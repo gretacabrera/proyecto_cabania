@@ -1,0 +1,246 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-size: cover;
+}
+
+.centered-body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+
+.home {
+  background: url(./imagenes/home.png) no-repeat center center fixed;
+}
+
+.login {
+  background: url(./imagenes/login.png) no-repeat center center fixed;
+}
+
+.reservas {
+  background: url(./imagenes/reservas.png) no-repeat center center fixed;
+  justify-content: right;
+  align-items: right;
+  margin-right: 400px;
+}
+
+#form_reserva {
+  border-style: double;
+  background-color: whitesmoke;
+}
+
+.loginform {
+  border-style: double;
+  background-color: rgba(158, 158, 158, 0.7);
+  color: #eee6e6;
+  margin: 0 auto;
+  padding: 20px;
+  text-align: center;
+}
+
+.menu {
+  background-color: rgba(155, 155, 155, 0.7);
+  overflow: hidden;
+}
+
+.menu-botonera {
+  float: right;
+}
+
+.botonera-abm {
+  float: left;
+}
+
+.menu a {
+  float: left;
+  display: block;
+  color: #f2f2f2;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+}
+
+.menu a:hover {
+  background-color: #ddd;
+  color: black;
+}
+
+.fixed-div-left {
+  position: fixed;
+  bottom: 50px;
+  left: 20px;
+  border-radius: 10px;
+  background-color: rgba(155, 155, 155, 0);
+  color: white;
+  text-align: center;
+  font-size: 5vh;
+  z-index: 100;
+}
+
+.fixed-div-right {
+  position: fixed;
+  bottom: 100px;
+  right: 20px;
+  border-radius: 10px;
+  background-color: rgba(155, 155, 155, 0);
+  color: white;
+  text-align: center;
+  z-index: 102;
+}
+
+input[type=button],
+input[type=submit],
+input[type=reset] {
+  background-color: rgba(158, 158, 158, 0.7);
+  padding: 16px 20px;
+  border-radius: 3px;
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  display: inline-block;
+}
+
+.a-button {
+  background-color: rgba(155, 155, 155, 0);
+  color: white;
+  border-color: white;
+  border-style: double;
+  font-size: 5vh;
+}
+
+.abm-button{
+  color: white;
+  border-color: white;
+  border-style: double;
+  font-size: 3vh;
+}
+.alta-button {
+  background-color: rgba(109, 204, 46, 0.747);
+}
+.mod-button {
+  background-color: rgba(35, 119, 167, 0.747);
+}
+.baja-button {
+  background-color: rgba(243, 57, 44, 0.747);
+}
+
+.content {
+  background-color: rgba(255, 255, 255, 0.7);
+  padding: 20px;
+  color: #000;
+  text-align: center;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  z-index: 0;
+}
+
+caption {
+  font-family: arial;
+  font-size: 15px;
+  text-align: center;
+  margin: 0px;
+  font-weight: bold;
+  padding: 10px;
+}
+
+table {
+  border-collapse: collapse;
+  border: 1;
+  width: 100%;
+}
+
+th {
+  border-right: 1px solid #fff;
+  border-bottom: 1px solid #fff;
+  padding: 0.5em;
+  background-color: #C2C2C2;
+}
+
+td {
+  border: 1px solid #000;
+  padding: .5em;
+  background-color: #f0f5f770;
+  width: 100px;
+  text-align: center;
+}
+
+thead th {
+  background-color: #6495ed;
+  color: #fff;
+}
+
+.galeria {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: left;
+  gap: 20px;
+  padding: 20px;
+}
+
+.galeria-lista {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.galeria-item {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  text-align: left;
+  max-width: 500px;
+}
+
+.galeria-item-foto{
+  height: 350px;
+  width: 350px;
+}
+
+.galeria-item div {
+  padding: 10px;
+}
+
+.galeria-item figure{
+  margin: 0;
+  padding: 0;
+}
+
+.galeria-item img {
+  height: 350px;
+  width: 350px;
+}
+
+.galeria-item :hover img{
+  visibility: hidden;
+  height: 0px;
+}
+
+.galeria-item label {
+  margin: 0;
+  font-size: 16px;
+}
+
+.galeria-item input[type=checkbox]{
+  width: 24px;
+  height: 24px;
+  margin-right: 5px;
+  border: 2px solid #000;
+  border-radius: 4px;
+  position: relative;
+}
+
+.subrayado{
+  text-decoration: underline;
+}
+
+.export {
+  align-items: right;
+  align-content: right;
+  float: right;
+}
