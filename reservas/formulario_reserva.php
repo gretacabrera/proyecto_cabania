@@ -15,9 +15,9 @@
 				<label>DNI del huesped:</label>
 				<input type="number" name="persona_dni" size="10" required><br><br>
 				<label>Fecha y hora de inicio:</label>
-				<input type="datetime-local" name="reserva_fhinicio" min="2024-11-26T00:00" value="<?php echo $reg['reserva_fhinicio']; ?>" required><br><br>
+				<input type="datetime-local" name="reserva_fhinicio" min="2024-11-26T00:00" required><br><br>
 				<label>Fecha y hora de fin:</label>
-				<input type="datetime-local" name="reserva_fhfin" min="2024-11-26T00:00" value="<?php echo $reg['reserva_fhfin']; ?>" required><br><br>
+				<input type="datetime-local" name="reserva_fhfin" min="2024-11-26T00:00" required><br><br>
 				<br>
 				<input type="submit" value="Continuar">
 			</form>

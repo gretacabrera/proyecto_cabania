@@ -7,13 +7,19 @@
 
 	if (isset($_SESSION["usuario_nombre"])){
 
-		$reserva_fhinicio = $_REQUEST["reserva_fhinicio"];
-		$reserva_fhfin = $_REQUEST["reserva_fhfin"];
+		$reserva_fhinicio = (new DateTime($_REQUEST["reserva_fhinicio"]))->format('Y-m-d H:i:s');
+		$reserva_fhfin = (new DateTime($_REQUEST["reserva_fhfin"]))->format('Y-m-d H:i:s');
 		$rela_cabania = $_REQUEST["rela_cabania"];
 
 		$registro = $mysql->query("select * from periodo 
 									where '$reserva_fhinicio' BETWEEN periodo_fechainicio AND periodo_fechafin") or 
 			die($mysql->error);
+
+		if ($registro->num_rows == 0){
+			echo "No se encontró el periodo correspondiente a la fecha de inicio.<br><br>";
+			echo '<button onclick="location.href=\'../home.php\'">Volver</button>';
+			die();
+		}
 
 		$rela_periodo = $registro->fetch_array()["id_periodo"];
 
