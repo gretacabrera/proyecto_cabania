@@ -48,8 +48,10 @@
 		$usuario_estado = $_REQUEST["usuario_estado"];
 	}
 
+	$usuario_constrasenia = password_hash($_REQUEST["usuario_contrasenia"], PASSWORD_DEFAULT);
+
 	$mysql->query("insert into usuario (usuario_nombre, usuario_contrasenia, rela_persona, rela_perfil, usuario_estado)
-			values ('$_REQUEST[usuario_nombre]','$_REQUEST[usuario_contrasenia]', $rela_persona, $rela_perfil, $usuario_estado)") or die($mysql->error);
+			values ('$_REQUEST[usuario_nombre]','$usuario_constrasenia', $rela_persona, $rela_perfil, $usuario_estado)") or die($mysql->error);
 	
 	$mysql->close();
 

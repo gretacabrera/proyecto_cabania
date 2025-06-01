@@ -8,22 +8,15 @@ $registro = $mysql->query("select * from usuario
 or die($mysql->error);
 
 if ($reg = $registro->fetch_array()) {
-
-    $registro = $mysql->query("select * from usuario 
-                            where usuario_nombre = '$_REQUEST[usuario_nombre]'
-                            and usuario_contrasenia = '$_REQUEST[usuario_contrasenia]'") 
-    or die($mysql->error);
-
-    if ($reg = $registro->fetch_array()) {
+    if (password_verify($_REQUEST["usuario_contrasenia"], $reg["usuario_contrasenia"])){
         session_start();
         $_SESSION["usuario_nombre"] = $_REQUEST["usuario_nombre"];
         $mysql->close(); // se cierra la conexion antes de redireccionar
         header("Location: ../home.php");
     }
     else{
-        echo 'Contraseña incorrecta. Por favor, reintente.';
-        echo '<br>';
-		echo '<button onclick="location.href=\'login.php\'">Volver</button>';
+        echo 'Contraseña incorrecta. Por favor, reintente.<br>';
+        echo '<button onclick="location.href=\'login.php\'">Volver</button>';
     }
 }
 else{
