@@ -1,6 +1,16 @@
 <?php
 	require("../conexion.php");
 
+	// agrego validacion para que no se agreguen nombres de usuario ya existentes
+	$usuario_nombre = $_REQUEST["usuario_nombre"];
+	$consulta = $mysql->query("SELECT * FROM usuario WHERE usuario_nombre = '$usuario_nombre'");
+	$filas = $consulta->num_rows;
+	if ($filas > 0){
+		echo "El nombre de usuario ya existe. Por favor, reintente ingresando otro nombre de usuario.<br>";
+		echo '<button onclick="location.href=\'index.php\'">Volver</button>';
+		exit();
+	}
+
 	$mysql->query("insert into persona (persona_nombre, persona_apellido, persona_dni, persona_fechanac, persona_direccion, rela_estadopersona) 
 	values ('$_REQUEST[persona_nombre]','$_REQUEST[persona_apellido]',$_REQUEST[persona_dni],'$_REQUEST[persona_fechanac]','$_REQUEST[persona_direccion]',
 	(SELECT id_estadopersona FROM estadopersona WHERE estadopersona_descripcion = 'activo'))");
