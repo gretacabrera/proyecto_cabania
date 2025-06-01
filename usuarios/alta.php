@@ -7,7 +7,7 @@
 	$filas = $consulta->num_rows;
 	if ($filas > 0){
 		echo "El nombre de usuario ya existe. Por favor, reintente ingresando otro nombre de usuario.<br>";
-		echo '<button onclick="location.href=\'index.php\'">Volver</button>';
+		echo '<button onclick="location.href=\'registro.php\'">Volver</button>';
 		exit();
 	}
 
