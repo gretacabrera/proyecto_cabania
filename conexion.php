@@ -1,6 +1,13 @@
 <?php
 
-$mysql = new mysqli("localhost", "root", "0205", "proyecto_cabania");
+require_once("load_env.php");
+
+$hostname = getenv('DB_HOST');
+$username = getenv('DB_USER');
+$password = getenv('DB_PASS');
+$schema = getenv('DB_SCHEMA');
+
+$mysql = new mysqli($hostname, $username, $password, $schema);
 
 if ($mysql->connect_error)
 	die("Problemas con la conexión a la base de datos");
