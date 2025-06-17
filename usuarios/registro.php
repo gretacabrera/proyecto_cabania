@@ -20,6 +20,8 @@
 				<input type="text" name="usuario_nombre" required><br>
 				<label>Contraseña:</label>
 				<input type="password" name="usuario_contrasenia" required><br>
+				<label>Confirmar contraseña:</label>
+				<input type="password" name="confirmacion_contrasenia" required><br>
 			</fieldset>
 			<fieldset>
 				<legend>Datos personales</legend>
@@ -27,8 +29,6 @@
 				<input type="text" name="persona_nombre" required><br>
 				<label>Apellido:</label>
 				<input type="text" name="persona_apellido" required><br>
-				<label>DNI:</label>
-				<input type="number" name="persona_dni" size="10" required><br>
 				<label>Fecha de nacimiento:</label>
 				<input type="date" name="persona_fechanac" max="2024-11-19" required><br>
 				<label>Dirección:</label>

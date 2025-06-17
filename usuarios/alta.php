@@ -1,6 +1,29 @@
 <?php
 	require("../conexion.php");
 
+	// agrego validacion para revisar la confirmacion de la contraseña
+	if ($_REQUEST["usuario_contrasenia"] != $_REQUEST["confirmacion_contrasenia"]) {
+		echo "Las contraseñas no coinciden. Por favor, reintente.<br>";
+		echo '<button onclick="location.href=\'registro.php\'">Volver</button>';
+		exit();
+	}
+
+	// agrego validacion para que no se registren menores de edad
+	$fecha_nacimiento = $_REQUEST["persona_fechanac"];
+	$fecha_actual = date("Y-m-d");
+	if (strtotime($fecha_nacimiento) > strtotime($fecha_actual) - 568025136) { // 18 años en segundos
+		echo "Debe ser mayor de edad para registrarse.<br>";
+		echo '<button onclick="location.href=\'registro.php\'">Volver</button>';
+		exit();
+	}
+
+	// agrego validacion para validar el formato del email
+	if (!filter_var($_REQUEST["contacto_email"], FILTER_VALIDATE_EMAIL)) {
+		echo "El formato del email es incorrecto. Por favor, reintente.<br>";
+		echo '<button onclick="location.href=\'registro.php\'">Volver</button>';
+		exit();
+	}
+
 	// agrego validacion para que no se agreguen nombres de usuario ya existentes
 	$usuario_nombre = $_REQUEST["usuario_nombre"];
 	$consulta = $mysql->query("SELECT * FROM usuario WHERE usuario_nombre = '$usuario_nombre'");
@@ -11,8 +34,8 @@
 		exit();
 	}
 
-	$mysql->query("insert into persona (persona_nombre, persona_apellido, persona_dni, persona_fechanac, persona_direccion, rela_estadopersona) 
-	values ('$_REQUEST[persona_nombre]','$_REQUEST[persona_apellido]',$_REQUEST[persona_dni],'$_REQUEST[persona_fechanac]','$_REQUEST[persona_direccion]',
+	$mysql->query("insert into persona (persona_nombre, persona_apellido, persona_fechanac, persona_direccion, rela_estadopersona) 
+	values ('$_REQUEST[persona_nombre]','$_REQUEST[persona_apellido]','$_REQUEST[persona_fechanac]','$_REQUEST[persona_direccion]',
 	(SELECT id_estadopersona FROM estadopersona WHERE estadopersona_descripcion = 'activo'))");
 	$rela_persona = $mysql->insert_id; 
 

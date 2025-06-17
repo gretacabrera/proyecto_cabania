@@ -52,8 +52,6 @@
 						<input type="text" name="persona_nombre" value="<?php echo $reg['persona_nombre']; ?>" required><br>
 						<label>Apellido:</label>
 						<input type="text" name="persona_apellido" value="<?php echo $reg['persona_apellido']; ?>" required><br>
-						<label>DNI:</label>
-						<input type="number" name="persona_dni" size="10" value="<?php echo $reg['persona_dni']; ?>" required><br>
 						<label>Fecha de nacimiento:</label>
 						<input type="date" name="persona_fechanac" max="2024-11-25" value="<?php echo $reg['persona_fechanac']; ?>" required><br>
 						<label>Dirección:</label>

@@ -17,7 +17,6 @@
   $mysql->query("update persona set 
                 persona_nombre='$_REQUEST[persona_nombre]',
                 persona_apellido='$_REQUEST[persona_apellido]',
-                persona_dni='$_REQUEST[persona_dni]',
                 persona_fechanac='$_REQUEST[persona_fechanac]',
                 persona_direccion='$_REQUEST[persona_direccion]'
                 where id_persona=$rela_persona") or
