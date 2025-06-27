@@ -8,12 +8,14 @@
 <body class="centered-body login">
 	<?php
 		require("../conexion.php");
+		include('../includes/mensajes.php');
 	?>
 	<div class="loginform">
+		<?php mostrar_mensaje(); ?>
 		<h2>CASA DE PALOS</h2>
         <h3>CABAÑAS</h3>
         <br>
-		<form method="post" action="alta.php">
+		<form method="post" action="alta.php" onsubmit="return validar_registro()">
 			<fieldset>
 				<legend>Credenciales de usuario</legend>
 				<label>Usuario:</label>
@@ -37,7 +39,7 @@
 			<fieldset>
 				<legend>Contactos</legend>
 				<label>Email:</label>
-				<input type="text" name="contacto_email" required><br>
+				<input type="email" name="contacto_email" required><br>
 				<label>Teléfono:</label>
 				<input type="number" name="contacto_telefono" size="10"><br>
 				<label>Instragram:</label>
@@ -47,8 +49,10 @@
 			</fieldset>
 			<br>
 			<input type="hidden" name="registro_online" value="1" required>
-			<input type="submit" value="REGISTRARSE">
+			<input type="button" value="REGISTRARSE" onclick="if(validar_registro()) this.form.submit();">
 		</form>
 	</div>
+	
+	<script src="../js/validaciones.js"></script>
 </body>
 </html>

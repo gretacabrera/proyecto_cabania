@@ -1,6 +1,16 @@
 <?php
 
 include('../conexion.php');
+include('../includes/mensajes.php');
+
+// Validaciones del lado del servidor
+if (empty($_REQUEST['usuario_nombre']) || empty($_REQUEST['usuario_contrasenia'])) {
+    redireccionar_con_mensaje('login.php', 'Todos los campos son obligatorios', 'error');
+}
+
+if (strlen($_REQUEST['usuario_nombre']) < 3) {
+    redireccionar_con_mensaje('login.php', 'El usuario debe tener al menos 3 caracteres', 'error');
+}
 
 $registro = $mysql->query("select * from usuario 
                         where usuario_nombre = '$_REQUEST[usuario_nombre]'
@@ -15,14 +25,11 @@ if ($reg = $registro->fetch_array()) {
         header("Location: ../home.php");
     }
     else{
-        echo 'Contraseña incorrecta. Por favor, reintente.<br>';
-        echo '<button onclick="location.href=\'login.php\'">Volver</button>';
+        redireccionar_con_mensaje('login.php', 'Contraseña incorrecta. Por favor, reintente.', 'error');
     }
 }
 else{
-    echo 'No existe un usuario registrado con ese nombre. Por favor, reintente o ingrese a Registrarse.';
-    echo '<br>';
-    echo '<button onclick="location.href=\'login.php\'">Volver</button>';
+    redireccionar_con_mensaje('login.php', 'No existe un usuario registrado con ese nombre.', 'error');
 }
 $mysql->close();
 

@@ -1,37 +1,55 @@
 <?php
 	require("../conexion.php");
+	include('../includes/mensajes.php');
+
+	// Validaciones del lado del servidor
+	if (empty($_REQUEST["usuario_nombre"]) || empty($_REQUEST["usuario_contrasenia"]) || 
+	    empty($_REQUEST["confirmacion_contrasenia"]) || empty($_REQUEST["persona_nombre"]) ||
+	    empty($_REQUEST["persona_apellido"]) || empty($_REQUEST["persona_fechanac"]) ||
+	    empty($_REQUEST["contacto_email"])) {
+		redireccionar_con_mensaje('registro.php', 'Todos los campos obligatorios deben ser completados', 'error');
+	}
+
+	// Validar longitud mínima de usuario
+	if (strlen($_REQUEST["usuario_nombre"]) < 3) {
+		redireccionar_con_mensaje('registro.php', 'El nombre de usuario debe tener al menos 3 caracteres', 'error');
+	}
 
 	// agrego validacion para revisar la confirmacion de la contraseña
 	if ($_REQUEST["usuario_contrasenia"] != $_REQUEST["confirmacion_contrasenia"]) {
-		echo "Las contraseñas no coinciden. Por favor, reintente.<br>";
-		echo '<button onclick="location.href=\'registro.php\'">Volver</button>';
-		exit();
+		redireccionar_con_mensaje('registro.php', 'Las contraseñas no coinciden', 'error');
 	}
 
 	// agrego validacion para que no se registren menores de edad
 	$fecha_nacimiento = $_REQUEST["persona_fechanac"];
 	$fecha_actual = date("Y-m-d");
 	if (strtotime($fecha_nacimiento) > strtotime($fecha_actual) - 568025136) { // 18 años en segundos
-		echo "Debe ser mayor de edad para registrarse.<br>";
-		echo '<button onclick="location.href=\'registro.php\'">Volver</button>';
-		exit();
+		redireccionar_con_mensaje('registro.php', 'Debe ser mayor de edad para registrarse', 'error');
 	}
 
 	// agrego validacion para validar el formato del email
 	if (!filter_var($_REQUEST["contacto_email"], FILTER_VALIDATE_EMAIL)) {
-		echo "El formato del email es incorrecto. Por favor, reintente.<br>";
-		echo '<button onclick="location.href=\'registro.php\'">Volver</button>';
-		exit();
+		redireccionar_con_mensaje('registro.php', 'El formato del email es incorrecto', 'error');
 	}
 
 	// agrego validacion para que no se agreguen nombres de usuario ya existentes
-	$usuario_nombre = $_REQUEST["usuario_nombre"];
+	$usuario_nombre = $mysql->real_escape_string($_REQUEST["usuario_nombre"]);
 	$consulta = $mysql->query("SELECT * FROM usuario WHERE usuario_nombre = '$usuario_nombre'");
 	$filas = $consulta->num_rows;
 	if ($filas > 0){
-		echo "El nombre de usuario ya existe. Por favor, reintente ingresando otro nombre de usuario.<br>";
-		echo '<button onclick="location.href=\'registro.php\'">Volver</button>';
-		exit();
+		redireccionar_con_mensaje('registro.php', 'El nombre de usuario ya existe. Por favor, elija otro', 'error');
+	}
+
+	// Validar que el email no esté ya registrado
+	$email = $mysql->real_escape_string($_REQUEST["contacto_email"]);
+	$consulta_email = $mysql->query("SELECT c.contacto_descripcion 
+	                                FROM contacto c 
+	                                INNER JOIN tipocontacto tc ON c.rela_tipocontacto = tc.id_tipocontacto 
+	                                WHERE c.contacto_descripcion = '$email' 
+	                                AND tc.tipocontacto_descripcion = 'email' 
+	                                AND c.contacto_estado = 1");
+	if ($consulta_email->num_rows > 0) {
+		redireccionar_con_mensaje('registro.php', 'Este email ya está registrado', 'error');
 	}
 
 	$mysql->query("insert into persona (persona_nombre, persona_apellido, persona_fechanac, persona_direccion, rela_estadopersona) 
@@ -89,7 +107,7 @@
 	$mysql->close();
 
 	if (isset($_REQUEST["registro_online"])){
-		header("Location: login.php");
+		redireccionar_con_mensaje('login.php', 'Usuario registrado exitosamente. Ya puede iniciar sesión', 'exito');
 	}
 	else{
 		echo 'Se dió de alta el usuario correctamente';
