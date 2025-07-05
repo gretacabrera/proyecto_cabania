@@ -66,9 +66,18 @@
 			<td>".$row["periodo_descripcion"]."</td>
 			<td>".$row["estadoreserva_descripcion"]."</td> 
 			<td>
-				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_reserva=".$row["id_reserva"]."\"'>Editar</button>
-				<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_reserva=".$row["id_reserva"]."\", \"anular esta reserva\")'>Anular</button>
-			</td>
+				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_reserva=".$row["id_reserva"]."\"'>Editar</button>";
+		
+		// Mostrar botón Anular o Reactivar según el estado
+		if ($row["rela_estadoreserva"] == 6) {
+			// Si está anulada (estado 6), mostrar botón Reactivar
+			echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_reserva=".$row["id_reserva"]."\", \"reactivar esta reserva\")'>Reactivar</button>";
+		} else {
+			// Si está activa, mostrar botón Anular
+			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_reserva=".$row["id_reserva"]."\", \"anular esta reserva\")'>Anular</button>";
+		}
+		
+		echo "</td>
 		</tr>";
 	}
 ?>

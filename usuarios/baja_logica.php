@@ -1,13 +1,14 @@
 <?php
-  require("../conexion.php");
+	require("../conexion.php");
+	require("../includes/mensajes.php");
 
-  $mysql->query("update usuario set usuario_estado = 3 WHERE id_usuario=$_REQUEST[id_usuario]") or
-    die($mysql->error);
+	$resultado = $mysql->query("update usuario set usuario_estado = 3 WHERE id_usuario=$_REQUEST[id_usuario]");
 
-  echo 'Se dió de baja correctamente al usuario';
-  echo '<br>';
-  echo '<button onclick="location.href=\'index.php\'">Volver</button>';
+	if ($resultado) {
+	  echo 'Se dió de baja correctamente el usuario';
+  } else {
+	  echo 'Error: ' . $mysql->error;
+  }
 
   $mysql->close();
-
-  ?>
+?>

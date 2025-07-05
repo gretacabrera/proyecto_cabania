@@ -36,9 +36,18 @@
 			<td>".$row["categoria_descripcion"]."</td> 
 			<td>".(($row["categoria_estado"]) ? "Activo" : "Baja")."</td> 
 			<td>
-				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_categoria=".$row["id_categoria"]."\"'>Editar</button>
-				<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_categoria=".$row["id_categoria"]."\")'>Borrar</button>
-			</td>
+				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_categoria=".$row["id_categoria"]."\"'>Editar</button>";
+		
+		// Mostrar botón Eliminar o Recuperar según el estado
+		if ($row["categoria_estado"]) {
+			// Si está activo, mostrar botón Eliminar
+			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_categoria=".$row["id_categoria"]."\", \"dar de baja esta categoría\")'>Eliminar</button>";
+		} else {
+			// Si está de baja, mostrar botón Recuperar
+			echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_categoria=".$row["id_categoria"]."\", \"recuperar esta categoría\")'>Recuperar</button>";
+		}
+		
+		echo "</td>
 		</tr>";
 	}
 ?>

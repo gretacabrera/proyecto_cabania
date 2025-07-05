@@ -36,9 +36,18 @@
 			<td>".$row["tiposervicio_descripcion"]."</td> 
 			<td>".(($row["tiposervicio_estado"]) ? "Activo" : "Baja")."</td> 
 			<td>
-				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_tiposervicio=".$row["id_tiposervicio"]."\"'>Editar</button>
-				<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_tiposervicio=".$row["id_tiposervicio"]."\")'>Borrar</button>
-			</td>
+				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_tiposervicio=".$row["id_tiposervicio"]."\"'>Editar</button>";
+		
+		// Mostrar botón Eliminar o Recuperar según el estado
+		if ($row["tiposervicio_estado"] == 0) {
+			// Si está de baja (estado 0), mostrar botón Recuperar
+			echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_tiposervicio=".$row["id_tiposervicio"]."\", \"recuperar este tipo de servicio\")'>Recuperar</button>";
+		} else {
+			// Si está activo (estado 1), mostrar botón Eliminar
+			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_tiposervicio=".$row["id_tiposervicio"]."\", \"dar de baja este tipo de servicio\")'>Eliminar</button>";
+		}
+		
+		echo "</td>
 		</tr>";
 	}
 ?>

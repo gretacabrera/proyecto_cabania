@@ -36,9 +36,18 @@
 			<td>".$row["marca_descripcion"]."</td> 
 			<td>".(($row["marca_estado"]) ? "Activo" : "Baja")."</td> 
 			<td>
-				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_marca=".$row["id_marca"]."\"'>Editar</button>
-				<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_marca=".$row["id_marca"]."\")'>Borrar</button>
-			</td>
+				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_marca=".$row["id_marca"]."\"'>Editar</button>";
+		
+		// Mostrar botón Eliminar o Recuperar según el estado
+		if ($row["marca_estado"]) {
+			// Si está activo, mostrar botón Eliminar
+			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_marca=".$row["id_marca"]."\", \"dar de baja esta marca\")'>Eliminar</button>";
+		} else {
+			// Si está de baja, mostrar botón Recuperar
+			echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_marca=".$row["id_marca"]."\", \"recuperar esta marca\")'>Recuperar</button>";
+		}
+		
+		echo "</td>
 		</tr>";
 	}
 ?>

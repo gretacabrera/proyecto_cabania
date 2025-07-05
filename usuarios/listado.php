@@ -31,8 +31,7 @@
 	}
 	
 	$registros = $mysql->query("select * from vw_usuario
-								where usuario_estado <> 'baja'
-								and persona_estado <> 'baja'
+								where persona_estado <> 'baja'
 								".$filtro."
 								order by usuario_nombre asc") or
 	die($mysql->error);
@@ -46,9 +45,18 @@
 			<td>".$row["contacto_email"]."</td>
 			<td>".$row["usuario_estado"]."</td>
 			<td>
-				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_usuario=".$row["id_usuario"]."\"'>Editar</button>
-				<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_usuario=".$row["id_usuario"]."\")'>Borrar</button>
-			</td>
+				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_usuario=".$row["id_usuario"]."\"'>Editar</button>";
+		
+		// Mostrar botón Eliminar o Recuperar según el estado
+		if ($row["usuario_estado"] == 3 || $row["usuario_estado"] == 'baja') {
+			// Si está de baja (estado 3 o 'baja'), mostrar botón Recuperar
+			echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_usuario=".$row["id_usuario"]."\", \"recuperar este usuario\")'>Recuperar</button>";
+		} else {
+			// Si está activo, mostrar botón Eliminar
+			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_usuario=".$row["id_usuario"]."\", \"dar de baja este usuario\")'>Eliminar</button>";
+		}
+		
+		echo "</td>
 		</tr>";
 	}
 ?>

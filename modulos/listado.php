@@ -38,9 +38,18 @@
 			<td>".$row["modulo_ruta"]."</td> 
 			<td>".(($row["modulo_estado"]) ? "Activo" : "Baja")."</td> 
 			<td>
-				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_modulo=".$row["id_modulo"]."\"'>Editar</button>
-				<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_modulo=".$row["id_modulo"]."\")'>Borrar</button>
-			</td>
+				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_modulo=".$row["id_modulo"]."\"'>Editar</button>";
+		
+		// Mostrar botón Eliminar o Recuperar según el estado
+		if ($row["modulo_estado"]) {
+			// Si está activo, mostrar botón Eliminar
+			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_modulo=".$row["id_modulo"]."\", \"dar de baja este módulo\")'>Eliminar</button>";
+		} else {
+			// Si está de baja, mostrar botón Recuperar
+			echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_modulo=".$row["id_modulo"]."\", \"recuperar este módulo\")'>Recuperar</button>";
+		}
+		
+		echo "</td>
 		</tr>";
 	}
 ?>

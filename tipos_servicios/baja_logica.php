@@ -1,13 +1,14 @@
 <?php
-  require("../conexion.php");
+	require("../conexion.php");
+	require("../includes/mensajes.php");
 
-  $mysql->query("update tiposervicio set tiposervicio_estado = 0 WHERE id_tiposervicio=$_REQUEST[id_tiposervicio]") or
-    die($mysql->error);
+	$resultado = $mysql->query("update tiposervicio set tiposervicio_estado = 0 WHERE id_tiposervicio=$_REQUEST[id_tiposervicio]");
 
-  echo 'Se dió de baja correctamente al tipo de servicio';
-  echo '<br>';
-  echo '<button onclick="location.href=\'index.php\'">Volver</button>';
-
-  $mysql->close();
-
-  ?>
+	if ($resultado) {
+		$mysql->close();
+		redireccionar_con_mensaje('index.php', 'Tipo de servicio dado de baja correctamente', 'exito');
+	} else {
+		$mysql->close();
+		redireccionar_con_mensaje('index.php', 'Error: ' . $mysql->error, 'error');
+	}
+?>

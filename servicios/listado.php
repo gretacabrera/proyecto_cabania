@@ -52,11 +52,20 @@
 			<td>".$row["servicio_descripcion"]."</td>  
 			<td>".$row["servicio_precio"]."</td>
 			<td>".$row["tiposervicio_descripcion"]."</td> 
-			<td>".$row["servicio_estado"]."</td> 
+			<td>".(($row["servicio_estado"]) ? "Activo" : "Baja")."</td> 
 			<td>
-				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_servicio=".$row["id_servicio"]."\"'>Editar</button>
-				<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_servicio=".$row["id_servicio"]."\")'>Borrar</button>
-			</td>
+				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_servicio=".$row["id_servicio"]."\"'>Editar</button>";
+		
+		// Mostrar botón Eliminar o Recuperar según el estado
+		if ($row["servicio_estado"]) {
+			// Si está activo, mostrar botón Eliminar
+			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_servicio=".$row["id_servicio"]."\", \"dar de baja este servicio\")'>Eliminar</button>";
+		} else {
+			// Si está de baja, mostrar botón Recuperar
+			echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_servicio=".$row["id_servicio"]."\", \"recuperar este servicio\")'>Recuperar</button>";
+		}
+		
+		echo "</td>
 		</tr>";
 	}
 ?>

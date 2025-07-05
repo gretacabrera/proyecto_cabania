@@ -46,10 +46,7 @@
 								left join marca on rela_marca = id_marca
 								left join categoria on rela_categoria = id_categoria
 								left join estadoproducto on rela_estadoproducto = id_estadoproducto
-								where rela_estadoproducto IN 
-									(select id_estadoproducto from estadoproducto 
-									where estadoproducto_estado = 1 
-									and estadoproducto_descripcion <> 'baja')
+								where 1=1 
 								".$filtro) or
 	die($mysql->error);
 	
@@ -64,9 +61,18 @@
 			<td>".$row["producto_stock"]."</td> 
 			<td>".$row["estadoproducto_descripcion"]."</td> 
 			<td>
-				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_producto=".$row["id_producto"]."\"'>Editar</button>
-				<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_producto=".$row["id_producto"]."\")'>Borrar</button>
-			</td>
+				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_producto=".$row["id_producto"]."\"'>Editar</button>";
+		
+		// Mostrar botón Eliminar o Recuperar según el estado
+		if ($row["rela_estadoproducto"] == 4) {
+			// Si está de baja (estado 4), mostrar botón Recuperar
+			echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_producto=".$row["id_producto"]."\", \"recuperar este producto\")'>Recuperar</button>";
+		} else {
+			// Si está activo, mostrar botón Eliminar
+			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_producto=".$row["id_producto"]."\", \"dar de baja este producto\")'>Eliminar</button>";
+		}
+		
+		echo "</td>
 		</tr>";
 	}
 ?>
