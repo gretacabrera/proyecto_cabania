@@ -20,31 +20,10 @@
 			if ($reg = $registro->fetch_array()) {
 				?>
 				<h1>Formulario de modificación de marca</h1>
-				<form method="post" action="modificacion.php">
+				<form method="post" action="modificacion.php" onsubmit="return procesarFormularioAsincrono(this, 'Marca modificada correctamente', 'index.php')">
 					<fieldset>
 						<label>Descripcion:</label>
 						<input type="text" name="marca_descripcion" size="45" value="<?php echo $reg['marca_descripcion']; ?>" required><br>
-						<label>Estado:</label>
-						<select name="marca_estado">
-							<option value="">Seleccione el estado de la marca...</option>
-							<option value="1"
-							<?php
-								if (isset($_REQUEST["marca_estado"])){
-									if ($_REQUEST["marca_estado"] == 1){
-										echo "selected";
-									}
-								}
-							?>
-							>Activo</option>
-							<option value="0"<?php
-								if (isset($_REQUEST["marca_estado"])){
-									if ($_REQUEST["marca_estado"] == 0){
-										echo "selected";
-									}
-								}
-							?>
-							>Baja</option>
-						</select><br><br>
 						<input type="hidden" name="id_marca" value="<?php echo $_REQUEST['id_marca']; ?>" required>
 						<input type="submit" value="Confirmar">
 					</fieldset>

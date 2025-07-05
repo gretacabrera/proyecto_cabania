@@ -3,8 +3,7 @@
   require("../conexion.php");
 
   $mysql->query("update tiposervicio set 
-				tiposervicio_descripcion='$_REQUEST[tiposervicio_descripcion]',
-				tiposervicio_estado=$_REQUEST[tiposervicio_estado]
+				tiposervicio_descripcion='$_REQUEST[tiposervicio_descripcion]'
 				where id_tiposervicio=$_REQUEST[id_tiposervicio]") or
     die($mysql->error);
 

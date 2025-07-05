@@ -1,17 +1,17 @@
 
 <?php
   require("../conexion.php");
+  require("../includes/mensajes.php");
 
-  $mysql->query("update perfil set 
-				perfil_descripcion='$_REQUEST[perfil_descripcion]',
-				perfil_estado=$_REQUEST[perfil_estado]
-				where id_perfil=$_REQUEST[id_perfil]") or
-    die($mysql->error);
+  $resultado = $mysql->query("update perfil set 
+				perfil_descripcion='$_REQUEST[perfil_descripcion]'
+				where id_perfil=$_REQUEST[id_perfil]");
 
-  echo 'Se modificaron los datos del perfil';
-  echo '<br>';
-  echo '<button onclick="location.href=\'index.php\'">Volver</button>';
-  
-  $mysql->close();
-
-  ?>
+  if ($resultado) {
+	$mysql->close();
+	redireccionar_con_mensaje('index.php', 'Se modificaron los datos del perfil correctamente', 'exito');
+  } else {
+	$mysql->close();
+	redireccionar_con_mensaje('index.php', 'Error: ' . $mysql->error, 'error');
+  }
+?>

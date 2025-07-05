@@ -1,17 +1,17 @@
 
 <?php
   require("../conexion.php");
+  require("../includes/mensajes.php");
 
-  $mysql->query("update marca set 
-				marca_descripcion='$_REQUEST[marca_descripcion]',
-				marca_estado=$_REQUEST[marca_estado]
-				where id_marca=$_REQUEST[id_marca]") or
-    die($mysql->error);
+  $resultado = $mysql->query("update marca set 
+				marca_descripcion='$_REQUEST[marca_descripcion]'
+				where id_marca=$_REQUEST[id_marca]");
 
-  echo 'Se modificaron los datos de la marca';
-  echo '<br>';
-  echo '<button onclick="location.href=\'index.php\'">Volver</button>';
-  
-  $mysql->close();
-
-  ?>
+  if ($resultado) {
+	$mysql->close();
+	redireccionar_con_mensaje('index.php', 'Se modificaron los datos de la marca correctamente', 'exito');
+  } else {
+	$mysql->close();
+	redireccionar_con_mensaje('index.php', 'Error: ' . $mysql->error, 'error');
+  }
+?>

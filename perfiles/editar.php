@@ -20,31 +20,10 @@
 			if ($reg = $registro->fetch_array()) {
 				?>
 				<h1>Formulario de modificación de Perfiles</h1>
-				<form method="post" action="modificacion.php">
+				<form method="post" action="modificacion.php" onsubmit="return procesarFormularioAsincrono(this, 'Perfil modificado correctamente', 'index.php')">
 					<fieldset>
 						<label>Descripcion:</label>
 						<input type="text" name="perfil_descripcion" size="45" value="<?php echo $reg['perfil_descripcion']; ?>" required><br>
-						<label>Estado:</label>
-						<select name="perfil_estado">
-							<option value="">Seleccione el estado del perfil...</option>
-							<option value="1"
-							<?php
-								if (isset($_REQUEST["perfil_estado"])){
-									if ($_REQUEST["perfil_estado"] == 1){
-										echo "selected";
-									}
-								}
-							?>
-							>Activo</option>
-							<option value="0"<?php
-								if (isset($_REQUEST["perfil_estado"])){
-									if ($_REQUEST["perfil_estado"] == 0){
-										echo "selected";
-									}
-								}
-							?>
-							>Baja</option>
-						</select><br><br>
 						<input type="hidden" name="id_perfil" value="<?php echo $_REQUEST['id_perfil']; ?>" required>
 						<input type="submit" value="Confirmar">
 					</fieldset>

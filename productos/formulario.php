@@ -14,7 +14,7 @@
 				require("../conexion.php");
 			?>
 			<h1>Formulario de alta de Producto</h1>
-			<form method="post" action="alta.php">
+			<form method="post" action="alta.php" onsubmit="return procesarFormularioAsincrono(this, 'Producto creado correctamente', 'index.php')">
 				<fieldset>
 					<label>Nombre:</label>
 					<input type="text" name="producto_nombre" size="50" required><br>

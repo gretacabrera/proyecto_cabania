@@ -1,17 +1,17 @@
 
 <?php
   require("../conexion.php");
+  require("../includes/mensajes.php");
 
-  $mysql->query("update categoria set 
-				categoria_descripcion='$_REQUEST[categoria_descripcion]',
-				categoria_estado=$_REQUEST[categoria_estado]
-				where id_categoria=$_REQUEST[id_categoria]") or
-    die($mysql->error);
+  $resultado = $mysql->query("update categoria set 
+				categoria_descripcion='$_REQUEST[categoria_descripcion]'
+				where id_categoria=$_REQUEST[id_categoria]");
 
-  echo 'Se modificaron los datos de la categoria';
-  echo '<br>';
-  echo '<button onclick="location.href=\'index.php\'">Volver</button>';
-  
-  $mysql->close();
-
-  ?>
+  if ($resultado) {
+	$mysql->close();
+	redireccionar_con_mensaje('index.php', 'Se modificaron los datos de la categoría correctamente', 'exito');
+  } else {
+	$mysql->close();
+	redireccionar_con_mensaje('index.php', 'Error: ' . $mysql->error, 'error');
+  }
+?>

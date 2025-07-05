@@ -37,7 +37,7 @@
 			<td>".(($row["marca_estado"]) ? "Activo" : "Baja")."</td> 
 			<td>
 				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_marca=".$row["id_marca"]."\"'>Editar</button>
-				<button class='abm-button baja-button' onclick='location.href=\"baja_logica.php?id_marca=".$row["id_marca"]."\"'>Borrar</button>
+				<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_marca=".$row["id_marca"]."\")'>Borrar</button>
 			</td>
 		</tr>";
 	}

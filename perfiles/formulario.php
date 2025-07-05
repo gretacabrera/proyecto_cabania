@@ -14,16 +14,10 @@
 				require("../conexion.php");
 			?>
 			<h1>Formulario de alta de perfil</h1>
-			<form method="post" action="alta.php">
+			<form method="post" action="alta.php" onsubmit="return procesarFormularioAsincrono(this, 'Perfil creado correctamente', 'index.php')">
 				<fieldset>
 					<label>Descripcion:</label>
 					<input type="text" name="perfil_descripcion" size="45" required><br>
-					<label>Estado:</label>
-					<select name="perfil_estado">
-						<option value="">Seleccione el estado del perfil...</option>
-						<option value="1">Activo</option>
-						<option value="0">Baja</option>
-					</select><br><br>
 					<input type="submit" value="Confirmar">
 				</fieldset>
 			</form>

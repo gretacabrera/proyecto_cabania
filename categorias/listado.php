@@ -37,7 +37,7 @@
 			<td>".(($row["categoria_estado"]) ? "Activo" : "Baja")."</td> 
 			<td>
 				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_categoria=".$row["id_categoria"]."\"'>Editar</button>
-				<button class='abm-button baja-button' onclick='location.href=\"baja_logica.php?id_categoria=".$row["id_categoria"]."\"'>Borrar</button>
+				<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_categoria=".$row["id_categoria"]."\")'>Borrar</button>
 			</td>
 		</tr>";
 	}

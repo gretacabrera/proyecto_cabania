@@ -21,6 +21,31 @@ function mostrar_mensaje() {
         echo htmlspecialchars($_GET['mensaje']);
         echo '<button type="button" class="cerrar-mensaje" onclick="cerrarMensaje()">×</button>';
         echo '</div>';
+        
+        // Agregar JavaScript para cerrar el mensaje y limpiar URL
+        echo '<script>
+        function cerrarMensaje() {
+            document.getElementById("mensaje-global").style.display = "none";
+            // Limpiar parámetros de la URL
+            if (window.history && window.history.replaceState) {
+                var url = window.location.protocol + "//" + window.location.host + window.location.pathname;
+                window.history.replaceState({path: url}, "", url);
+            }
+        }
+        
+        // Auto-ocultar mensaje después de 5 segundos
+        setTimeout(function() {
+            var mensaje = document.getElementById("mensaje-global");
+            if (mensaje) {
+                mensaje.style.display = "none";
+                // Limpiar parámetros de la URL
+                if (window.history && window.history.replaceState) {
+                    var url = window.location.protocol + "//" + window.location.host + window.location.pathname;
+                    window.history.replaceState({path: url}, "", url);
+                }
+            }
+        }, 5000);
+        </script>';
     }
 }
 

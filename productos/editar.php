@@ -20,7 +20,7 @@
 			if ($reg = $registro->fetch_array()) {
 				?>
 				<h1>Formulario de modificación de Producto</h1>
-				<form method="post" action="modificacion.php">
+				<form method="post" action="modificacion.php" onsubmit="return procesarFormularioAsincrono(this, 'Producto modificado correctamente', 'index.php')">
 					<fieldset>
 						<label>Nombre:</label>
 						<input type="text" name="producto_nombre" size="50" value="<?php echo $reg['producto_nombre']; ?>" required><br>

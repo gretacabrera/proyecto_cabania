@@ -1,12 +1,14 @@
 <?php
 	require("../conexion.php");
+	require("../includes/mensajes.php");
 	
-	$mysql->query("insert into perfil (perfil_descripcion, perfil_estado) values ('$_REQUEST[perfil_descripcion]', 1)") or die($mysql->error);
+	$resultado = $mysql->query("insert into perfil (perfil_descripcion, perfil_estado) values ('$_REQUEST[perfil_descripcion]', 1)");
 	
-	echo 'Se dió de alta el perfil correctamente';
-	echo '<br>';
-	echo '<button onclick="location.href=\'index.php\'">Volver</button>';
-	
-	$mysql->close();
-
- ?>
+	if ($resultado) {
+		$mysql->close();
+		redireccionar_con_mensaje('index.php', 'Se dió de alta el perfil correctamente', 'exito');
+	} else {
+		$mysql->close();
+		redireccionar_con_mensaje('index.php', 'Error: ' . $mysql->error, 'error');
+	}
+?>

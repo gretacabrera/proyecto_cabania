@@ -1,13 +1,13 @@
 <?php
   require("../conexion.php");
 
-  $mysql->query("update categoria set categoria_estado = 0 WHERE id_categoria=$_REQUEST[id_categoria]") or
-    die($mysql->error);
+  $resultado = $mysql->query("update categoria set categoria_estado = 0 WHERE id_categoria=$_REQUEST[id_categoria]");
 
-  echo 'Se dió de baja correctamente la categoria';
-  echo '<br>';
-  echo '<button onclick="location.href=\'index.php\'">Volver</button>';
+  if ($resultado) {
+	echo 'Se dió de baja correctamente la categoria';
+  } else {
+	echo 'Error: ' . $mysql->error;
+  }
 
   $mysql->close();
-
-  ?>
+?>

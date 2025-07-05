@@ -18,12 +18,6 @@
 				<fieldset>
 					<label>Descripcion:</label>
 					<input type="text" name="tiposervicio_descripcion" size="45" required><br>
-					<label>Estado:</label>
-					<select name="tiposervicio_estado">
-						<option value="">Seleccione el estado del tipo de servicio...</option>
-						<option value="1">Activo</option>
-						<option value="0">Baja</option>
-					</select><br><br>
 					<input type="submit" value="Confirmar">
 				</fieldset>
 			</form>

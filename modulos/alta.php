@@ -1,12 +1,14 @@
 <?php
 	require("../conexion.php");
+	require("../includes/mensajes.php");
 	
-	$mysql->query("insert into modulo (modulo_descripcion, modulo_ruta, modulo_estado) values ('$_REQUEST[modulo_descripcion]', '$_REQUEST[modulo_ruta]', 1)") or die($mysql->error);
+	$resultado = $mysql->query("insert into modulo (modulo_descripcion, modulo_ruta, modulo_estado) values ('$_REQUEST[modulo_descripcion]', '$_REQUEST[modulo_ruta]', 1)");
 	
-	echo 'Se dió de alta el modulo correctamente';
-	echo '<br>';
-	echo '<button onclick="location.href=\'index.php\'">Volver</button>';
-	
-	$mysql->close();
-
- ?>
+	if ($resultado) {
+		$mysql->close();
+		redireccionar_con_mensaje('index.php', 'Se dió de alta el módulo correctamente', 'exito');
+	} else {
+		$mysql->close();
+		redireccionar_con_mensaje('index.php', 'Error: ' . $mysql->error, 'error');
+	}
+?>

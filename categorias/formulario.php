@@ -18,12 +18,6 @@
 				<fieldset>
 					<label>Descripcion:</label>
 					<input type="text" name="categoria_descripcion" size="45" required><br>
-					<label>Estado:</label>
-					<select name="categoria_estado">
-						<option value="">Seleccione el estado del categoria...</option>
-						<option value="1">Activo</option>
-						<option value="0">Baja</option>
-					</select><br><br>
 					<input type="submit" value="Confirmar">
 				</fieldset>
 			</form>

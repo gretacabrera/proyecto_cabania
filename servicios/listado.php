@@ -55,7 +55,7 @@
 			<td>".$row["servicio_estado"]."</td> 
 			<td>
 				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_servicio=".$row["id_servicio"]."\"'>Editar</button>
-				<button class='abm-button baja-button' onclick='location.href=\"baja_logica.php?id_servicio=".$row["id_servicio"]."\"'>Borrar</button>
+				<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_servicio=".$row["id_servicio"]."\")'>Borrar</button>
 			</td>
 		</tr>";
 	}

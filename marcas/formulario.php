@@ -18,12 +18,6 @@
 				<fieldset>
 					<label>Descripcion:</label>
 					<input type="text" name="marca_descripcion" size="45" required><br>
-					<label>Estado:</label>
-					<select name="marca_estado">
-						<option value="">Seleccione el estado de la marca...</option>
-						<option value="1">Activo</option>
-						<option value="0">Baja</option>
-					</select><br><br>
 					<input type="submit" value="Confirmar">
 				</fieldset>
 			</form>

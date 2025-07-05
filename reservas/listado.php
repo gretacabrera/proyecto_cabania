@@ -67,7 +67,7 @@
 			<td>".$row["estadoreserva_descripcion"]."</td> 
 			<td>
 				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_reserva=".$row["id_reserva"]."\"'>Editar</button>
-				<button class='abm-button baja-button' onclick='location.href=\"baja_logica.php?id_reserva=".$row["id_reserva"]."\"'>Anular</button>
+				<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_reserva=".$row["id_reserva"]."\", \"anular esta reserva\")'>Anular</button>
 			</td>
 		</tr>";
 	}

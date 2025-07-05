@@ -12,6 +12,8 @@
 		?>
 		<div class="content">
 			<?php
+				require("../includes/mensajes.php");
+				mostrar_mensaje();
 				require("../perfiles/validar_permiso.php");
 				if (validar_permiso("productos/index.php")){
 					include("listado.php");

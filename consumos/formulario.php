@@ -51,19 +51,7 @@
 							echo "<option value=".$row["id_categoria"].">".$row["categoria_descripcion"]."</option>";
 						}
 					?>
-				</select>
-				<br>
-				Estado:
-				<select name="rela_estadoproducto">
-					<option value="">Seleccione el estado del producto...</option>
-					<?php
-						$registros = $mysql->query("select * from estadoproducto where estadoproducto_estado = 1") or
-						die($mysql->error);
-						while ($row = $registros->fetch_assoc()) {
-							echo "<option value=".$row["id_estadoproducto"].">".$row["estadoproducto_descripcion"]."</option>";
-						}
-					?>
-				</select>
+				</select><br>
 				<input type="submit" value="Confirmar">
 			</form>
 		</div>

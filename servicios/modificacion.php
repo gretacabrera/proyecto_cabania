@@ -6,8 +6,7 @@
 				servicio_nombre='$_REQUEST[servicio_nombre]',
 				servicio_descripcion='$_REQUEST[servicio_descripcion]',
 				servicio_precio=$_REQUEST[servicio_precio],
-				rela_tiposervicio=$_REQUEST[rela_tiposervicio],
-				servicio_estado=$_REQUEST[servicio_estado],
+				rela_tiposervicio=$_REQUEST[rela_tiposervicio]
 				where id_servicio=$_REQUEST[id_servicio]") or
     die($mysql->error);
 

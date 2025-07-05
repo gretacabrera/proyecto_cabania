@@ -24,27 +24,6 @@
 					<fieldset>
 						<label>Descripcion:</label>
 						<input type="text" name="tiposervicio_descripcion" size="45" value="<?php echo $reg['tiposervicio_descripcion']; ?>" required><br>
-						<label>Estado:</label>
-						<select name="tiposervicio_estado">
-							<option value="">Seleccione el estado del tipo de servicio...</option>
-							<option value="1"
-							<?php
-								if (isset($_REQUEST["tiposervicio_estado"])){
-									if ($_REQUEST["tiposervicio_estado"] == 1){
-										echo "selected";
-									}
-								}
-							?>
-							>Activo</option>
-							<option value="0"<?php
-								if (isset($_REQUEST["tiposervicio_estado"])){
-									if ($_REQUEST["tiposervicio_estado"] == 0){
-										echo "selected";
-									}
-								}
-							?>
-							>Baja</option>
-						</select><br><br>
 						<input type="hidden" name="id_tiposervicio" value="<?php echo $_REQUEST['id_tiposervicio']; ?>" required>
 						<input type="submit" value="Confirmar">
 					</fieldset>

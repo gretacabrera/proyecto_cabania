@@ -37,7 +37,7 @@
 			<td>".(($row["perfil_estado"]) ? "Activo" : "Baja")."</td> 
 			<td>
 				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_perfil=".$row["id_perfil"]."\"'>Editar</button>
-				<button class='abm-button baja-button' onclick='location.href=\"baja_logica.php?id_perfil=".$row["id_perfil"]."\"'>Borrar</button>
+				<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_perfil=".$row["id_perfil"]."\")'>Borrar</button>
 			</td>
 		</tr>";
 	}

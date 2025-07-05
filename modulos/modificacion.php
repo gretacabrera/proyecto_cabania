@@ -3,8 +3,7 @@
   require("../conexion.php");
 
   $mysql->query("update modulo set 
-				modulo_descripcion='$_REQUEST[modulo_descripcion]',
-				modulo_estado=$_REQUEST[modulo_estado]
+				modulo_descripcion='$_REQUEST[modulo_descripcion]'
 				where id_modulo=$_REQUEST[id_modulo]") or
     die($mysql->error);
 

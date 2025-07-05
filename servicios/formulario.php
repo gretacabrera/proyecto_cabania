@@ -14,7 +14,7 @@
 				require("../conexion.php");
 			?>
 			<h1>Formulario de alta de Servicio</h1>
-			<form method="post" action="alta.php">
+			<form method="post" action="alta.php" onsubmit="return procesarFormularioAsincrono(this, 'Servicio creado correctamente', 'index.php')">
 				<fieldset>
 					<label>Nombre:</label>
 					<input type="text" name="producto_nombre" size="50" required><br>
@@ -32,11 +32,6 @@
 								echo "<option value=".$row["id_tiposervicio"].">".$row["tiposervicio_descripcion"]."</option>";
 							}
 						?>
-					</select><br>
-					<select name="servicio_estado">
-						<option value="">Seleccione el estado del servicio...</option>
-						<option value="1">Activo</option>
-						<option value="0">Baja</option>
 					</select><br><br>
 					<input type="submit" value="Confirmar">
 				</fieldset>

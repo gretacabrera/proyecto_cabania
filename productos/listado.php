@@ -65,7 +65,7 @@
 			<td>".$row["estadoproducto_descripcion"]."</td> 
 			<td>
 				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_producto=".$row["id_producto"]."\"'>Editar</button>
-				<button class='abm-button baja-button' onclick='location.href=\"baja_logica.php?id_producto=".$row["id_producto"]."\"'>Borrar</button>
+				<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_producto=".$row["id_producto"]."\")'>Borrar</button>
 			</td>
 		</tr>";
 	}

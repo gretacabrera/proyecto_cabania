@@ -4,6 +4,7 @@
 		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
 		<title>ABM de Consumos</title>
 		<link rel="stylesheet" href="../estilos.css">
+		<script src="../funciones.js"></script>
 	</head>
 	<body class="home">
 		<?php

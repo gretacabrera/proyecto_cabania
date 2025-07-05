@@ -24,27 +24,6 @@
 					<fieldset>
 						<label>Descripcion:</label>
 						<input type="text" name="categoria_descripcion" size="45" value="<?php echo $reg['categoria_descripcion']; ?>" required><br>
-						<label>Estado:</label>
-						<select name="categoria_estado">
-							<option value="">Seleccione el estado de la categoria...</option>
-							<option value="1"
-							<?php
-								if (isset($_REQUEST["categoria_estado"])){
-									if ($_REQUEST["categoria_estado"] == 1){
-										echo "selected";
-									}
-								}
-							?>
-							>Activo</option>
-							<option value="0"<?php
-								if (isset($_REQUEST["categoria_estado"])){
-									if ($_REQUEST["categoria_estado"] == 0){
-										echo "selected";
-									}
-								}
-							?>
-							>Baja</option>
-						</select><br><br>
 						<input type="hidden" name="id_categoria" value="<?php echo $_REQUEST['id_categoria']; ?>" required>
 						<input type="submit" value="Confirmar">
 					</fieldset>

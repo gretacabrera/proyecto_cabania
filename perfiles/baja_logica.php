@@ -1,13 +1,13 @@
 <?php
   require("../conexion.php");
 
-  $mysql->query("update perfil set perfil_estado = 0 WHERE id_perfil=$_REQUEST[id_perfil]") or
-    die($mysql->error);
+  $resultado = $mysql->query("update perfil set perfil_estado = 0 WHERE id_perfil=$_REQUEST[id_perfil]");
 
-  echo 'Se dió de baja correctamente al perfil';
-  echo '<br>';
-  echo '<button onclick="location.href=\'index.php\'">Volver</button>';
+  if ($resultado) {
+	echo 'Se dió de baja correctamente el perfil';
+  } else {
+	echo 'Error: ' . $mysql->error;
+  }
 
   $mysql->close();
-
-  ?>
+?>
