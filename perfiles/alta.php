@@ -1,6 +1,6 @@
 <?php
 	require("../conexion.php");
-	require("../includes/mensajes.php");
+	require_once("../funciones.php");
 	
 	$resultado = $mysql->query("insert into perfil (perfil_descripcion, perfil_estado) values ('$_REQUEST[perfil_descripcion]', 1)");
 	

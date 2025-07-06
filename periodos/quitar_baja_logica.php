@@ -1,6 +1,6 @@
 <?php
 	require("../conexion.php");
-	require("../includes/mensajes.php");
+	require_once("../funciones.php");
 	
 	$resultado = $mysql->query("UPDATE periodo SET periodo_estado = 1 WHERE id_periodo = $_REQUEST[id_periodo]");
 

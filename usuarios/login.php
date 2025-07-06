@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="../estilos.css">
 </head>
 <body class="centered-body login">
-    <?php include('../includes/mensajes.php'); ?>
+    <?php include('../funciones.php'); ?>
     <div class="loginform">
         <?php mostrar_mensaje(); ?>
         <h2>CASA DE PALOS</h2>
@@ -25,6 +25,6 @@
         <label><b>¿No tiene una cuenta? <a href="registro.php">Registrarse</a></b></label>
     </div>
     
-    <script src="../js/validaciones.js"></script>
+    <script src="../funciones.js"></script>
 </body>
 </html>

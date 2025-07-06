@@ -1,6 +1,6 @@
 <?php
 	require("../conexion.php");
-	require("../includes/mensajes.php");
+	require_once("../funciones.php");
 	
 	$resultado = $mysql->query("UPDATE estadoreserva SET estadoreserva_estado = 1 WHERE id_estadoreserva = $_REQUEST[id_estadoreserva]");
 	

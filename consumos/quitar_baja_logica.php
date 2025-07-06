@@ -1,6 +1,6 @@
 <?php
 	require("../conexion.php");
-	require("../includes/mensajes.php");
+	require_once("../funciones.php");
 	
 	$resultado = $mysql->query("UPDATE producto SET rela_estadoproducto = 1 WHERE id_producto = $_REQUEST[id_producto]");
 	

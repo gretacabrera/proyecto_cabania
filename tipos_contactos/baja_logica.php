@@ -1,6 +1,6 @@
 <?php
 	require("../conexion.php");
-	require("../includes/mensajes.php");
+	require_once("../funciones.php");
 
 	$resultado = $mysql->query("update tipocontacto set tipocontacto_estado = 0 WHERE id_tipocontacto=$_REQUEST[id_tipocontacto]");
 

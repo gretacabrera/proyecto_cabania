@@ -1,6 +1,6 @@
 <?php
 	require("../conexion.php");
-	require("../includes/mensajes.php");
+	require_once("../funciones.php");
 	
 	$resultado = $mysql->query("insert into servicio (servicio_nombre, servicio_descripcion, servicio_precio, rela_tiposervicio, servicio_estado) values ('$_REQUEST[servicio_nombre]', 
 	'$_REQUEST[servicio_descripcion]', $_REQUEST[servicio_precio], $_REQUEST[rela_tiposervicio], $_REQUEST[servicio_estado])");

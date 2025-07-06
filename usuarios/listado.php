@@ -16,6 +16,12 @@
 	</thead>
 <?php
 	require("../conexion.php");
+	require_once("../funciones.php");
+	
+	// Iniciar sesión si no está iniciada
+	if (session_status() == PHP_SESSION_NONE) {
+		session_start();
+	}
 
 	$filtro = "";
 	
@@ -30,8 +36,15 @@
 		}
 	}
 	
+	// Aplicar filtro de estado según el tipo de usuario
+	$filtro_estado = "where persona_estado <> 'baja'";
+	if (!es_administrador()) {
+		// Los no administradores solo ven usuarios activos (no en estado 'baja' o estado 3)
+		$filtro_estado .= " and usuario_estado not in (3, 'baja')";
+	}
+	
 	$registros = $mysql->query("select * from vw_usuario
-								where persona_estado <> 'baja'
+								".$filtro_estado."
 								".$filtro."
 								order by usuario_nombre asc") or
 	die($mysql->error);
@@ -49,8 +62,10 @@
 		
 		// Mostrar botón Eliminar o Recuperar según el estado
 		if ($row["usuario_estado"] == 3 || $row["usuario_estado"] == 'baja') {
-			// Si está de baja (estado 3 o 'baja'), mostrar botón Recuperar
-			echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_usuario=".$row["id_usuario"]."\", \"recuperar este usuario\")'>Recuperar</button>";
+			// Si está de baja (estado 3 o 'baja') y es administrador, mostrar botón Recuperar
+			if (es_administrador()) {
+				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_usuario=".$row["id_usuario"]."\", \"recuperar este usuario\")'>Recuperar</button>";
+			}
 		} else {
 			// Si está activo, mostrar botón Eliminar
 			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_usuario=".$row["id_usuario"]."\", \"dar de baja este usuario\")'>Eliminar</button>";

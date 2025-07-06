@@ -1,6 +1,6 @@
 <?php
 
-require_once("load_env.php");
+require_once("funciones.php");
 
 $hostname = getenv('DB_HOST');
 $username = getenv('DB_USER');

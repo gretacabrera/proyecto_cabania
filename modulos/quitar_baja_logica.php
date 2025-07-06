@@ -1,6 +1,6 @@
 <?php
 	require("../conexion.php");
-	require("../includes/mensajes.php");
+	require_once("../funciones.php");
 	
 	$resultado = $mysql->query("UPDATE modulo SET modulo_estado = 1 WHERE id_modulo = $_REQUEST[id_modulo]");
 

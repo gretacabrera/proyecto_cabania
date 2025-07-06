@@ -13,6 +13,12 @@
 	</thead>
 <?php
 	require("../conexion.php");
+	require_once("../funciones.php");
+	
+	// Iniciar sesión si no está iniciada
+	if (session_status() == PHP_SESSION_NONE) {
+		session_start();
+	}
 
 	$filtro = "";
 	
@@ -25,6 +31,11 @@
 		if ($_REQUEST["tiposervicio_estado"] != ""){
 			$filtro .= " and tiposervicio_estado = $_REQUEST[tiposervicio_estado] ";
 		}
+	}
+	
+	// Aplicar filtro de estado según el tipo de usuario
+	if (!es_administrador()) {
+		$filtro .= " and tiposervicio_estado = 1 ";
 	}
 	
 	$registros = $mysql->query("select * from tiposervicio where 1=1 ".$filtro) or
@@ -40,8 +51,10 @@
 		
 		// Mostrar botón Eliminar o Recuperar según el estado
 		if ($row["tiposervicio_estado"] == 0) {
-			// Si está de baja (estado 0), mostrar botón Recuperar
-			echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_tiposervicio=".$row["id_tiposervicio"]."\", \"recuperar este tipo de servicio\")'>Recuperar</button>";
+			// Si está de baja (estado 0) y es administrador, mostrar botón Recuperar
+			if (es_administrador()) {
+				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_tiposervicio=".$row["id_tiposervicio"]."\", \"recuperar este tipo de servicio\")'>Recuperar</button>";
+			}
 		} else {
 			// Si está activo (estado 1), mostrar botón Eliminar
 			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_tiposervicio=".$row["id_tiposervicio"]."\", \"dar de baja este tipo de servicio\")'>Eliminar</button>";

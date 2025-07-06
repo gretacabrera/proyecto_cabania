@@ -1,7 +1,7 @@
 
 <?php
   require("../conexion.php");
-  require("../includes/mensajes.php");
+  require_once("../funciones.php");
 
   $resultado = $mysql->query("update condicionsalud set 
 				condicionsalud_descripcion='$_REQUEST[condicionsalud_descripcion]'

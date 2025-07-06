@@ -16,6 +16,12 @@
 	</thead>
 <?php
 	require("../conexion.php");
+	require_once("../funciones.php");
+	
+	// Iniciar sesión si no está iniciada
+	if (session_status() == PHP_SESSION_NONE) {
+		session_start();
+	}
 
 	$reserva_fhinicio = "2000-01-01T00:00";
 	$reserva_fhfin = "2030-12-31T00:00";
@@ -49,6 +55,11 @@
 		}
 	}
 	
+	// Aplicar filtro de estado según el tipo de usuario
+	if (!es_administrador()) {
+		$filtro .= " and rela_estadoreserva != 6 ";
+	}
+	
 	$registros = $mysql->query("select * from reserva
 								left join cabania on rela_cabania = id_cabania
 								left join estadoreserva on rela_estadoreserva = id_estadoreserva
@@ -70,8 +81,10 @@
 		
 		// Mostrar botón Anular o Reactivar según el estado
 		if ($row["rela_estadoreserva"] == 6) {
-			// Si está anulada (estado 6), mostrar botón Reactivar
-			echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_reserva=".$row["id_reserva"]."\", \"reactivar esta reserva\")'>Reactivar</button>";
+			// Si está anulada (estado 6) y es administrador, mostrar botón Reactivar
+			if (es_administrador()) {
+				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_reserva=".$row["id_reserva"]."\", \"reactivar esta reserva\")'>Reactivar</button>";
+			}
 		} else {
 			// Si está activa, mostrar botón Anular
 			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_reserva=".$row["id_reserva"]."\", \"anular esta reserva\")'>Anular</button>";

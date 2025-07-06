@@ -16,6 +16,12 @@
 	</thead>
 <?php
 	require("../conexion.php");
+	require_once("../funciones.php");
+	
+	// Iniciar sesión si no está iniciada
+	if (session_status() == PHP_SESSION_NONE) {
+		session_start();
+	}
 
 	$filtro = "";
 	
@@ -40,6 +46,11 @@
 		}
 	}
 	
+	// Aplicar filtro de estado según el tipo de usuario
+	if (!es_administrador()) {
+		$filtro .= " and servicio_estado = 1 ";
+	}
+	
 	$registros = $mysql->query("select * from servicio 
 								left join tiposervicio on rela_tiposervicio = id_tiposervicio
 								where 1=1 ".$filtro) or
@@ -60,8 +71,8 @@
 		if ($row["servicio_estado"]) {
 			// Si está activo, mostrar botón Eliminar
 			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_servicio=".$row["id_servicio"]."\", \"dar de baja este servicio\")'>Eliminar</button>";
-		} else {
-			// Si está de baja, mostrar botón Recuperar
+		} else if (es_administrador()) {
+			// Si está de baja y es administrador, mostrar botón Recuperar
 			echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_servicio=".$row["id_servicio"]."\", \"recuperar este servicio\")'>Recuperar</button>";
 		}
 		

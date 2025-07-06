@@ -13,6 +13,12 @@
 	</thead>
 <?php
 	require("../conexion.php");
+	require_once("../funciones.php");
+	
+	// Iniciar sesión si no está iniciada
+	if (session_status() == PHP_SESSION_NONE) {
+		session_start();
+	}
 
 	$filtro = "";
 	
@@ -27,6 +33,11 @@
 		}
 	}
 	
+	// Aplicar filtro de estado según el tipo de usuario
+	if (!es_administrador()) {
+		$filtro .= " and estadopersona_estado = 1 ";
+	}
+	
 	$registros = $mysql->query("select * from estadopersona where 1=1 ".$filtro) or
 	die($mysql->error);
 	
@@ -38,13 +49,15 @@
 			<td>
 				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_estadopersona=".$row["id_estadopersona"]."\"'>Editar</button>";
 		
-		// Mostrar botón Eliminar o Recuperar según el estado
+		// Mostrar botón Eliminar o Recuperar según el estado y permisos
 		if ($row["estadopersona_estado"]) {
 			// Si está activo, mostrar botón Eliminar
-			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_estadopersona=".$row["id_estadopersona"]."\", \"dar de baja esta categoría\")'>Eliminar</button>";
+			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_estadopersona=".$row["id_estadopersona"]."\", \"dar de baja este estado de persona\")'>Eliminar</button>";
 		} else {
-			// Si está de baja, mostrar botón Recuperar
-			echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_estadopersona=".$row["id_estadopersona"]."\", \"recuperar esta categoría\")'>Recuperar</button>";
+			// Si está de baja, solo mostrar botón Recuperar a administradores
+			if (es_administrador()) {
+				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_estadopersona=".$row["id_estadopersona"]."\", \"recuperar este estado de persona\")'>Recuperar</button>";
+			}
 		}
 		
 		echo "</td>

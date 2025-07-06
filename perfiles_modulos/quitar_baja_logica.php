@@ -1,6 +1,6 @@
 <?php
 	require("../conexion.php");
-	require("../includes/mensajes.php");
+	require_once("../funciones.php");
 	
 	$resultado = $mysql->query("UPDATE perfil_modulo SET perfilmodulo_estado = 1 WHERE id_perfilmodulo = $_REQUEST[id_perfilmodulo]");
 

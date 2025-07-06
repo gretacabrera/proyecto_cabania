@@ -1,6 +1,6 @@
 <?php
 	require("../conexion.php");
-	require("../includes/mensajes.php");
+	require_once("../funciones.php");
 	
 	$resultado = $mysql->query("UPDATE marca SET marca_estado = 1 WHERE id_marca = $_REQUEST[id_marca]");
 	

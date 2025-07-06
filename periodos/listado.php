@@ -17,6 +17,12 @@
 	</thead>
 <?php
 	require("../conexion.php");
+	require_once("../funciones.php");
+	
+	// Iniciar sesión si no está iniciada
+	if (session_status() == PHP_SESSION_NONE) {
+		session_start();
+	}
 
 	$filtro = "";
 	
@@ -34,6 +40,11 @@
 		if ($_REQUEST["periodo_estado"] != ""){
 			$filtro .= " and periodo_estado = $_REQUEST[periodo_estado] ";
 		}
+	}
+	
+	// Aplicar filtro de estado según el tipo de usuario
+	if (!es_administrador()) {
+		$filtro .= " and periodo_estado = 1 ";
 	}
 	
 	$registros = $mysql->query("select * from periodo where 1=1 ".$filtro) or
@@ -54,10 +65,10 @@
 		// Mostrar botón Eliminar o Recuperar según el estado
 		if ($row["periodo_estado"]) {
 			// Si está activo, mostrar botón Eliminar
-			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_periodo=".$row["id_periodo"]."\", \"dar de baja este módulo\")'>Eliminar</button>";
-		} else {
-			// Si está de baja, mostrar botón Recuperar
-			echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_periodo=".$row["id_periodo"]."\", \"recuperar este módulo\")'>Recuperar</button>";
+			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_periodo=".$row["id_periodo"]."\", \"dar de baja este período\")'>Eliminar</button>";
+		} else if (es_administrador()) {
+			// Si está de baja y es administrador, mostrar botón Recuperar
+			echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_periodo=".$row["id_periodo"]."\", \"recuperar este período\")'>Recuperar</button>";
 		}
 		
 		echo "</td>

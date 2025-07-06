@@ -1,6 +1,6 @@
 <?php
 	require("../conexion.php");
-	require("../includes/mensajes.php");
+	require_once("../funciones.php");
 	
 	$resultado = $mysql->query("UPDATE metododepago SET metododepago_estado = 1 WHERE id_ = $_REQUEST[id_metododepago]");
 	

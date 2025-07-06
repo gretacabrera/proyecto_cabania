@@ -1,6 +1,6 @@
 <?php
 	require("../conexion.php");
-	require("../includes/mensajes.php");
+	require_once("../funciones.php");
 	
 	$resultado = $mysql->query("UPDATE condicionsalud SET condicionsalud_estado = 1 WHERE id_condicionsalud = $_REQUEST[id_condicionsalud]");
 	

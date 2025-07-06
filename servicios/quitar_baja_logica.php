@@ -1,6 +1,6 @@
 <?php
 	require("../conexion.php");
-	require("../includes/mensajes.php");
+	require_once("../funciones.php");
 	
 	$resultado = $mysql->query("UPDATE servicio SET servicio_estado = 1 WHERE id_servicio = $_REQUEST[id_servicio]");
 	

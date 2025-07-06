@@ -20,4 +20,26 @@
         return $tiene_permiso;
     }
     
+    function es_administrador(){
+        require("../conexion.php");
+        
+        // Verificar si hay sesión activa
+        if (!isset($_SESSION["usuario_nombre"])) {
+            return false;
+        }
+        
+        // Consultar si el usuario tiene perfil de administrador
+        $registro = $mysql->query("select count(*) as es_admin
+                                   from usuario u
+                                   left join perfil p on u.rela_perfil = p.id_perfil
+                                   where u.usuario_nombre = '$_SESSION[usuario_nombre]'
+                                   and u.usuario_estado = 1
+                                   and p.perfil_descripcion = 'administrador'
+                                   and p.perfil_estado = 1") or
+        die($mysql->error);
+        
+        $resultado = $registro->fetch_array();
+        return (int) $resultado["es_admin"] > 0;
+    }
+    
 ?>

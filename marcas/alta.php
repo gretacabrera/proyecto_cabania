@@ -1,6 +1,6 @@
 <?php
 	require("../conexion.php");
-	require("../includes/mensajes.php");
+	require_once("../funciones.php");
 	
 	$resultado = $mysql->query("insert into marca (marca_descripcion, marca_estado) values ('$_REQUEST[marca_descripcion]', 1)");
 	

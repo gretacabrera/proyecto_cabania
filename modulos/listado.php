@@ -14,6 +14,12 @@
 	</thead>
 <?php
 	require("../conexion.php");
+	require_once("../funciones.php");
+	
+	// Iniciar sesión si no está iniciada
+	if (session_status() == PHP_SESSION_NONE) {
+		session_start();
+	}
 
 	$filtro = "";
 	
@@ -26,6 +32,11 @@
 		if ($_REQUEST["modulo_estado"] != ""){
 			$filtro .= " and modulo_estado = $_REQUEST[modulo_estado] ";
 		}
+	}
+	
+	// Aplicar filtro de estado según el tipo de usuario
+	if (!es_administrador()) {
+		$filtro .= " and modulo_estado = 1 ";
 	}
 	
 	$registros = $mysql->query("select * from modulo where 1=1 ".$filtro) or
@@ -44,8 +55,8 @@
 		if ($row["modulo_estado"]) {
 			// Si está activo, mostrar botón Eliminar
 			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_modulo=".$row["id_modulo"]."\", \"dar de baja este módulo\")'>Eliminar</button>";
-		} else {
-			// Si está de baja, mostrar botón Recuperar
+		} else if (es_administrador()) {
+			// Si está de baja y es administrador, mostrar botón Recuperar
 			echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_modulo=".$row["id_modulo"]."\", \"recuperar este módulo\")'>Recuperar</button>";
 		}
 		

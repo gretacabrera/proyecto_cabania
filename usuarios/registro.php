@@ -8,7 +8,7 @@
 <body class="centered-body login">
 	<?php
 		require("../conexion.php");
-		include('../includes/mensajes.php');
+		include('../funciones.php');
 	?>
 	<div class="loginform">
 		<?php mostrar_mensaje(); ?>
@@ -53,6 +53,6 @@
 		</form>
 	</div>
 	
-	<script src="../js/validaciones.js"></script>
+	<script src="../funciones.js"></script>
 </body>
 </html>

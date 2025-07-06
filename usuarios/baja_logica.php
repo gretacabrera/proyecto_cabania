@@ -1,6 +1,6 @@
 <?php
 	require("../conexion.php");
-	require("../includes/mensajes.php");
+	require_once("../funciones.php");
 
 	$resultado = $mysql->query("update usuario set usuario_estado = 3 WHERE id_usuario=$_REQUEST[id_usuario]");
 

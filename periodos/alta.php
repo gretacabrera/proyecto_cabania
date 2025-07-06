@@ -1,6 +1,6 @@
 <?php
 	require("../conexion.php");
-	require("../includes/mensajes.php");
+	require_once("../funciones.php");
 	
 	$resultado = $mysql->query("insert into periodo (periodo_descripcion, periodo_fechainicio, periodo_fechafin, periodo_anio, periodo_orden, periodo_estado) values ('$_REQUEST[periodo_descripcion]', '$_REQUEST[periodo_fechainicio]', '$_REQUEST[periodo_fechafin]', $_REQUEST[periodo_anio], $_REQUEST[periodo_orden], 1)");
 	

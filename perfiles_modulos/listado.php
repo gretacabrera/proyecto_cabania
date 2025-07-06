@@ -14,6 +14,12 @@
 	</thead>
 <?php
 	require("../conexion.php");
+	require_once("../funciones.php");
+	
+	// Iniciar sesión si no está iniciada
+	if (session_status() == PHP_SESSION_NONE) {
+		session_start();
+	}
 
 	$filtro = "";
 	
@@ -33,6 +39,11 @@
 		}
 	}
 	
+	// Aplicar filtro de estado según el tipo de usuario
+	if (!es_administrador()) {
+		$filtro .= " and perfilmodulo_estado = 1 ";
+	}
+	
 	$registros = $mysql->query("select * from perfil_modulo
 								left join perfil on rela_perfil = id_perfil
 								left join modulo on rela_modulo = id_modulo
@@ -49,11 +60,11 @@
 				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_perfilmodulo=".$row["id_perfilmodulo"]."\"'>Editar</button>";
 		
 		// Mostrar botón Eliminar o Recuperar según el estado
-		if ($row["perfil_estado"]) {
+		if ($row["perfilmodulo_estado"]) {
 			// Si está activo, mostrar botón Eliminar
 			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_perfilmodulo=".$row["id_perfilmodulo"]."\", \"dar de baja este perfil\")'>Eliminar</button>";
-		} else {
-			// Si está de baja, mostrar botón Recuperar
+		} else if (es_administrador()) {
+			// Si está de baja y es administrador, mostrar botón Recuperar
 			echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_perfilmodulo=".$row["id_perfilmodulo"]."\", \"recuperar este perfil\")'>Recuperar</button>";
 		}
 		

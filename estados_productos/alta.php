@@ -1,6 +1,6 @@
 <?php
 	require("../conexion.php");
-	require("../includes/mensajes.php");
+	require_once("../funciones.php");
 	
 	$resultado = $mysql->query("insert into estadoproducto (estadoproducto_descripcion, estadoproducto_estado) values ('$_REQUEST[estadoproducto_descripcion]', 1)");
 	

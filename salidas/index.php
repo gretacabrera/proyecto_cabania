@@ -12,7 +12,7 @@
 		?>
 		<div class="content">
 			<?php
-				require("../perfiles/validar_permiso.php");
+				require_once("../funciones.php");
 				if (validar_permiso("salidas")){
 					include("formulario.php");
 				}

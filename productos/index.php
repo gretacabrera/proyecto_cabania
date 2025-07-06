@@ -12,9 +12,8 @@
 		?>
 		<div class="content">
 			<?php
-				require("../includes/mensajes.php");
+				require_once("../funciones.php");
 				mostrar_mensaje();
-				require("../perfiles/validar_permiso.php");
 				if (validar_permiso("productos")){
 					include("listado.php");
 				}

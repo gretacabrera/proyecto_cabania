@@ -1,6 +1,6 @@
 <?php
 	require("../conexion.php");
-	require("../includes/mensajes.php");
+	require_once("../funciones.php");
 	
 	$resultado = $mysql->query("insert into categoria (categoria_descripcion, categoria_estado) values ('$_REQUEST[categoria_descripcion]', 1)");
 	

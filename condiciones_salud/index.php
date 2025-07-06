@@ -12,9 +12,9 @@
 		?>
 		<div class="content">
 			<?php
-				require("../includes/mensajes.php");
+				require_once("../funciones.php");
 				mostrar_mensaje();
-				require("../perfiles/validar_permiso.php");
+				require_once("../funciones.php");
 				if (validar_permiso("condiciones_salud")){
 					include("listado.php");
 				}

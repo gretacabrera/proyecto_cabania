@@ -1,6 +1,6 @@
 <?php
 	require("../conexion.php");
-	include('../includes/mensajes.php');
+	include('../funciones.php');
 
 	// Validaciones del lado del servidor
 	if (empty($_REQUEST["usuario_nombre"]) || empty($_REQUEST["usuario_contrasenia"]) || 

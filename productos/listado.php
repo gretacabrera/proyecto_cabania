@@ -18,6 +18,12 @@
 	</thead>
 <?php
 	require("../conexion.php");
+	require_once("../funciones.php");
+	
+	// Iniciar sesión si no está iniciada
+	if (session_status() == PHP_SESSION_NONE) {
+		session_start();
+	}
 
 	$filtro = "";
 	
@@ -40,6 +46,11 @@
 		if ($_REQUEST["rela_estadoproducto"] != ""){
 			$filtro .= " and rela_estadoproducto = $_REQUEST[rela_estadoproducto] ";
 		}
+	}
+	
+	// Aplicar filtro de estado según el tipo de usuario
+	if (!es_administrador()) {
+		$filtro .= " and rela_estadoproducto != 4 ";
 	}
 	
 	$registros = $mysql->query("select * from producto 
@@ -65,8 +76,10 @@
 		
 		// Mostrar botón Eliminar o Recuperar según el estado
 		if ($row["rela_estadoproducto"] == 4) {
-			// Si está de baja (estado 4), mostrar botón Recuperar
-			echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_producto=".$row["id_producto"]."\", \"recuperar este producto\")'>Recuperar</button>";
+			// Si está de baja (estado 4) y es administrador, mostrar botón Recuperar
+			if (es_administrador()) {
+				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_producto=".$row["id_producto"]."\", \"recuperar este producto\")'>Recuperar</button>";
+			}
 		} else {
 			// Si está activo, mostrar botón Eliminar
 			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_producto=".$row["id_producto"]."\", \"dar de baja este producto\")'>Eliminar</button>";
