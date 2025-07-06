@@ -1,9 +1,6 @@
 
 <h1>Filtros de busqueda:</h1>
 
-<?php
-	require("../../conexion.php");
-?>
 <form method="post" action="index.php">
 	Periodo:
 	<select name="id_periodo" required>

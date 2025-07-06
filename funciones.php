@@ -1,8 +1,13 @@
 <?php
+
 // ============================================================================
 // ARCHIVO UNIFICADO DE FUNCIONES
 // Contiene funciones de validaciones, mensajes y carga de variables de entorno
 // ============================================================================
+
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+} 
 
 // ============================================================================
 // FUNCIONES DE CARGA DE VARIABLES DE ENTORNO
@@ -41,39 +46,25 @@ loadEnv(__DIR__ . '/.env');
  * @return bool True si tiene permiso, False en caso contrario
  */
 function validar_permiso($modulo) {
-    // Verificar si conexion.php está en el directorio actual o en el padre
-    if (file_exists("conexion.php")) {
-        require("conexion.php");
-    } else {
-        require("../conexion.php");
-    }
-    
-    $tiene_permiso = false;
-    
+    require("conexion.php");
+    $tiene_permiso = false;  
     if (isset($_SESSION["usuario_nombre"])) {
-        $stmt = $mysql->prepare("SELECT COUNT(*) as resultados
-                                FROM modulo m
-                                LEFT JOIN perfil_modulo pm ON pm.rela_modulo = m.id_modulo
-                                LEFT JOIN perfil p ON pm.rela_perfil = p.id_perfil
-                                LEFT JOIN usuario u ON u.rela_perfil = p.id_perfil
-                                WHERE m.modulo_estado = 1
-                                AND u.usuario_estado = 1
-                                AND u.usuario_nombre = ?
-                                AND m.modulo_ruta = ?");
-        
-        if ($stmt) {
-            $stmt->bind_param("ss", $_SESSION["usuario_nombre"], $modulo);
-            $stmt->execute();
-            $resultado = $stmt->get_result();
-            $fila = $resultado->fetch_array();
-            
-            if ((int) $fila["resultados"] > 0) {
-                $tiene_permiso = true;
-            }
-            $stmt->close();
+        $resultado = $mysql->query("SELECT COUNT(*) as resultados
+                                    FROM modulo m
+                                    LEFT JOIN perfil_modulo pm ON pm.rela_modulo = m.id_modulo
+                                    LEFT JOIN perfil p ON pm.rela_perfil = p.id_perfil
+                                    LEFT JOIN usuario u ON u.rela_perfil = p.id_perfil
+                                    WHERE m.modulo_estado = 1
+                                    AND u.usuario_estado = 1
+                                    AND u.usuario_nombre = '$_SESSION[usuario_nombre]'
+                                    AND m.modulo_ruta = '$modulo'") or
+        die($mysql->error);
+        $fila = $resultado->fetch_array();
+        if ((int) $fila["resultados"] > 0) {
+            $tiene_permiso = true;
         }
+        $mysql->close();
     }
-    
     return $tiene_permiso;
 }
 
@@ -82,36 +73,27 @@ function validar_permiso($modulo) {
  * @return bool True si es administrador, False en caso contrario
  */
 function es_administrador() {
-    // Verificar si conexion.php está en el directorio actual o en el padre
-    if (file_exists("conexion.php")) {
-        require("conexion.php");
-    } else {
-        require("../conexion.php");
-    }
+    require("conexion.php");
     
     // Verificar si hay sesión activa
     if (!isset($_SESSION["usuario_nombre"])) {
         return false;
     }
     
-    $stmt = $mysql->prepare("SELECT COUNT(*) as es_admin
-                            FROM usuario u
-                            LEFT JOIN perfil p ON u.rela_perfil = p.id_perfil
-                            WHERE u.usuario_nombre = ?
-                            AND u.usuario_estado = 1
-                            AND p.perfil_descripcion = 'administrador'
-                            AND p.perfil_estado = 1");
-    
-    if ($stmt) {
-        $stmt->bind_param("s", $_SESSION["usuario_nombre"]);
-        $stmt->execute();
-        $resultado = $stmt->get_result();
+    if (isset($_SESSION["usuario_nombre"])) {
+        $resultado = $mysql->query("SELECT COUNT(*) as es_admin
+                                    FROM usuario u
+                                    LEFT JOIN perfil p ON u.rela_perfil = p.id_perfil
+                                    WHERE u.usuario_nombre = '$_SESSION[usuario_nombre]'
+                                    AND u.usuario_estado = 1
+                                    AND p.perfil_descripcion = 'administrador'
+                                    AND p.perfil_estado = 1") or
+        die($mysql->error);
         $fila = $resultado->fetch_array();
-        $stmt->close();
-        
+        $mysql->close();
+
         return (int) $fila["es_admin"] > 0;
     }
-    
     return false;
 }
 

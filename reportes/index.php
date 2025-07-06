@@ -7,12 +7,8 @@
     <link rel="stylesheet" href="../estilos.css">
 </head>
 <body class="home">
-    <?php
-        include("../menu.php");
-    ?>
     <div class="content">
         <?php
-            require_once("../funciones.php");
 			if (validar_permiso("reportes")){
 				echo "<h1>Bienvenido al Área de Reportes</h1>
                         <p>Selecciona una opción del menú para navegar entre los diferentes reportes.</p><br><br>

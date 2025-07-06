@@ -17,9 +17,6 @@
 		<th> <font face="Arial">Acciones</font> </th> 
 	</thead>
 <?php
-	require("../conexion.php");
-	require_once("../funciones.php");
-	
 	// Iniciar sesión si no está iniciada
 	if (session_status() == PHP_SESSION_NONE) {
 		session_start();

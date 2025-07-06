@@ -7,9 +7,6 @@
 	<script src="../../funciones.js"></script>
 </head>
 <body class="home">
-    <?php
-        include("../../menu.php");
-    ?>
 	<div class="content">
 		<?php
 			include("listado.php");

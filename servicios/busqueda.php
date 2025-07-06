@@ -1,6 +1,3 @@
-<?php
-	require("../conexion.php");
-?>
 <form method="post" action="index.php">
     Nombre del servicio:
     <input type="text" name="servicio_nombre" value="<?php if (isset($_REQUEST["servicio_nombre"])){ echo $_REQUEST["servicio_nombre"]; } ?>">
@@ -47,7 +44,3 @@
 	<input type="submit" value="Buscar">
 	<input type="button" value="Limpiar" onclick="limpiarFormulario(this)">
 </form>
-
-<?php
-	$mysql->close();
-?>

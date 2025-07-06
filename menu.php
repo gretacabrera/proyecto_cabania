@@ -3,7 +3,9 @@
         <a href="/proyecto_cabania/index.php">Inicio</a>
         <?php
             require("conexion.php");  
-            session_start();   
+            if (session_status() == PHP_SESSION_NONE) {
+                session_start();
+            }   
             if (isset($_SESSION["usuario_nombre"])){
                 $registro = $mysql->query("select p.perfil_descripcion
                                         from perfil p
@@ -25,7 +27,7 @@
                 die($mysql->error);
                 while ($row = $registros->fetch_assoc()) {
                     echo 
-                    "<a href='/proyecto_cabania/$row[modulo_ruta]/index.php'>$row[modulo_descripcion]</a>";
+                    "<a href='plantilla_modulo.php?titulo=$row[modulo_descripcion]&ruta=$row[modulo_ruta]'>$row[modulo_descripcion]</a>";
                 }
             }
             else{

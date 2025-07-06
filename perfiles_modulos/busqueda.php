@@ -1,6 +1,3 @@
-<?php
-	require("../conexion.php");
-?>
 <form method="post" action="index.php">
     Perfil:
 	<select name="rela_perfil">
@@ -60,7 +57,3 @@
 	<input type="submit" value="Buscar">
 	<input type="button" value="Limpiar" onclick="limpiarFormulario(this)">
 </form>
-
-<?php
-	$mysql->close();
-?>

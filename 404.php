@@ -11,13 +11,6 @@ http_response_code(404);
     <link rel="stylesheet" href="estilos.css">
 </head>
 <body class="home">
-    <?php 
-    // Incluir menú solo si el usuario está logueado
-    if (isset($_SESSION["usuario_nombre"])) {
-        include("menu.php"); 
-    }
-    ?>
-    
     <div class="content">
         <div class="error-container error-404">
             <div class="icon-notfound">🔍</div>

@@ -9,14 +9,7 @@ http_response_code(403); // Establecer código de respuesta HTTP 403
     <title>403 - Acceso Denegado</title>
     <link rel="stylesheet" href="estilos.css">
 </head>
-<body class="home">
-    <?php 
-    // Incluir menú solo si el usuario está logueado
-    if (isset($_SESSION["usuario_nombre"])) {
-        include("menu.php"); 
-    }
-    ?>
-    
+<body class="home">    
     <div class="content">
         <div class="error-container error-403">
             <div class="icon-forbidden">🚫</div>

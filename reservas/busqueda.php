@@ -1,6 +1,3 @@
-<?php
-	require("../conexion.php");
-?>
 <form method="post" action="index.php">
 	Fecha y hora inicio:
 	<input type="datetime-local" name="reserva_fhinicio" min="2000-01-01T00:00" max="2030-12-31T00:00" value="<?php if (isset($_REQUEST["reserva_fhinicio"])){ echo $_REQUEST["reserva_fhinicio"]; } ?>">
@@ -60,7 +57,3 @@
 	<input type="submit" value="Buscar">
 	<input type="button" value="Limpiar" onclick="limpiarFormulario(this)">
 </form>
-<br>
-<?php
-	$mysql->close();
-?>

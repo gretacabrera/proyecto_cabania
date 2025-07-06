@@ -1,6 +1,3 @@
-<?php
-	require("../conexion.php");
-?>
 <form method="post" action="index.php">
     Nombre del producto:
     <input type="text" name="producto_nombre" value="<?php if (isset($_REQUEST["producto_nombre"])){ echo $_REQUEST["producto_nombre"]; } ?>">
@@ -58,7 +55,3 @@
 	<input type="submit" value="Buscar">
 	<input type="button" value="Limpiar" onclick="limpiarFormulario(this)">
 </form>
-
-<?php
-	$mysql->close();
-?>

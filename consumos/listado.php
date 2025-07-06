@@ -13,9 +13,6 @@
 		<td> <font face="Arial">Acciones</font> </td> 
 	</tr>
 <?php
-	require("../conexion.php");
-	require_once("../funciones.php");
-	
 	// Iniciar sesión si no está iniciada
 	if (session_status() == PHP_SESSION_NONE) {
 		session_start();

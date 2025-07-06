@@ -1,6 +1,3 @@
-<?php
-	require("../conexion.php");
-?>
 <form method="post" action="index.php">
     Descripción:
     <input type="text" name="marca_descripcion" value="<?php if (isset($_REQUEST["marca_descripcion"])){ echo $_REQUEST["marca_descripcion"]; } ?>">
@@ -28,7 +25,3 @@
 	<input type="submit" value="Buscar">
 	<input type="button" value="Limpiar" onclick="limpiarFormulario(this)">
 </form>
-
-<?php
-	$mysql->close();
-?>
