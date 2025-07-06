@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-		<title>Alta de nueva metodo de pago</title>
+		<title>Alta de nuevo metodo de pago</title>
 		<link rel="stylesheet" href="../estilos.css">
 	</head>
 	<body class="home">
@@ -17,7 +17,7 @@
 			<form method="post" action="alta.php">
 				<fieldset>
 					<label>Descripcion:</label>
-					<input type="text" name="metodopago_descripcion" size="45" required><br>
+					<input type="text" name="metododepago_descripcion" size="45" required><br>
 					<input type="submit" value="Confirmar">
 				</fieldset>
 			</form>

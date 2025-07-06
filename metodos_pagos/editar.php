@@ -14,7 +14,7 @@
 			<?php
 			require("../conexion.php");
 
-			$registro = $mysql->query("select * from metodopago where id_metodopago=$_REQUEST[id_metodopago]") or
+			$registro = $mysql->query("select * from metododepago where id_metododepago=$_REQUEST[id_metododepago]") or
 				die($mysql->error);
 
 			if ($reg = $registro->fetch_array()) {
@@ -23,8 +23,8 @@
 				<form method="post" action="modificacion.php">
 					<fieldset>
 						<label>Descripcion:</label>
-						<input type="text" name="metodopago_descripcion" size="45" value="<?php echo $reg['metodopago_descripcion']; ?>" required><br>
-						<input type="hidden" name="id_metodopago" value="<?php echo $_REQUEST['id_metodopago']; ?>" required>
+						<input type="text" name="metododepago_descripcion" size="45" value="<?php echo $reg['metododepago_descripcion']; ?>" required><br>
+						<input type="hidden" name="id_metododepago" value="<?php echo $_REQUEST['id_metododepago']; ?>" required>
 						<input type="submit" value="Confirmar">
 					</fieldset>
 				</form>

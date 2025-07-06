@@ -2,7 +2,7 @@
 	require("../conexion.php");
 	require("../includes/mensajes.php");
 	
-	$resultado = $mysql->query("UPDATE metodopago SET metodopago_estado = 1 WHERE id_metodopago = $_REQUEST[id_metodopago]");
+	$resultado = $mysql->query("UPDATE metododepago SET metododepago_estado = 1 WHERE id_ = $_REQUEST[id_metododepago]");
 	
     if ($resultado) {
         echo 'Categoría recuperada correctamente';

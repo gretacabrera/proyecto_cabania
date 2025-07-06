@@ -2,7 +2,7 @@
 	require("../conexion.php");
 	require("../includes/mensajes.php");
 	
-	$resultado = $mysql->query("insert into metodopago (metodopago_descripcion, metodopago_estado) values ('$_REQUEST[metodopago_descripcion]', 1)");
+	$resultado = $mysql->query("insert into metododepago (metododepago_descripcion, metododepago_estado) values ('$_REQUEST[metododepago_descripcion]', 1)");
 	
 	if ($resultado) {
 		$mysql->close();

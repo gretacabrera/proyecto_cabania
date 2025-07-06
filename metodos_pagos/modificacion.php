@@ -3,9 +3,9 @@
   require("../conexion.php");
   require("../includes/mensajes.php");
 
-  $resultado = $mysql->query("update metodopago set 
-				metodopago_descripcion='$_REQUEST[metodopago_descripcion]'
-				where id_metodopago=$_REQUEST[id_metodopago]");
+  $resultado = $mysql->query("update metododepago set 
+				metododepago_descripcion='$_REQUEST[metododepago_descripcion]'
+				where id_metododepago=$_REQUEST[id_metododepago]");
 
   if ($resultado) {
 	$mysql->close();

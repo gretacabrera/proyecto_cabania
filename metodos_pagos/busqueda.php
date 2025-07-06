@@ -3,22 +3,22 @@
 ?>
 <form method="post" action="index.php">
     Descripción:
-    <input type="text" name="metodopago_descripcion" value="<?php if (isset($_REQUEST["metodopago_descripcion"])){ echo $_REQUEST["metodopago_descripcion"]; } ?>">
+    <input type="text" name="metododepago_descripcion" value="<?php if (isset($_REQUEST["metododepago_descripcion"])){ echo $_REQUEST["metododepago_descripcion"]; } ?>">
 	Estado:
-	<select name="metodopago_estado">
+	<select name="metododepago_estado">
 		<option value="">Seleccione el estado de la metodo de pago...</option>
 		<option value="1"
 		<?php
-			if (isset($_REQUEST["metodopago_estado"])){
-				if ($_REQUEST["metodopago_estado"] == 1){
+			if (isset($_REQUEST["metododepago_estado"])){
+				if ($_REQUEST["metododepago_estado"] == 1){
 					echo "selected";
 				}
 			}
 		?>
 		>Activo</option>
 		<option value="0"<?php
-			if (isset($_REQUEST["metodopago_estado"])){
-				if ($_REQUEST["metodopago_estado"] == 0){
+			if (isset($_REQUEST["metododepago_estado"])){
+				if ($_REQUEST["metododepago_estado"] == 0){
 					echo "selected";
 				}
 			}

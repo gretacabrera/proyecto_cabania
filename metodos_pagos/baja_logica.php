@@ -1,10 +1,10 @@
 <?php
   require("../conexion.php");
 
-  $resultado = $mysql->query("update metodopago set metodopago_estado = 0 WHERE id_metodopago=$_REQUEST[id_metodopago]");
+  $resultado = $mysql->query("update metododepago set metododepago_estado = 0 WHERE id_metododepago=$_REQUEST[id_metododepago]");
 
   if ($resultado) {
-	echo 'Se dió de baja correctamente la metodopago';
+	echo 'Se dió de baja correctamente la metododepago';
   } else {
 	echo 'Error: ' . $mysql->error;
   }
