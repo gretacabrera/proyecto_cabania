@@ -1,7 +1,7 @@
 <?php
 
 include('../conexion.php');
-include('../funciones.php');
+require_once('../funciones.php');
 
 // Validaciones del lado del servidor
 if (empty($_REQUEST['usuario_nombre']) || empty($_REQUEST['usuario_contrasenia'])) {
