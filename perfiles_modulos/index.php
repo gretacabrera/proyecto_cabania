@@ -14,7 +14,7 @@
 			<?php
 				require("../includes/mensajes.php");
 				mostrar_mensaje();
-				require("validar_permiso.php");
+				require("../perfiles/validar_permiso.php");
 				if (validar_permiso("perfiles_modulos")){
 					include("listado.php");
 				}
