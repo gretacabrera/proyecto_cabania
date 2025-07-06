@@ -13,7 +13,7 @@
     <div class="content">
 		<?php
 			require("../perfiles/validar_permiso.php");
-			if (validar_permiso("reservas/index.php")){
+			if (validar_permiso("reservas")){
 				include("listado.php");
 			}
 			else{

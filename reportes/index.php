@@ -13,7 +13,7 @@
     <div class="content">
         <?php
             require("../perfiles/validar_permiso.php");
-			if (validar_permiso("reportes/index.php")){
+			if (validar_permiso("reportes")){
 				echo "<h1>Bienvenido al Área de Reportes</h1>
                         <p>Selecciona una opción del menú para navegar entre los diferentes reportes.</p><br><br>
                         <a href='/proyecto_cabania/reportes/productos_cantidadxcategoria/index.php'>Productos por Categoría</a><br><br>

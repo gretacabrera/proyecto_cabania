@@ -15,7 +15,7 @@
 				require("../includes/mensajes.php");
 				mostrar_mensaje();
 				require("validar_permiso.php");
-				if (validar_permiso("perfiles/index.php")){
+				if (validar_permiso("perfiles")){
 					include("listado.php");
 				}
 				else{

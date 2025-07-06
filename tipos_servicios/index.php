@@ -13,7 +13,7 @@
 		<div class="content">
 			<?php
 				require("validar_permiso.php");
-				if (validar_permiso("tipos_servicios/index.php")){
+				if (validar_permiso("tipos_servicios")){
 					include("listado.php");
 				}
 				else{

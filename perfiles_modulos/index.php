@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-		<title>ABM de Servicios</title>
+		<title>ABM de Asignaciones de Modulos a Perfiles</title>
 		<link rel="stylesheet" href="../estilos.css">
 		<script src="../funciones.js"></script>
 	</head>
@@ -14,8 +14,8 @@
 			<?php
 				require("../includes/mensajes.php");
 				mostrar_mensaje();
-				require("../perfiles/validar_permiso.php");
-				if (validar_permiso("servicios")){
+				require("validar_permiso.php");
+				if (validar_permiso("perfiles_modulos")){
 					include("listado.php");
 				}
 				else{

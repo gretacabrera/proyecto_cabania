@@ -15,7 +15,7 @@
 				require("../includes/mensajes.php");
 				mostrar_mensaje();
 				require("../perfiles/validar_permiso.php");
-				if (validar_permiso("estados_productos/index.php")){
+				if (validar_permiso("estados_productos")){
 					include("listado.php");
 				}
 				else{

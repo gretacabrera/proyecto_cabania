@@ -25,7 +25,7 @@
                 die($mysql->error);
                 while ($row = $registros->fetch_assoc()) {
                     echo 
-                    "<a href='/proyecto_cabania/$row[modulo_ruta]'>$row[modulo_descripcion]</a>";
+                    "<a href='/proyecto_cabania/$row[modulo_ruta]/index.php'>$row[modulo_descripcion]</a>";
                 }
             }
             else{

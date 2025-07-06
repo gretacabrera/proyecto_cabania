@@ -13,7 +13,7 @@
 		<div class="content">
 			<?php
 				require("validar_permiso.php");
-				if (validar_permiso("tipos_contactos/index.php")){
+				if (validar_permiso("tipos_contactos")){
 					include("listado.php");
 				}
 				else{

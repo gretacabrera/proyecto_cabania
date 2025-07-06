@@ -15,7 +15,7 @@
 				require("../includes/mensajes.php");
 				mostrar_mensaje();
 				require("../perfiles/validar_permiso.php");
-				if (validar_permiso("condiciones_salud/index.php")){
+				if (validar_permiso("condiciones_salud")){
 					include("listado.php");
 				}
 				else{
