@@ -52,10 +52,12 @@ if (!isset($incluir_listado)) {
                 // Permitir contenido personalizado si se define
                 echo $contenido_personalizado;
             } else {
-                echo "<p>Módulo " . htmlspecialchars($modulo_titulo) . " disponible.</p>";
+                // Incluir página 404 si no se encuentra el archivo requerido
+                include("../404.php");
             }
         } else {
-            echo "<p>No tiene permiso para acceder a este módulo.</p>";
+            // Incluir página 403 si no tiene permisos
+            include("../403.php");
         }
         ?>
     </div>

@@ -17,7 +17,7 @@
 
 		if ($registro->num_rows == 0){
 			echo "No se encontró el periodo correspondiente a la fecha de inicio.<br><br>";
-			echo '<button onclick="location.href=\'../home.php\'">Volver</button>';
+			echo '<button onclick="location.href=\'../index.php\'">Volver</button>';
 			die();
 		}
 

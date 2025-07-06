@@ -1,6 +1,6 @@
 <div class="menu">
     <div class="menu-botonera">
-        <a href="/proyecto_cabania/home.php">Inicio</a>
+        <a href="/proyecto_cabania/index.php">Inicio</a>
         <?php
             require("conexion.php");  
             session_start();   

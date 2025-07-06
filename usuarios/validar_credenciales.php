@@ -22,7 +22,7 @@ if ($reg = $registro->fetch_array()) {
         session_start();
         $_SESSION["usuario_nombre"] = $_REQUEST["usuario_nombre"];
         $mysql->close(); // se cierra la conexion antes de redireccionar
-        header("Location: ../home.php");
+        header("Location: ../index.php");
     }
     else{
         redireccionar_con_mensaje('login.php', 'Contraseña incorrecta. Por favor, reintente.', 'error');

@@ -548,3 +548,139 @@ textarea:focus {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+/* ============================================================================
+ * ESTILOS PARA PÁGINAS DE ERROR (403 y 404)
+ * ============================================================================ */
+
+/* Contenedor principal para páginas de error */
+.error-container {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    margin: 50px auto;
+    padding: 40px;
+    max-width: 600px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Contenedor específico para error 403 */
+.error-container.error-403 {
+    border: 2px solid #dc3545;
+}
+
+/* Contenedor específico para error 404 */
+.error-container.error-404 {
+    border: 2px solid #ffc107;
+}
+
+/* Código de error (403, 404) */
+.error-code {
+    font-size: 72px;
+    font-weight: bold;
+    margin: 0;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Color específico para error 403 */
+.error-code.error-403 {
+    color: #dc3545;
+}
+
+/* Color específico para error 404 */
+.error-code.error-404 {
+    color: #ffc107;
+}
+
+/* Título del error */
+.error-title {
+    font-size: 24px;
+    color: #333;
+    margin: 20px 0;
+    font-weight: bold;
+}
+
+/* Mensaje del error */
+.error-message {
+    font-size: 16px;
+    color: #666;
+    margin: 20px 0;
+    line-height: 1.5;
+}
+
+/* Contenedor de acciones/botones */
+.error-actions {
+    margin-top: 30px;
+}
+
+/* Botones de error */
+.btn-error {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 20px;
+    text-decoration: none;
+    border-radius: 5px;
+    margin: 0 10px;
+    display: inline-block;
+    transition: background-color 0.3s;
+}
+
+.btn-error:hover {
+    background-color: #0056b3;
+    color: white;
+    text-decoration: none;
+}
+
+/* Botón secundario */
+.btn-secondary {
+    background-color: #6c757d;
+}
+
+.btn-secondary:hover {
+    background-color: #545b62;
+}
+
+/* Icono de error 403 (prohibido) */
+.icon-forbidden {
+    font-size: 48px;
+    color: #dc3545;
+    margin-bottom: 20px;
+}
+
+/* Icono de error 404 (no encontrado) */
+.icon-notfound {
+    font-size: 48px;
+    color: #ffc107;
+    margin-bottom: 20px;
+}
+
+/* Contenedor de búsqueda (para 404) */
+.search-container {
+    margin: 20px 0;
+    padding: 20px;
+    background-color: rgba(248, 249, 250, 0.8);
+    border-radius: 5px;
+}
+
+/* Campo de búsqueda */
+.search-input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    width: 200px;
+    margin-right: 10px;
+}
+
+/* Botón de búsqueda */
+.btn-search {
+    background-color: #28a745;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-search:hover {
+    background-color: #218838;
+}

@@ -7,14 +7,29 @@
     <link rel="stylesheet" href="estilos.css">
 </head>
 <body class="home">
-    <div class="menu">
-        <div class="menu-botonera">
-            <a href="/proyecto_cabania/usuarios/login.php">Iniciar sesión</a>
-        </div>
-    </div>
+    <?php
+        include("menu.php");
+    ?>
     <div class="fixed-div-left">
         <label>CASA DE PALOS</label><br>
         <label>CABAÑAS</label>
     </div>
+    <?php
+        require("conexion.php"); 
+        if (isset($_SESSION["usuario_nombre"])){
+            $registro = $mysql->query("select p.perfil_descripcion
+                                        from perfil p
+                                        left join usuario u on u.rela_perfil = p.id_perfil
+                                        where u.usuario_nombre = '$_SESSION[usuario_nombre]'") or
+            die($mysql->error);
+            if ($registro->fetch_array()["perfil_descripcion"] == "huesped") {
+                echo 
+                "<div class='fixed-div-right'>
+                    <button class='a-button' onclick='location.href=\"/proyecto_cabania/reservas/reserva_online.php\"'>HACER UNA RESERVA</button>
+                </div>";
+            }
+            $mysql->close();
+        }
+    ?>
 </body>
 </html>
