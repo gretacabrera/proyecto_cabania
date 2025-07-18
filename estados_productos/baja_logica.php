@@ -1,5 +1,5 @@
 <?php
-  require("../conexion.php");
+  require_once("../conexion.php");
 
   $resultado = $mysql->query("update estadoproducto set estadoproducto_estado = 0 WHERE id_estadoproducto=$_REQUEST[id_estadoproducto]");
 

@@ -2,7 +2,7 @@
 <?php
     if (isset($_SESSION["usuario_nombre"])){
 
-        require("../conexion.php");
+        require("conexion.php");
 
         $registro = $mysql->query("select * from reserva r
                                     left join cabania c on r.rela_cabania = c.id_cabania

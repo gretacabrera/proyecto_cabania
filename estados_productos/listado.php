@@ -3,7 +3,7 @@
 	include("busqueda.php");
 ?>
 <div class="botonera-abm">
-	<button class="abm-button alta-button" onclick="location.href='formulario.php'">Nuevo estado de producto</button><br><br>
+	<button class="abm-button alta-button" onclick="location.href='/proyecto_cabania/plantilla_modulo.php?titulo=Estados de Productos&ruta=estados_productos&archivo=formulario.php'">Nuevo estado de producto</button><br><br>
 </div>
 <table> 
 	<thead>
@@ -44,16 +44,16 @@
 			<td>".$row["estadoproducto_descripcion"]."</td> 
 			<td>".(($row["estadoproducto_estado"]) ? "Activo" : "Baja")."</td> 
 			<td>
-				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_estadoproducto=".$row["id_estadoproducto"]."\"'>Editar</button>";
+				<button class='abm-button mod-button' onclick='location.href=\"/proyecto_cabania/plantilla_modulo.php?titulo=Estados de Productos&ruta=estados_productos&archivo=editar.php&id_estadoproducto=".$row["id_estadoproducto"]."\"'>Editar</button>";
 		
 		// Mostrar botón Eliminar o Recuperar según el estado y permisos
 		if ($row["estadoproducto_estado"]) {
 			// Si está activo, mostrar botón Eliminar
-			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_estadoproducto=".$row["id_estadoproducto"]."\", \"dar de baja este estado de producto\")'>Eliminar</button>";
+			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"/proyecto_cabania/estados_productos/baja_logica.php?id_estadoproducto=".$row["id_estadoproducto"]."\", \"dar de baja este estado de producto\")'>Eliminar</button>";
 		} else {
 			// Si está de baja, solo mostrar botón Recuperar a administradores
 			if (es_administrador()) {
-				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_estadoproducto=".$row["id_estadoproducto"]."\", \"recuperar este estado de producto\")'>Recuperar</button>";
+				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"/proyecto_cabania/estados_productos/quitar_baja_logica.php?id_estadoproducto=".$row["id_estadoproducto"]."\", \"recuperar este estado de producto\")'>Recuperar</button>";
 			}
 		}
 		

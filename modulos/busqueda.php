@@ -1,4 +1,4 @@
-<form method="post" action="index.php">
+<form method="post" action="/proyecto_cabania/plantilla_modulo.php?titulo=Módulos&ruta=modulos">
     Descripción:
     <input type="text" name="modulo_descripcion" value="<?php if (isset($_REQUEST["modulo_descripcion"])){ echo $_REQUEST["modulo_descripcion"]; } ?>">
 	Estado:

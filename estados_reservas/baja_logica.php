@@ -1,5 +1,5 @@
 <?php
-  require("../conexion.php");
+  require_once("../conexion.php");
 
   $resultado = $mysql->query("update estadoreserva set estadoreserva_estado = 0 WHERE id_estadoreserva=$_REQUEST[id_estadoreserva]");
 

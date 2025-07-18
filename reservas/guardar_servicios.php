@@ -1,7 +1,7 @@
 <?php
     if (isset($_POST['servicios'])){
 
-        require("../conexion.php");
+        require("conexion.php");
 
         $servicios_seleccionados = $_POST['servicios'];
         

@@ -21,7 +21,8 @@
                                             left join perfil_modulo pm on pm.rela_modulo = m.id_modulo
                                             left join perfil p on pm.rela_perfil = p.id_perfil
                                             left join usuario u on u.rela_perfil = p.id_perfil
-                                            where m.modulo_estado = 1
+                                            where pm.perfilmodulo_estado = 1
+                                            and m.modulo_estado = 1
                                             and u.usuario_estado = 1
                                             and u.usuario_nombre = '$_SESSION[usuario_nombre]'") or
                 die($mysql->error);

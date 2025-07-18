@@ -1,4 +1,4 @@
-<form method="post" action="index.php">
+<form method="post" action="/proyecto_cabania/plantilla_modulo.php?titulo=Categorías&ruta=categorias">
     Descripción:
     <input type="text" name="categoria_descripcion" value="<?php if (isset($_REQUEST["categoria_descripcion"])){ echo $_REQUEST["categoria_descripcion"]; } ?>">
 	Estado:

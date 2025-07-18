@@ -3,7 +3,7 @@
 	include("busqueda.php");
 ?>
 <div class="botonera-abm">
-	<button class="abm-button alta-button" onclick="location.href='formulario.php'">Nuevo tipo de contacto</button><br><br>
+	<button class="abm-button alta-button" onclick="location.href='/proyecto_cabania/plantilla_modulo.php?titulo=Tipos de Contactos&ruta=tipos_contactos&archivo=formulario.php'">Nuevo tipo de contacto</button><br><br>
 </div>
 <table> 
 	<thead>
@@ -44,17 +44,17 @@
 			<td>".$row["tipocontacto_descripcion"]."</td> 
 			<td>".(($row["tipocontacto_estado"]) ? "Activo" : "Baja")."</td> 
 			<td>
-				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_tipocontacto=".$row["id_tipocontacto"]."\"'>Editar</button>";
+				<button class='abm-button mod-button' onclick='location.href=\"/proyecto_cabania/plantilla_modulo.php?titulo=Tipos de contactos&ruta=tipos_contactos&archivo=editar.php&id_tipocontacto=".$row["id_tipocontacto"]."\"'>Editar</button>";
 		
 		// Mostrar botón Eliminar o Recuperar según el estado
 		if ($row["tipocontacto_estado"] == 0) {
 			// Si está de baja (estado 0) y es administrador, mostrar botón Recuperar
 			if (es_administrador()) {
-				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_tipocontacto=".$row["id_tipocontacto"]."\", \"recuperar este tipo de contacto\")'>Recuperar</button>";
+				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"/proyecto_cabania/tipos_contactos/quitar_baja_logica.php?id_tipocontacto=".$row["id_tipocontacto"]."\", \"recuperar este tipo de contacto\")'>Recuperar</button>";
 			}
 		} else {
 			// Si está activo (estado 1), mostrar botón Eliminar
-			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_tipocontacto=".$row["id_tipocontacto"]."\", \"dar de baja este tipo de contacto\")'>Eliminar</button>";
+			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"/proyecto_cabania/tipos_contactos/baja_logica.php?id_tipocontacto=".$row["id_tipocontacto"]."\", \"dar de baja este tipo de contacto\")'>Eliminar</button>";
 		}
 		
 		echo "</td>

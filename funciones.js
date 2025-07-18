@@ -38,27 +38,51 @@ function confirmarEliminacion(url, accion = 'eliminar') {
         })
         .then(response => response.text())
         .then(data => {
-            if (data.includes('Error') || data.includes('error')) {
-                // Redirigir con mensaje de error usando sistema PHP
-                var indexUrl = 'index.php';
-                var separador = indexUrl.includes('?') ? '&' : '?';
-                indexUrl += separador + 'mensaje=' + encodeURIComponent('Error al procesar la solicitud') + '&tipo=error';
-                window.location.href = indexUrl;
+            // Debug: mostrar lo que devuelve el servidor
+            console.log('Respuesta del servidor:', data);
+            
+            // Obtener URL actual preservando TODOS los parámetros
+            var currentUrl = window.location.href;
+            var url_obj = new URL(currentUrl);
+            
+            // Limpiar solo los parámetros de mensaje anteriores
+            url_obj.searchParams.delete('mensaje');
+            url_obj.searchParams.delete('tipo');
+            
+            // Mejorar detección de errores - buscar patrones más específicos
+            if (data.includes('Error:') || data.includes('MySQL error') || data.includes('Fatal error') || data.includes('Warning:')) {
+                // Agregar mensaje de error manteniendo todos los demás parámetros
+                var mensaje_error = data.trim() || 'Error al procesar la solicitud';
+                url_obj.searchParams.set('mensaje', mensaje_error);
+                url_obj.searchParams.set('tipo', 'error');
             } else {
+                // Usar el mensaje de texto directamente
                 var mensaje_exito = data.trim() || 'Operación completada correctamente';
-                // Redirigir con mensaje de éxito usando sistema PHP
-                var indexUrl = 'index.php';
-                var separador = indexUrl.includes('?') ? '&' : '?';
-                indexUrl += separador + 'mensaje=' + encodeURIComponent(mensaje_exito) + '&tipo=exito';
-                window.location.href = indexUrl;
+                url_obj.searchParams.set('mensaje', mensaje_exito);
+                url_obj.searchParams.set('tipo', 'exito');
             }
+            
+            // Redirigir manteniendo todos los parámetros originales
+            window.location.href = url_obj.toString();
         })
         .catch(error => {
-            // Redirigir con mensaje de error usando sistema PHP
-            var indexUrl = 'index.php';
-            var separador = indexUrl.includes('?') ? '&' : '?';
-            indexUrl += separador + 'mensaje=' + encodeURIComponent('Error de conexión') + '&tipo=error';
-            window.location.href = indexUrl;
+            // Debug: mostrar el error de conexión
+            console.error('Error de conexión AJAX:', error);
+            console.log('URL que falló:', url);
+            
+            // Obtener URL actual preservando TODOS los parámetros
+            var currentUrl = window.location.href;
+            var url_obj = new URL(currentUrl);
+            
+            // Limpiar solo los parámetros de mensaje anteriores
+            url_obj.searchParams.delete('mensaje');
+            url_obj.searchParams.delete('tipo');
+            
+            // Agregar mensaje de error manteniendo todos los demás parámetros
+            url_obj.searchParams.set('mensaje', 'Error de conexión: ' + error.message);
+            url_obj.searchParams.set('tipo', 'error');
+            
+            window.location.href = url_obj.toString();
         });
     };
     
@@ -151,10 +175,6 @@ function procesarFormularioAsincrono(formElement, mensaje_exito, redirigir_a = n
     
     return false; // Prevenir envío normal del formulario
 }
-
-// ================================================================================
-// FUNCIONES DE VALIDACIÓN MIGRADAS DE js/validaciones.js
-// ================================================================================
 
 // Función para validar formulario de login
 function validar_login() {
@@ -358,6 +378,13 @@ function cerrarMensaje() {
     var mensaje = document.getElementById('mensaje-global');
     if (mensaje) {
         mensaje.style.display = 'none';
+        // Limpiar solo los parámetros de mensaje manteniendo los demás
+        if (window.history && window.history.replaceState) {
+            var url_obj = new URL(window.location.href);
+            url_obj.searchParams.delete('mensaje');
+            url_obj.searchParams.delete('tipo');
+            window.history.replaceState({path: url_obj.toString()}, '', url_obj.toString());
+        }
     }
 }
 
@@ -401,3 +428,32 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Página de registro detectada - con validaciones AJAX');
     }
 });
+
+// Función auxiliar para extraer solo el mensaje de texto del HTML devuelto por el servidor
+function extraerMensajeDeHTML(htmlString) {
+    // Crear un documento temporal para parsear el HTML
+    var tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlString;
+    
+    // Buscar el contenido dentro del div.content
+    var contentDiv = tempDiv.querySelector('.content');
+    if (contentDiv) {
+        return contentDiv.textContent.trim();
+    }
+    
+    // Si no hay div.content, buscar en el body
+    var bodyElement = tempDiv.querySelector('body');
+    if (bodyElement) {
+        return bodyElement.textContent.trim();
+    }
+    
+    // Si no hay estructura HTML, usar el texto directamente
+    var texto = tempDiv.textContent.trim();
+    
+    // Filtrar líneas vacías y tomar solo la primera línea significativa
+    var lineas = texto.split('\n').filter(function(linea) {
+        return linea.trim().length > 0;
+    });
+    
+    return lineas.length > 0 ? lineas[0].trim() : 'Operación completada correctamente';
+}

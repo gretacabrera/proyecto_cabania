@@ -1,19 +1,24 @@
 
 <?php
-  require("../conexion.php");
+require("conexion.php");
+$resultado = $mysql->query("update servicio set 
+			servicio_nombre='$_REQUEST[servicio_nombre]',
+			servicio_descripcion='$_REQUEST[servicio_descripcion]',
+			servicio_precio=$_REQUEST[servicio_precio],
+			rela_tiposervicio=$_REQUEST[rela_tiposervicio]
+			where id_servicio=$_REQUEST[id_servicio]");
 
-  $mysql->query("update servicio set 
-				servicio_nombre='$_REQUEST[servicio_nombre]',
-				servicio_descripcion='$_REQUEST[servicio_descripcion]',
-				servicio_precio=$_REQUEST[servicio_precio],
-				rela_tiposervicio=$_REQUEST[rela_tiposervicio]
-				where id_servicio=$_REQUEST[id_servicio]") or
-    die($mysql->error);
+if ($resultado) {
+	redireccionar_con_mensaje(
+		'/proyecto_cabania/plantilla_modulo.php?titulo=Servicios&ruta=servicios&archivo=listado.php',
+		'Se modificaron los datos del servicio correctamente',
+		'exito'
+	);
+} else {
+	echo 'Error: ' . $mysql->error;
+}
 
-  echo 'Se modificaron los datos del servicio';
-  echo '<br>';
-  echo '<button onclick="location.href=\'index.php\'">Volver</button>';
-  
-  $mysql->close();
+$mysql->close();
+?>
 
   ?>

@@ -1,7 +1,7 @@
 
 <h1>Filtros de busqueda:</h1>
 
-<form method="post" action="index.php">
+<form method="post" action="/proyecto_cabania/plantilla_modulo.php?titulo=Top Grupos Etarios por Período&ruta=reportes/top_grupos_etarios_x_periodo">
 	Periodo:
 	<select name="id_periodo" required>
 		<option value="">Seleccione el periodo...</option>

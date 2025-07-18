@@ -3,7 +3,7 @@
 	include("busqueda.php");
 ?>
 <div class="botonera-abm">
-	<button class="abm-button alta-button" onclick="location.href='formulario.php'">Nueva condicion de salud</button><br><br>
+	<button class="abm-button alta-button" onclick="location.href='/proyecto_cabania/plantilla_modulo.php?titulo=Condiciones de Salud&ruta=condiciones_salud&archivo=formulario.php'">Nueva condicion de salud</button><br><br>
 </div>
 <table> 
 	<thead>
@@ -11,7 +11,7 @@
 		<th> <font face="Arial">Estado</font> </th> 
 		<th> <font face="Arial">Acciones</font> </th> 
 	</thead>
-<?php
+<?php 
 	// Iniciar sesión si no está iniciada
 	if (session_status() == PHP_SESSION_NONE) {
 		session_start();
@@ -44,16 +44,16 @@
 			<td>".$row["condicionsalud_descripcion"]."</td> 
 			<td>".(($row["condicionsalud_estado"]) ? "Activo" : "Baja")."</td> 
 			<td>
-				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_condicionsalud=".$row["id_condicionsalud"]."\"'>Editar</button>";
+				<button class='abm-button mod-button' onclick='location.href=\"/proyecto_cabania/plantilla_modulo.php?titulo=Condiciones de salud&ruta=condiciones_salud&archivo=editar.php&id_condicionsalud=".$row["id_condicionsalud"]."\"'>Editar</button>";
 		
 		// Mostrar botón Eliminar o Recuperar según el estado y permisos
 		if ($row["condicionsalud_estado"]) {
 			// Si está activo, mostrar botón Eliminar
-			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_condicionsalud=".$row["id_condicionsalud"]."\", \"dar de baja esta condición de salud\")'>Eliminar</button>";
+			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"/proyecto_cabania/condiciones_salud/baja_logica.php?id_condicionsalud=".$row["id_condicionsalud"]."\", \"dar de baja esta condición de salud\")'>Eliminar</button>";
 		} else {
 			// Si está de baja, solo mostrar botón Recuperar a administradores
 			if (es_administrador()) {
-				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_condicionsalud=".$row["id_condicionsalud"]."\", \"recuperar esta condición de salud\")'>Recuperar</button>";
+				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"/proyecto_cabania/condiciones_salud/quitar_baja_logica.php?id_condicionsalud=".$row["id_condicionsalud"]."\", \"recuperar esta condición de salud\")'>Recuperar</button>";
 			}
 		}
 		

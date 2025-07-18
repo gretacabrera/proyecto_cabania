@@ -1,4 +1,4 @@
-<form method="post" action="index.php">
+<form method="post" action="/proyecto_cabania/plantilla_modulo.php?titulo=Estados de Productos&ruta=estados_productos">
     Descripción:
     <input type="text" name="estadoproducto_descripcion" value="<?php if (isset($_REQUEST["estadoproducto_descripcion"])){ echo $_REQUEST["estadoproducto_descripcion"]; } ?>">
 	Estado:

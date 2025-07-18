@@ -3,7 +3,7 @@
 	include("busqueda.php");
 ?>
 <div class="botonera-abm">
-	<button class="abm-button alta-button" onclick="location.href='formulario.php'">Nuevo tipo de servicio</button><br><br>
+	<button class="abm-button alta-button" onclick="location.href='/proyecto_cabania/plantilla_modulo.php?titulo=Tipos de Servicios&ruta=tipos_servicios&archivo=formulario.php'">Nuevo tipo de servicio</button><br><br>
 </div>
 <table> 
 	<thead>
@@ -44,17 +44,17 @@
 			<td>".$row["tiposervicio_descripcion"]."</td> 
 			<td>".(($row["tiposervicio_estado"]) ? "Activo" : "Baja")."</td> 
 			<td>
-				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_tiposervicio=".$row["id_tiposervicio"]."\"'>Editar</button>";
+				<button class='abm-button mod-button' onclick='location.href=\"/proyecto_cabania/plantilla_modulo.php?titulo=Tipos de servicios&ruta=tipos_servicios&archivo=editar.php&id_tiposervicio=".$row["id_tiposervicio"]."\"'>Editar</button>";
 		
 		// Mostrar botón Eliminar o Recuperar según el estado
 		if ($row["tiposervicio_estado"] == 0) {
 			// Si está de baja (estado 0) y es administrador, mostrar botón Recuperar
 			if (es_administrador()) {
-				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_tiposervicio=".$row["id_tiposervicio"]."\", \"recuperar este tipo de servicio\")'>Recuperar</button>";
+				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"/proyecto_cabania/tipos_servicios/quitar_baja_logica.php?id_tiposervicio=".$row["id_tiposervicio"]."\", \"recuperar este tipo de servicio\")'>Recuperar</button>";
 			}
 		} else {
 			// Si está activo (estado 1), mostrar botón Eliminar
-			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_tiposervicio=".$row["id_tiposervicio"]."\", \"dar de baja este tipo de servicio\")'>Eliminar</button>";
+			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"/proyecto_cabania/tipos_servicios/baja_logica.php?id_tiposervicio=".$row["id_tiposervicio"]."\", \"dar de baja este tipo de servicio\")'>Eliminar</button>";
 		}
 		
 		echo "</td>

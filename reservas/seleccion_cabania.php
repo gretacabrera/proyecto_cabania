@@ -10,7 +10,7 @@
     <?php
         include("../menu.php");
 
-        require("../conexion.php");
+        require("conexion.php");
 
         $filtro = '';
 	

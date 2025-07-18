@@ -1,4 +1,4 @@
-<form method="post" action="index.php">
+<form method="post" action="/proyecto_cabania/plantilla_modulo.php?titulo=Reservas&ruta=reservas">
 	Fecha y hora inicio:
 	<input type="datetime-local" name="reserva_fhinicio" min="2000-01-01T00:00" max="2030-12-31T00:00" value="<?php if (isset($_REQUEST["reserva_fhinicio"])){ echo $_REQUEST["reserva_fhinicio"]; } ?>">
 	Fecha y hora fin:

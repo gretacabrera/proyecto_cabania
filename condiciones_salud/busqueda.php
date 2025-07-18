@@ -1,4 +1,4 @@
-<form method="post" action="index.php">
+<form method="post" action="/proyecto_cabania/plantilla_modulo.php?titulo=Condiciones de Salud&ruta=condiciones_salud">
     Descripción:
     <input type="text" name="condicionsalud_descripcion" value="<?php if (isset($_REQUEST["condicionsalud_descripcion"])){ echo $_REQUEST["condicionsalud_descripcion"]; } ?>">
 	Estado:

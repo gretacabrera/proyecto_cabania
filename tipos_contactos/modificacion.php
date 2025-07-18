@@ -1,16 +1,19 @@
-
 <?php
-  require("../conexion.php");
+require("conexion.php");
 
-  $mysql->query("update tipocontacto set 
-				tipocontacto_descripcion='$_REQUEST[tipocontacto_descripcion]'
-				where id_tipocontacto=$_REQUEST[id_tipocontacto]") or
-    die($mysql->error);
+$resultado = $mysql->query("update tipocontacto set 
+			tipocontacto_descripcion='$_REQUEST[tipocontacto_descripcion]'
+			where id_tipocontacto=$_REQUEST[id_tipocontacto]");
 
-  echo 'Se modificaron los datos del tipo de contacto';
-  echo '<br>';
-  echo '<button onclick="location.href=\'index.php\'">Volver</button>';
-  
-  $mysql->close();
+if ($resultado) {
+	redireccionar_con_mensaje(
+		'/proyecto_cabania/plantilla_modulo.php?titulo=Tipos de contactos&ruta=tipos_contactos&archivo=listado.php',
+		'Se modificaron los datos del tipo de contacto correctamente',
+		'exito'
+	);
+} else {
+	echo 'Error: ' . $mysql->error;
+}
 
-  ?>
+$mysql->close();
+?>

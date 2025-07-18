@@ -131,10 +131,12 @@ function mostrar_mensaje() {
         echo '<script>
         function cerrarMensaje() {
             document.getElementById("mensaje-global").style.display = "none";
-            // Limpiar parámetros de la URL
+            // Limpiar solo los parámetros de mensaje manteniendo los demás
             if (window.history && window.history.replaceState) {
-                var url = window.location.protocol + "//" + window.location.host + window.location.pathname;
-                window.history.replaceState({path: url}, "", url);
+                var url_obj = new URL(window.location.href);
+                url_obj.searchParams.delete("mensaje");
+                url_obj.searchParams.delete("tipo");
+                window.history.replaceState({path: url_obj.toString()}, "", url_obj.toString());
             }
         }
         
@@ -143,10 +145,12 @@ function mostrar_mensaje() {
             var mensaje = document.getElementById("mensaje-global");
             if (mensaje) {
                 mensaje.style.display = "none";
-                // Limpiar parámetros de la URL
+                // Limpiar solo los parámetros de mensaje manteniendo los demás
                 if (window.history && window.history.replaceState) {
-                    var url = window.location.protocol + "//" + window.location.host + window.location.pathname;
-                    window.history.replaceState({path: url}, "", url);
+                    var url_obj = new URL(window.location.href);
+                    url_obj.searchParams.delete("mensaje");
+                    url_obj.searchParams.delete("tipo");
+                    window.history.replaceState({path: url_obj.toString()}, "", url_obj.toString());
                 }
             }
         }, 5000);

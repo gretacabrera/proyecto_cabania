@@ -26,7 +26,7 @@
                             <th> <font face="Arial">Acciones</font> </th> 
                         </thead>
                     <?php
-                    require("../conexion.php");
+                    require("conexion.php");
                     $registros = $mysql->query("select
                                                 id_reserva,
                                                 reserva_fhinicio,

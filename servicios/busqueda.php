@@ -1,4 +1,4 @@
-<form method="post" action="index.php">
+<form method="post" action="/proyecto_cabania/plantilla_modulo.php?titulo=Servicios&ruta=servicios">
     Nombre del servicio:
     <input type="text" name="servicio_nombre" value="<?php if (isset($_REQUEST["servicio_nombre"])){ echo $_REQUEST["servicio_nombre"]; } ?>">
 	Descripción:

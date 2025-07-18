@@ -1,14 +1,17 @@
 <?php
-	require("../conexion.php");
-	require_once("../funciones.php");
-	
-	$resultado = $mysql->query("insert into perfil_modulo (rela_perfil, rela_modulo, perfilmodulo_estado) values ($_REQUEST[rela_perfil], $_REQUEST[rela_modulo], 1)");
-	
-	if ($resultado) {
-		$mysql->close();
-		redireccionar_con_mensaje('index.php', 'Se dió de alta la asignación perfil-modulo correctamente', 'exito');
-	} else {
-		$mysql->close();
-		redireccionar_con_mensaje('index.php', 'Error: ' . $mysql->error, 'error');
-	}
+require("conexion.php");
+
+$resultado = $mysql->query("insert into perfil_modulo (rela_perfil, rela_modulo, perfilmodulo_estado) values ($_REQUEST[rela_perfil], $_REQUEST[rela_modulo], 1)");
+
+if ($resultado) {
+	redireccionar_con_mensaje(
+		'/proyecto_cabania/plantilla_modulo.php?titulo=Asignar Módulo a Perfil&ruta=perfiles_modulos&archivo=listado.php',
+		'Se dió de alta la asignación de módulo al perfil correctamente',
+		'exito'
+	);
+} else {
+	echo 'Error: ' . $mysql->error;
+}
+
+$mysql->close();
 ?>

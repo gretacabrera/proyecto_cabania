@@ -3,7 +3,7 @@
 	include("busqueda.php");
 ?>
 <div class="botonera-abm">
-	<button class="abm-button alta-button" onclick="location.href='formulario.php'">Nuevo periodo</button><br><br>
+	<button class="abm-button alta-button" onclick="location.href='/proyecto_cabania/plantilla_modulo.php?titulo=Períodos&ruta=periodos&archivo=formulario.php'">Nuevo periodo</button><br><br>
 </div>
 <table> 
 	<thead>
@@ -57,15 +57,15 @@
 			<td>".$row["periodo_orden"]."</td> 
 			<td>".(($row["periodo_estado"]) ? "Activo" : "Baja")."</td> 
 			<td>
-				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_periodo=".$row["id_periodo"]."\"'>Editar</button>";
+				<button class='abm-button mod-button' onclick='location.href=\"/proyecto_cabania/plantilla_modulo.php?titulo=Periodos&ruta=periodos&archivo=editar.php&id_periodo=".$row["id_periodo"]."\"'>Editar</button>";
 		
 		// Mostrar botón Eliminar o Recuperar según el estado
 		if ($row["periodo_estado"]) {
 			// Si está activo, mostrar botón Eliminar
-			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_periodo=".$row["id_periodo"]."\", \"dar de baja este período\")'>Eliminar</button>";
+			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"/proyecto_cabania/periodos/baja_logica.php?id_periodo=".$row["id_periodo"]."\", \"dar de baja este período\")'>Eliminar</button>";
 		} else if (es_administrador()) {
 			// Si está de baja y es administrador, mostrar botón Recuperar
-			echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_periodo=".$row["id_periodo"]."\", \"recuperar este período\")'>Recuperar</button>";
+			echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"/proyecto_cabania/periodos/quitar_baja_logica.php?id_periodo=".$row["id_periodo"]."\", \"recuperar este período\")'>Recuperar</button>";
 		}
 		
 		echo "</td>

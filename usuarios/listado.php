@@ -3,7 +3,7 @@
 	include("busqueda.php");
 ?>
 <div class="botonera-abm">
-	<button class="abm-button alta-button" onclick="location.href='formulario.php'">Nuevo usuario</button><br><br>
+	<button class="abm-button alta-button" onclick="location.href='/proyecto_cabania/plantilla_modulo.php?titulo=Usuarios&ruta=usuarios&archivo=formulario.php'">Nuevo usuario</button><br><br>
 </div>
 <table> 
 	<thead> 
@@ -55,17 +55,17 @@
 			<td>".$row["contacto_email"]."</td>
 			<td>".$row["usuario_estado"]."</td>
 			<td>
-				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_usuario=".$row["id_usuario"]."\"'>Editar</button>";
+				<button class='abm-button mod-button' onclick='location.href=\"/proyecto_cabania/plantilla_modulo.php?titulo=Usuarios&ruta=usuarios&archivo=editar.php&id_usuario=".$row["id_usuario"]."\"'>Editar</button>";
 		
 		// Mostrar botón Eliminar o Recuperar según el estado
 		if ($row["usuario_estado"] == 3 || $row["usuario_estado"] == 'baja') {
 			// Si está de baja (estado 3 o 'baja') y es administrador, mostrar botón Recuperar
 			if (es_administrador()) {
-				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_usuario=".$row["id_usuario"]."\", \"recuperar este usuario\")'>Recuperar</button>";
+				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"/proyecto_cabania/plantilla_modulo.php?titulo=Usuarios&ruta=usuarios&archivo=quitar_baja_logica.php&id_usuario=".$row["id_usuario"]."\", \"recuperar este usuario\")'>Recuperar</button>";
 			}
 		} else {
 			// Si está activo, mostrar botón Eliminar
-			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_usuario=".$row["id_usuario"]."\", \"dar de baja este usuario\")'>Eliminar</button>";
+			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"/proyecto_cabania/plantilla_modulo.php?titulo=Usuarios&ruta=usuarios&archivo=baja_logica.php&id_usuario=".$row["id_usuario"]."\", \"dar de baja este usuario\")'>Eliminar</button>";
 		}
 		
 		echo "</td>

@@ -1,4 +1,4 @@
-<form method="post" action="index.php">
+<form method="post" action="/proyecto_cabania/plantilla_modulo.php?titulo=Asignar Módulo a Perfil&ruta=perfiles_modulos">
     Perfil:
 	<select name="rela_perfil">
 		<option value="">Seleccione un perfil...</option>

@@ -1,17 +1,19 @@
 
 <?php
-  require("../conexion.php");
-  require_once("../funciones.php");
+require("conexion.php");
+$resultado = $mysql->query("update estadoreserva set 
+			estadoreserva_descripcion='$_REQUEST[estadoreserva_descripcion]'
+			where id_estadoreserva=$_REQUEST[id_estadoreserva]");
 
-  $resultado = $mysql->query("update estadoreserva set 
-				estadoreserva_descripcion='$_REQUEST[estadoreserva_descripcion]'
-				where id_estadoreserva=$_REQUEST[id_estadoreserva]");
+if ($resultado) {
+	redireccionar_con_mensaje(
+		'/proyecto_cabania/plantilla_modulo.php?titulo=Estados de reservas&ruta=estados_reservas&archivo=listado.php',
+		'Se modificaron los datos del estado de reserva correctamente',
+		'exito'
+	);
+} else {
+	echo 'Error: ' . $mysql->error;
+}
 
-  if ($resultado) {
-	$mysql->close();
-	redireccionar_con_mensaje('index.php', 'Se modificaron los datos del estado de reserva correctamente', 'exito');
-  } else {
-	$mysql->close();
-	redireccionar_con_mensaje('index.php', 'Error: ' . $mysql->error, 'error');
-  }
+$mysql->close();
 ?>

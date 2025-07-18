@@ -1,4 +1,4 @@
-<form method="post" action="index.php">
+<form method="post" action="/proyecto_cabania/plantilla_modulo.php?titulo=Períodos&ruta=periodos">
     Descripción:
     <input type="text" name="periodo_descripcion" value="<?php if (isset($_REQUEST["periodo_descripcion"])){ echo $_REQUEST["periodo_descripcion"]; } ?>">
 	Año:

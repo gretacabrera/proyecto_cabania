@@ -1,5 +1,5 @@
 <?php
-	require("../conexion.php");
+	require("conexion.php");
 	
 	if (session_status() == PHP_SESSION_NONE) {
 		session_start();

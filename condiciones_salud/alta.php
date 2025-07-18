@@ -1,14 +1,17 @@
 <?php
-	require("../conexion.php");
-	require_once("../funciones.php");
+require("conexion.php");
 	
-	$resultado = $mysql->query("insert into condicionsalud (condicionsalud_descripcion, condicionsalud_estado) values ('$_REQUEST[condicionsalud_descripcion]', 1)");
+$resultado = $mysql->query("insert into condicionsalud (condicionsalud_descripcion, condicionsalud_estado) values ('$_REQUEST[condicionsalud_descripcion]', 1)");
 	
-	if ($resultado) {
-		$mysql->close();
-		redireccionar_con_mensaje('index.php', 'Se dió de alta la condicion de salud correctamente', 'exito');
-	} else {
-		$mysql->close();
-		redireccionar_con_mensaje('index.php', 'Error: ' . $mysql->error, 'error');
-	}
+if ($resultado) {
+	redireccionar_con_mensaje(
+		'/proyecto_cabania/plantilla_modulo.php?titulo=Condiciones de Salud&ruta=condiciones_salud&archivo=listado.php',
+		'Se dió de alta la condición de salud correctamente',
+		'exito'
+	);
+} else {
+	echo 'Error: ' . $mysql->error;
+}
+
+$mysql->close();
 ?>

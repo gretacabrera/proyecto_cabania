@@ -1,4 +1,4 @@
-<form method="post" action="index.php">
+<form method="post" action="/proyecto_cabania/plantilla_modulo.php?titulo=Estados de Personas&ruta=estados_personas">
     Descripción:
     <input type="text" name="estadopersona_descripcion" value="<?php if (isset($_REQUEST["estadopersona_descripcion"])){ echo $_REQUEST["estadopersona_descripcion"]; } ?>">
 	Estado:

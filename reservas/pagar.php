@@ -1,5 +1,5 @@
 <?php
-    require("../conexion.php");
+    require("conexion.php");
 
     // el metodo de pago seleccionado por el huesped es informado
     // por la pasarela de pago externa

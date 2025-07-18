@@ -1,14 +1,13 @@
 <?php
-	require("../conexion.php");
-	require_once("../funciones.php");
+require_once("../conexion.php");
 
-	$resultado = $mysql->query("update tiposervicio set tiposervicio_estado = 0 WHERE id_tiposervicio=$_REQUEST[id_tiposervicio]");
+$resultado = $mysql->query("update tiposervicio set tiposervicio_estado = 0 WHERE id_tiposervicio=$_REQUEST[id_tiposervicio]");
 
-	if ($resultado) {
-		$mysql->close();
-		redireccionar_con_mensaje('index.php', 'Tipo de servicio dado de baja correctamente', 'exito');
-	} else {
-		$mysql->close();
-		redireccionar_con_mensaje('index.php', 'Error: ' . $mysql->error, 'error');
-	}
+if ($resultado) {
+	echo 'Se dió de baja correctamente el tipo de servicio';
+} else {
+	echo 'Error: ' . $mysql->error;
+}
+
+$mysql->close();
 ?>

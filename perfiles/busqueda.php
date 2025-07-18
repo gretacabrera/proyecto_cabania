@@ -1,4 +1,4 @@
-<form method="post" action="index.php">
+<form method="post" action="/proyecto_cabania/plantilla_modulo.php?titulo=Perfiles&ruta=perfiles">
     Descripción:
     <input type="text" name="perfil_descripcion" value="<?php if (isset($_REQUEST["perfil_descripcion"])){ echo $_REQUEST["perfil_descripcion"]; } ?>">
 	Estado:

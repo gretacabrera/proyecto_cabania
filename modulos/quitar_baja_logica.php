@@ -1,14 +1,13 @@
 <?php
-	require("../conexion.php");
-	require_once("../funciones.php");
-	
-	$resultado = $mysql->query("UPDATE modulo SET modulo_estado = 1 WHERE id_modulo = $_REQUEST[id_modulo]");
+require_once("../conexion.php");
 
-    if ($resultado) {
-        echo 'Módulo recuperado correctamente';
-    } else {
-        echo 'Error: ' . $mysql->error;
-    }
+$resultado = $mysql->query("UPDATE modulo SET modulo_estado = 1 WHERE id_modulo = $_REQUEST[id_modulo]");
 
-    $mysql->close();
+if ($resultado) {
+	echo 'Módulo recuperado correctamente';
+} else {
+	echo 'Error: ' . $mysql->error;
+}
+
+$mysql->close();
 ?>

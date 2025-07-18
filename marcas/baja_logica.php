@@ -1,13 +1,13 @@
 <?php
-  require("../conexion.php");
+require_once("../conexion.php");
 
-  $resultado = $mysql->query("update marca set marca_estado = 0 WHERE id_marca=$_REQUEST[id_marca]");
+$resultado = $mysql->query("update marca set marca_estado = 0 WHERE id_marca=$_REQUEST[id_marca]");
 
-  if ($resultado) {
+if ($resultado) {
 	echo 'Se dió de baja correctamente la marca';
-  } else {
+} else {
 	echo 'Error: ' . $mysql->error;
-  }
+}
 
-  $mysql->close();
+$mysql->close();
 ?>

@@ -1,12 +1,17 @@
 <?php
-	require("../conexion.php");
-	
-	$mysql->query("insert into tipocontacto (tipocontacto_descripcion, tipocontacto_estado) values ('$_REQUEST[tipocontacto_descripcion]', 1)") or die($mysql->error);
-	
-	echo 'Se dió de alta el tipo de contacto correctamente';
-	echo '<br>';
-	echo '<button onclick="location.href=\'index.php\'">Volver</button>';
-	
-	$mysql->close();
+require("conexion.php");
 
- ?>
+$resultado = $mysql->query("insert into tipocontacto (tipocontacto_descripcion, tipocontacto_estado) values ('$_REQUEST[tipocontacto_descripcion]', 1)") or die($mysql->error);
+
+if ($resultado) {
+	redireccionar_con_mensaje(
+		'/proyecto_cabania/plantilla_modulo.php?titulo=Tipos de Contacto&ruta=tipos_contactos&archivo=listado.php',
+		'Se dió de alta el tipo de contacto correctamente',
+		'exito'
+	);
+} else {
+	echo 'Error: ' . $mysql->error;
+}
+
+$mysql->close();
+?>

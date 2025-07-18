@@ -1,17 +1,19 @@
 
 <?php
-  require("../conexion.php");
-  require_once("../funciones.php");
+require("conexion.php");
+$resultado = $mysql->query("update metododepago set 
+			metododepago_descripcion='$_REQUEST[metododepago_descripcion]'
+			where id_metododepago=$_REQUEST[id_metododepago]");
 
-  $resultado = $mysql->query("update metododepago set 
-				metododepago_descripcion='$_REQUEST[metododepago_descripcion]'
-				where id_metododepago=$_REQUEST[id_metododepago]");
+if ($resultado) {
+	redireccionar_con_mensaje(
+		'/proyecto_cabania/plantilla_modulo.php?titulo=Métodos de pago&ruta=metodos_pagos&archivo=listado.php',
+		'Se modificaron los datos del método de pago correctamente',
+		'exito'
+	);
+} else {
+	echo 'Error: ' . $mysql->error;
+}
 
-  if ($resultado) {
-	$mysql->close();
-	redireccionar_con_mensaje('index.php', 'Se modificaron los datos de la categoría correctamente', 'exito');
-  } else {
-	$mysql->close();
-	redireccionar_con_mensaje('index.php', 'Error: ' . $mysql->error, 'error');
-  }
+$mysql->close();
 ?>

@@ -1,4 +1,4 @@
-<form method="post" action="index.php">
+<form method="post" action="/proyecto_cabania/plantilla_modulo.php?titulo=Productos&ruta=productos">
     Nombre del producto:
     <input type="text" name="producto_nombre" value="<?php if (isset($_REQUEST["producto_nombre"])){ echo $_REQUEST["producto_nombre"]; } ?>">
 	Categoria:

@@ -1,4 +1,4 @@
-<form method="post" action="index.php">
+<form method="post" action="/proyecto_cabania/plantilla_modulo.php?titulo=Estados de Reservas&ruta=estados_reservas">
     Descripción:
     <input type="text" name="estadoreserva_descripcion" value="<?php if (isset($_REQUEST["estadoreserva_descripcion"])){ echo $_REQUEST["estadoreserva_descripcion"]; } ?>">
 	Estado:

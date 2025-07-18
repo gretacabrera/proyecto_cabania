@@ -3,7 +3,7 @@
 	include("busqueda.php");
 ?>
 <div class="botonera-abm">
-	<button class="abm-button alta-button" onclick="location.href='formulario.php'">Nuevo marca</button><br><br>
+	<button class="abm-button alta-button" onclick="location.href='/proyecto_cabania/plantilla_modulo.php?titulo=Marcas&ruta=marcas&archivo=formulario.php'">Nuevo marca</button><br><br>
 </div>
 <table> 
 	<thead>
@@ -44,16 +44,16 @@
 			<td>".$row["marca_descripcion"]."</td> 
 			<td>".(($row["marca_estado"]) ? "Activo" : "Baja")."</td> 
 			<td>
-				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_marca=".$row["id_marca"]."\"'>Editar</button>";
+				<button class='abm-button mod-button' onclick='location.href=\"/proyecto_cabania/plantilla_modulo.php?titulo=Marcas&ruta=marcas&archivo=editar.php&id_marca=".$row["id_marca"]."\"'>Editar</button>";
 		
 		// Mostrar botón Eliminar o Recuperar según el estado y permisos
 		if ($row["marca_estado"]) {
 			// Si está activo, mostrar botón Eliminar
-			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_marca=".$row["id_marca"]."\", \"dar de baja esta marca\")'>Eliminar</button>";
+			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"/proyecto_cabania/marcas/baja_logica.php?id_marca=".$row["id_marca"]."\", \"dar de baja esta marca\")'>Eliminar</button>";
 		} else {
 			// Si está de baja, solo mostrar botón Recuperar a administradores
 			if (es_administrador()) {
-				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_marca=".$row["id_marca"]."\", \"recuperar esta marca\")'>Recuperar</button>";
+				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"/proyecto_cabania/marcas/quitar_baja_logica.php?id_marca=".$row["id_marca"]."\", \"recuperar esta marca\")'>Recuperar</button>";
 			}
 		}
 		

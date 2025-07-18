@@ -19,7 +19,7 @@
                 <form method="post" action="guardar_servicios.php">
                     <ul class="galeria-lista">
                         <?php
-                            require("../conexion.php");
+                            require("conexion.php");
                             
                             $registros = $mysql->query("select * from servicio where servicio_estado <> 2") or
                             die($mysql->error);

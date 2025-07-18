@@ -3,7 +3,7 @@
 	include("busqueda.php");
 ?>
 <div class="botonera-abm">
-	<button class="abm-button alta-button" onclick="location.href='formulario.php'">Nuevo estado de reserva</button><br><br>
+	<button class="abm-button alta-button" onclick="location.href='/proyecto_cabania/plantilla_modulo.php?titulo=Estados de Reservas&ruta=estados_reservas&archivo=formulario.php'">Nuevo estado de reserva</button><br><br>
 </div>
 <table> 
 	<thead>
@@ -44,16 +44,16 @@
 			<td>".$row["estadoreserva_descripcion"]."</td> 
 			<td>".(($row["estadoreserva_estado"]) ? "Activo" : "Baja")."</td> 
 			<td>
-				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_estadoreserva=".$row["id_estadoreserva"]."\"'>Editar</button>";
+				<button class='abm-button mod-button' onclick='location.href=\"/proyecto_cabania/plantilla_modulo.php?titulo=Estados de Reservas&ruta=estados_reservas&archivo=editar.php&id_estadoreserva=".$row["id_estadoreserva"]."\"'>Editar</button>";
 		
 		// Mostrar botón Eliminar o Recuperar según el estado y permisos
 		if ($row["estadoreserva_estado"]) {
 			// Si está activo, mostrar botón Eliminar
-			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_estadoreserva=".$row["id_estadoreserva"]."\", \"dar de baja este estado de reserva\")'>Eliminar</button>";
+			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"/proyecto_cabania/estados_reservas/baja_logica.php?id_estadoreserva=".$row["id_estadoreserva"]."\", \"dar de baja este estado de reserva\")'>Eliminar</button>";
 		} else {
 			// Si está de baja, solo mostrar botón Recuperar a administradores
 			if (es_administrador()) {
-				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_estadoreserva=".$row["id_estadoreserva"]."\", \"recuperar este estado de reserva\")'>Recuperar</button>";
+				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"/proyecto_cabania/estados_reservas/quitar_baja_logica.php?id_estadoreserva=".$row["id_estadoreserva"]."\", \"recuperar este estado de reserva\")'>Recuperar</button>";
 			}
 		}
 		

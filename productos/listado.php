@@ -3,7 +3,7 @@
 	include("busqueda.php");
 ?>
 <div class="botonera-abm">
-	<button class="abm-button alta-button" onclick="location.href='formulario.php'">Nuevo producto</button><br><br>
+	<button class="abm-button alta-button" onclick="location.href='/proyecto_cabania/plantilla_modulo.php?titulo=Productos&ruta=productos&archivo=formulario.php'">Nuevo producto</button><br><br>
 </div>
 <table> 
 	<thead>
@@ -69,17 +69,17 @@
 			<td>".$row["producto_stock"]."</td> 
 			<td>".$row["estadoproducto_descripcion"]."</td> 
 			<td>
-				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_producto=".$row["id_producto"]."\"'>Editar</button>";
+				<button class='abm-button mod-button' onclick='location.href=\"/proyecto_cabania/plantilla_modulo.php?titulo=Productos&ruta=productos&archivo=editar.php&id_producto=".$row["id_producto"]."\"'>Editar</button>";
 		
 		// Mostrar botón Eliminar o Recuperar según el estado
 		if ($row["rela_estadoproducto"] == 4) {
 			// Si está de baja (estado 4) y es administrador, mostrar botón Recuperar
 			if (es_administrador()) {
-				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_producto=".$row["id_producto"]."\", \"recuperar este producto\")'>Recuperar</button>";
+				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"/proyecto_cabania/plantilla_modulo.php?titulo=Productos&ruta=productos&archivo=quitar_baja_logica.php&id_producto=".$row["id_producto"]."\", \"recuperar este producto\")'>Recuperar</button>";
 			}
 		} else {
 			// Si está activo, mostrar botón Eliminar
-			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_producto=".$row["id_producto"]."\", \"dar de baja este producto\")'>Eliminar</button>";
+			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"/proyecto_cabania/plantilla_modulo.php?titulo=Productos&ruta=productos&archivo=baja_logica.php&id_producto=".$row["id_producto"]."\", \"dar de baja este producto\")'>Eliminar</button>";
 		}
 		
 		echo "</td>

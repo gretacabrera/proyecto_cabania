@@ -12,7 +12,7 @@
 		?>
 		<div class="content">
             <?php
-                require("../conexion.php");
+                require("conexion.php");
 
                 // si se registraron pagos que saldan la deuda
                 // el estado de la reserva cambia a "finalizada"

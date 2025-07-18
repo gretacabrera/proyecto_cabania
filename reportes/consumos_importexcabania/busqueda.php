@@ -4,7 +4,7 @@
 <?php
 	require("../../conexion.php");
 ?>
-<form method="post" action="index.php">
+<form method="post" action="/proyecto_cabania/plantilla_modulo.php?titulo=Consumos Importe por Cabaña&ruta=reportes/consumos_importexcabania">
 	Cabaña:
 	<select name="rela_cabania">
 		<option value="">Seleccione la cabania...</option>

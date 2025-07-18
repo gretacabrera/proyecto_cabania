@@ -1,4 +1,4 @@
-<form method="post" action="index.php">
+<form method="post" action="/proyecto_cabania/plantilla_modulo.php?titulo=Tipos de Contactos&ruta=tipos_contactos">
     Descripción:
     <input type="text" name="tipocontacto_descripcion" value="<?php if (isset($_REQUEST["tipocontacto_descripcion"])){ echo $_REQUEST["tipocontacto_descripcion"]; } ?>">
 	Estado:

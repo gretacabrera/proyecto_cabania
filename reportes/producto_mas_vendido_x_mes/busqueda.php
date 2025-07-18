@@ -4,7 +4,7 @@
 <?php
 	require("../../conexion.php");
 ?>
-<form method="post" action="index.php">
+<form method="post" action="/proyecto_cabania/plantilla_modulo.php?titulo=Producto Más Vendido por Mes&ruta=reportes/producto_mas_vendido_x_mes">
 	Fecha desde:
 	<input type="month" name="fecha_desde" min="2000-01" max="2030-12" value="<?php if (isset($_REQUEST["fecha_desde"])){ echo $_REQUEST["fecha_desde"]; } ?>">
 	<br>

@@ -1,16 +1,21 @@
 
 <?php
-  require("../conexion.php");
+require("conexion.php");
+$resultado = $mysql->query("update tiposervicio set 
+			tiposervicio_descripcion='$_REQUEST[tiposervicio_descripcion]'
+			where id_tiposervicio=$_REQUEST[id_tiposervicio]");
 
-  $mysql->query("update tiposervicio set 
-				tiposervicio_descripcion='$_REQUEST[tiposervicio_descripcion]'
-				where id_tiposervicio=$_REQUEST[id_tiposervicio]") or
-    die($mysql->error);
+if ($resultado) {
+	redireccionar_con_mensaje(
+		'/proyecto_cabania/plantilla_modulo.php?titulo=Tipos de servicios&ruta=tipos_servicios&archivo=listado.php',
+		'Se modificaron los datos del tipo de servicio correctamente',
+		'exito'
+	);
+} else {
+	echo 'Error: ' . $mysql->error;
+}
 
-  echo 'Se modificaron los datos del tipo de servicio';
-  echo '<br>';
-  echo '<button onclick="location.href=\'index.php\'">Volver</button>';
-  
-  $mysql->close();
+$mysql->close();
+?>
 
   ?>

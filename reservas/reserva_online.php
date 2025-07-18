@@ -11,7 +11,7 @@
     ?>
     <div class="centered-body reservas">
 		<?php
-			require("../conexion.php");
+			require("conexion.php");
 		?>
 		<form id="form_reserva" method="post" action="seleccion_cabania.php">
 			<fieldset>

@@ -3,7 +3,7 @@
 	include("busqueda.php");
 ?>
 <div class="botonera-abm">
-	<button class="abm-button alta-button" onclick="location.href='formulario.php'">Nuevo servicio</button><br><br>
+	<button class="abm-button alta-button" onclick="location.href='/proyecto_cabania/plantilla_modulo.php?titulo=Servicios&ruta=servicios&archivo=formulario.php'">Nuevo servicio</button><br><br>
 </div>
 <table> 
 	<thead>
@@ -62,15 +62,15 @@
 			<td>".$row["tiposervicio_descripcion"]."</td> 
 			<td>".(($row["servicio_estado"]) ? "Activo" : "Baja")."</td> 
 			<td>
-				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_servicio=".$row["id_servicio"]."\"'>Editar</button>";
+				<button class='abm-button mod-button' onclick='location.href=\"/proyecto_cabania/plantilla_modulo.php?titulo=Servicios&ruta=servicios&archivo=editar.php&id_servicio=".$row["id_servicio"]."\"'>Editar</button>";
 		
 		// Mostrar botón Eliminar o Recuperar según el estado
 		if ($row["servicio_estado"]) {
 			// Si está activo, mostrar botón Eliminar
-			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_servicio=".$row["id_servicio"]."\", \"dar de baja este servicio\")'>Eliminar</button>";
+			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"/proyecto_cabania/plantilla_modulo.php?titulo=Servicios&ruta=servicios&archivo=baja_logica.php&id_servicio=".$row["id_servicio"]."\", \"dar de baja este servicio\")'>Eliminar</button>";
 		} else if (es_administrador()) {
 			// Si está de baja y es administrador, mostrar botón Recuperar
-			echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_servicio=".$row["id_servicio"]."\", \"recuperar este servicio\")'>Recuperar</button>";
+			echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"/proyecto_cabania/plantilla_modulo.php?titulo=Servicios&ruta=servicios&archivo=quitar_baja_logica.php&id_servicio=".$row["id_servicio"]."\", \"recuperar este servicio\")'>Recuperar</button>";
 		}
 		
 		echo "</td>

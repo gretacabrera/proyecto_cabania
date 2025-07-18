@@ -1,14 +1,13 @@
 <?php
-	require("../conexion.php");
-	require_once("../funciones.php");
-	
-	$resultado = $mysql->query("UPDATE perfil SET perfil_estado = 1 WHERE id_perfil = $_REQUEST[id_perfil]");
+require_once("../conexion.php");
 
-    if ($resultado) {
-        echo 'Perfil recuperado correctamente';
-    } else {
-        echo 'Error: ' . $mysql->error;
-    }
+$resultado = $mysql->query("UPDATE perfil SET perfil_estado = 1 WHERE id_perfil = $_REQUEST[id_perfil]");
 
-    $mysql->close();
+if ($resultado) {
+	echo 'Perfil recuperado correctamente';
+} else {
+	echo 'Error: ' . $mysql->error;
+}
+
+$mysql->close();
 ?>

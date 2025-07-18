@@ -12,7 +12,7 @@
 		?>
 		<div class="content">
             <?php
-                require("../conexion.php");
+                require("conexion.php");
                 
                 $mysql->query("update reserva 
                             set rela_estadoreserva = 

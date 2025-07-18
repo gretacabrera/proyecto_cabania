@@ -1,13 +1,13 @@
 <?php
-  require("../conexion.php");
+require_once("../conexion.php");
 
-  $mysql->query("update modulo set modulo_estado = 0 WHERE id_modulo=$_REQUEST[id_modulo]") or
-    die($mysql->error);
+$resultado = $mysql->query("update modulo set modulo_estado = 0 WHERE id_modulo=$_REQUEST[id_modulo]");
 
-  echo 'Se dió de baja correctamente al modulo';
-  echo '<br>';
-  echo '<button onclick="location.href=\'index.php\'">Volver</button>';
+if ($resultado) {
+	echo 'Se dió de baja correctamente el módulo';
+} else {
+	echo 'Error: ' . $mysql->error;
+}
 
-  $mysql->close();
-
-  ?>
+$mysql->close();
+?>

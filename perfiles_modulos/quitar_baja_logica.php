@@ -1,14 +1,13 @@
 <?php
-	require("../conexion.php");
-	require_once("../funciones.php");
-	
-	$resultado = $mysql->query("UPDATE perfil_modulo SET perfilmodulo_estado = 1 WHERE id_perfilmodulo = $_REQUEST[id_perfilmodulo]");
+require_once("conexion.php");
 
-    if ($resultado) {
-        echo 'Asignación perfil-modulo recuperada correctamente';
-    } else {
-        echo 'Error: ' . $mysql->error;
-    }
+$resultado = $mysql->query("UPDATE perfil_modulo SET perfilmodulo_estado = 1 WHERE id_perfilmodulo = $_REQUEST[id_perfilmodulo]");
 
-    $mysql->close();
+if ($resultado) {
+    echo 'La asignación de módulo al perfil recuperada correctamente';
+} else {
+    echo 'Error: ' . $mysql->error;
+}
+
+$mysql->close();
 ?>

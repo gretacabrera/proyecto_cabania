@@ -1,4 +1,4 @@
-<form method="post" action="index.php">
+<form method="post" action="/proyecto_cabania/plantilla_modulo.php?titulo=Marcas&ruta=marcas">
     Descripción:
     <input type="text" name="marca_descripcion" value="<?php if (isset($_REQUEST["marca_descripcion"])){ echo $_REQUEST["marca_descripcion"]; } ?>">
 	Estado:

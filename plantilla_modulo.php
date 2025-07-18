@@ -30,7 +30,7 @@ $titulo = $_GET["titulo"];
 </head>
 <body class="home">  
     <?php
-        require("conexion.php");
+        require_once("conexion.php");
         require_once("funciones.php");
         include("menu.php");
     ?>  
@@ -42,7 +42,23 @@ $titulo = $_GET["titulo"];
         }  
 
         if (validar_permiso($ruta)) {
-            if (file_exists($ruta."/listado.php")) {
+            // Verificar si se especifica un archivo específico
+            if (isset($_GET["archivo"])) {
+                $archivo = $_GET["archivo"];
+                if (file_exists($ruta."/".$archivo)) {
+                    // Pasar todos los parámetros GET al archivo incluido
+                    foreach ($_GET as $key => $value) {
+                        if ($key != 'ruta' && $key != 'titulo' && $key != 'archivo') {
+                            $_REQUEST[$key] = $value;
+                            $_GET[$key] = $value;
+                        }
+                    }
+                    include($ruta."/".$archivo);
+                } else {
+                    // Incluir página 404 si no se encuentra el archivo específico
+                    include("404.php");
+                }
+            } elseif (file_exists($ruta."/listado.php")) {
                 include($ruta."/listado.php");
             } elseif (file_exists($ruta."/index.php")) {
                 include($ruta."/index.php");

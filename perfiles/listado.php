@@ -3,7 +3,7 @@
 	include("busqueda.php");
 ?>
 <div class="botonera-abm">
-	<button class="abm-button alta-button" onclick="location.href='formulario.php'">Nuevo perfil</button><br><br>
+	<button class="abm-button alta-button" onclick="location.href='/proyecto_cabania/plantilla_modulo.php?titulo=Perfiles&ruta=perfiles&archivo=formulario.php'">Nuevo perfil</button><br><br>
 </div>
 <table> 
 	<thead>
@@ -44,15 +44,15 @@
 			<td>".$row["perfil_descripcion"]."</td> 
 			<td>".(($row["perfil_estado"]) ? "Activo" : "Baja")."</td> 
 			<td>
-				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_perfil=".$row["id_perfil"]."\"'>Editar</button>";
+				<button class='abm-button mod-button' onclick='location.href=\"/proyecto_cabania/plantilla_modulo.php?titulo=Perfiles&ruta=perfiles&archivo=editar.php&id_perfil=".$row["id_perfil"]."\"'>Editar</button>";
 		
 		// Mostrar botón Eliminar o Recuperar según el estado
 		if ($row["perfil_estado"]) {
 			// Si está activo, mostrar botón Eliminar
-			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_perfil=".$row["id_perfil"]."\", \"dar de baja este perfil\")'>Eliminar</button>";
+			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"/proyecto_cabania/perfiles/baja_logica.php?id_perfil=".$row["id_perfil"]."\", \"dar de baja este perfil\")'>Eliminar</button>";
 		} else if (es_administrador()) {
 			// Si está de baja y es administrador, mostrar botón Recuperar
-			echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_perfil=".$row["id_perfil"]."\", \"recuperar este perfil\")'>Recuperar</button>";
+			echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"/proyecto_cabania/perfiles/quitar_baja_logica.php?id_perfil=".$row["id_perfil"]."\", \"recuperar este perfil\")'>Recuperar</button>";
 		}
 		
 		echo "</td>

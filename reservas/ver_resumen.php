@@ -14,7 +14,7 @@
             <p><b>Fecha de inicio:</b> <?php echo date_format(date_create($_REQUEST["reserva_fhinicio"]), 'Y-m-d H:i'); ?></p>
             <p><b>Fecha de fin:</b> <?php echo date_format(date_create($_REQUEST["reserva_fhfin"]), 'Y-m-d H:i'); ?></p>
             <?php
-                require("../conexion.php");
+                require("conexion.php");
                 $registro = $mysql->query("select cabania_nombre from cabania where id_cabania = $_REQUEST[rela_cabania]") or
                     die($mysql->error);
                 $cabania_nombre = $registro->fetch_array()["cabania_nombre"];

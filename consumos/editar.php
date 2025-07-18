@@ -12,7 +12,7 @@
 		?>
 		<div class="content">
 			<?php
-			require("../conexion.php");
+			require("conexion.php");
 
 			$registro = $mysql->query("select * from producto where id_producto=$_REQUEST[id_producto]") or
 				die($mysql->error);

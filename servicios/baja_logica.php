@@ -1,13 +1,13 @@
-<?php
-  require("../conexion.php");
+<?php	
+require_once("conexion.php");
 
-  $mysql->query("update servicio set servicio_estado = 0 WHERE id_servicio=$_REQUEST[id_servicio]") or
-    die($mysql->error);
+$resultado = $mysql->query("update servicio set servicio_estado = 0 WHERE id_servicio=$_REQUEST[id_servicio]");
 
-  echo 'Se dió de baja correctamente al servicio';
-  echo '<br>';
-  echo '<button onclick="location.href=\'index.php\'">Volver</button>';
+if ($resultado) {
+	echo 'Se dió de baja correctamente el servicio';
+} else {
+	echo 'Error: ' . $mysql->error;
+}
 
-  $mysql->close();
-
-  ?>
+$mysql->close();
+?>

@@ -1,13 +1,13 @@
 <?php
-  require("../conexion.php");
+require_once("../conexion.php");
 
-  $mysql->query("update periodo set periodo_estado = 0 WHERE id_periodo=$_REQUEST[id_periodo]") or
-    die($mysql->error);
+$resultado = $mysql->query("update periodo set periodo_estado = 0 WHERE id_periodo=$_REQUEST[id_periodo]");
 
-  echo 'Se dió de baja correctamente al periodo';
-  echo '<br>';
-  echo '<button onclick="location.href=\'index.php\'">Volver</button>';
+if ($resultado) {
+  echo 'Se dió de baja correctamente el período';
+} else {
+  echo 'Error: ' . $mysql->error;
+}
 
-  $mysql->close();
-
-  ?>
+$mysql->close();
+?>

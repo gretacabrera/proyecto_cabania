@@ -1,16 +1,20 @@
 
 <?php
-  require("../conexion.php");
+require("conexion.php");
 
-  $mysql->query("update modulo set 
-				modulo_descripcion='$_REQUEST[modulo_descripcion]'
-				where id_modulo=$_REQUEST[id_modulo]") or
-    die($mysql->error);
+$resultado = $mysql->query("update modulo set 
+			modulo_descripcion='$_REQUEST[modulo_descripcion]'
+			where id_modulo=$_REQUEST[id_modulo]");
 
-  echo 'Se modificaron los datos del modulo';
-  echo '<br>';
-  echo '<button onclick="location.href=\'index.php\'">Volver</button>';
-  
-  $mysql->close();
+if ($resultado) {
+	redireccionar_con_mensaje(
+		'/proyecto_cabania/plantilla_modulo.php?titulo=Módulos&ruta=modulos&archivo=listado.php',
+		'Se modificaron los datos del módulo correctamente',
+		'exito'
+	);
+} else {
+	echo 'Error: ' . $mysql->error;
+}
 
-  ?>
+$mysql->close();
+?>

@@ -11,7 +11,7 @@
 		?>
 		<div class="content">
 			<?php
-				require("../conexion.php");
+				require("conexion.php");
 			?>
 			<form method="post" action="alta.php">
 				Nombre:

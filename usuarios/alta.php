@@ -1,14 +1,13 @@
 <?php
-	require("../conexion.php");
-	include('../funciones.php');
-
-	// Validaciones del lado del servidor
-	if (empty($_REQUEST["usuario_nombre"]) || empty($_REQUEST["usuario_contrasenia"]) || 
-	    empty($_REQUEST["confirmacion_contrasenia"]) || empty($_REQUEST["persona_nombre"]) ||
-	    empty($_REQUEST["persona_apellido"]) || empty($_REQUEST["persona_fechanac"]) ||
-	    empty($_REQUEST["contacto_email"])) {
-		redireccionar_con_mensaje('registro.php', 'Todos los campos obligatorios deben ser completados', 'error');
-	}
+// Validaciones del lado del servidor
+if (empty($_REQUEST["usuario_nombre"]) || empty($_REQUEST["usuario_contrasenia"]) || 
+    empty($_REQUEST["confirmacion_contrasenia"]) || empty($_REQUEST["persona_nombre"]) ||
+    empty($_REQUEST["persona_apellido"]) || empty($_REQUEST["persona_fechanac"]) ||
+    empty($_REQUEST["contacto_email"])) {
+	echo 'Error: Todos los campos obligatorios deben ser completados';
+	$mysql->close();
+	exit;
+}
 
 	// Validar longitud mínima de usuario
 	if (strlen($_REQUEST["usuario_nombre"]) < 3) {

@@ -1,4 +1,4 @@
-<form method="post" action="index.php">
+<form method="post" action="/proyecto_cabania/plantilla_modulo.php?titulo=Métodos de Pagos&ruta=metodos_pagos">
     Descripción:
     <input type="text" name="metododepago_descripcion" value="<?php if (isset($_REQUEST["metododepago_descripcion"])){ echo $_REQUEST["metododepago_descripcion"]; } ?>">
 	Estado:

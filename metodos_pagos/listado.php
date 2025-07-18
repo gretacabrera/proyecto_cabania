@@ -3,7 +3,7 @@
 	include("busqueda.php");
 ?>
 <div class="botonera-abm">
-	<button class="abm-button alta-button" onclick="location.href='formulario.php'">Nuevo metodo de pago</button><br><br>
+	<button class="abm-button alta-button" onclick="location.href='/proyecto_cabania/plantilla_modulo.php?titulo=Métodos de Pagos&ruta=metodos_pagos&archivo=formulario.php'">Nuevo metodo de pago</button><br><br>
 </div>
 <table> 
 	<thead>
@@ -44,16 +44,16 @@
 			<td>".$row["metododepago_descripcion"]."</td> 
 			<td>".(($row["metododepago_estado"]) ? "Activo" : "Baja")."</td> 
 			<td>
-				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_metododepago=".$row["id_metododepago"]."\"'>Editar</button>";
+				<button class='abm-button mod-button' onclick='location.href=\"/proyecto_cabania/plantilla_modulo.php?titulo=Métodos de pago&ruta=metodos_pagos&archivo=editar.php&id_metododepago=".$row["id_metododepago"]."\"'>Editar</button>";
 		
 		// Mostrar botón Eliminar o Recuperar según el estado y permisos
 		if ($row["metododepago_estado"]) {
 			// Si está activo, mostrar botón Eliminar
-			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_metododepago=".$row["id_metododepago"]."\", \"dar de baja este método de pago\")'>Eliminar</button>";
+			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"/proyecto_cabania/metodos_pagos/baja_logica.php?id_metododepago=".$row["id_metododepago"]."\", \"dar de baja este método de pago\")'>Eliminar</button>";
 		} else {
 			// Si está de baja, solo mostrar botón Recuperar a administradores
 			if (es_administrador()) {
-				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_metododepago=".$row["id_metododepago"]."\", \"recuperar este método de pago\")'>Recuperar</button>";
+				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"/proyecto_cabania/metodos_pagos/quitar_baja_logica.php?id_metododepago=".$row["id_metododepago"]."\", \"recuperar este método de pago\")'>Recuperar</button>";
 			}
 		}
 		

@@ -1,6 +1,6 @@
 
 <?php
-  require("../conexion.php");
+require("conexion.php");
 
   $registro = $mysql->query("select rela_persona from usuario 
 										where id_usuario=$_REQUEST[id_usuario]") or
@@ -66,9 +66,11 @@
     }
   }
 
-  echo 'Se modificaron los datos del usuario';
-  echo '<br>';
-  echo '<button onclick="location.href=\'index.php\'">Volver</button>';
+  redireccionar_con_mensaje(
+		'/proyecto_cabania/plantilla_modulo.php?titulo=Usuarios&ruta=usuarios&archivo=listado.php',
+		'Se modificaron los datos del usuario correctamente',
+		'exito'
+	);
   
   $mysql->close();
 

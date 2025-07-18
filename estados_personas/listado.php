@@ -3,7 +3,7 @@
 	include("busqueda.php");
 ?>
 <div class="botonera-abm">
-	<button class="abm-button alta-button" onclick="location.href='formulario.php'">Nuevo estado de persona</button><br><br>
+	<button class="abm-button alta-button" onclick="location.href='/proyecto_cabania/plantilla_modulo.php?titulo=Estados de Personas&ruta=estados_personas&archivo=formulario.php'">Nuevo estado de persona</button><br><br>
 </div>
 <table> 
 	<thead>
@@ -44,16 +44,16 @@
 			<td>".$row["estadopersona_descripcion"]."</td> 
 			<td>".(($row["estadopersona_estado"]) ? "Activo" : "Baja")."</td> 
 			<td>
-				<button class='abm-button mod-button' onclick='location.href=\"editar.php?id_estadopersona=".$row["id_estadopersona"]."\"'>Editar</button>";
+				<button class='abm-button mod-button' onclick='location.href=\"/proyecto_cabania/plantilla_modulo.php?titulo=Estados de Personas&ruta=estados_personas&archivo=editar.php&id_estadopersona=".$row["id_estadopersona"]."\"'>Editar</button>";
 		
 		// Mostrar botón Eliminar o Recuperar según el estado y permisos
 		if ($row["estadopersona_estado"]) {
 			// Si está activo, mostrar botón Eliminar
-			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"baja_logica.php?id_estadopersona=".$row["id_estadopersona"]."\", \"dar de baja este estado de persona\")'>Eliminar</button>";
+			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"/proyecto_cabania/estados_personas/baja_logica.php?id_estadopersona=".$row["id_estadopersona"]."\", \"dar de baja este estado de persona\")'>Eliminar</button>";
 		} else {
 			// Si está de baja, solo mostrar botón Recuperar a administradores
 			if (es_administrador()) {
-				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"quitar_baja_logica.php?id_estadopersona=".$row["id_estadopersona"]."\", \"recuperar este estado de persona\")'>Recuperar</button>";
+				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"/proyecto_cabania/estados_personas/quitar_baja_logica.php?id_estadopersona=".$row["id_estadopersona"]."\", \"recuperar este estado de persona\")'>Recuperar</button>";
 			}
 		}
 		

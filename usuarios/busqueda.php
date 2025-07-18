@@ -1,4 +1,4 @@
-<form method="post" action="index.php">
+<form method="post" action="/proyecto_cabania/plantilla_modulo.php?titulo=Usuarios&ruta=usuarios">
     Nombre de usuario:
     <input type="text" name="usuario_nombre" value="<?php if (isset($_REQUEST["usuario_nombre"])){ echo $_REQUEST["usuario_nombre"]; } ?>">
 	Perfil:

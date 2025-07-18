@@ -16,7 +16,7 @@
             <br><br>
             <p>Para confirmar su reserva, deberá abonar el monto correspondiente a:</p>
             <?php
-                require("../conexion.php");
+                require("conexion.php");
                 $registro = $mysql->query("select 
                                             cabania_precio,
                                             case reserva_dias

@@ -1,17 +1,19 @@
 
 <?php
-  require("../conexion.php");
-  require_once("../funciones.php");
+require("conexion.php");
+$resultado = $mysql->query("update condicionsalud set 
+			condicionsalud_descripcion='$_REQUEST[condicionsalud_descripcion]'
+			where id_condicionsalud=$_REQUEST[id_condicionsalud]");
 
-  $resultado = $mysql->query("update condicionsalud set 
-				condicionsalud_descripcion='$_REQUEST[condicionsalud_descripcion]'
-				where id_condicionsalud=$_REQUEST[id_condicionsalud]");
+if ($resultado) {
+	redireccionar_con_mensaje(
+		'/proyecto_cabania/plantilla_modulo.php?titulo=Condiciones de salud&ruta=condiciones_salud&archivo=listado.php',
+		'Se modificaron los datos de la condición de salud correctamente',
+		'exito'
+	);
+} else {
+	echo 'Error: ' . $mysql->error;
+}
 
-  if ($resultado) {
-	$mysql->close();
-	redireccionar_con_mensaje('index.php', 'Se modificaron los datos de la condicion de salud correctamente', 'exito');
-  } else {
-	$mysql->close();
-	redireccionar_con_mensaje('index.php', 'Error: ' . $mysql->error, 'error');
-  }
+$mysql->close();
 ?>

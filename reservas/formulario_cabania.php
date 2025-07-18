@@ -22,7 +22,7 @@
 				<select name="rela_cabania" required>
 					<option value="">Seleccione ...</option>
 					<?php
-						require("../conexion.php");
+						require("conexion.php");
 						$registros = $mysql->query("select * from cabania
 													where cabania_estado = 1
 													and id_cabania not in
