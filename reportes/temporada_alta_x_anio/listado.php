@@ -51,11 +51,11 @@
 				"<tr> 
 					<td>".$row["anio"]."</td> 
 					<td>".$row["temporada_alta"]."</td>
-					<td><button onclick='location.href=\"index.php?anio=".$row["anio"]."\"'>Ver</button></td>
+					<td><button onclick='location.href=\"/proyecto_cabania/plantilla_modulo.php?titulo=Temporadas Altas por Año&ruta=reportes/temporada_alta_x_anio&archivo=listado.php&anio=".$row["anio"]."\"'>Ver</button></td>
 				</tr>";
 			}
-		?>
-		<table>
+			?>
+		</table>
 	</div>
 	<br>
 	<div>
