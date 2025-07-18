@@ -12,7 +12,8 @@
 		<th> <font face="Arial">Categoría</font> </th> 
 		<th> <font face="Arial">Marca</font> </th> 
 		<th> <font face="Arial">Precio Unitario</font> </th> 
-		<th> <font face="Arial">Stock</font> </th>  
+		<th> <font face="Arial">Stock</font> </th>
+		<th> <font face="Arial">Foto</font> </th>  
 		<th> <font face="Arial">Estado</font> </th> 
 		<th> <font face="Arial">Acciones</font> </th> 
 	</thead>
@@ -65,8 +66,9 @@
 			<td>".$row["producto_descripcion"]."</td>  
 			<td>".$row["categoria_descripcion"]."</td> 
 			<td>".$row["marca_descripcion"]."</td> 
-			<td>".$row["producto_precio"]."</td>
-			<td>".$row["producto_stock"]."</td> 
+			<td>$".$row["producto_precio"]."</td>
+			<td>".$row["producto_stock"]."</td>
+			<td>".($row["producto_foto"] ? "<img src='imagenes/productos/".$row["producto_foto"]."' width='50' height='50'>" : "Sin foto")."</td> 
 			<td>".$row["estadoproducto_descripcion"]."</td> 
 			<td>
 				<button class='abm-button mod-button' onclick='location.href=\"/proyecto_cabania/plantilla_modulo.php?titulo=Productos&ruta=productos&archivo=editar.php&id_producto=".$row["id_producto"]."\"'>Editar</button>";

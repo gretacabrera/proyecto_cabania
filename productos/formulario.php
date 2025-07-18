@@ -1,5 +1,5 @@
 <h1>Formulario de alta de Producto</h1>
-<form method="post" action="/proyecto_cabania/plantilla_modulo.php?titulo=Productos&ruta=productos&archivo=alta.php">
+<form method="post" action="/proyecto_cabania/plantilla_modulo.php?titulo=Productos&ruta=productos&archivo=alta.php" enctype="multipart/form-data">
 	<fieldset>
 		<label>Nombre:</label>
 		<input type="text" name="producto_nombre" size="50" required><br>
@@ -9,8 +9,8 @@
 		<input type="number" name="producto_precio" size="10" required><br>
 		<label>Stock:</label>
 		<input type="number" name="producto_stock" size="10" required><br>
-		<label>Ruta de la foto:</label>
-		<input type="text" name="producto_foto" size="10" required><br>
+		<label>Foto del producto:</label>
+		<input type="file" name="producto_foto" accept="image/*"><br>
 		<label>Marca:</label>
 		<select name="rela_marca" required>
 			<option value="">Seleccione la marca del producto...</option>
