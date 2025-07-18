@@ -1,7 +1,14 @@
 <?php
 require("conexion.php");
 
-$resultado = $mysql->query("insert into modulo (modulo_descripcion, modulo_ruta, modulo_estado) values ('$_REQUEST[modulo_descripcion]', '$_REQUEST[modulo_ruta]', 1)");
+// Construir la consulta de inserción con el campo rela_menu opcional
+$rela_menu = isset($_REQUEST['rela_menu']) && $_REQUEST['rela_menu'] != '' ? $_REQUEST['rela_menu'] : 'NULL';
+
+if ($rela_menu == 'NULL') {
+    $resultado = $mysql->query("insert into modulo (modulo_descripcion, modulo_ruta, modulo_estado) values ('$_REQUEST[modulo_descripcion]', '$_REQUEST[modulo_ruta]', 1)");
+} else {
+    $resultado = $mysql->query("insert into modulo (modulo_descripcion, modulo_ruta, rela_menu, modulo_estado) values ('$_REQUEST[modulo_descripcion]', '$_REQUEST[modulo_ruta]', $rela_menu, 1)");
+}
 
 if ($resultado) {
 	redireccionar_con_mensaje(
@@ -14,5 +21,4 @@ if ($resultado) {
 }
 
 $mysql->close();
-?>
 ?>
