@@ -1,9 +1,5 @@
 
 <h1>Filtros de busqueda:</h1>
-
-<?php
-	require("../../conexion.php");
-?>
 <form method="post" action="/proyecto_cabania/plantilla_modulo.php?titulo=Productos Cantidad por Categoría&ruta=reportes/productos_cantidadxcategoria">
 	Nombre:
 	<input type="text" name="producto_nombre" size="50" value="<?php if (isset($_REQUEST["producto_nombre"])){ echo $_REQUEST["producto_nombre"]; } ?>">

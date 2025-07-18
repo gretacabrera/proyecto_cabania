@@ -1,6 +1,5 @@
 
 <h1>Listado de Temporadas Altas por Año</h1>
-
 <div>
 	<div>
 		<div class="export">
@@ -13,9 +12,7 @@
 				<td> <font face="Arial"><b>Ver detalle por Período</b></font> </td>
 			</tr>
 			
-		<?php
-			require("../../conexion.php");
-			
+		<?php			
 			$consulta_sql = "select 
 							reservas_x_periodo.periodo_anio as anio,
 							periodo_descripcion as temporada_alta

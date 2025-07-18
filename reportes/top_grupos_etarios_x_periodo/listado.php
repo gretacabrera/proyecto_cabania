@@ -1,6 +1,8 @@
 
 <h1>Listado de Frecuencias de Reservas por Grupo Etario</h1>
-
+<?php
+	include("busqueda.php");
+?>
 <div class="export">
 	<input type="button" onclick="tableToExcel('tableResultados','Reporte_de_Frecuencias_de_Reservas_por_Grupo_Etario')" value="Exportar a Excel">
 </div>
@@ -12,9 +14,6 @@
 	<?php
 		if (isset($_REQUEST["id_periodo"])){
 			if ($_REQUEST["id_periodo"] != ""){
-
-				require("../../conexion.php");
-				
 				$consulta_sql = "select
 								case 
 									when edad < 18 then 'menores de 18 años'

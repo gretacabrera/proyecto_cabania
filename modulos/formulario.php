@@ -9,12 +9,10 @@
 		<select name="rela_menu">
 			<option value="">Seleccione un menu (opcional)...</option>
 			<?php
-			require_once("../conexion.php");
 			$menus = $mysql->query("select * from menu where menu_estado = 1 order by menu_nombre") or die($mysql->error);
 			while ($menu = $menus->fetch_assoc()) {
 				echo "<option value='".$menu["id_menu"]."'>".$menu["menu_nombre"]."</option>";
 			}
-			$mysql->close();
 			?>
 		</select><br>
 		<input type="submit" value="Confirmar">

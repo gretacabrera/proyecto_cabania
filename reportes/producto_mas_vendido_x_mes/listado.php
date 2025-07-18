@@ -1,6 +1,8 @@
 
 <h1>Listado de Productos Mas Vendidos por Mes</h1>
-
+<?php
+	include("busqueda.php");
+?>
 <div class="export">
 	<input type="button" onclick="tableToExcel('tableResultados','Reporte_de_Productos_por_Categoria')" value="Exportar a Excel">
 </div>
@@ -13,8 +15,6 @@
 	</tr>
 	
 <?php
-	require("../../conexion.php");
-	
 	$fecha_desde = "2000-01";
 	$fecha_hasta = "2030-12";
 	

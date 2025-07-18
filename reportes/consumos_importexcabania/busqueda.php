@@ -1,9 +1,5 @@
 
 <h1>Filtros de busqueda:</h1>
-
-<?php
-	require("../../conexion.php");
-?>
 <form method="post" action="/proyecto_cabania/plantilla_modulo.php?titulo=Consumos Importe por Cabaña&ruta=reportes/consumos_importexcabania">
 	Cabaña:
 	<select name="rela_cabania">

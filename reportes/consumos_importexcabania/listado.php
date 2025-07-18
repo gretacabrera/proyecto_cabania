@@ -1,6 +1,8 @@
 
 <h1>Listado de Consumos en Pesos por Cabaña</h1>
-
+<?php
+	include("busqueda.php");
+?>
 <div class="export">
 	<input type="button" onclick="tableToExcel('tableResultados','Reporte_de_Consumos_Importes_Por_Cabania')" value="Exportar a Excel">
 </div>
@@ -11,8 +13,6 @@
 	</tr>
 	
 <?php
-	require("../../conexion.php");
-	
 	$filtro = '';
 	
 	if (isset($_REQUEST["rela_cabania"])){

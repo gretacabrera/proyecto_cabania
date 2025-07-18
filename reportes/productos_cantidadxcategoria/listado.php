@@ -1,6 +1,7 @@
-
 <h1>Listado de Productos por Categoría</h1>
-
+<?php
+	include("busqueda.php");
+?>
 <div class="export">
 	<input type="button" onclick="tableToExcel('tableResultados','Reporte_de_Productos_por_Categoria')" value="Exportar a Excel">
 </div>
@@ -11,8 +12,6 @@
 	</tr>
 	
 <?php
-	require("../../conexion.php");
-	
 	$filtro = '';
 	
 	if (isset($_REQUEST["producto_nombre"])){
