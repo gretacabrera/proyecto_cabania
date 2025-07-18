@@ -1,7 +1,8 @@
 <?php
 require("conexion.php");
 $resultado = $mysql->query("update menu set 
-			menu_nombre='$_REQUEST[menu_nombre]'
+			menu_nombre='$_REQUEST[menu_nombre]',
+			menu_orden=$_REQUEST[menu_orden]
 			where id_menu=$_REQUEST[id_menu]");
 
 if ($resultado) {

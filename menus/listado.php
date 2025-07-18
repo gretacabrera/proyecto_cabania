@@ -8,6 +8,7 @@
 <table> 
 	<thead>
 		<th> <font face="Arial">Nombre</font> </th>
+		<th> <font face="Arial">Orden</font> </th>
 		<th> <font face="Arial">Estado</font> </th> 
 		<th> <font face="Arial">Acciones</font> </th> 
 	</thead>
@@ -35,13 +36,14 @@
 		$filtro .= " and menu_estado = 1 ";
 	}
 	
-	$registros = $mysql->query("select * from menu where 1=1 ".$filtro) or
+	$registros = $mysql->query("select * from menu where 1=1 ".$filtro." order by menu_orden") or
 	die($mysql->error);
 	
 	while ($row = $registros->fetch_assoc()) {
 		echo 
 		"<tr> 
 			<td>".$row["menu_nombre"]."</td> 
+			<td>".$row["menu_orden"]."</td> 
 			<td>".(($row["menu_estado"]) ? "Activo" : "Baja")."</td> 
 			<td>
 				<button class='abm-button mod-button' onclick='location.href=\"/proyecto_cabania/plantilla_modulo.php?titulo=Menus&ruta=menus&archivo=editar.php&id_menu=".$row["id_menu"]."\"'>Editar</button>";

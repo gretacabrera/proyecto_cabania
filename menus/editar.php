@@ -9,6 +9,8 @@ if ($reg = $registro->fetch_array()) {
 		<fieldset>
 			<label>Nombre:</label>
 			<input type="text" name="menu_nombre" size="45" value="<?php echo $reg['menu_nombre']; ?>" required><br>
+			<label>Orden:</label>
+			<input type="number" name="menu_orden" min="1" value="<?php echo $reg['menu_orden']; ?>" required><br>
 			<input type="hidden" name="id_menu" value="<?php echo $_REQUEST['id_menu']; ?>" required>
 			<input type="submit" value="Confirmar">
 		</fieldset>

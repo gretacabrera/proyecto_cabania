@@ -43,6 +43,11 @@
                         $modulos_sin_menu[] = $row;
                     }
                 }
+
+                // Mostrar módulos sin menú asignado como enlaces normales
+                foreach ($modulos_sin_menu as $modulo) {
+                    echo "<a href='plantilla_modulo.php?titulo=$modulo[modulo_descripcion]&ruta=$modulo[modulo_ruta]'>$modulo[modulo_descripcion]</a>";
+                }
                 
                 // Mostrar módulos organizados por menú
                 foreach ($modulos_por_menu as $menu_nombre => $modulos) {
@@ -54,11 +59,6 @@
                     }
                     echo "</div>";
                     echo "</div>";
-                }
-                
-                // Mostrar módulos sin menú asignado como enlaces normales
-                foreach ($modulos_sin_menu as $modulo) {
-                    echo "<a href='plantilla_modulo.php?titulo=$modulo[modulo_descripcion]&ruta=$modulo[modulo_ruta]'>$modulo[modulo_descripcion]</a>";
                 }
             }
             else{

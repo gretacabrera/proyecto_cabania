@@ -1,6 +1,6 @@
 <?php
 require("conexion.php");
-$resultado = $mysql->query("insert into menu (menu_nombre, menu_estado) values ('$_REQUEST[menu_nombre]', 1)");
+$resultado = $mysql->query("insert into menu (menu_nombre, menu_orden, menu_estado) values ('$_REQUEST[menu_nombre]', $_REQUEST[menu_orden], 1)");
 
 if ($resultado) {
 	redireccionar_con_mensaje(
