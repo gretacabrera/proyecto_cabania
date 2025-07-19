@@ -25,7 +25,7 @@
             if ($registro->fetch_array()["perfil_descripcion"] == "huesped") {
                 echo 
                 "<div class='fixed-div-right'>
-                    <button class='a-button' onclick='location.href=\"/proyecto_cabania/reservas/reserva_online.php\"'>HACER UNA RESERVA</button>
+                    <button class='a-button' onclick='location.href=\"plantilla_modulo.php?titulo=Reserva Online&ruta=reservas/online&archivo=formulario.php\"'>HACER UNA RESERVA</button>
                 </div>";
             }
             $mysql->close();

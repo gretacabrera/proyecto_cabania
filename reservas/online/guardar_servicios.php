@@ -1,8 +1,6 @@
 <?php
     if (isset($_POST['servicios'])){
 
-        require("conexion.php");
-
         $servicios_seleccionados = $_POST['servicios'];
         
         foreach ($servicios_seleccionados as $id_servicio) {
@@ -24,6 +22,6 @@
         
         echo "Se registraron correctamente sus consumos.";
         echo '<br>';
-		echo '<button onclick="location.href=\'mis_reservas.php\'">Volver</button>';
+		echo '<button onclick="location.href=\'plantilla_modulo.php?titulo=Mis Reservas&ruta=reservas/online&archivo=listado.php\'">Volver</button>';
     }
 ?>

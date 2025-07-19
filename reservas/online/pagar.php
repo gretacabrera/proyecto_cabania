@@ -1,6 +1,4 @@
 <?php
-    require("conexion.php");
-
     // el metodo de pago seleccionado por el huesped es informado
     // por la pasarela de pago externa
     $metododepago = "EFECTIVO"; // se simula que devolvió "EFECTIVO" como metodo de pago seleccionado
@@ -38,7 +36,7 @@
 
     if (!isset($pago_online)){
         echo "<br>";
-        echo "<input type='button' onclick='location.href=\"mis_reservas.php\"' value='Volver'>";
+        echo "<input type='button' onclick='location.href=\"plantilla_modulo.php?titulo=Mis Reservas&ruta=reservas/online&archivo=listado.php\"' value='Volver'>";
     }
     
     $mysql->close();

@@ -60,8 +60,8 @@ $titulo = $_GET["titulo"];
                 }
             } elseif (file_exists($ruta."/listado.php")) {
                 include($ruta."/listado.php");
-            } elseif (file_exists($ruta."/index.php")) {
-                include($ruta."/index.php");
+            } elseif (file_exists($ruta.".php")) {
+                include($ruta.".php");
             } else {
                 // Incluir página 404 si no se encuentra el archivo requerido
                 include("404.php");

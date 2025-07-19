@@ -7,15 +7,7 @@
                 session_start();
             }   
             if (isset($_SESSION["usuario_nombre"])){
-                $registro = $mysql->query("select p.perfil_descripcion
-                                        from perfil p
-                                        left join usuario u on u.rela_perfil = p.id_perfil
-                                        where u.usuario_nombre = '$_SESSION[usuario_nombre]'") or
-                die($mysql->error);
-                if ($registro->fetch_array()["perfil_descripcion"] == "huesped") {
-                    echo 
-                    "<a href='/proyecto_cabania/reservas/mis_reservas.php'>Mis Reservas</a>";
-                }
+                // Obtener los módulos del usuario
                 $registros = $mysql->query("select men.menu_nombre, m.modulo_ruta, m.modulo_descripcion, m.rela_menu
                                             from modulo m
                                             left join perfil_modulo pm on pm.rela_modulo = m.id_modulo

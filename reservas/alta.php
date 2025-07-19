@@ -70,6 +70,4 @@
 		echo '<br>';
 		echo '<button onclick="location.href=\'../usuarios/login.php\'">Ir</button>';
 	}
-	
-	$mysql->close();
  ?>
