@@ -59,10 +59,10 @@
 		// Mostrar botón Eliminar o Recuperar según el estado
 		if ($row["perfilmodulo_estado"]) {
 			// Si está activo, mostrar botón Eliminar
-			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"/proyecto_cabania/plantilla_modulo.php?titulo=Asignar Módulo a Perfil&ruta=perfiles_modulos&archivo=baja_logica.php&id_perfilmodulo=".$row["id_perfilmodulo"]."\", \"dar de baja este perfil\")'>Eliminar</button>";
+			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"/proyecto_cabania/perfiles_modulos/baja_logica.php?id_perfilmodulo=".$row["id_perfilmodulo"]."\", \"dar de baja este perfil\")'>Eliminar</button>";
 		} else if (es_administrador()) {
 			// Si está de baja y es administrador, mostrar botón Recuperar
-			echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"/proyecto_cabania/plantilla_modulo.php?titulo=Asignar Módulo a Perfil&ruta=perfiles_modulos&archivo=quitar_baja_logica.php&id_perfilmodulo=".$row["id_perfilmodulo"]."\", \"recuperar este perfil\")'>Recuperar</button>";
+			echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"/proyecto_cabania/perfiles_modulos/quitar_baja_logica.php?id_perfilmodulo=".$row["id_perfilmodulo"]."\", \"recuperar este perfil\")'>Recuperar</button>";
 		}
 		
 		echo "</td>

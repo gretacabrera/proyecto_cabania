@@ -1,5 +1,5 @@
 <?php	
-require_once("conexion.php");
+require_once("../conexion.php");
 
 $resultado = $mysql->query("update servicio set servicio_estado = 0 WHERE id_servicio=$_REQUEST[id_servicio]");
 

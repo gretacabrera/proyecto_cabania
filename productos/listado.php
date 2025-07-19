@@ -77,11 +77,11 @@
 		if ($row["rela_estadoproducto"] == 4) {
 			// Si está de baja (estado 4) y es administrador, mostrar botón Recuperar
 			if (es_administrador()) {
-				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"/proyecto_cabania/plantilla_modulo.php?titulo=Productos&ruta=productos&archivo=quitar_baja_logica.php&id_producto=".$row["id_producto"]."\", \"recuperar este producto\")'>Recuperar</button>";
+				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"/proyecto_cabania/productos/quitar_baja_logica.php?id_producto=".$row["id_producto"]."\", \"recuperar este producto\")'>Recuperar</button>";
 			}
 		} else {
 			// Si está activo, mostrar botón Eliminar
-			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"/proyecto_cabania/plantilla_modulo.php?titulo=Productos&ruta=productos&archivo=baja_logica.php&id_producto=".$row["id_producto"]."\", \"dar de baja este producto\")'>Eliminar</button>";
+			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"/proyecto_cabania/productos/baja_logica.php?id_producto=".$row["id_producto"]."\", \"dar de baja este producto\")'>Eliminar</button>";
 		}
 		
 		echo "</td>

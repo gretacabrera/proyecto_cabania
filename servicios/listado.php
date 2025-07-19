@@ -67,10 +67,10 @@
 		// Mostrar botón Eliminar o Recuperar según el estado
 		if ($row["servicio_estado"]) {
 			// Si está activo, mostrar botón Eliminar
-			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"/proyecto_cabania/plantilla_modulo.php?titulo=Servicios&ruta=servicios&archivo=baja_logica.php&id_servicio=".$row["id_servicio"]."\", \"dar de baja este servicio\")'>Eliminar</button>";
+			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"/proyecto_cabania/servicios/baja_logica.php?id_servicio=".$row["id_servicio"]."\", \"dar de baja este servicio\")'>Eliminar</button>";
 		} else if (es_administrador()) {
 			// Si está de baja y es administrador, mostrar botón Recuperar
-			echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"/proyecto_cabania/plantilla_modulo.php?titulo=Servicios&ruta=servicios&archivo=quitar_baja_logica.php&id_servicio=".$row["id_servicio"]."\", \"recuperar este servicio\")'>Recuperar</button>";
+			echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"/proyecto_cabania/servicios/quitar_baja_logica.php?id_servicio=".$row["id_servicio"]."\", \"recuperar este servicio\")'>Recuperar</button>";
 		}
 		
 		echo "</td>
