@@ -171,4 +171,149 @@ function redireccionar_con_mensaje($url, $mensaje, $tipo = 'info') {
     exit();
 }
 
+// ============================================================================
+// FUNCIONES DE PAGINACIÓN
+// Implementación procedimental para compatibilidad con el proyecto existente
+// ============================================================================
+
+/**
+ * Calcula la información de paginación
+ */
+function calcular_paginacion($total_registros, $registros_por_pagina = 10, $pagina_actual = 1) {
+    $pagina_actual = max(1, intval($pagina_actual));
+    $total_paginas = ceil($total_registros / $registros_por_pagina);
+    
+    // Asegurar que la página actual no exceda el total
+    if ($pagina_actual > $total_paginas && $total_paginas > 0) {
+        $pagina_actual = $total_paginas;
+    }
+    
+    $offset = ($pagina_actual - 1) * $registros_por_pagina;
+    
+    return [
+        'pagina_actual' => $pagina_actual,
+        'total_paginas' => $total_paginas,
+        'total_registros' => $total_registros,
+        'registros_por_pagina' => $registros_por_pagina,
+        'offset' => $offset,
+        'limite' => $registros_por_pagina
+    ];
+}
+
+/**
+ * Genera los enlaces de paginación
+ */
+function generar_enlaces_paginacion($paginacion, $url_base, $parametros_adicionales = []) {
+    if ($paginacion['total_paginas'] <= 1) {
+        return '';
+    }
+    
+    $html = '<div class="pagination-container">';
+    $html .= '<div class="pagination">';
+    
+    // Botón anterior
+    if ($paginacion['pagina_actual'] > 1) {
+        $url_anterior = construir_url_paginacion($url_base, $paginacion['pagina_actual'] - 1, $parametros_adicionales);
+        $html .= '<a href="' . $url_anterior . '" class="pagination-link">« Anterior</a>';
+    } else {
+        $html .= '<span class="pagination-link disabled">« Anterior</span>';
+    }
+    
+    // Números de página
+    $inicio = max(1, $paginacion['pagina_actual'] - 2);
+    $fin = min($paginacion['total_paginas'], $paginacion['pagina_actual'] + 2);
+    
+    if ($inicio > 1) {
+        $url_primera = construir_url_paginacion($url_base, 1, $parametros_adicionales);
+        $html .= '<a href="' . $url_primera . '" class="pagination-link">1</a>';
+        if ($inicio > 2) {
+            $html .= '<span class="pagination-link disabled">...</span>';
+        }
+    }
+    
+    for ($i = $inicio; $i <= $fin; $i++) {
+        if ($i == $paginacion['pagina_actual']) {
+            $html .= '<span class="pagination-link active">' . $i . '</span>';
+        } else {
+            $url_pagina = construir_url_paginacion($url_base, $i, $parametros_adicionales);
+            $html .= '<a href="' . $url_pagina . '" class="pagination-link">' . $i . '</a>';
+        }
+    }
+    
+    if ($fin < $paginacion['total_paginas']) {
+        if ($fin < $paginacion['total_paginas'] - 1) {
+            $html .= '<span class="pagination-link disabled">...</span>';
+        }
+        $url_ultima = construir_url_paginacion($url_base, $paginacion['total_paginas'], $parametros_adicionales);
+        $html .= '<a href="' . $url_ultima . '" class="pagination-link">' . $paginacion['total_paginas'] . '</a>';
+    }
+    
+    // Botón siguiente
+    if ($paginacion['pagina_actual'] < $paginacion['total_paginas']) {
+        $url_siguiente = construir_url_paginacion($url_base, $paginacion['pagina_actual'] + 1, $parametros_adicionales);
+        $html .= '<a href="' . $url_siguiente . '" class="pagination-link">Siguiente »</a>';
+    } else {
+        $html .= '<span class="pagination-link disabled">Siguiente »</span>';
+    }
+    
+    $html .= '</div>';
+    $html .= '</div>';
+    
+    return $html;
+}
+
+/**
+ * Construye URL con parámetros de paginación
+ */
+function construir_url_paginacion($url_base, $pagina, $parametros_adicionales = []) {
+    $parametros = array_merge($parametros_adicionales, ['pagina' => $pagina]);
+    return $url_base . '&' . http_build_query($parametros);
+}
+
+/**
+ * Genera información de registros mostrados
+ */
+function mostrar_info_paginacion($paginacion) {
+    if ($paginacion['total_registros'] == 0) {
+        return "No se encontraron registros";
+    }
+    
+    $inicio = $paginacion['offset'] + 1;
+    $fin = min($paginacion['offset'] + $paginacion['registros_por_pagina'], $paginacion['total_registros']);
+    return "Mostrando {$inicio} a {$fin} de {$paginacion['total_registros']} registros";
+}
+
+/**
+ * Función helper para obtener registros paginados usando mysqli
+ */
+function obtener_registros_paginados($mysql, $query_base, $query_count, $pagina = 1, $por_pagina = 10) {
+    // Contar total de registros
+    $result_count = $mysql->query($query_count);
+    if (!$result_count) {
+        die("Error en query count: " . $mysql->error);
+    }
+    $total_registros = $result_count->fetch_row()[0];
+    
+    // Calcular paginación
+    $paginacion = calcular_paginacion($total_registros, $por_pagina, $pagina);
+    
+    // Obtener registros paginados
+    $query_paginada = $query_base . " LIMIT " . $paginacion['limite'] . " OFFSET " . $paginacion['offset'];
+    $result = $mysql->query($query_paginada);
+    
+    if (!$result) {
+        die("Error en query paginada: " . $mysql->error);
+    }
+    
+    $registros = [];
+    while ($row = $result->fetch_assoc()) {
+        $registros[] = $row;
+    }
+    
+    return [
+        'registros' => $registros,
+        'paginacion' => $paginacion
+    ];
+}
+
 ?>

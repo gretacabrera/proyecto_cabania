@@ -761,3 +761,59 @@ textarea:focus {
 .btn-search:hover {
     background-color: #218838;
 }
+
+/* Estilos para paginación */
+.pagination-container {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.pagination {
+    display: inline-flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.pagination-link {
+    padding: 8px 12px;
+    text-decoration: none;
+    color: #007bff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #fff;
+    transition: all 0.3s ease;
+}
+
+.pagination-link:hover {
+    background-color: #e9ecef;
+    text-decoration: none;
+    color: #0056b3;
+}
+
+.pagination-link.active {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.pagination-link.disabled {
+    color: #6c757d;
+    background-color: #fff;
+    border-color: #ddd;
+    cursor: not-allowed;
+}
+
+.pagination-info {
+    margin: 10px 0;
+    text-align: center;
+    color: #6c757d;
+    font-size: 14px;
+}
+
+/* Responsive para paginación */
+@media (max-width: 768px) {
+    .pagination-link {
+        padding: 6px 8px;
+        font-size: 12px;
+    }
+}

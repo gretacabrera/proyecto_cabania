@@ -11,7 +11,7 @@ var tableToExcel = (function() {
 })()
 
 // Función para confirmar eliminación con modal personalizado y AJAX
-function confirmarEliminacion(url, accion = 'eliminar') {
+function confirmarAccion(url, accion = 'eliminar') {
     // Crear el modal si no existe
     if (!document.getElementById('modal-confirmacion')) {
         crearModalConfirmacion();

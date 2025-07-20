@@ -1,13 +1,9 @@
 <?php
-require("conexion.php");
+require("../conexion.php");
 $resultado = $mysql->query("update cabania set cabania_estado=0 where id_cabania=$_REQUEST[id_cabania]");
 
 if ($resultado) {
-	redireccionar_con_mensaje(
-		'/proyecto_cabania/plantilla_modulo.php?titulo=Cabañas&ruta=cabanias&archivo=listado.php',
-		'Se eliminó la cabaña correctamente',
-		'exito'
-	);
+	echo 'Se eliminó la cabaña correctamente';
 } else {
 	echo 'Error: ' . $mysql->error;
 }

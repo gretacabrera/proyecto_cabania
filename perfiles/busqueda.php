@@ -1,4 +1,12 @@
 <form method="post" action="/proyecto_cabania/plantilla_modulo.php?titulo=Perfiles&ruta=perfiles">
+    <!-- Mantener parámetros de paginación -->
+    <?php if (isset($_REQUEST['registros_por_pagina'])): ?>
+        <input type="hidden" name="registros_por_pagina" value="<?php echo htmlspecialchars($_REQUEST['registros_por_pagina']); ?>">
+    <?php endif; ?>
+    <?php if (isset($_REQUEST['pagina'])): ?>
+        <input type="hidden" name="pagina" value="<?php echo htmlspecialchars($_REQUEST['pagina']); ?>">
+    <?php endif; ?>
+    
     Descripción:
     <input type="text" name="perfil_descripcion" value="<?php if (isset($_REQUEST["perfil_descripcion"])){ echo $_REQUEST["perfil_descripcion"]; } ?>">
 	Estado:
