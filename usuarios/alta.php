@@ -89,19 +89,12 @@ if (empty($_REQUEST["usuario_nombre"]) || empty($_REQUEST["usuario_contrasenia"]
 		}
 	}
 
-	if (isset($_REQUEST["registro_online"])){
-		$rela_perfil = "(SELECT id_perfil FROM perfil WHERE perfil_descripcion = 'huesped')";
-		$usuario_estado = 1; // activo
-	}
-	else{
-		$rela_perfil = $_REQUEST["rela_perfil"];
-		$usuario_estado = $_REQUEST["usuario_estado"];
-	}
+	// $usuario_estado = 1 --> activo
 
 	$usuario_constrasenia = password_hash($_REQUEST["usuario_contrasenia"], PASSWORD_DEFAULT);
 
 	$mysql->query("insert into usuario (usuario_nombre, usuario_contrasenia, rela_persona, rela_perfil, usuario_estado)
-			values ('$_REQUEST[usuario_nombre]','$usuario_constrasenia', $rela_persona, $rela_perfil, $usuario_estado)") or die($mysql->error);
+			values ('$_REQUEST[usuario_nombre]','$usuario_constrasenia', $rela_persona, $rela_perfil, 1)") or die($mysql->error);
 	
 	$mysql->close();
 

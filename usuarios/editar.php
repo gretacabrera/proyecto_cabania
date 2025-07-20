@@ -24,12 +24,6 @@ if ($reg = $registro->fetch_array()) {
 					}
 				?>
 			</select><br>
-			<label>Estado:</label>
-			<select name="usuario_estado" required>
-				<option value="1" <?php if ($reg['usuario_estado'] == 'activo') { echo "selected"; } ?> >Activo</option>
-				<option value="2" <?php if ($reg['usuario_estado'] == 'bloqueado') { echo "selected"; } ?>>Bloqueado</option>
-				<option value="3" <?php if ($reg['usuario_estado'] == 'baja') { echo "selected"; } ?>>Baja</option>
-			</select><br>
 		</fieldset>
 		<fieldset>
 			<legend>Datos personales</legend>

@@ -57,15 +57,18 @@
 			<td>
 				<button class='abm-button mod-button' onclick='location.href=\"/proyecto_cabania/plantilla_modulo.php?titulo=Usuarios&ruta=usuarios&archivo=editar.php&id_usuario=".$row["id_usuario"]."\"'>Editar</button>";
 		
-		// Mostrar botón Eliminar o Recuperar según el estado
-		if ($row["usuario_estado"] == 3 || $row["usuario_estado"] == 'baja') {
-			// Si está de baja (estado 3 o 'baja') y es administrador, mostrar botón Recuperar
-			if (es_administrador()) {
-				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"/proyecto_cabania/plantilla_modulo.php?titulo=Usuarios&ruta=usuarios&archivo=quitar_baja_logica.php&id_usuario=".$row["id_usuario"]."\", \"recuperar este usuario\")'>Recuperar</button>";
+		if (es_administrador()) {
+			if ($row["usuario_estado"] == 'bloqueado') {
+				// Si está bloqueado, mostrar botón Desbloquear
+				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"/proyecto_cabania/usuarios/cambiar_estado.php?id_usuario=".$row["id_usuario"]."&accion=desbloquear\", \"desbloquear este usuario\")'>Desbloquear</button>";
+			}elseif ($row["usuario_estado"] == 'baja') {
+				// Si está de baja, mostrar botón Recuperar
+				echo "<button class='abm-button alta-button' onclick='confirmarEliminacion(\"/proyecto_cabania/usuarios/cambiar_estado.php?id_usuario=".$row["id_usuario"]."&accion=recuperar\", \"recuperar este usuario\")'>Recuperar</button>";
+			} else {
+				// Si está activo, mostrar botones Bloquear y Eliminar
+				echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"/proyecto_cabania/usuarios/cambiar_estado.php?id_usuario=".$row["id_usuario"]."&accion=bloquear\", \"bloquear este usuario\")'>Bloquear</button>";
+				echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"/proyecto_cabania/usuarios/cambiar_estado.php?id_usuario=".$row["id_usuario"]."&accion=baja\", \"dar de baja este usuario\")'>Eliminar</button>";
 			}
-		} else {
-			// Si está activo, mostrar botón Eliminar
-			echo "<button class='abm-button baja-button' onclick='confirmarEliminacion(\"/proyecto_cabania/plantilla_modulo.php?titulo=Usuarios&ruta=usuarios&archivo=baja_logica.php&id_usuario=".$row["id_usuario"]."\", \"dar de baja este usuario\")'>Eliminar</button>";
 		}
 		
 		echo "</td>

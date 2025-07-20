@@ -19,12 +19,6 @@
 				}
 			?>
 		</select><br>
-		<label>Estado:</label>
-		<select name="usuario_estado" required>
-			<option value="1">Activo</option>
-			<option value="2">Bloqueado</option>
-			<option value="3">Baja</option>
-		</select><br>
 	</fieldset>
 	<fieldset>
 		<legend>Datos personales</legend>

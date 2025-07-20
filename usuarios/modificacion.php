@@ -9,8 +9,7 @@ require("conexion.php");
   $rela_persona = $registro->fetch_array()["rela_persona"];
 
   $mysql->query("update usuario set 
-                rela_perfil=$_REQUEST[rela_perfil],
-                usuario_estado=$_REQUEST[usuario_estado]
+                rela_perfil=$_REQUEST[rela_perfil]
                 where id_usuario=$_REQUEST[id_usuario]") or
   die($mysql->error);
 
