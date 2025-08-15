@@ -21,7 +21,7 @@
 
         while ($row = $registro->fetch_assoc()) {
             $mostrar = 
-                "<form method='post' action='alta.php'>
+                "<form method='post' action='/proyecto_cabania/plantilla_modulo.php?titulo=Ingresos&ruta=ingresos&archivo=alta.php'>
                     <fieldset>
                         <p><b>Fecha de inicio:</b> ".date_format(date_create($row["reserva_fhinicio"]), 'Y-m-d H:i')."</p>
                         <p><b>Fecha de fin:</b> ".date_format(date_create($row["reserva_fhfin"]), 'Y-m-d H:i')."</p>

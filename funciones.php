@@ -49,6 +49,7 @@ function validar_permiso($modulo) {
     require("conexion.php");
     $tiene_permiso = false;  
     if (isset($_SESSION["usuario_nombre"])) {
+        // Primero intentar validación exacta
         $resultado = $mysql->query("SELECT COUNT(*) as resultados
                                     FROM modulo m
                                     LEFT JOIN perfil_modulo pm ON pm.rela_modulo = m.id_modulo
@@ -63,6 +64,25 @@ function validar_permiso($modulo) {
         if ((int) $fila["resultados"] > 0) {
             $tiene_permiso = true;
         }
+        
+        // Si no tiene permiso exacto, intentar con rutas que comiencen con el módulo
+        if (!$tiene_permiso) {
+            $resultado2 = $mysql->query("SELECT COUNT(*) as resultados
+                                        FROM modulo m
+                                        LEFT JOIN perfil_modulo pm ON pm.rela_modulo = m.id_modulo
+                                        LEFT JOIN perfil p ON pm.rela_perfil = p.id_perfil
+                                        LEFT JOIN usuario u ON u.rela_perfil = p.id_perfil
+                                        WHERE m.modulo_estado = 1
+                                        AND u.usuario_estado = 1
+                                        AND u.usuario_nombre = '$_SESSION[usuario_nombre]'
+                                        AND m.modulo_ruta LIKE '$modulo/%'") or
+            die($mysql->error);
+            $fila2 = $resultado2->fetch_array();
+            if ((int) $fila2["resultados"] > 0) {
+                $tiene_permiso = true;
+            }
+        }
+        
         $mysql->close();
     }
     return $tiene_permiso;
