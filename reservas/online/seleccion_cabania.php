@@ -99,7 +99,7 @@ $registros = $mysql->query($query) or
                 echo
                 "<div class='galeria-item galeria-item-foto'>
                 <figure>
-                    <img src='../imagenes/cabanias/" . $row["cabania_foto"] . "'>
+                    <img src='imagenes/cabanias/" . $row["cabania_foto"] . "'>
                 </figure>
                 <div>
                     <label><b>" . $row["cabania_nombre"] . "</b></label><br>
