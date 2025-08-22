@@ -1,13 +1,16 @@
 <?php
-// Validaciones del lado del servidor
-if (empty($_REQUEST["usuario_nombre"]) || empty($_REQUEST["usuario_contrasenia"]) || 
-    empty($_REQUEST["confirmacion_contrasenia"]) || empty($_REQUEST["persona_nombre"]) ||
-    empty($_REQUEST["persona_apellido"]) || empty($_REQUEST["persona_fechanac"]) ||
-    empty($_REQUEST["contacto_email"])) {
-	echo 'Error: Todos los campos obligatorios deben ser completados';
-	$mysql->close();
-	exit;
-}
+
+	require("../conexion.php");
+
+	// Validaciones del lado del servidor
+	if (empty($_REQUEST["usuario_nombre"]) || empty($_REQUEST["usuario_contrasenia"]) || 
+		empty($_REQUEST["confirmacion_contrasenia"]) || empty($_REQUEST["persona_nombre"]) ||
+		empty($_REQUEST["persona_apellido"]) || empty($_REQUEST["persona_fechanac"]) ||
+		empty($_REQUEST["contacto_email"])) {
+		echo 'Error: Todos los campos obligatorios deben ser completados';
+		$mysql->close();
+		exit;
+	}
 
 	// Validar longitud mínima de usuario
 	if (strlen($_REQUEST["usuario_nombre"]) < 3) {
@@ -61,6 +64,13 @@ if (empty($_REQUEST["usuario_nombre"]) || empty($_REQUEST["usuario_contrasenia"]
 
 	if (isset($_REQUEST["registro_online"])){
 		$mysql->query("insert into huesped (rela_persona, huesped_estado) values ($rela_persona, 1)");
+
+		// Asignar perfil 'huesped' al usuario
+		$consulta_perfil = $mysql->query("SELECT id_perfil FROM perfil WHERE perfil_descripcion = 'huesped' LIMIT 1");
+		if ($consulta_perfil && $consulta_perfil->num_rows > 0) {
+			$fila_perfil = $consulta_perfil->fetch_assoc();
+			$rela_perfil = $fila_perfil['id_perfil'];
+		}
 	}
 
 	// contacto_estado = 1 --> activo
@@ -99,6 +109,13 @@ if (empty($_REQUEST["usuario_nombre"]) || empty($_REQUEST["usuario_contrasenia"]
 	$mysql->close();
 
 	if (isset($_REQUEST["registro_online"])){
+
+		// Enviar correo de confirmación al usuario
+		$asunto = 'Confirmación de registro';
+		$cuerpo = '<h2>¡Bienvenido/a!</h2><p>Su usuario ha sido registrado exitosamente en el sistema.</p>';
+		$altCuerpo = 'Su usuario ha sido registrado exitosamente en el sistema.';
+		enviarCorreo($_REQUEST["contacto_email"], $asunto, $cuerpo, $altCuerpo);
+
 		redireccionar_con_mensaje('login.php', 'Usuario registrado exitosamente. Ya puede iniciar sesión', 'exito');
 	}
 	else{

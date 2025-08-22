@@ -294,10 +294,6 @@ function construir_url_paginacion($url_base, $pagina, $parametros_adicionales = 
  * Genera información de registros mostrados
  */
 function mostrar_info_paginacion($paginacion) {
-    if ($paginacion['total_registros'] == 0) {
-        return "No se encontraron registros";
-    }
-    
     $inicio = $paginacion['offset'] + 1;
     $fin = min($paginacion['offset'] + $paginacion['registros_por_pagina'], $paginacion['total_registros']);
     return "Mostrando {$inicio} a {$fin} de {$paginacion['total_registros']} registros";
@@ -336,4 +332,76 @@ function obtener_registros_paginados($mysql, $query_base, $query_count, $pagina 
     ];
 }
 
-?>
+// ============================================================================
+// FUNCION PARA ENVIO DE CORREOS USANDO PHPMailer Y VARIABLES DE ENTORNO
+// ============================================================================
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+use PHPMailer\PHPMailer\Exception;
+
+/**
+ * Envía un correo electrónico usando PHPMailer y credenciales desde .env
+ * @param string $to Correo destinatario
+ * @param string $subject Asunto del correo
+ * @param string $body Cuerpo del correo (HTML permitido)
+ * @param string|null $altBody Cuerpo alternativo (texto plano)
+ * @param array $cc Lista de correos CC
+ * @param array $bcc Lista de correos BCC
+ * @param array $attachments Lista de rutas de archivos adjuntos
+ * @return bool True si se envió correctamente, False si hubo error
+ */
+function enviarCorreo($to, $subject, $body, $altBody = null, $cc = [], $bcc = [], $attachments = []) {
+    require_once __DIR__ . '/vendor/autoload.php';
+
+    $mail = new PHPMailer(true);
+    try {
+        // Configuración SMTP desde variables de entorno
+        $mail->isSMTP();
+        $mail->Host       = getenv('MAIL_HOST') ?: 'smtp.gmail.com';
+        $mail->SMTPAuth   = true;
+        $mail->Username   = getenv('MAIL_USERNAME');
+        $mail->Password   = getenv('MAIL_PASSWORD');
+        $mail->SMTPSecure = getenv('MAIL_ENCRYPTION') ?: PHPMailer::ENCRYPTION_SMTPS;
+        $mail->Port       = getenv('MAIL_PORT') ?: 465;
+
+        // Remitente
+        $mail->setFrom($mail->Username, "SIRCA Software");
+
+        // Destinatario principal
+        $mail->addAddress($to);
+
+        // CC
+        if (!empty($cc)) {
+            foreach ($cc as $ccEmail) {
+                $mail->addCC($ccEmail);
+            }
+        }
+
+        // BCC
+        if (!empty($bcc)) {
+            foreach ($bcc as $bccEmail) {
+                $mail->addBCC($bccEmail);
+            }
+        }
+
+        // Adjuntos
+        if (!empty($attachments)) {
+            foreach ($attachments as $filePath) {
+                $mail->addAttachment($filePath);
+            }
+        }
+
+        // Contenido
+        $mail->isHTML(true);
+        $mail->Subject = $subject;
+        $mail->Body    = $body;
+        $mail->AltBody = $altBody ?: strip_tags($body);
+
+        $mail->send();
+        return true;
+    } catch (Exception $e) {
+        // Opcional: loguear el error $mail->ErrorInfo
+        return false;
+    }
+}

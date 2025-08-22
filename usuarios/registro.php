@@ -7,7 +7,6 @@
 </head>
 <body class="centered-body login">
 	<?php
-		require("conexion.php");
 		include('../funciones.php');
 	?>
 	<div class="loginform">
