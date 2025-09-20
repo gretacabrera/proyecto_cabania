@@ -52,8 +52,9 @@ $resultado2 = $mysql->query("update cabania
 if ($resultado1 && $resultado2) {
     $mensaje = "Se registró correctamente la salida de la cabaña";
     
+    // Redirigir al formulario de comentarios en el nuevo módulo
     redireccionar_con_mensaje(
-        '/proyecto_cabania/plantilla_modulo.php?titulo=Salidas&ruta=salidas&archivo=formulario.php',
+        '/proyecto_cabania/plantilla_modulo.php?titulo=Comentarios&ruta=comentarios&archivo=formulario.php&id_reserva=' . $_REQUEST['id_reserva'],
         $mensaje,
         'exito'
     );
