@@ -1,0 +1,339 @@
+/**
+ * Estilos para Componentes UI - Casa de Palos Cabañas
+ * CSS específico para componentes reutilizables del sistema
+ */
+
+/* ===========================================
+   COMPONENTES DE MENSAJES Y NOTIFICACIONES
+   =========================================== */
+
+/* Mensajes globales del sistema */
+.mensaje-global {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1060;
+    max-width: 350px;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mensaje-global.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.mensaje-global.fade-out {
+    opacity: 0;
+    transform: translateX(100%);
+}
+
+.mensaje-global .alert {
+    margin: 0;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    border: none;
+    padding: 15px 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.mensaje-global .alert-success {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    color: #155724;
+    border-left: 4px solid #28a745;
+}
+
+.mensaje-global .alert-danger,
+.mensaje-global .alert-error {
+    background: linear-gradient(135deg, #f8d7da 0%, #f1b0b7 100%);
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+}
+
+.mensaje-global .alert-warning {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    color: #856404;
+    border-left: 4px solid #ffc107;
+}
+
+.mensaje-global .alert-info {
+    background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+    color: #0c5460;
+    border-left: 4px solid #17a2b8;
+}
+
+.close-button {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    background: none;
+    border: none;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    opacity: 0.6;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.2s ease;
+}
+
+.close-button:hover {
+    opacity: 1;
+}
+
+.progress-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background-color: rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #007bff, #0056b3);
+    width: 0%;
+    transition: width 50ms linear;
+}
+
+/* ===========================================
+   COMPONENTES DE NAVEGACIÓN
+   =========================================== */
+
+/* Breadcrumbs modernos */
+.modern-breadcrumb {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 8px;
+    padding: 12px 20px;
+    margin-bottom: 20px;
+    border-left: 4px solid var(--primary-500);
+}
+
+.modern-breadcrumb ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.modern-breadcrumb li {
+    display: flex;
+    align-items: center;
+}
+
+.modern-breadcrumb li:not(:last-child)::after {
+    content: "›";
+    margin: 0 8px;
+    color: #6c757d;
+    font-weight: bold;
+}
+
+.modern-breadcrumb a {
+    color: var(--primary-600);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.modern-breadcrumb a:hover {
+    color: var(--primary-800);
+    text-decoration: underline;
+}
+
+.modern-breadcrumb .active {
+    color: #495057;
+    font-weight: 600;
+}
+
+/* ===========================================
+   COMPONENTES DE INFORMACIÓN
+   =========================================== */
+
+/* Cards de información */
+.info-card {
+    background: #f8f9fa;
+    border-left: 4px solid #007bff;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.info-card.warning {
+    border-left-color: #ffc107;
+    background: #fff3cd;
+}
+
+.info-card.success {
+    border-left-color: #28a745;
+    background: #d4edda;
+}
+
+.info-card.danger {
+    border-left-color: #dc3545;
+    background: #f8d7da;
+}
+
+.info-card h3 {
+    margin: 0 0 10px 0;
+    color: #333;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.info-card p {
+    margin: 0;
+    color: #555;
+    line-height: 1.4;
+}
+
+/* ===========================================
+   COMPONENTES DE LOADING Y ESTADOS
+   =========================================== */
+
+/* Spinner de carga */
+.spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+/* Estados vacíos */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 48px;
+    color: #dee2e6;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.empty-state h3 {
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: #495057;
+}
+
+.empty-state p {
+    font-size: 14px;
+    margin: 0;
+}
+
+/* ===========================================
+   UTILIDADES DE COMPONENTES
+   =========================================== */
+
+/* Tooltips modernos */
+.tooltip-modern {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip-modern:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    opacity: 0;
+    animation: fadeIn 0.2s forwards;
+}
+
+@keyframes fadeIn {
+    to { opacity: 1; }
+}
+
+/* Badges y etiquetas */
+.badge-modern {
+    display: inline-block;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: 12px;
+    line-height: 1;
+}
+
+.badge-modern.primary {
+    background: var(--primary-100);
+    color: var(--primary-800);
+}
+
+.badge-modern.success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.badge-modern.warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.badge-modern.danger {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .mensaje-global {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        max-width: none;
+        transform: translateY(-100%);
+    }
+    
+    .mensaje-global.show {
+        transform: translateY(0);
+    }
+    
+    .mensaje-global.fade-out {
+        transform: translateY(-100%);
+    }
+}

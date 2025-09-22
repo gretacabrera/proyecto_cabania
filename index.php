@@ -1,35 +1,39 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Menú de Navegación</title>
-    <link rel="stylesheet" href="estilos.css">
-</head>
-<body class="home">
-    <?php
-        include("menu.php");
-    ?>
-    <div class="fixed-div-left">
-        <label>CASA DE PALOS</label><br>
-        <label>CABAÑAS</label>
-    </div>
-    <?php
-        require("conexion.php"); 
-        if (isset($_SESSION["usuario_nombre"])){
-            $registro = $mysql->query("select p.perfil_descripcion
-                                        from perfil p
-                                        left join usuario u on u.rela_perfil = p.id_perfil
-                                        where u.usuario_nombre = '$_SESSION[usuario_nombre]'") or
-            die($mysql->error);
-            if ($registro->fetch_array()["perfil_descripcion"] == "huesped") {
-                echo 
-                "<div class='fixed-div-right'>
-                    <button class='a-button' onclick='location.href=\"plantilla_modulo.php?titulo=Reserva Online&ruta=reservas/online&archivo=formulario.php\"'>HACER UNA RESERVA</button>
-                </div>";
-            }
-            $mysql->close();
-        }
-    ?>
-</body>
-</html>
+<?php
+/**
+ * Punto de entrada principal del sistema MVC
+ * Casa de Palos - Sistema de Gestión de Cabañas
+ */
+
+// Configurar reporte de errores para debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// Cargar el autoloader
+require_once __DIR__ . '/Core/Autoloader.php';
+\App\Core\Autoloader::register();
+
+use App\Core\Application;
+
+try {
+    // Crear y ejecutar la aplicación MVC
+    $app = new Application();
+    $app->run();
+    
+} catch (Exception $e) {
+    // Manejo de errores detallado
+    echo "<!DOCTYPE html><html><head><title>Error del Sistema</title></head><body>";
+    echo "<h1>Error del Sistema</h1>";
+    echo "<p><strong>Mensaje:</strong> " . htmlspecialchars($e->getMessage()) . "</p>";
+    echo "<p><strong>Archivo:</strong> " . htmlspecialchars($e->getFile()) . ":" . $e->getLine() . "</p>";
+    echo "<pre>" . htmlspecialchars($e->getTraceAsString()) . "</pre>";
+    echo "</body></html>";
+} catch (Error $e) {
+    // Capturar errores fatales también
+    echo "<!DOCTYPE html><html><head><title>Error Fatal</title></head><body>";
+    echo "<h1>Error Fatal del Sistema</h1>";
+    echo "<p><strong>Mensaje:</strong> " . htmlspecialchars($e->getMessage()) . "</p>";
+    echo "<p><strong>Archivo:</strong> " . htmlspecialchars($e->getFile()) . ":" . $e->getLine() . "</p>";
+    echo "<pre>" . htmlspecialchars($e->getTraceAsString()) . "</pre>";
+    echo "</body></html>";
+}
+?>

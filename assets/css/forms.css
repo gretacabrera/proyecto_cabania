@@ -1,0 +1,531 @@
+/**
+ * Estilos para Formularios - Casa de Palos Cabañas
+ * CSS específico para formularios y elementos de entrada
+ */
+
+/* ===========================================
+   FORMULARIOS GENERALES
+   =========================================== */
+
+.formulario-moderno {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.formulario-moderno fieldset {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 25px;
+    margin: 0;
+    background: #fafbfc;
+}
+
+.formulario-moderno legend {
+    font-weight: 600;
+    padding: 0 15px;
+    color: #333;
+    background: #ffffff;
+    border-radius: 6px;
+    font-size: 16px;
+}
+
+/* ===========================================
+   CAMPOS DE FORMULARIO
+   =========================================== */
+
+.campo-formulario {
+    margin-bottom: 20px;
+}
+
+.campo-formulario label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #495057;
+    font-size: 14px;
+}
+
+.campo-formulario .required {
+    color: #dc3545;
+    margin-left: 2px;
+}
+
+.campo-formulario input,
+.campo-formulario textarea,
+.campo-formulario select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background: #ffffff;
+}
+
+.campo-formulario input:focus,
+.campo-formulario textarea:focus,
+.campo-formulario select:focus {
+    outline: none;
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.campo-formulario input:invalid,
+.campo-formulario textarea:invalid {
+    border-color: #dc3545;
+}
+
+.campo-formulario textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+/* ===========================================
+   ELEMENTOS DE RATING Y ESTRELLAS
+   =========================================== */
+
+.rating-stars {
+    display: flex;
+    direction: row-reverse;
+    justify-content: flex-end;
+    margin-bottom: 15px;
+    gap: 2px;
+}
+
+.rating-stars input[type="radio"] {
+    display: none;
+}
+
+.rating-stars label {
+    font-size: 28px;
+    color: #dee2e6;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 4px;
+    border-radius: 4px;
+    user-select: none;
+}
+
+.rating-stars label:hover {
+    color: #ffc107;
+    transform: scale(1.1);
+}
+
+.rating-stars input[type="radio"]:checked ~ label,
+.rating-stars input[type="radio"]:checked + label,
+.rating-stars label:hover,
+.rating-stars label:hover ~ label {
+    color: #ffc107;
+}
+
+.rating-display {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.rating-display .stars {
+    color: #ffc107;
+    font-size: 16px;
+}
+
+.rating-display .score {
+    font-weight: 600;
+    color: #495057;
+}
+
+/* ===========================================
+   CONTADORES Y AYUDAS
+   =========================================== */
+
+.contador-caracteres {
+    text-align: right;
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 5px;
+    font-weight: 500;
+}
+
+.contador-caracteres.warning {
+    color: #ffc107;
+}
+
+.contador-caracteres.danger {
+    color: #dc3545;
+}
+
+.campo-ayuda {
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 5px;
+    line-height: 1.4;
+}
+
+.campo-error {
+    font-size: 12px;
+    color: #dc3545;
+    margin-top: 5px;
+    font-weight: 500;
+}
+
+/* ===========================================
+   BOTONES DE FORMULARIO
+   =========================================== */
+
+.botones-formulario {
+    display: flex;
+    gap: 12px;
+    margin-top: 25px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.button-primary,
+.button-secondary,
+.button-success,
+.button-warning,
+.button-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    min-width: 120px;
+    user-select: none;
+}
+
+.button-primary {
+    background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-600) 100%);
+    color: white;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+.button-primary:hover {
+    background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+.button-secondary {
+    background: linear-gradient(135deg, #6c757d 0%, #545b62 100%);
+    color: white;
+    box-shadow: 0 2px 4px rgba(108, 117, 125, 0.3);
+}
+
+.button-secondary:hover {
+    background: linear-gradient(135deg, #545b62 0%, #343a40 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(108, 117, 125, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+.button-success {
+    background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+    color: white;
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+}
+
+.button-success:hover {
+    background: linear-gradient(135deg, #218838 0%, #155724 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+.button-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+    color: #856404;
+    box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
+}
+
+.button-warning:hover {
+    background: linear-gradient(135deg, #e0a800 0%, #d39e00 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(255, 193, 7, 0.4);
+    color: #856404;
+    text-decoration: none;
+}
+
+.button-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+}
+
+.button-danger:hover {
+    background: linear-gradient(135deg, #c82333 0%, #a71e2a 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+/* Estados de botones */
+.button-primary:disabled,
+.button-secondary:disabled,
+.button-success:disabled,
+.button-warning:disabled,
+.button-danger:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.button-loading {
+    position: relative;
+    color: transparent;
+}
+
+.button-loading::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* ===========================================
+   GRUPOS DE FORMULARIOS
+   =========================================== */
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group-inline {
+    display: flex;
+    gap: 15px;
+    align-items: end;
+}
+
+.form-group-inline .campo-formulario {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.form-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.form-col {
+    flex: 1;
+}
+
+.form-col-2 {
+    flex: 2;
+}
+
+.form-col-3 {
+    flex: 3;
+}
+
+/* ===========================================
+   FORMULARIOS DE BÚSQUEDA
+   =========================================== */
+
+.search-container {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 25px;
+}
+
+.search-form .search-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.search-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-start;
+}
+
+.btn-search {
+    background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-600) 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-search:hover {
+    background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
+    transform: translateY(-1px);
+}
+
+.btn-clear {
+    background: linear-gradient(135deg, #6c757d 0%, #545b62 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-clear:hover {
+    background: linear-gradient(135deg, #545b62 0%, #343a40 100%);
+    transform: translateY(-1px);
+}
+
+/* ===========================================
+   UTILIDADES Y CLASES ESPECÍFICAS
+   =========================================== */
+
+.records-selector {
+    margin-bottom: 10px;
+}
+
+.inline-form {
+    display: inline;
+}
+
+.no-results {
+    text-align: center;
+    padding: 20px;
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* ===========================================
+   RESPONSIVE DESIGN
+   =========================================== */
+
+@media (max-width: 768px) {
+    .search-form .search-fields {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-row {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .form-group-inline {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    
+    .botones-formulario {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .button-primary,
+    .button-secondary,
+    .button-success,
+    .button-warning,
+    .button-danger {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .search-buttons {
+        flex-direction: column;
+    }
+    
+    .btn-search,
+    .btn-clear {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+/* ========================================== */
+/* COMENTARIOS - Formularios de Rating       */
+/* ========================================== */
+
+.info-reserva {
+    background-color: #f8f9fa;
+    border-left: 4px solid #007bff;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+}
+
+.formulario-comentarios fieldset {
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    padding: 25px;
+    margin: 0;
+}
+
+.formulario-comentarios legend {
+    font-weight: bold;
+    padding: 0 10px;
+    color: #333;
+}
+
+.campo-formulario {
+    margin-bottom: 20px;
+}
+
+.campo-formulario label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #555;
+}
+
+.required {
+    color: #e74c3c;
+}
+
+.rating-stars {
+    display: flex;
+    direction: row-reverse;
+    justify-content: flex-end;
+    margin-bottom: 10px;
+}
+
+.rating-stars input[type="radio"] {
+    display: none;
+}
+
+.rating-stars label {
+    font-size: 30px;
+    color: #ddd;
+    cursor: pointer;
+    margin-right: 5px;
+    transition: color 0.2s;
+}
+
+.rating-stars input[type="radio"]:checked ~ label,
+.rating-stars input[type="radio"]:checked + label,
+.rating-stars label:hover,
+.rating-stars label:hover ~ label {
+    color: #f39c12;
+}
