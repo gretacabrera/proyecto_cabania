@@ -117,7 +117,6 @@ El sistema de reservas online implementado en `/public/reservas/` incluye un flu
   - Número de reserva generado
   - Resumen completo de la reserva confirmada
   - Información práctica para la estadía
-  - Enlaces de contacto y soporte
   - Opciones para descargar comprobante
   - Sugerencias de servicios adicionales
 

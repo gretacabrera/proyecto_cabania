@@ -71,7 +71,7 @@ require_once 'app/Views/layouts/header.php';
                         <!-- Información sobre condiciones críticas -->
                         <div class="alert alert-info">
                             <h6><i class="fas fa-info-circle"></i> Detección de Condiciones Críticas</h6>
-                            <p class="mb-2">El sistema detecta automáticamente condiciones que requieren atención especial basándose en palabras clave:</p>
+                            <p class="mb-2">El sistema detecta automáticamente condiciones que requieren atención especial basándose en palabras contrasenia:</p>
                             <div class="row">
                                 <div class="col-md-6">
                                     <small>

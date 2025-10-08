@@ -99,7 +99,7 @@ class Comentario extends Model
      */
     public function getPersonas()
     {
-        $sql = "SELECT * FROM personas WHERE persona_estado = 1 ORDER BY persona_nombre, persona_apellido";
+        $sql = "SELECT * FROM personas WHERE rela_estadopersona = 1 ORDER BY persona_nombre, persona_apellido";
         $result = $this->db->query($sql);
         
         $personas = [];

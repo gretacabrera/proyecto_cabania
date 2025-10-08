@@ -197,47 +197,6 @@
                         </div>
                     </div>
 
-                    <!-- Contacto y Soporte -->
-                    <div class="card mt-4">
-                        <div class="card-header bg-secondary text-white">
-                            <h6 class="mb-0">
-                                <i class="fas fa-headset me-2"></i>
-                                ¿Necesitas Ayuda?
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row text-center">
-                                <div class="col-md-4">
-                                    <div class="mb-2">
-                                        <i class="fas fa-phone fa-2x text-primary mb-2"></i>
-                                        <h6>Teléfono</h6>
-                                        <a href="tel:+542902491004" class="btn btn-outline-primary">
-                                            (02902) 49-1004
-                                        </a>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-2">
-                                        <i class="fas fa-envelope fa-2x text-success mb-2"></i>
-                                        <h6>Email</h6>
-                                        <a href="mailto:info@casadepalos.com" class="btn btn-outline-success">
-                                            info@casadepalos.com
-                                        </a>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-2">
-                                        <i class="fas fa-comments fa-2x text-warning mb-2"></i>
-                                        <h6>WhatsApp</h6>
-                                        <a href="https://wa.me/5492902491004" target="_blank" class="btn btn-outline-warning">
-                                            (02902) 49-1004
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Botones de Acción -->
                     <div class="row mt-4">
                         <div class="col-md-4">

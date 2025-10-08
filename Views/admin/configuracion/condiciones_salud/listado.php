@@ -330,7 +330,7 @@ require_once 'app/Views/layouts/header.php';
             <div class="alert alert-info">
                 <h6><i class="fas fa-info-circle"></i> Información sobre Condiciones de Salud</h6>
                 <ul class="mb-0 pl-3">
-                    <li><strong>Condiciones Críticas:</strong> Se marcan automáticamente cuando contienen palabras clave de condiciones que requieren atención especial.</li>
+                    <li><strong>Condiciones Críticas:</strong> Se marcan automáticamente cuando contienen palabras contrasenia de condiciones que requieren atención especial.</li>
                     <li><strong>Estado Activo:</strong> Solo las condiciones activas están disponibles para asignar a huéspedes.</li>
                     <li><strong>Búsqueda:</strong> Puede filtrar por descripción y estado para encontrar condiciones específicas.</li>
                     <li><strong>Gestión:</strong> Use las acciones para ver detalles, editar o cambiar el estado de las condiciones.</li>
