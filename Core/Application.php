@@ -70,6 +70,13 @@ class Application
         $this->router->get('/auth/register', 'AuthController@register');
         $this->router->post('/auth/register', 'AuthController@register');
         $this->router->any('/auth/change-password', 'AuthController@changePassword');
+        
+        // Rutas de verificación de email
+        $this->router->get('/auth/verify', 'EmailVerificationController@verify');
+        $this->router->get('/auth/verification/status', 'EmailVerificationController@status');
+        $this->router->get('/auth/verification/status/{id}', 'EmailVerificationController@status');
+        $this->router->post('/auth/verification/resend', 'EmailVerificationController@resend');
+        $this->router->get('/auth/verification/cleanup', 'EmailVerificationController@cleanup');
 
         // Rutas principales
         $this->router->get('/', 'HomeController@index');
@@ -138,6 +145,7 @@ class Application
         $this->router->get('/usuarios/{id}/toggle-status', 'UsuariosController@toggleStatus');
         $this->router->get('/usuarios/{id}/profile', 'UsuariosController@profile');
         $this->router->get('/usuarios/profile', 'UsuariosController@profile'); // Perfil actual
+        $this->router->get('/usuarios/{id}/resend-verification', 'UsuariosController@resendVerification');
 
         // Rutas de servicios
         $this->router->get('/servicios', 'ServiciosController@index');

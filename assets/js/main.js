@@ -4554,13 +4554,13 @@ function exportarEstadisticas() {
     window.print();
 }
 
-// Auto-refresh para estadísticas (cada 5 minutos)
+// Auto-refresh para estadísticas (cada 5 minutos) - DESHABILITADO
 function initAutoRefresh() {
-    setInterval(function() {
-        if (!document.querySelector('.modal.show')) {
-            window.location.reload();
-        }
-    }, 300000);
+    // setInterval(function() {
+    //     if (!document.querySelector('.modal.show')) {
+    //         window.location.reload();
+    //     }
+    // }, 300000);
 }
 
 // Inicialización de funciones de salidas

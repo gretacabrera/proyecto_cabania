@@ -688,10 +688,10 @@ function initSalidas() {
         }, 100);
     });
     
-    // Auto-refresh si está definido
-    if (typeof initAutoRefresh === 'function') {
-        initAutoRefresh();
-    }
+    // Auto-refresh si está definido (DESHABILITADO)
+    // if (typeof initAutoRefresh === 'function') {
+    //     initAutoRefresh();
+    // }
 }
 
 // Auto-refresh para estadísticas
@@ -722,14 +722,14 @@ function initAutoRefresh() {
         }
     });
     
-    startRefresh();
+    // startRefresh(); // DESHABILITADO: Auto-refresh cada 30 segundos
 }
 
 // Función para inicializar estadísticas con Chart.js
 function initSalidasStats(chartData) {
     // Inicializar funciones básicas primero
     initSalidas();
-    initAutoRefresh();
+    // initAutoRefresh(); // DESHABILITADO: Auto-refresh automático
     
     // Crear gráfico de distribución por estados
     if (chartData.distribucionEstados) {

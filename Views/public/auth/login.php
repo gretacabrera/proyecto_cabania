@@ -16,15 +16,15 @@
     </div>
     
     <div class="form-group">
-        <label for="usuario_clave">
+        <label for="usuario_contrasenia">
             <i class="fas fa-lock"></i>
             Contraseña
         </label>
         <div class="password-input-group">
             <input 
                 type="password" 
-                id="usuario_clave" 
-                name="usuario_clave" 
+                id="usuario_contrasenia" 
+                name="usuario_contrasenia" 
                 class="form-control"
                 placeholder="Ingresa tu contraseña"
                 required 

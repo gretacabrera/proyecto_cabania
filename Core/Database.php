@@ -102,6 +102,7 @@ class Database
     public function beginTransaction()
     {
         $this->connection->autocommit(false);
+        return $this->connection->begin_transaction();
     }
 
     /**
@@ -109,8 +110,9 @@ class Database
      */
     public function commit()
     {
-        $this->connection->commit();
+        $result = $this->connection->commit();
         $this->connection->autocommit(true);
+        return $result;
     }
 
     /**
@@ -118,8 +120,25 @@ class Database
      */
     public function rollback()
     {
-        $this->connection->rollback();
+        $result = $this->connection->rollback();
         $this->connection->autocommit(true);
+        return $result;
+    }
+
+    /**
+     * Ejecutar múltiples operaciones en transacción
+     */
+    public function transaction(callable $operations)
+    {
+        try {
+            $this->beginTransaction();
+            $result = $operations($this);
+            $this->commit();
+            return $result;
+        } catch (\Exception $e) {
+            $this->rollback();
+            throw $e;
+        }
     }
 
     /**

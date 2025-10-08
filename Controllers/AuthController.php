@@ -47,7 +47,7 @@ class AuthController extends Controller
     private function processLogin()
     {
         $username = $this->post('usuario_nombre');
-        $password = $this->post('usuario_clave');
+        $password = $this->post('usuario_contrasenia');
 
         if (empty($username) || empty($password)) {
             $this->redirect('/auth/login', 'Por favor complete todos los campos', 'error');
@@ -94,12 +94,18 @@ class AuthController extends Controller
      */
     public function register()
     {
+        // DEBUG: Verificar si llegamos aquí
+        error_log("AuthController::register() - Método: " . $_SERVER['REQUEST_METHOD']);
+        
         if ($this->isPost()) {
+            error_log("AuthController::register() - Procesando POST");
             return $this->processRegister();
         }
 
+        error_log("AuthController::register() - Mostrando formulario");
         $data = [
-            'title' => 'Registro de Usuario'
+            'title' => 'Registro de Usuario',
+            'pageTitle' => 'Crear Nueva Cuenta'
         ];
 
         return $this->render('public/auth/register', $data, 'auth');
@@ -110,58 +116,95 @@ class AuthController extends Controller
      */
     private function processRegister()
     {
-        $username = $this->post('usuario_nombre');
-        $password = $this->post('usuario_clave');
-        $confirmPassword = $this->post('confirmar_clave');
-        $email = $this->post('email');
-        $nombre = $this->post('nombre');
-        $apellido = $this->post('apellido');
+        error_log("AuthController::processRegister() - Iniciando procesamiento");
+        
+        $data = $_POST;
+        
+        // Mapear datos al formato esperado por el modelo
+        $mappedData = [
+            'usuario_nombre' => $this->post('usuario_nombre'),
+            'usuario_contrasenia' => $this->post('usuario_contrasenia'),
+            'confirmar_contrasenia' => $this->post('confirmar_contrasenia'),
+            'rela_perfil' => 3, // Perfil huésped por defecto
+            'persona_nombres' => $this->post('nombre'),
+            'persona_apellidos' => $this->post('apellido'),
+            'persona_telefono' => $this->post('telefono', ''),
+            'persona_email' => $this->post('email'),
+            'persona_fecha_nacimiento' => $this->post('fecha_nacimiento'),
+            'persona_direccion' => $this->post('direccion'),
+            'persona_instagram' => $this->post('contacto_instagram'),
+            'persona_facebook' => $this->post('contacto_facebook'),
+            'acepta_terminos' => isset($_POST['accept_all'])  // Cambiar acepta_terminos -> accept_all
+        ];
 
-        // Validaciones básicas
-        if (empty($username) || empty($password) || empty($email) || empty($nombre) || empty($apellido)) {
-            $this->redirect('/auth/register', 'Por favor complete todos los campos', 'error');
+        error_log("AuthController::processRegister() - Datos mapeados: " . json_encode($mappedData, JSON_UNESCAPED_UNICODE));
+
+        // Validar usando el modelo centralizado
+        $errors = $this->usuarioModel->validateUserData($mappedData);
+
+        // Validación de edad mínima
+        if (!empty($mappedData['persona_fecha_nacimiento'])) {
+            $fechaNac = new \DateTime($mappedData['persona_fecha_nacimiento']);
+            $hoy = new \DateTime();
+            $edad = $hoy->diff($fechaNac)->y;
+            
+            if ($edad < 18) {
+                $errors[] = 'Debe ser mayor de 18 años para registrarse';
+            }
         }
 
-        if ($password !== $confirmPassword) {
-            $this->redirect('/auth/register', 'Las contraseñas no coinciden', 'error');
+        // Verificar campos requeridos de persona
+        if (empty($mappedData['persona_nombres'])) {
+            $errors[] = 'Los nombres son obligatorios';
         }
 
-        if ($this->usuarioModel->userExists($username)) {
-            $this->redirect('/auth/register', 'El nombre de usuario ya existe', 'error');
+        if (empty($mappedData['persona_apellidos'])) {
+            $errors[] = 'Los apellidos son obligatorios';
         }
 
+        if (empty($mappedData['persona_email'])) {
+            $errors[] = 'El email es obligatorio';
+        }
+
+        if (empty($mappedData['persona_fecha_nacimiento'])) {
+            $errors[] = 'La fecha de nacimiento es obligatoria';
+        }
+
+        if (empty($mappedData['persona_direccion'])) {
+            $errors[] = 'La dirección es obligatoria';
+        }
+
+        if (!$mappedData['acepta_terminos']) {
+            $errors[] = 'Debe aceptar los términos y condiciones';
+        }
+
+        if (!empty($errors)) {
+            error_log("AuthController::processRegister() - Errores de validación: " . implode(', ', $errors));
+            $this->redirect('/auth/register', implode('. ', $errors), 'error');
+            return;
+        }
+
+        // Verificar email duplicado usando la tabla contacto
         $personaModel = new Persona();
-        if ($personaModel->emailExists($email)) {
+        if ($personaModel->emailExists($mappedData['persona_email'])) {
+            error_log("AuthController::processRegister() - Error: email existe");
             $this->redirect('/auth/register', 'El email ya está registrado', 'error');
+            return;
         }
 
         try {
-            // Crear persona primero
-            $personaId = $personaModel->create([
-                'persona_nombre' => $nombre,
-                'persona_apellido' => $apellido,
-                'persona_email' => $email,
-                'persona_telefono' => $this->post('telefono', ''),
-                'persona_documento' => $this->post('documento', ''),
-                'rela_estadopersona' => 1, // Estado activo
-                'persona_estado' => 1
-            ]);
-
-            // Crear usuario
-            $userId = $this->usuarioModel->createUser([
-                'usuario_nombre' => $username,
-                'usuario_clave' => $password,
-                'rela_persona' => $personaId,
-                'rela_perfil' => 3, // Perfil huésped por defecto
-                'usuario_estado' => 1
-            ]);
+            // Usar el método del modelo para crear usuario completo
+            $userId = $this->usuarioModel->createUsuarioCompleto($mappedData);
 
             if ($userId) {
+                error_log("AuthController::processRegister() - Registro completo exitoso con ID: $userId");
                 $this->redirect('/auth/login', 'Usuario registrado correctamente. Ya puede iniciar sesión.', 'exito');
             } else {
+                error_log("AuthController::processRegister() - Error: no se pudo completar el registro");
                 $this->redirect('/auth/register', 'Error al crear el usuario', 'error');
             }
         } catch (\Exception $e) {
+            error_log("AuthController::processRegister() - Excepción: " . $e->getMessage());
             $this->redirect('/auth/register', 'Error: ' . $e->getMessage(), 'error');
         }
     }
@@ -205,5 +248,42 @@ class AuthController extends Controller
         ];
 
         return $this->render('public/auth/change-password', $data);
+    }
+
+    /**
+     * Crear un contacto en la tabla contacto (método legacy - mantener para compatibilidad)
+     */
+    private function createContacto($personaId, $tipoDescripcion, $valor)
+    {
+        if (empty($valor)) {
+            return true; // No crear contacto si el valor está vacío
+        }
+
+        $db = \App\Core\Database::getInstance();
+        
+        // Obtener el ID del tipo de contacto
+        $stmt = $db->prepare("SELECT id_tipocontacto FROM tipocontacto WHERE tipocontacto_descripcion = ?");
+        $stmt->bind_param("s", $tipoDescripcion);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($result->num_rows === 0) {
+            error_log("AuthController::createContacto() - Tipo de contacto '$tipoDescripcion' no encontrado");
+            return false;
+        }
+        
+        $tipoContactoId = $result->fetch_assoc()['id_tipocontacto'];
+        
+        // Crear el contacto
+        $stmt = $db->prepare("INSERT INTO contacto (contacto_descripcion, rela_persona, rela_tipocontacto, contacto_estado) VALUES (?, ?, ?, 1)");
+        $stmt->bind_param("sii", $valor, $personaId, $tipoContactoId);
+        
+        if ($stmt->execute()) {
+            error_log("AuthController::createContacto() - Contacto $tipoDescripcion creado: $valor");
+            return true;
+        } else {
+            error_log("AuthController::createContacto() - Error al crear contacto $tipoDescripcion: " . $stmt->error);
+            return false;
+        }
     }
 }

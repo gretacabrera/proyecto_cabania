@@ -17,22 +17,60 @@ class Persona extends Model
      */
     public function getActive($page = 1, $perPage = 10, $search = '')
     {
-        $where = "persona_estado = 1";
+        $offset = ($page - 1) * $perPage;
+        $baseWhere = "rela_estadopersona = 1";
+        $params = [];
         
         if ($search) {
-            $search = $this->db->escape($search);
-            $where .= " AND (persona_nombre LIKE '%$search%' OR persona_apellido LIKE '%$search%' OR persona_email LIKE '%$search%')";
+            $searchPattern = '%' . $search . '%';
+            $baseWhere .= " AND (persona_nombre LIKE ? OR persona_apellido LIKE ?)";
+            $params = [$searchPattern, $searchPattern];
         }
         
-        return $this->paginate($page, $perPage, $where, "persona_apellido, persona_nombre");
+        // Contar total
+        $countSql = "SELECT COUNT(*) as total FROM {$this->table} WHERE $baseWhere";
+        if (!empty($params)) {
+            $countResult = $this->query($countSql, $params);
+        } else {
+            $countResult = $this->db->query($countSql);
+        }
+        $totalRecords = $countResult->fetch_assoc()['total'];
+        
+        // Obtener registros
+        $sql = "SELECT * FROM {$this->table} WHERE $baseWhere ORDER BY persona_apellido, persona_nombre LIMIT ? OFFSET ?";
+        $allParams = array_merge($params, [$perPage, $offset]);
+        
+        $result = $this->query($sql, $allParams);
+        $records = [];
+        while ($row = $result->fetch_assoc()) {
+            $records[] = $row;
+        }
+        
+        return [
+            'data' => $records,
+            'total' => $totalRecords,
+            'current_page' => $page,
+            'per_page' => $perPage,
+            'total_pages' => ceil($totalRecords / $perPage)
+        ];
     }
 
     /**
-     * Buscar persona por email
+     * Buscar persona por email (lógica simple: buscar contacto y obtener rela_persona)
      */
     public function findByEmail($email)
     {
-        return $this->findWhere("persona_email = ? AND persona_estado = 1", [$email]);
+        $contactoModel = new Contacto();
+        
+        // 1. Buscar el contacto con ese email
+        $contacto = $contactoModel->findByDescripcionAndTipo($email, 'email');
+        
+        if (!$contacto) {
+            return false; // No existe contacto con ese email
+        }
+        
+        // 2. Obtener la persona usando el rela_persona del contacto
+        return $this->find($contacto['rela_persona']);
     }
 
     /**
@@ -50,30 +88,26 @@ class Persona extends Model
     }
 
     /**
-     * Obtener persona con sus contactos (email y teléfono)
+     * Obtener persona con sus contactos (email y teléfono) usando modelo Contacto
      */
     public function getWithContacts($id)
     {
-        $sql = "SELECT p.*, 
-                       ep.estadopersona_descripcion,
-                       (SELECT contacto_descripcion FROM contacto c 
-                        JOIN tipocontacto tc ON c.rela_tipocontacto = tc.id_tipocontacto 
-                        WHERE tc.tipocontacto_descripcion = 'email' 
-                        AND c.rela_persona = p.id_persona 
-                        AND c.contacto_estado = 1 
-                        LIMIT 1) AS contacto_email,
-                       (SELECT contacto_descripcion FROM contacto c 
-                        JOIN tipocontacto tc ON c.rela_tipocontacto = tc.id_tipocontacto 
-                        WHERE tc.tipocontacto_descripcion = 'telefono' 
-                        AND c.rela_persona = p.id_persona 
-                        AND c.contacto_estado = 1 
-                        LIMIT 1) AS contacto_telefono
+        $sql = "SELECT p.*, ep.estadopersona_descripcion
                 FROM persona p
                 LEFT JOIN estadopersona ep ON p.rela_estadopersona = ep.id_estadopersona
                 WHERE p.id_persona = ?";
         
         $result = $this->query($sql, [$id]);
-        return $result->fetch_assoc();
+        $persona = $result->fetch_assoc();
+        
+        if ($persona) {
+            // Usar el modelo Contacto para obtener los contactos específicos
+            $contactoModel = new Contacto();
+            $persona['contacto_email'] = $contactoModel->getContactoByTipoAndPersona('email', $id);
+            $persona['contacto_telefono'] = $contactoModel->getContactoByTipoAndPersona('telefono', $id);
+        }
+        
+        return $persona;
     }
 
     /**
@@ -81,15 +115,115 @@ class Persona extends Model
      */
     public function emailExists($email, $excludeId = null)
     {
-        $where = "persona_email = ?";
-        $params = [$email];
+        $contactoModel = new Contacto();
+        return $contactoModel->existsByDescripcionAndTipo($email, 'email', $excludeId);
+    }
+
+    /**
+     * Crear persona con transacción completa
+     */
+    public function createPersonaCompleta($data)
+    {
+        $db = \App\Core\Database::getInstance();
         
-        if ($excludeId) {
-            $where .= " AND id_persona != ?";
-            $params[] = $excludeId;
+        return $db->transaction(function($db) use ($data) {
+            // 1. Crear persona usando el método create del modelo
+            $personaData = [
+                'persona_nombre' => $data['persona_nombres'],
+                'persona_apellido' => $data['persona_apellidos'],
+                'persona_fechanac' => $data['persona_fecha_nacimiento'],
+                'persona_direccion' => $data['persona_direccion'],
+                'rela_estadopersona' => 1
+            ];
+            
+            $personaId = $this->create($personaData);
+            if (!$personaId) {
+                throw new \Exception('Error al crear la persona');
+            }
+            
+            // 2. Crear contactos usando el modelo Contacto
+            $this->createContactosForPersona($personaId, $data);
+            
+            // 3. Crear huésped si es necesario
+            if (isset($data['crear_huesped']) && $data['crear_huesped']) {
+                $this->createHuespedForPersona($personaId);
+            }
+            
+            return $personaId;
+        });
+    }
+
+    /**
+     * Crear contactos para una persona
+     */
+    private function createContactosForPersona($personaId, $data)
+    {
+        $contactoModel = new Contacto();
+        $tipoContactoModel = new TipoContacto();
+        
+        $contactos = [
+            'email' => $data['persona_email'] ?? '',
+            'telefono' => $data['persona_telefono'] ?? '',
+            'instagram' => $data['persona_instagram'] ?? '',
+            'facebook' => $data['persona_facebook'] ?? ''
+        ];
+
+        foreach ($contactos as $tipoDescripcion => $valor) {
+            if (!empty($valor)) {
+                // Obtener ID del tipo de contacto usando findWhere
+                $tipoContacto = $tipoContactoModel->findWhere("tipocontacto_descripcion = ?", [$tipoDescripcion]);
+                
+                if (!$tipoContacto) {
+                    throw new \Exception("Tipo de contacto '$tipoDescripcion' no encontrado");
+                }
+                
+                // Crear contacto usando el método create del modelo
+                $contactoData = [
+                    'contacto_descripcion' => $valor,
+                    'rela_persona' => $personaId,
+                    'rela_tipocontacto' => $tipoContacto['id_tipocontacto'],
+                    'contacto_estado' => 1
+                ];
+                
+                $contactoId = $contactoModel->create($contactoData);
+                if (!$contactoId) {
+                    throw new \Exception("Error al crear contacto $tipoDescripcion");
+                }
+            }
+        }
+    }
+
+    /**
+     * Crear huésped para una persona
+     */
+    private function createHuespedForPersona($personaId)
+    {
+        $huespedModel = new Huesped();
+        
+        // Verificar si ya es huésped
+        if ($huespedModel->personaIsHuesped($personaId)) {
+            return; // Ya es huésped, no hacer nada
         }
         
-        $persona = $this->findWhere($where, $params);
-        return $persona !== false;
+        // Crear huésped usando el método create del modelo
+        $huespedData = [
+            'rela_persona' => $personaId,
+            'huesped_estado' => 1
+        ];
+        
+        $huespedId = $huespedModel->create($huespedData);
+        if (!$huespedId) {
+            throw new \Exception('Error al crear huésped');
+        }
+        
+        return $huespedId;
+    }
+
+    /**
+     * Método público para crear huésped (usado desde Usuario model)
+     */
+    public function insertHuespedTransaction($db, $personaId)
+    {
+        return $this->createHuespedForPersona($personaId);
     }
 }

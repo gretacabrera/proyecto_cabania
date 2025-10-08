@@ -67,10 +67,6 @@
                     <?= $content ?>
                 </div>
                 
-                <!-- Footer del formulario -->
-                <div class="auth-form-footer">
-                    <p>¿Necesitas ayuda? <a href="#" class="text-primary">Contacta con soporte</a></p>
-                </div>
             </div>
         </div>
     </div>

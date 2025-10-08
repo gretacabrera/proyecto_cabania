@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Core\EmailService;
 use App\Models\Usuario;
 
 /**
@@ -59,19 +60,37 @@ class UsuariosController extends Controller
         if ($this->isPost()) {
             $data = [
                 'usuario_nombre' => $this->post('usuario_nombre'),
-                'usuario_clave' => password_hash($this->post('usuario_clave'), PASSWORD_DEFAULT),
+                'usuario_contrasenia' => $this->post('usuario_contrasenia'),
+                'confirmar_contrasenia' => $this->post('confirmar_contrasenia'),
                 'rela_perfil' => $this->post('rela_perfil'),
                 'rela_persona' => $this->post('rela_persona'),
                 'usuario_estado' => 1
             ];
 
-            // Verificar que el usuario no exista
-            if ($this->usuarioModel->findByUsername($data['usuario_nombre'])) {
-                $this->redirect('/admin/seguridad/usuarios/create', 'El nombre de usuario ya existe', 'error');
+            // Validar usando el método centralizado
+            $errors = $this->usuarioModel->validateUserData($data);
+
+            if (!empty($errors)) {
+                $this->redirect('/admin/seguridad/usuarios/create', implode('. ', $errors), 'error');
+                return;
             }
 
-            if ($this->usuarioModel->create($data)) {
-                $this->redirect('/usuarios', 'Usuario creado exitosamente', 'exito');
+            // Preparar datos para inserción
+            // Estado 2 = Pendiente de verificación de email
+            $insertData = [
+                'usuario_nombre' => $data['usuario_nombre'],
+                'usuario_contrasenia' => password_hash($data['usuario_contrasenia'], PASSWORD_DEFAULT),
+                'rela_perfil' => $data['rela_perfil'],
+                'rela_persona' => $data['rela_persona'],
+                'usuario_estado' => 2
+            ];
+
+            $userId = $this->usuarioModel->create($insertData);
+            
+            if ($userId) {
+                // Enviar email de verificación
+                $this->sendVerificationEmail($userId);
+                $this->redirect('/usuarios', 'Usuario creado exitosamente. Se ha enviado un email de verificación.', 'exito');
             } else {
                 $this->redirect('/admin/seguridad/usuarios/create', 'Error al crear el usuario', 'error');
             }
@@ -108,22 +127,33 @@ class UsuariosController extends Controller
         if ($this->isPost()) {
             $data = [
                 'usuario_nombre' => $this->post('usuario_nombre'),
+                'usuario_contrasenia' => $this->post('usuario_contrasenia'),
+                'confirmar_contrasenia' => $this->post('confirmar_contrasenia'),
                 'rela_perfil' => $this->post('rela_perfil'),
                 'rela_persona' => $this->post('rela_persona')
             ];
 
-            // Solo actualizar clave si se proporciona
-            if ($this->post('usuario_clave')) {
-                $data['usuario_clave'] = password_hash($this->post('usuario_clave'), PASSWORD_DEFAULT);
+            // Validar usando el método centralizado (para actualización)
+            $errors = $this->usuarioModel->validateUserData($data, true, $id);
+
+            if (!empty($errors)) {
+                $this->redirect("/admin/seguridad/usuarios/{$id}/edit", implode('. ', $errors), 'error');
+                return;
             }
 
-            // Verificar que el usuario no exista (excepto el actual)
-            $existingUser = $this->usuarioModel->findByUsername($data['usuario_nombre']);
-            if ($existingUser && $existingUser['id_usuario'] != $id) {
-                $this->redirect("/admin/seguridad/usuarios/{$id}/edit", 'El nombre de usuario ya existe', 'error');
+            // Preparar datos para actualización
+            $updateData = [
+                'usuario_nombre' => $data['usuario_nombre'],
+                'rela_perfil' => $data['rela_perfil'],
+                'rela_persona' => $data['rela_persona']
+            ];
+
+            // Solo actualizar contrasenia si se proporciona
+            if (!empty($data['usuario_contrasenia'])) {
+                $updateData['usuario_contrasenia'] = password_hash($data['usuario_contrasenia'], PASSWORD_DEFAULT);
             }
 
-            if ($this->usuarioModel->update($id, $data)) {
+            if ($this->usuarioModel->update($id, $updateData)) {
                 $this->redirect('/usuarios', 'Usuario actualizado exitosamente', 'exito');
             } else {
                 $this->redirect("/admin/seguridad/usuarios/{$id}/edit", 'Error al actualizar el usuario', 'error');
@@ -210,5 +240,110 @@ class UsuariosController extends Controller
         ];
 
         return $this->render('admin/seguridad/usuarios/perfil', $data);
+    }
+
+    /**
+     * Enviar email de verificación al usuario
+     */
+    private function sendVerificationEmail($userId)
+    {
+        try {
+            // Obtener datos del usuario para el email
+            $userData = $this->usuarioModel->getUserForEmail($userId);
+            
+            if (!$userData || !$userData['persona_email']) {
+                error_log("No se pudo obtener el email del usuario ID: $userId");
+                return false;
+            }
+            
+            // Generar token de verificación
+            $verificationToken = $this->usuarioModel->generateVerificationToken($userId);
+            
+            if (!$verificationToken) {
+                error_log("Error al generar token de verificación para usuario ID: $userId");
+                return false;
+            }
+            
+            // Preparar datos para el email
+            $recipientEmail = $userData['persona_email'];
+            $recipientName = trim($userData['persona_nombre'] . ' ' . $userData['persona_apellido']);
+            $userName = $userData['usuario_nombre'];
+            
+            // Enviar email usando EmailService
+            $emailService = new EmailService();
+            $result = $emailService->sendUserVerificationEmail(
+                $recipientEmail,
+                $recipientName,
+                $userName,
+                $verificationToken
+            );
+            
+            if ($result['success']) {
+                error_log("Email de verificación enviado exitosamente a: $recipientEmail (Usuario: $userName)");
+                return true;
+            } else {
+                error_log("Error al enviar email de verificación: " . $result['message']);
+                return false;
+            }
+            
+        } catch (\Exception $e) {
+            error_log("Excepción al enviar email de verificación: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Verificar token de verificación de email
+     */
+    public function verify()
+    {
+        $token = $this->get('token');
+        
+        if (!$token) {
+            $this->redirect('/', 'Token de verificación no válido', 'error');
+            return;
+        }
+        
+        $usuario = $this->usuarioModel->verifyToken($token);
+        
+        if ($usuario) {
+            $nombreCompleto = trim($usuario['persona_nombre'] . ' ' . $usuario['persona_apellido']);
+            $this->redirect('/', "¡Email verificado exitosamente! Bienvenido/a $nombreCompleto", 'exito');
+        } else {
+            $this->redirect('/', 'Token de verificación inválido o expirado', 'error');
+        }
+    }
+
+    /**
+     * Reenviar email de verificación
+     */
+    public function resendVerification($id = null)
+    {
+        if (!$this->hasPermission('usuarios') && !$id) {
+            return $this->view->error(403);
+        }
+        
+        // Si no se proporciona ID, usar el usuario actual
+        if (!$id) {
+            $id = $_SESSION['usuario_id'] ?? null;
+        }
+        
+        if (!$id) {
+            $this->redirect('/login', 'Debe iniciar sesión', 'error');
+            return;
+        }
+        
+        // Verificar si el email ya está verificado
+        if ($this->usuarioModel->isEmailVerified($id)) {
+            $this->redirect('/usuarios', 'El email ya está verificado', 'info');
+            return;
+        }
+        
+        // Reenviar email de verificación
+        if ($this->sendVerificationEmail($id)) {
+            $this->redirect('/usuarios', 'Email de verificación reenviado exitosamente', 'exito');
+        } else {
+            $this->redirect('/usuarios', 'Error al reenviar el email de verificación', 'error');
+        }
     }
 }

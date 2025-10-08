@@ -31,13 +31,13 @@
                                 </div>
 
                                 <div class="form-group">
-                                    <label for="usuario_clave">
+                                    <label for="usuario_contrasenia">
                                         Contraseña <?= isset($usuario) ? '' : '*' ?>
                                     </label>
                                     <input type="password" 
                                            class="form-control" 
-                                           id="usuario_clave" 
-                                           name="usuario_clave" 
+                                           id="usuario_contrasenia" 
+                                           name="usuario_contrasenia" 
                                            <?= isset($usuario) ? '' : 'required' ?>
                                            minlength="6">
                                     <small class="form-text text-muted">
@@ -46,13 +46,13 @@
                                 </div>
 
                                 <div class="form-group">
-                                    <label for="usuario_clave_confirm">
+                                    <label for="usuario_contrasenia_confirm">
                                         Confirmar Contraseña <?= isset($usuario) ? '' : '*' ?>
                                     </label>
                                     <input type="password" 
                                            class="form-control" 
-                                           id="usuario_clave_confirm" 
-                                           name="usuario_clave_confirm"
+                                           id="usuario_contrasenia_confirm" 
+                                           name="usuario_contrasenia_confirm"
                                            <?= isset($usuario) ? '' : 'required' ?>>
                                     <div id="password-feedback"></div>
                                 </div>
