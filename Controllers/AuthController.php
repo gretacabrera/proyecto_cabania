@@ -54,28 +54,34 @@ class AuthController extends Controller
             return;
         }
 
-        $usuario = $this->usuarioModel->authenticate($username, $password);
+        try {
+            $usuario = $this->usuarioModel->authenticate($username, $password);
 
-        if ($usuario) {
-            Auth::login($usuario['usuario_nombre'], $usuario['id_usuario']);
-            
-            // Verificar si hay una reserva pendiente después del login exitoso
-            if (isset($_SESSION['pending_reservation'])) {
-                $pendingReservation = $_SESSION['pending_reservation'];
-                unset($_SESSION['pending_reservation']);
+            if ($usuario) {
+                Auth::login($usuario['usuario_nombre'], $usuario['id_usuario']);
                 
-                $redirectUrl = '/reservas/confirmar?' . http_build_query([
-                    'cabania_id' => $pendingReservation['cabania_id'],
-                    'fecha_inicio' => $pendingReservation['fecha_inicio'],
-                    'fecha_fin' => $pendingReservation['fecha_fin']
-                ]);
-                
-                $this->redirect($redirectUrl, 'Bienvenido ' . $usuario['usuario_nombre'] . '. Completa tu reserva.', 'exito');
+                // Verificar si hay una reserva pendiente después del login exitoso
+                if (isset($_SESSION['pending_reservation'])) {
+                    $pendingReservation = $_SESSION['pending_reservation'];
+                    unset($_SESSION['pending_reservation']);
+                    
+                    $redirectUrl = '/reservas/confirmar?' . http_build_query([
+                        'cabania_id' => $pendingReservation['cabania_id'],
+                        'fecha_inicio' => $pendingReservation['fecha_inicio'],
+                        'fecha_fin' => $pendingReservation['fecha_fin']
+                    ]);
+                    
+                    $this->redirect($redirectUrl, 'Bienvenido ' . $usuario['usuario_nombre'] . '. Completa tu reserva.', 'exito');
+                } else {
+                    $this->redirect('/', 'Bienvenido ' . $usuario['usuario_nombre'], 'exito');
+                }
             } else {
-                $this->redirect('/', 'Bienvenido ' . $usuario['usuario_nombre'], 'exito');
+                $this->redirect('/auth/login', 'Credenciales incorrectas', 'error');
+                return;
             }
-        } else {
-            $this->redirect('/auth/login', 'Credenciales incorrectas', 'error');
+        } catch (\Exception $e) {
+            // Capturar mensaje de verificación pendiente
+            $this->redirect('/auth/login', $e->getMessage(), 'aviso');
             return;
         }
     }
@@ -198,7 +204,48 @@ class AuthController extends Controller
 
             if ($userId) {
                 error_log("AuthController::processRegister() - Registro completo exitoso con ID: $userId");
-                $this->redirect('/auth/login', 'Usuario registrado correctamente. Ya puede iniciar sesión.', 'exito');
+                
+                // Generar token de verificación
+                $verificationToken = $this->usuarioModel->generateVerificationToken($userId);
+                
+                if ($verificationToken) {
+                    // Obtener datos del usuario para el email
+                    $userData = $this->usuarioModel->getUserForEmail($userId);
+                    
+                    error_log("AuthController::processRegister() - Datos de usuario: " . json_encode($userData, JSON_UNESCAPED_UNICODE));
+                    
+                    if ($userData && !empty($userData['persona_email'])) {
+                        // Enviar email de verificación
+                        try {
+                            $emailService = new \App\Core\EmailService();
+                            $nombreCompleto = trim($userData['persona_nombre'] . ' ' . $userData['persona_apellido']);
+                            
+                            $emailResult = $emailService->sendUserVerificationEmail(
+                                $userData['persona_email'],
+                                $nombreCompleto,
+                                $userData['usuario_nombre'],
+                                $verificationToken
+                            );
+                            
+                            if ($emailResult['success']) {
+                                error_log("AuthController::processRegister() - Email de verificación enviado exitosamente");
+                                $this->redirect('/auth/login', 'Usuario registrado correctamente. Se ha enviado un email de verificación a su correo. Por favor verifique su email antes de iniciar sesión.', 'exito');
+                            } else {
+                                error_log("AuthController::processRegister() - Error al enviar email: " . $emailResult['message']);
+                                $this->redirect('/auth/login', 'Usuario registrado correctamente, pero hubo un problema al enviar el email de verificación. Contacte al administrador.', 'aviso');
+                            }
+                        } catch (\Exception $e) {
+                            error_log("AuthController::processRegister() - Excepción al enviar email: " . $e->getMessage());
+                            $this->redirect('/auth/login', 'Usuario registrado correctamente, pero hubo un problema al enviar el email de verificación. Contacte al administrador.', 'aviso');
+                        }
+                    } else {
+                        error_log("AuthController::processRegister() - No se pudo obtener email del usuario");
+                        $this->redirect('/auth/login', 'Usuario registrado correctamente, pero no se pudo enviar el email de verificación. Contacte al administrador.', 'aviso');
+                    }
+                } else {
+                    error_log("AuthController::processRegister() - Error al generar token de verificación");
+                    $this->redirect('/auth/login', 'Usuario registrado correctamente, pero no se pudo generar el token de verificación. Contacte al administrador.', 'aviso');
+                }
             } else {
                 error_log("AuthController::processRegister() - Error: no se pudo completar el registro");
                 $this->redirect('/auth/register', 'Error al crear el usuario', 'error');

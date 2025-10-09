@@ -17,7 +17,18 @@ class EmailService
     public function __construct()
     {
         // Cargar configuración
-        $config = require_once __DIR__ . '/config.php';
+        $configFile = __DIR__ . '/config.php';
+        
+        if (!file_exists($configFile)) {
+            throw new \Exception("Archivo de configuración no encontrado: $configFile");
+        }
+        
+        $config = require $configFile;
+        
+        if (!is_array($config) || !isset($config['mail'])) {
+            throw new \Exception("Configuración de mail no encontrada en config.php");
+        }
+        
         $this->config = $config['mail'];
         
         // Configurar PHPMailer

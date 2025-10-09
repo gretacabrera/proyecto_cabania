@@ -28,11 +28,12 @@ class EmailVerificationController extends Controller
         if (!$token) {
             $data = [
                 'title' => 'Error de Verificación',
+                'pageTitle' => 'Verificación de Email',
                 'message' => 'Token de verificación no válido',
                 'type' => 'error'
             ];
             
-            return $this->render('public/auth/verification_result', $data);
+            return $this->render('public/auth/verification_result', $data, 'auth');
         }
         
         $usuario = $this->usuarioModel->verifyToken($token);
@@ -42,6 +43,7 @@ class EmailVerificationController extends Controller
             
             $data = [
                 'title' => '¡Email Verificado!',
+                'pageTitle' => 'Verificación Exitosa',
                 'message' => "¡Email verificado exitosamente! Bienvenido/a $nombreCompleto",
                 'type' => 'success',
                 'usuario' => $usuario
@@ -49,12 +51,13 @@ class EmailVerificationController extends Controller
         } else {
             $data = [
                 'title' => 'Error de Verificación',
+                'pageTitle' => 'Verificación Fallida',
                 'message' => 'Token de verificación inválido o expirado',
                 'type' => 'error'
             ];
         }
         
-        return $this->render('public/auth/verification_result', $data);
+        return $this->render('public/auth/verification_result', $data, 'auth');
     }
 
     /**
@@ -82,12 +85,13 @@ class EmailVerificationController extends Controller
         
         $data = [
             'title' => 'Estado de Verificación de Email',
+            'pageTitle' => 'Estado de Verificación',
             'usuario' => $usuario,
             'is_verified' => $isVerified,
             'can_resend' => !$isVerified
         ];
         
-        return $this->render('public/auth/verification_status', $data);
+        return $this->render('public/auth/verification_status', $data, 'auth');
     }
 
     /**

@@ -8,7 +8,10 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// Cargar el autoloader
+// Cargar autoload de Composer para dependencias externas
+require_once __DIR__ . '/vendor/autoload.php';
+
+// Cargar el autoloader personalizado para las clases del proyecto
 require_once __DIR__ . '/Core/Autoloader.php';
 \App\Core\Autoloader::register();
 

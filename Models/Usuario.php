@@ -17,9 +17,17 @@ class Usuario extends Model
      */
     public function authenticate($username, $password)
     {
-        $usuario = $this->findWhere("usuario_nombre = ? AND usuario_estado = 1", [$username]);
+        // Buscar usuario por nombre (incluir estados 1 y 2 para dar mensajes específicos)
+        $usuario = $this->findWhere("usuario_nombre = ? AND usuario_estado IN (1, 2)", [$username]);
         
         if ($usuario && password_verify($password, $usuario['usuario_contrasenia'])) {
+            // Verificar si el usuario está pendiente de verificación
+            if ($usuario['usuario_estado'] == 2) {
+                // Usuario existe pero no ha verificado su email
+                throw new \Exception('Su cuenta está pendiente de verificación de email. Por favor revise su correo electrónico.');
+            }
+            
+            // Usuario verificado y activo
             return $usuario;
         }
         
@@ -330,7 +338,7 @@ class Usuario extends Model
         
         $perfilId = $result->fetch_assoc()['id_perfil'];
         
-        return $this->insertUsuarioWithPerfil($db, $data, $personaId, $perfilId);
+        return $this->insertUsuarioWithPerfilPendiente($db, $data, $personaId, $perfilId);
     }
 
     /**
@@ -341,6 +349,31 @@ class Usuario extends Model
         $hashedPassword = password_hash($data['usuario_contrasenia'], PASSWORD_DEFAULT);
         
         $sql = "INSERT INTO usuario (usuario_nombre, usuario_contrasenia, rela_persona, rela_perfil, usuario_estado) VALUES (?, ?, ?, ?, 1)";
+        
+        $stmt = $db->prepare($sql);
+        $stmt->bind_param("ssii", 
+            $data['usuario_nombre'],
+            $hashedPassword,
+            $personaId,
+            $perfilId
+        );
+        
+        if ($stmt->execute()) {
+            return $db->insertId();
+        }
+        
+        throw new \Exception('Error al insertar usuario: ' . $stmt->error);
+    }
+
+    /**
+     * Insertar usuario con perfil específico en estado pendiente de verificación
+     */
+    private function insertUsuarioWithPerfilPendiente($db, $data, $personaId, $perfilId)
+    {
+        $hashedPassword = password_hash($data['usuario_contrasenia'], PASSWORD_DEFAULT);
+        
+        // Estado 2 = Pendiente de verificación de email
+        $sql = "INSERT INTO usuario (usuario_nombre, usuario_contrasenia, rela_persona, rela_perfil, usuario_estado) VALUES (?, ?, ?, ?, 2)";
         
         $stmt = $db->prepare($sql);
         $stmt->bind_param("ssii", 
@@ -434,21 +467,58 @@ class Usuario extends Model
      */
     public function generateVerificationToken($userId)
     {
+        error_log("generateVerificationToken: Iniciando para usuario ID: $userId");
+        
+        // Verificar que el usuario existe
+        try {
+            $usuario = $this->find($userId);
+            if (!$usuario) {
+                error_log("generateVerificationToken: Usuario ID $userId no encontrado");
+                return false;
+            }
+            error_log("generateVerificationToken: Usuario encontrado - " . $usuario['usuario_nombre']);
+        } catch (\Exception $e) {
+            error_log("generateVerificationToken: Error al buscar usuario - " . $e->getMessage());
+            return false;
+        }
+        
         $token = bin2hex(random_bytes(32)); // Token de 64 caracteres
         $fechaToken = date('Y-m-d H:i:s');
+        
+        error_log("generateVerificationToken: Token generado, preparando SQL...");
         
         $sql = "UPDATE {$this->table} 
                 SET usuario_token = ?, 
                     usuario_fhtoken = ?
                 WHERE {$this->primaryKey} = ?";
         
-        $result = $this->query($sql, [$token, $fechaToken, $userId]);
-        
-        if ($result) {
-            return $token;
+        try {
+            $stmt = $this->db->prepare($sql);
+            if (!$stmt) {
+                error_log("generateVerificationToken: Error al preparar statement");
+                return false;
+            }
+            
+            $stmt->bind_param("ssi", $token, $fechaToken, $userId);
+            error_log("generateVerificationToken: Statement preparado, ejecutando...");
+            
+            if ($stmt->execute()) {
+                error_log("generateVerificationToken: Statement ejecutado - Filas afectadas: " . $stmt->affected_rows);
+                if ($stmt->affected_rows > 0) {
+                    error_log("generateVerificationToken: Token guardado exitosamente para usuario ID: $userId");
+                    return $token;
+                } else {
+                    error_log("generateVerificationToken: No se actualizó ninguna fila para usuario ID: $userId");
+                    return false;
+                }
+            } else {
+                error_log("generateVerificationToken: Error SQL al ejecutar - Error: " . $stmt->error);
+                return false;
+            }
+        } catch (\Exception $e) {
+            error_log("generateVerificationToken: Excepción SQL - " . $e->getMessage());
+            return false;
         }
-        
-        return false;
     }
 
     /**
@@ -478,10 +548,14 @@ class Usuario extends Model
                               usuario_fhtoken = NULL
                           WHERE {$this->primaryKey} = ?";
             
-            $updateResult = $this->query($updateSql, [$usuario[$this->primaryKey]]);
+            $stmt = $this->db->prepare($updateSql);
+            $stmt->bind_param("i", $usuario[$this->primaryKey]);
             
-            if ($updateResult) {
+            if ($stmt->execute() && $stmt->affected_rows > 0) {
+                error_log("Usuario verificado exitosamente: " . $usuario['usuario_nombre']);
                 return $usuario;
+            } else {
+                error_log("Error al verificar usuario ID: " . $usuario[$this->primaryKey] . " - Filas afectadas: " . $stmt->affected_rows);
             }
         }
         

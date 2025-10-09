@@ -226,10 +226,6 @@
             Crear cuenta
         </button>
         
-        <!-- Debug info -->
-        <div id="debug-info" style="margin-top: 10px; padding: 10px; background: #f8f9fa; border: 1px solid #dee2e6; font-size: 12px; display: none;">
-            <strong>Debug:</strong> <span id="debug-text"></span>
-        </div>
     </form>
 
     <div class="auth-divider">
