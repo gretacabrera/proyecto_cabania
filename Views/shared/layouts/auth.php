@@ -68,6 +68,9 @@
                                 case 'Restablecer Contraseña':
                                     echo 'Establezca una nueva contraseña segura para su cuenta';
                                     break;
+                                case 'Cambiar Contraseña':
+                                    echo 'Actualice su contraseña por una más segura';
+                                    break;
                                 default:
                                     echo 'Accede a tu cuenta para gestionar tus reservas';
                             }

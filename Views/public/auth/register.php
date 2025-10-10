@@ -43,6 +43,14 @@
                 </div>
             </div>
             
+            <!-- Indicador de fortaleza de contraseña -->
+            <div class="password-strength" id="passwordStrength">
+                <div class="strength-bar">
+                    <div class="strength-progress" id="strengthProgress"></div>
+                </div>
+                <small class="strength-text" id="strengthText">Ingrese una contraseña</small>
+            </div>
+            
             <div class="form-group">
                 <label for="confirmar_contrasenia">
                     <i class="fas fa-lock"></i>
@@ -250,6 +258,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const acceptAll = document.getElementById('accept_all');
     const debugInfo = document.getElementById('debug-info');
     const debugText = document.getElementById('debug-text');
+    const strengthProgress = document.getElementById('strengthProgress');
+    const strengthText = document.getElementById('strengthText');
     
     // Mostrar debug info
     if (debugInfo) debugInfo.style.display = 'block';
@@ -260,6 +270,48 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     updateDebug('Formulario de registro inicializado correctamente');
+    
+    // Validador de fuerza de contraseña
+    function calculatePasswordStrength(password) {
+        let score = 0;
+        
+        if (password.length >= 6) score += 1;
+        if (password.length >= 8) score += 1;
+        if (/[a-z]/.test(password)) score += 1;
+        if (/[A-Z]/.test(password)) score += 1;
+        if (/[0-9]/.test(password)) score += 1;
+        if (/[^A-Za-z0-9]/.test(password)) score += 1;
+        
+        return score;
+    }
+    
+    function updateStrengthIndicator(score, length) {
+        if (!strengthProgress || !strengthText) return;
+        
+        let width, className, text;
+        
+        if (length === 0) {
+            width = 0;
+            className = '';
+            text = 'Ingrese una contraseña';
+        } else if (score <= 2) {
+            width = 30;
+            className = 'strength-weak';
+            text = 'Contraseña débil';
+        } else if (score <= 4) {
+            width = 60;
+            className = 'strength-medium';
+            text = 'Contraseña media';
+        } else {
+            width = 100;
+            className = 'strength-strong';
+            text = 'Contraseña fuerte';
+        }
+        
+        strengthProgress.style.width = width + '%';
+        strengthProgress.className = 'strength-progress ' + className;
+        strengthText.textContent = text;
+    }
 
     // Agregar event listener al botón directamente también
     const submitBtn = document.getElementById('submit-btn');
@@ -324,15 +376,46 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (password) password.addEventListener('input', function() {
-        // Solo validar si ambos campos tienen contenido
-        if (password.value.length > 0 && confirmPassword.value.length > 0) {
+        const passwordValue = this.value;
+        const strength = calculatePasswordStrength(passwordValue);
+        updateStrengthIndicator(strength, passwordValue.length);
+        
+        // Validar coincidencia de contraseñas
+        if (passwordValue.length > 0 && confirmPassword.value.length > 0) {
             validatePasswords();
         }
+        
+        // Validación visual de fortaleza
+        if (passwordValue.length > 0) {
+            if (strength <= 2) {
+                this.classList.remove('is-valid');
+                this.classList.add('is-invalid');
+            } else {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            }
+        } else {
+            this.classList.remove('is-valid', 'is-invalid');
+        }
     });
+    
     if (confirmPassword) confirmPassword.addEventListener('input', function() {
         // Solo validar si ambos campos tienen contenido  
         if (password.value.length > 0 && confirmPassword.value.length > 0) {
             validatePasswords();
+        }
+        
+        // Validación visual de coincidencia
+        if (this.value.length > 0) {
+            if (password.value === this.value) {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            } else {
+                this.classList.remove('is-valid');
+                this.classList.add('is-invalid');
+            }
+        } else {
+            this.classList.remove('is-valid', 'is-invalid');
         }
     });
 

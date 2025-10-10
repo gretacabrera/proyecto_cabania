@@ -102,7 +102,23 @@ class Usuario extends Model
     public function updatePassword($userId, $newPassword)
     {
         $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-        return $this->update($userId, ['usuario_contrasenia' => $hashedPassword]);
+        
+        try {
+            $result = $this->update($userId, [
+                'usuario_contrasenia' => $hashedPassword
+            ]);
+            
+            if ($result) {
+                // Limpiar tokens de recuperación si existen
+                $this->clearPasswordResetTokens($userId);
+                error_log("updatePassword: Contraseña actualizada exitosamente para usuario ID: $userId");
+            }
+            
+            return $result;
+        } catch (\Exception $e) {
+            error_log("updatePassword: Error - " . $e->getMessage());
+            return false;
+        }
     }
 
     /**
@@ -801,6 +817,91 @@ class Usuario extends Model
         } catch (\Exception $e) {
             error_log("cleanupExpiredPasswordResetTokens: Error - " . $e->getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Cambiar contraseña de usuario logueado
+     * Requiere verificar la contraseña actual por seguridad
+     */
+    public function changePassword($userId, $currentPassword, $newPassword)
+    {
+        // Verificar que el usuario existe y obtener la contraseña actual
+        $usuario = $this->find($userId);
+        
+        if (!$usuario) {
+            error_log("changePassword: Usuario no encontrado - ID: $userId");
+            return ['success' => false, 'message' => 'Usuario no encontrado'];
+        }
+
+        // Verificar que el usuario está activo
+        if ($usuario['usuario_estado'] != 1) {
+            error_log("changePassword: Usuario inactivo - ID: $userId");
+            return ['success' => false, 'message' => 'Usuario inactivo'];
+        }
+
+        // Verificar contraseña actual
+        if (!password_verify($currentPassword, $usuario['usuario_contrasenia'])) {
+            error_log("changePassword: Contraseña actual incorrecta - Usuario: " . $usuario['usuario_nombre']);
+            return ['success' => false, 'message' => 'La contraseña actual es incorrecta'];
+        }
+
+        // Verificar que la nueva contraseña es diferente a la actual
+        if (password_verify($newPassword, $usuario['usuario_contrasenia'])) {
+            return ['success' => false, 'message' => 'La nueva contraseña debe ser diferente a la actual'];
+        }
+
+        // Hashear la nueva contraseña
+        $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+
+        // Actualizar contraseña en la base de datos
+        try {
+            $sql = "UPDATE {$this->table} 
+                    SET usuario_contrasenia = ?
+                    WHERE {$this->primaryKey} = ?";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param("si", $hashedPassword, $userId);
+            
+            if ($stmt->execute() && $stmt->affected_rows > 0) {
+                error_log("changePassword: Contraseña cambiada exitosamente - Usuario: " . $usuario['usuario_nombre']);
+                
+                // Opcional: Limpiar tokens de recuperación si existen
+                $this->clearPasswordResetTokens($userId);
+                
+                return [
+                    'success' => true, 
+                    'message' => 'Contraseña cambiada exitosamente',
+                    'usuario' => $usuario['usuario_nombre']
+                ];
+            } else {
+                error_log("changePassword: No se pudo actualizar la contraseña - Usuario ID: $userId");
+                return ['success' => false, 'message' => 'Error al actualizar la contraseña'];
+            }
+        } catch (\Exception $e) {
+            error_log("changePassword: Excepción SQL - " . $e->getMessage());
+            return ['success' => false, 'message' => 'Error interno del servidor'];
+        }
+    }
+
+    /**
+     * Limpiar tokens de recuperación de contraseña para un usuario específico
+     */
+    private function clearPasswordResetTokens($userId)
+    {
+        try {
+            $sql = "UPDATE {$this->table} 
+                    SET usuario_token = NULL,
+                        usuario_fhtoken = NULL
+                    WHERE {$this->primaryKey} = ?";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            
+            error_log("clearPasswordResetTokens: Tokens limpiados para usuario ID: $userId");
+        } catch (\Exception $e) {
+            error_log("clearPasswordResetTokens: Error - " . $e->getMessage());
         }
     }
 }

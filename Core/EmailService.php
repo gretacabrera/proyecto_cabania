@@ -227,7 +227,7 @@ class EmailService
                 <div class='user-info'>
                     <h3>Información de su cuenta:</h3>
                     <p><strong>Nombre de usuario:</strong> " . htmlspecialchars($userName) . "</p>
-                    <p><strong>Email registrado:</strong> " . htmlspecialchars($recipientName) . "</p>
+                    <p><strong>Nombre real:</strong> " . htmlspecialchars($recipientName) . "</p>
                     <p><strong>Fecha de creación:</strong> " . date('d/m/Y H:i:s') . "</p>
                 </div>
                 
@@ -280,7 +280,7 @@ Su cuenta de usuario ha sido creada exitosamente en nuestro sistema.
 
 INFORMACIÓN DE SU CUENTA:
 - Nombre de usuario: $userName
-- Email registrado: $recipientName
+- Nombre real: $recipientName
 - Fecha de creación: " . date('d/m/Y H:i:s') . "
 
 VERIFICACIÓN DE CUENTA:
@@ -496,7 +496,7 @@ Este es un email automático, por favor no responda a este mensaje.
                 <div class='user-info'>
                     <h3>Datos de la cuenta:</h3>
                     <p><strong>Nombre de usuario:</strong> " . htmlspecialchars($userName) . "</p>
-                    <p><strong>Email:</strong> " . htmlspecialchars($recipientName) . "</p>
+                    <p><strong>Nombre real:</strong> " . htmlspecialchars($recipientName) . "</p>
                     <p><strong>Fecha de solicitud:</strong> " . date('d/m/Y H:i:s') . "</p>
                 </div>
                 
@@ -555,7 +555,7 @@ Hemos recibido una solicitud para restablecer la contraseña de su cuenta en nue
 
 DATOS DE LA CUENTA:
 - Nombre de usuario: $userName
-- Email: $recipientName
+- Nombre real: $recipientName
 - Fecha de solicitud: " . date('d/m/Y H:i:s') . "
 
 RESTABLECER CONTRASEÑA:

@@ -279,22 +279,42 @@ class AuthController extends Controller
             $userId = Auth::id();
             $usuario = $this->usuarioModel->find($userId);
 
-            if (!password_verify($currentPassword, $usuario['usuario_contrasenia'])) {
-                $this->redirect('/auth/change-password', 'La contraseña actual es incorrecta', 'error');
+            if (!$usuario) {
+                $this->redirect('/auth/change-password', 'Usuario no encontrado', 'error');
+                return;
             }
 
-            if ($this->usuarioModel->updatePassword($userId, $newPassword)) {
-                $this->redirect('/', 'Contraseña actualizada correctamente', 'exito');
+            if (!password_verify($currentPassword, $usuario['usuario_contrasenia'])) {
+                $this->redirect('/auth/change-password', 'La contraseña actual es incorrecta', 'error');
+                return;
+            }
+
+            $result = $this->usuarioModel->updatePassword($userId, $newPassword);
+
+            if ($result) {
+                error_log("AuthController::changePassword() - Contraseña actualizada exitosamente para usuario: " . $usuario['usuario_nombre']);
+                
+                // Por seguridad, cerrar sesión después de cambiar contraseña
+                Auth::logout();
+                
+                // Redireccionar al login con mensaje de éxito
+                $this->redirect('/auth/login', 'Contraseña cambiada exitosamente. Por seguridad, debe iniciar sesión nuevamente.', 'exito');
             } else {
                 $this->redirect('/auth/change-password', 'Error al actualizar la contraseña', 'error');
             }
         }
 
+        // Obtener datos del usuario actual
+        $userId = Auth::id();
+        $usuario = $this->usuarioModel->find($userId);
+
         $data = [
-            'title' => 'Cambiar Contraseña'
+            'title' => 'Cambiar Contraseña - Casa de Palos',
+            'pageTitle' => 'Cambiar Contraseña',
+            'usuario' => $usuario
         ];
 
-        return $this->render('public/auth/change-password', $data);
+        return $this->render('public/auth/change-password', $data, 'auth');
     }
 
     /**
@@ -512,4 +532,6 @@ class AuthController extends Controller
             return false;
         }
     }
+
+
 }

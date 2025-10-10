@@ -110,7 +110,13 @@ if (session_status() == PHP_SESSION_NONE) {
                         <div class="dropdown-menu dropdown-menu-right">
                             <h6 class="dropdown-header" style="color: #2c3e50;">Usuario: <?= htmlspecialchars(Auth::user()) ?></h6>
                             <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" href="<?= $this->url('/auth/logout') ?>">Cerrar Sesión</a>
+                            <a class="dropdown-item" href="<?= $this->url('/auth/change-password') ?>">
+                                <i class="fas fa-key me-2"></i>Cambiar Contraseña
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="<?= $this->url('/auth/logout') ?>">
+                                <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                            </a>
                         </div>
                     </li>
                 <?php else: ?>
