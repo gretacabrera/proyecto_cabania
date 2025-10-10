@@ -16,6 +16,7 @@ class Application
         $this->initializeSession();
         $this->loadHelpers();
         $this->config = require __DIR__ . '/config.php';
+        $this->initializeTimezone();
         $this->router = new Router();
         $this->registerRoutes();
     }
@@ -59,6 +60,16 @@ class Application
     }
 
     /**
+     * Inicializar zona horaria
+     */
+    protected function initializeTimezone()
+    {
+        if (isset($this->config['app']['timezone'])) {
+            date_default_timezone_set($this->config['app']['timezone']);
+        }
+    }
+
+    /**
      * Registrar rutas de la aplicación
      */
     protected function registerRoutes()
@@ -70,6 +81,12 @@ class Application
         $this->router->get('/auth/register', 'AuthController@register');
         $this->router->post('/auth/register', 'AuthController@register');
         $this->router->any('/auth/change-password', 'AuthController@changePassword');
+        
+        // Rutas de recuperación de contraseña
+        $this->router->get('/auth/forgot-password', 'AuthController@forgotPassword');
+        $this->router->post('/auth/forgot-password', 'AuthController@forgotPassword');
+        $this->router->get('/auth/reset-password', 'AuthController@resetPassword');
+        $this->router->post('/auth/reset-password', 'AuthController@resetPassword');
         
         // Rutas de verificación de email
         $this->router->get('/auth/verify', 'EmailVerificationController@verify');

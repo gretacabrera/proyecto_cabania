@@ -298,6 +298,185 @@ class AuthController extends Controller
     }
 
     /**
+     * ============================
+     * RECUPERACIÓN DE CONTRASEÑA
+     * ============================
+     */
+
+    /**
+     * Mostrar formulario para solicitar recuperación de contraseña
+     */
+    public function forgotPassword()
+    {
+        // Si ya está autenticado, redirigir al inicio
+        if (Auth::check()) {
+            $this->redirect('/');
+        }
+
+        if ($this->isPost()) {
+            return $this->processForgotPassword();
+        }
+
+        $data = [
+            'title' => 'Recuperar Contraseña - Casa de Palos',
+            'pageTitle' => 'Recuperar Contraseña'
+        ];
+
+        return $this->render('public/auth/forgot_password', $data, 'auth');
+    }
+
+    /**
+     * Procesar solicitud de recuperación de contraseña
+     */
+    private function processForgotPassword()
+    {
+        $email = trim($this->post('email'));
+
+        if (empty($email)) {
+            $this->redirect('/auth/forgot-password', 'Por favor ingrese su email', 'error');
+            return;
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->redirect('/auth/forgot-password', 'Por favor ingrese un email válido', 'error');
+            return;
+        }
+
+        try {
+            // Buscar usuario por email
+            $usuario = $this->usuarioModel->findUserByEmail($email);
+            
+            if (!$usuario) {
+                // Por seguridad, no revelar si el email existe o no
+                $this->redirect('/auth/login', 'Si el email está registrado en nuestro sistema, recibirá un mensaje con instrucciones para recuperar su contraseña.', 'info');
+                return;
+            }
+
+            // Generar token de recuperación
+            $tokenData = $this->usuarioModel->generatePasswordResetToken($email);
+            
+            if (!$tokenData) {
+                error_log("AuthController::processForgotPassword() - Error al generar token para: $email");
+                $this->redirect('/auth/forgot-password', 'Error interno. Por favor intente más tarde.', 'error');
+                return;
+            }
+
+            // Enviar email de recuperación
+            try {
+                $emailService = new \App\Core\EmailService();
+                $nombreCompleto = trim($usuario['persona_nombre'] . ' ' . $usuario['persona_apellido']);
+                
+                $emailResult = $emailService->sendPasswordResetEmail(
+                    $email,
+                    $nombreCompleto,
+                    $usuario['usuario_nombre'],
+                    $tokenData['token']
+                );
+                
+                if ($emailResult['success']) {
+                    error_log("AuthController::processForgotPassword() - Email de recuperación enviado exitosamente a: $email");
+                    $this->redirect('/auth/login', 'Se ha enviado un email con instrucciones para recuperar su contraseña. Revise su bandeja de entrada.', 'exito');
+                } else {
+                    error_log("AuthController::processForgotPassword() - Error al enviar email: " . $emailResult['message']);
+                    $this->redirect('/auth/forgot-password', 'Error al enviar email. Por favor intente más tarde.', 'error');
+                }
+            } catch (\Exception $e) {
+                error_log("AuthController::processForgotPassword() - Excepción al enviar email: " . $e->getMessage());
+                $this->redirect('/auth/forgot-password', 'Error al enviar email. Por favor intente más tarde.', 'error');
+            }
+
+        } catch (\Exception $e) {
+            error_log("AuthController::processForgotPassword() - Excepción: " . $e->getMessage());
+            $this->redirect('/auth/forgot-password', 'Error interno. Por favor intente más tarde.', 'error');
+        }
+    }
+
+    /**
+     * Mostrar formulario para restablecer contraseña
+     */
+    public function resetPassword()
+    {
+        $token = $this->get('token');
+        
+        if (!$token) {
+            $this->redirect('/auth/login', 'Token de recuperación no válido', 'error');
+            return;
+        }
+
+        // Verificar token
+        $usuario = $this->usuarioModel->verifyPasswordResetToken($token);
+        
+        if (!$usuario) {
+            $this->redirect('/auth/login', 'El enlace de recuperación ha expirado o no es válido', 'error');
+            return;
+        }
+
+        if ($this->isPost()) {
+            return $this->processResetPassword($token);
+        }
+
+        $data = [
+            'title' => 'Restablecer Contraseña - Casa de Palos',
+            'pageTitle' => 'Restablecer Contraseña',
+            'token' => $token,
+            'usuario_nombre' => $usuario['usuario_nombre']
+        ];
+
+        return $this->render('public/auth/reset_password', $data, 'auth');
+    }
+
+    /**
+     * Procesar restablecimiento de contraseña
+     */
+    private function processResetPassword($token)
+    {
+        // Intentar obtener el token del POST si no viene del GET
+        $tokenFromPost = $this->post('token');
+        if (empty($token) && !empty($tokenFromPost)) {
+            $token = $tokenFromPost;
+        }
+        
+        if (empty($token)) {
+            $this->redirect('/auth/login', 'Token de recuperación no válido', 'error');
+            return;
+        }
+        
+        $newPassword = $this->post('new_password');
+        $confirmPassword = $this->post('confirm_password');
+
+        if (empty($newPassword) || empty($confirmPassword)) {
+            $this->redirect("/auth/reset-password?token=$token", 'Complete todos los campos', 'error');
+            return;
+        }
+
+        if (strlen($newPassword) < 6) {
+            $this->redirect("/auth/reset-password?token=$token", 'La contraseña debe tener al menos 6 caracteres', 'error');
+            return;
+        }
+
+        if ($newPassword !== $confirmPassword) {
+            $this->redirect("/auth/reset-password?token=$token", 'Las contraseñas no coinciden', 'error');
+            return;
+        }
+
+        try {
+            // Restablecer contraseña
+            $usuario = $this->usuarioModel->resetPasswordWithToken($token, $newPassword);
+            
+            if ($usuario) {
+                error_log("AuthController::processResetPassword() - Contraseña restablecida exitosamente para: " . $usuario['usuario_nombre']);
+                $this->redirect('/auth/login', 'Contraseña restablecida exitosamente. Ya puede iniciar sesión con su nueva contraseña.', 'exito');
+            } else {
+                error_log("AuthController::processResetPassword() - Error al restablecer contraseña");
+                $this->redirect("/auth/reset-password?token=$token", 'Error al restablecer contraseña. Intente nuevamente.', 'error');
+            }
+        } catch (\Exception $e) {
+            error_log("AuthController::processResetPassword() - Excepción: " . $e->getMessage());
+            $this->redirect("/auth/reset-password?token=$token", 'Error interno. Por favor intente más tarde.', 'error');
+        }
+    }
+
+    /**
      * Crear un contacto en la tabla contacto (método legacy - mantener para compatibilidad)
      */
     private function createContacto($personaId, $tipoDescripcion, $valor)

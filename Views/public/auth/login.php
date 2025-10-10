@@ -64,7 +64,7 @@
 </div>
 
 <div class="auth-help">
-    <a href="#" class="text-muted">
+    <a href="<?= url('/auth/forgot-password') ?>" class="text-muted">
         <i class="fas fa-question-circle"></i>
         ¿Olvidaste tu contraseña?
     </a>

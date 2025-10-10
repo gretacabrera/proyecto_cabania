@@ -483,13 +483,12 @@ class Usuario extends Model
         }
         
         $token = bin2hex(random_bytes(32)); // Token de 64 caracteres
-        $fechaToken = date('Y-m-d H:i:s');
         
         error_log("generateVerificationToken: Token generado, preparando SQL...");
         
         $sql = "UPDATE {$this->table} 
                 SET usuario_token = ?, 
-                    usuario_fhtoken = ?
+                    usuario_fhtoken = NOW()
                 WHERE {$this->primaryKey} = ?";
         
         try {
@@ -499,7 +498,7 @@ class Usuario extends Model
                 return false;
             }
             
-            $stmt->bind_param("ssi", $token, $fechaToken, $userId);
+            $stmt->bind_param("si", $token, $userId);
             error_log("generateVerificationToken: Statement preparado, ejecutando...");
             
             if ($stmt->execute()) {
@@ -630,5 +629,178 @@ class Usuario extends Model
                 AND usuario_estado = 2";
         
         return $this->query($sql);
+    }
+
+    /**
+     * ============================
+     * FUNCIONES DE RECUPERACIÓN DE CONTRASEÑA
+     * Reutilizan las mismas columnas que la verificación de email
+     * ============================
+     */
+
+    /**
+     * Generar token para recuperación de contraseña
+     * Reutiliza las mismas columnas de verificación de email
+     */
+    public function generatePasswordResetToken($email)
+    {
+        // Buscar usuario por email - solo usuarios activos (estado 1) para recuperación
+        $sql = "SELECT u.{$this->primaryKey}, u.usuario_nombre, u.usuario_estado
+                FROM {$this->table} u
+                LEFT JOIN persona p ON u.rela_persona = p.id_persona
+                LEFT JOIN contacto c ON c.rela_persona = p.id_persona
+                LEFT JOIN tipocontacto tc ON c.rela_tipocontacto = tc.id_tipocontacto
+                WHERE c.contacto_descripcion = ?
+                AND tc.tipocontacto_descripcion = 'email'
+                AND c.contacto_estado = 1
+                AND u.usuario_estado = 1"; // Solo usuarios activos pueden recuperar contraseña
+        
+        $result = $this->query($sql, [$email]);
+        $usuario = $result->fetch_assoc();
+        
+        if (!$usuario) {
+            error_log("generatePasswordResetToken: No se encontró usuario activo con email: $email");
+            return false;
+        }
+        
+        $userId = $usuario[$this->primaryKey];
+        $token = bin2hex(random_bytes(32)); // Token de 64 caracteres
+        
+        // Usar NOW() de MySQL para evitar problemas de zona horaria
+        $sql = "UPDATE {$this->table} 
+                SET usuario_token = ?, 
+                    usuario_fhtoken = NOW()
+                WHERE {$this->primaryKey} = ?";
+        
+        try {
+            $stmt = $this->db->prepare($sql);
+            if (!$stmt) {
+                error_log("generatePasswordResetToken: Error al preparar statement");
+                return false;
+            }
+            
+            $stmt->bind_param("si", $token, $userId);
+            
+            if ($stmt->execute() && $stmt->affected_rows > 0) {
+                error_log("generatePasswordResetToken: Token de reset generado exitosamente para usuario ID: $userId");
+                return [
+                    'token' => $token,
+                    'usuario_id' => $userId,
+                    'usuario_nombre' => $usuario['usuario_nombre']
+                ];
+            } else {
+                error_log("generatePasswordResetToken: No se pudo generar token - Filas afectadas: " . $stmt->affected_rows);
+                return false;
+            }
+        } catch (\Exception $e) {
+            error_log("generatePasswordResetToken: Excepción SQL - " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Verificar token de recuperación de contraseña
+     * Diferencia de verificación de email: tiempo más corto (1 hora vs 24 horas) y solo usuarios activos
+     */
+    public function verifyPasswordResetToken($token)
+    {
+        // Verificar que el token existe y no ha expirado (1 hora para recuperación vs 24 horas para verificación)
+        // Solo usuarios activos (estado 1) pueden usar recuperación de contraseña
+        $sql = "SELECT u.{$this->primaryKey}, u.usuario_nombre, u.usuario_estado,
+                       p.persona_nombre, p.persona_apellido
+                FROM {$this->table} u
+                LEFT JOIN persona p ON u.rela_persona = p.id_persona
+                WHERE u.usuario_token = ? 
+                AND u.usuario_fhtoken > DATE_SUB(NOW(), INTERVAL 1 HOUR)
+                AND u.usuario_estado = 1"; // Solo usuarios activos
+        
+        $result = $this->query($sql, [$token]);
+        return $result->fetch_assoc();
+    }
+
+    /**
+     * Restablecer contraseña usando token
+     */
+    public function resetPasswordWithToken($token, $newPassword)
+    {
+        // Verificar token primero
+        $usuario = $this->verifyPasswordResetToken($token);
+        
+        if (!$usuario) {
+            error_log("resetPasswordWithToken: Token inválido o expirado");
+            return false;
+        }
+        
+        $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+        $userId = $usuario[$this->primaryKey];
+        
+        // Actualizar contraseña y limpiar token
+        $sql = "UPDATE {$this->table} 
+                SET usuario_contrasenia = ?,
+                    usuario_token = NULL,
+                    usuario_fhtoken = NULL
+                WHERE {$this->primaryKey} = ?";
+        
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param("si", $hashedPassword, $userId);
+            
+            if ($stmt->execute() && $stmt->affected_rows > 0) {
+                error_log("resetPasswordWithToken: Contraseña restablecida exitosamente para usuario ID: $userId");
+                return $usuario;
+            } else {
+                error_log("resetPasswordWithToken: Error al restablecer contraseña - Filas afectadas: " . $stmt->affected_rows);
+                return false;
+            }
+        } catch (\Exception $e) {
+            error_log("resetPasswordWithToken: Excepción SQL - " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Buscar usuario por email para recuperación
+     */
+    public function findUserByEmail($email)
+    {
+        $sql = "SELECT u.{$this->primaryKey}, u.usuario_nombre, u.usuario_estado,
+                       p.persona_nombre, p.persona_apellido,
+                       c.contacto_descripcion as persona_email
+                FROM {$this->table} u
+                LEFT JOIN persona p ON u.rela_persona = p.id_persona
+                LEFT JOIN contacto c ON c.rela_persona = p.id_persona
+                LEFT JOIN tipocontacto tc ON c.rela_tipocontacto = tc.id_tipocontacto
+                WHERE c.contacto_descripcion = ?
+                AND tc.tipocontacto_descripcion = 'email'
+                AND c.contacto_estado = 1
+                AND u.usuario_estado = 1
+                LIMIT 1";
+        
+        $result = $this->query($sql, [$email]);
+        return $result->fetch_assoc();
+    }
+
+    /**
+     * Limpiar tokens expirados específicamente para recuperación de contraseña
+     * Solo limpia tokens de usuarios activos que hayan expirado hace más de 1 hora
+     */
+    public function cleanupExpiredPasswordResetTokens()
+    {
+        // Solo limpiar tokens de usuarios activos que hayan expirado hace más de 1 hora
+        // No afecta tokens de verificación de email de usuarios pendientes
+        $sql = "UPDATE {$this->table} 
+                SET usuario_token = NULL,
+                    usuario_fhtoken = NULL
+                WHERE usuario_fhtoken < DATE_SUB(NOW(), INTERVAL 1 HOUR)
+                AND usuario_estado = 1"; // Solo usuarios activos
+        
+        try {
+            $result = $this->query($sql);
+            error_log("cleanupExpiredPasswordResetTokens: Tokens de reset expirados limpiados");
+            return true;
+        } catch (\Exception $e) {
+            error_log("cleanupExpiredPasswordResetTokens: Error - " . $e->getMessage());
+            return false;
+        }
     }
 }

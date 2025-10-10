@@ -58,7 +58,24 @@
                 <!-- Header del formulario -->
                 <div class="auth-form-header">
                     <h2><?= isset($pageTitle) ? $this->escape($pageTitle) : 'Iniciar Sesión' ?></h2>
-                    <p>Accede a tu cuenta para gestionar tus reservas</p>
+                    <p>
+                        <?php 
+                        if (isset($pageTitle)) {
+                            switch($pageTitle) {
+                                case 'Recuperar Contraseña':
+                                    echo 'Ingrese su email para recibir instrucciones de recuperación';
+                                    break;
+                                case 'Restablecer Contraseña':
+                                    echo 'Establezca una nueva contraseña segura para su cuenta';
+                                    break;
+                                default:
+                                    echo 'Accede a tu cuenta para gestionar tus reservas';
+                            }
+                        } else {
+                            echo 'Accede a tu cuenta para gestionar tus reservas';
+                        }
+                        ?>
+                    </p>
                 </div>
                 
                 <!-- Contenido del formulario -->
