@@ -73,12 +73,29 @@ class MetodoPago extends Model
     }
 
     /**
+     * Buscar método de pago por descripción exacta
+     */
+    public function findByDescripcion($descripcion)
+    {
+        $sql = "SELECT * FROM {$this->table} WHERE metododepago_descripcion = ? AND metododepago_estado = 1 LIMIT 1";
+        $result = $this->query($sql, [$descripcion]);
+        return $result->fetch_assoc();
+    }
+
+    /**
      * Obtener métodos de pago activos
      */
     public function getActive()
     {
         $sql = "SELECT * FROM {$this->table} WHERE metododepago_estado = 1 ORDER BY metododepago_descripcion ASC";
-        return $this->query($sql);
+        $result = $this->query($sql);
+        
+        $metodos = [];
+        while ($row = $result->fetch_assoc()) {
+            $metodos[] = $row;
+        }
+        
+        return $metodos;
     }
 
     /**

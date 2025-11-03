@@ -281,4 +281,16 @@ GET  /admin/reportes     → ReportesController@index
 
 ---
 
-*Documentación actualizada el 25/09/2025 - Casa de Palos Cabañas*
+---
+
+## 🔗 **Enlaces Relacionados**
+
+- **[README Principal](../README.md)** - Documentación completa del proyecto
+- **[Core/README.md](../Core/README.md)** - Framework MVC personalizado  
+- **[Models/README.md](../Models/README.md)** - Modelos y lógica de datos
+- **[Views/README.md](../Views/README.md)** - Sistema de vistas organizadas
+
+---
+
+*Documentación actualizada el 12/10/2025 - Casa de Palos Cabañas*
+*Sistema de Gestión Integral de Cabañas - SIRCA*

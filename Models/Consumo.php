@@ -9,7 +9,7 @@ use App\Core\Model;
  */
 class Consumo extends Model
 {
-    protected $table = 'consumos';
+    protected $table = 'consumo';
     protected $primaryKey = 'id_consumo';
 
     /**
@@ -38,9 +38,11 @@ class Consumo extends Model
         
         $sql = "SELECT c.*, r.reserva_codigo, p.producto_nombre, pr.persona_nombre, pr.persona_apellido
                 FROM {$this->table} c
-                LEFT JOIN reservas r ON c.rela_reserva = r.id_reserva
-                LEFT JOIN productos p ON c.rela_producto = p.id_producto
-                LEFT JOIN personas pr ON r.rela_persona = pr.id_persona
+                LEFT JOIN reserva r ON c.rela_reserva = r.id_reserva
+                LEFT JOIN producto p ON c.rela_producto = p.id_producto
+                LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
+                LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
+                LEFT JOIN persona pr ON h.rela_persona = pr.id_persona
                 WHERE {$where}
                 ORDER BY c.consumo_fecha DESC
                 LIMIT {$perPage} OFFSET {$offset}";
@@ -89,10 +91,12 @@ class Consumo extends Model
         $sql = "SELECT c.*, r.reserva_codigo, p.producto_nombre, pr.persona_nombre, pr.persona_apellido,
                        cab.cabania_nombre
                 FROM {$this->table} c
-                LEFT JOIN reservas r ON c.rela_reserva = r.id_reserva
-                LEFT JOIN productos p ON c.rela_producto = p.id_producto
-                LEFT JOIN personas pr ON r.rela_persona = pr.id_persona
-                LEFT JOIN cabanias cab ON r.rela_cabania = cab.id_cabania
+                LEFT JOIN reserva r ON c.rela_reserva = r.id_reserva
+                LEFT JOIN producto p ON c.rela_producto = p.id_producto
+                LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
+                LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
+                LEFT JOIN persona pr ON h.rela_persona = pr.id_persona
+                LEFT JOIN cabania cab ON r.rela_cabania = cab.id_cabania
                 WHERE c.{$this->primaryKey} = {$id}";
         
         $result = $this->db->query($sql);
@@ -105,11 +109,14 @@ class Consumo extends Model
     public function getReservasActivas()
     {
         $sql = "SELECT r.id_reserva, r.reserva_codigo, c.cabania_nombre, p.persona_nombre, p.persona_apellido
-                FROM reservas r
-                INNER JOIN cabanias c ON r.rela_cabania = c.id_cabania
-                INNER JOIN personas p ON r.rela_persona = p.id_persona
-                WHERE r.reserva_estado = 1
-                ORDER BY r.reserva_fechainicio DESC";
+                FROM reserva r
+                INNER JOIN cabania c ON r.rela_cabania = c.id_cabania
+                INNER JOIN estadoreserva er ON r.rela_estadoreserva = er.id_estadoreserva
+                INNER JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
+                INNER JOIN huesped h ON hr.rela_huesped = h.id_huesped
+                INNER JOIN persona p ON h.rela_persona = p.id_persona
+                WHERE er.estadoreserva_estado = 1
+                ORDER BY r.reserva_fhinicio DESC";
         
         $result = $this->db->query($sql);
         $reservas = [];
@@ -165,9 +172,11 @@ class Consumo extends Model
     public function getReservaInfo($reservaId)
     {
         $sql = "SELECT r.*, c.cabania_nombre, p.persona_nombre, p.persona_apellido
-                FROM reservas r
-                LEFT JOIN cabanias c ON r.rela_cabania = c.id_cabania
-                LEFT JOIN personas p ON r.rela_persona = p.id_persona
+                FROM reserva r
+                LEFT JOIN cabania c ON r.rela_cabania = c.id_cabania
+                LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
+                LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
+                LEFT JOIN persona p ON h.rela_persona = p.id_persona
                 WHERE r.id_reserva = {$reservaId}";
         
         $result = $this->db->query($sql);

@@ -79,11 +79,14 @@ class Comentario extends Model
     public function getReservas()
     {
         $sql = "SELECT r.id_reserva, r.reserva_codigo, c.cabania_nombre, p.persona_nombre, p.persona_apellido
-                FROM reservas r
-                INNER JOIN cabanias c ON r.rela_cabania = c.id_cabania
-                INNER JOIN personas p ON r.rela_persona = p.id_persona
-                WHERE r.reserva_estado = 1
-                ORDER BY r.reserva_fechainicio DESC";
+                FROM reserva r
+                INNER JOIN cabania c ON r.rela_cabania = c.id_cabania
+                INNER JOIN estadoreserva er ON r.rela_estadoreserva = er.id_estadoreserva
+                INNER JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
+                INNER JOIN huesped h ON hr.rela_huesped = h.id_huesped
+                INNER JOIN persona p ON h.rela_persona = p.id_persona
+                WHERE er.estadoreserva_estado = 1
+                ORDER BY r.reserva_fhinicio DESC";
         
         $result = $this->db->query($sql);
         $reservas = [];

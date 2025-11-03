@@ -50,7 +50,7 @@
                         <input type="hidden" name="cantidad_personas" value="<?= $reserva['cantidad_personas'] ?>">
                         <input type="hidden" name="id_persona" value="<?= $reserva['id_persona'] ?>">
                         <input type="hidden" name="subtotal_alojamiento" value="<?= $reserva['subtotal'] ?>">
-                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">>
+                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
                         
                         <!-- Servicios Disponibles -->
                         <div class="row g-4">
@@ -64,44 +64,41 @@
                                 
                                 <?php foreach ($servicios as $servicio): ?>
                                     <div class="col-lg-6 col-xl-4">
-                                        <div class="card h-100 servicio-card">
-                                            <div class="card-body">
-                                                <div class="form-check position-absolute top-0 end-0 m-3">
-                                                    <input class="form-check-input servicio-checkbox" 
-                                                           type="checkbox" 
-                                                           name="servicios[]" 
-                                                           value="<?= $servicio['id_servicio'] ?>"
-                                                           id="servicio_<?= $servicio['id_servicio'] ?>"
-                                                           data-precio="<?= $servicio['servicio_precio'] ?>"
-                                                           data-nombre="<?= htmlspecialchars($servicio['servicio_nombre']) ?>">
-                                                </div>
+                                        <div class="card h-100 servicio-card" data-servicio-id="<?= $servicio['id_servicio'] ?>">
+                                            <!-- Checkbox oculto -->
+                                            <input class="servicio-checkbox d-none" 
+                                                   type="checkbox" 
+                                                   name="servicios[]" 
+                                                   value="<?= $servicio['id_servicio'] ?>"
+                                                   id="servicio_<?= $servicio['id_servicio'] ?>"
+                                                   data-precio="<?= $servicio['servicio_precio'] ?>"
+                                                   data-nombre="<?= htmlspecialchars($servicio['servicio_nombre']) ?>">
+                                            
+                                            <div class="card-body servicio-card-body position-relative" style="cursor: pointer;">
+                                                <h6 class="card-title text-dark"><?= htmlspecialchars($servicio['servicio_nombre']) ?></h6>
                                                 
-                                                <label for="servicio_<?= $servicio['id_servicio'] ?>" class="cursor-pointer w-100">
-                                                    <h6 class="card-title text-dark"><?= htmlspecialchars($servicio['servicio_nombre']) ?></h6>
+                                                <?php if (!empty($servicio['servicio_descripcion'])): ?>
+                                                    <p class="card-text text-muted small mb-2">
+                                                        <?= htmlspecialchars($servicio['servicio_descripcion']) ?>
+                                                    </p>
+                                                <?php endif; ?>
+                                                
+                                                <?php if (!empty($servicio['tiposervicio_descripcion'])): ?>
+                                                    <small class="text-muted d-block mb-2">
+                                                        <i class="fas fa-tag me-1"></i>
+                                                        <?= htmlspecialchars($servicio['tiposervicio_descripcion']) ?>
+                                                    </small>
+                                                <?php endif; ?>
+                                                
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <span class="badge bg-success fs-6">
+                                                        $<?= number_format($servicio['servicio_precio'], 0, ',', '.') ?>
+                                                    </span>
                                                     
-                                                    <?php if (!empty($servicio['servicio_descripcion'])): ?>
-                                                        <p class="card-text text-muted small mb-2">
-                                                            <?= htmlspecialchars($servicio['servicio_descripcion']) ?>
-                                                        </p>
-                                                    <?php endif; ?>
-                                                    
-                                                    <?php if (!empty($servicio['tiposervicio_descripcion'])): ?>
-                                                        <small class="text-muted d-block mb-2">
-                                                            <i class="fas fa-tag me-1"></i>
-                                                            <?= htmlspecialchars($servicio['tiposervicio_descripcion']) ?>
-                                                        </small>
-                                                    <?php endif; ?>
-                                                    
-                                                    <div class="d-flex justify-content-between align-items-center">
-                                                        <span class="badge bg-success fs-6">
-                                                            $<?= number_format($servicio['servicio_precio'], 0, ',', '.') ?>
-                                                        </span>
-                                                        
-                                                        <small class="text-success">
-                                                            <i class="fas fa-check-circle"></i> Disponible
-                                                        </small>
-                                                    </div>
-                                                </label>
+                                                    <small class="text-primary selected-text d-none">
+                                                        <i class="fas fa-check-circle me-1"></i> Seleccionado
+                                                    </small>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -117,7 +114,7 @@
                         </div>
 
                         <!-- Resumen de Servicios Seleccionados -->
-                        <div class="card bg-info bg-opacity-10 border-info mt-4" id="resumenServicios" style="display: none;">
+                        <div class="card bg-opacity-10 border-info mt-4" id="resumenServicios" style="display: none;">
                             <div class="card-body">
                                 <h6 class="text-info mb-3">
                                     <i class="fas fa-list-check me-1"></i>
@@ -133,7 +130,7 @@
                         </div>
 
                         <!-- Total General -->
-                        <div class="card bg-success bg-opacity-10 border-success mt-3">
+                        <div class="card bg-opacity-10 border-success mt-3">
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-md-8">
@@ -188,21 +185,42 @@
 .servicio-card {
     transition: all 0.3s ease;
     cursor: pointer;
-    border: 2px solid transparent;
+    border: 2px solid #e0e0e0;
+    position: relative;
+    overflow: hidden;
 }
 
 .servicio-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    border-color: #007bff;
 }
 
 .servicio-card.selected {
-    border-color: #0d6efd;
-    background-color: rgba(13, 110, 253, 0.05);
+    border-color: #28a745;
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(40, 167, 69, 0.05) 100%);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
 }
 
-.cursor-pointer {
-    cursor: pointer;
+.servicio-card.selected .selected-text {
+    display: inline !important;
+}
+
+.servicio-card-body {
+    transition: all 0.2s ease;
+}
+
+.servicio-card-body:active {
+    transform: scale(0.98);
+}
+
+/* Ocultar checkboxes completamente */
+.servicio-checkbox {
+    position: absolute !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    width: 0 !important;
+    height: 0 !important;
 }
 </style>
 
@@ -270,12 +288,48 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Manejar click en las cards para seleccionar/deseleccionar
+    // Manejar clicks en las cards completas
     document.querySelectorAll('.servicio-card').forEach(card => {
         card.addEventListener('click', function(e) {
-            if (e.target.type !== 'checkbox') {
-                const checkbox = this.querySelector('.servicio-checkbox');
-                checkbox.click();
+            // Prevenir propagación si se hace click en elementos internos
+            e.stopPropagation();
+            
+            const checkbox = this.querySelector('.servicio-checkbox');
+            const wasChecked = checkbox.checked;
+            
+            // Toggle del checkbox
+            checkbox.checked = !wasChecked;
+            
+            // Trigger del evento change manualmente
+            const changeEvent = new Event('change', { bubbles: true });
+            checkbox.dispatchEvent(changeEvent);
+            
+            // Efecto visual inmediato
+            if (checkbox.checked) {
+                this.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    this.style.transform = 'translateY(-3px)';
+                }, 100);
+            } else {
+                this.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    this.style.transform = 'translateY(0)';
+                }, 100);
+            }
+        });
+        
+        // Agregar efectos hover mejorados
+        card.addEventListener('mouseenter', function() {
+            if (!this.classList.contains('selected')) {
+                this.style.borderColor = '#007bff';
+                this.style.boxShadow = '0 6px 12px rgba(0,123,255,0.15)';
+            }
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            if (!this.classList.contains('selected')) {
+                this.style.borderColor = '#e0e0e0';
+                this.style.boxShadow = 'none';
             }
         });
     });

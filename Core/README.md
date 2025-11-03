@@ -723,4 +723,30 @@ class YourModel extends Model
 
 ---
 
-*Framework Core documentado el 25/09/2025 - Casa de Palos Cabañas*
+---
+
+## 📚 **Referencias Adicionales**
+
+### **Documentación del Proyecto**
+- **[README Principal](../README.md)** - Visión general y instalación
+- **[Controllers/README.md](../Controllers/README.md)** - Controladores del sistema
+- **[Models/README.md](../Models/README.md)** - Modelos de datos  
+- **[Views/README.md](../Views/README.md)** - Sistema de vistas
+
+### **Arquitectura del Sistema**
+- **Patrón MVC**: Separación clara de responsabilidades
+- **Active Record**: Modelos con lógica de datos integrada
+- **Singleton**: Database y Application instances
+- **Factory Pattern**: Para creación de objetos complejos
+- **Observer Pattern**: Para eventos del sistema
+
+### **Recursos Externos**
+- **PHP Documentation**: https://www.php.net/docs.php
+- **MySQL Reference**: https://dev.mysql.com/doc/
+- **PSR Standards**: https://www.php-fig.org/psr/
+- **Composer**: https://getcomposer.org/doc/
+
+---
+
+*Framework Core documentado el 12/10/2025 - Casa de Palos Cabañas*
+*Arquitectura MVC personalizada con 13 componentes integrados*

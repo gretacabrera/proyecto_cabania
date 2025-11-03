@@ -193,7 +193,7 @@
                         </div>
 
                         <!-- Resumen de Costos -->
-                        <div class="card bg-success bg-opacity-10 border-success mt-4">
+                        <div class="card bg-opacity-10 border-success mt-4">
                             <div class="card-body">
                                 <h6 class="text-success mb-3">
                                     <i class="fas fa-calculator me-1"></i>

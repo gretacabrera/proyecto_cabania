@@ -10,7 +10,7 @@ $isEdit = isset($reserva) && !empty($reserva);
 $title = $isEdit ? 'Editar Reserva' : 'Nueva Reserva';
 $currentModule = 'reservas';
 
-require_once 'app/Views/layouts/header.php';
+require_once __DIR__ . '/../../../shared/layouts/header.php';
 ?>
 
 <div class="container mt-4">
@@ -53,21 +53,21 @@ require_once 'app/Views/layouts/header.php';
                             <input type="hidden" name="id_reserva" value="<?= $reserva['id_reserva'] ?>">
                         <?php endif; ?>
                         <!-- Información del huésped -->
-                        <div class="form-group">
+                        <!-- Campo DNI eliminado: persona_dni no existe en el esquema de la BD -->
+                        <div class="form-group" style="display: none;">
+                            <!-- Comentado: campo persona_dni no disponible en BD
                             <label for="persona_dni" class="required">DNI del huésped:</label>
                             <input type="number" 
-                                   class="form-control <?= isset($errors) && !empty($errors) ? 'is-invalid' : '' ?>" 
+                                   class="form-control" 
                                    id="persona_dni" 
                                    name="persona_dni" 
-                                   value="<?= $isEdit ? htmlspecialchars($reserva['persona_dni']) : (isset($data['persona_dni']) ? htmlspecialchars($data['persona_dni']) : '') ?>"
-                                   placeholder="Ingrese el DNI del huésped"
-                                   <?= $isEdit ? 'readonly' : '' ?>
-                                   required>
+                                   placeholder="Campo no disponible"
+                                   disabled>
                             <small class="form-text text-muted">
-                                <?= $isEdit ? 'El DNI no se puede modificar una vez creada la reserva.' : 'Ingrese el número de DNI del huésped que realizará la reserva.' ?>
+                                Campo DNI no disponible en el esquema de la base de datos.
                             </small>
                             <div class="invalid-feedback">
-                                Por favor ingrese un DNI válido.
+                                Por favor ingrese un DNI válido. -->
                             </div>
                         </div>
 
@@ -278,4 +278,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<?php require_once 'app/Views/layouts/footer.php'; ?>
+<?php require_once __DIR__ . '/../../../shared/layouts/footer.php'; ?>

@@ -100,6 +100,71 @@ class Cabania extends Model
     }
 
     /**
+     * Obtener todas las cabañas con filtros para exportación (sin paginación)
+     */
+    public function getAllWithDetailsForExport($filters = [])
+    {
+        $where = "1=1";
+        $params = [];
+        
+        // Aplicar los mismos filtros que getWithDetails
+        if (!empty($filters['cabania_codigo'])) {
+            $where .= " AND cabania_codigo LIKE ?";
+            $params[] = '%' . $filters['cabania_codigo'] . '%';
+        }
+        
+        if (!empty($filters['cabania_nombre'])) {
+            $where .= " AND cabania_nombre LIKE ?";
+            $params[] = '%' . $filters['cabania_nombre'] . '%';
+        }
+        
+        if (!empty($filters['cabania_ubicacion'])) {
+            $where .= " AND cabania_ubicacion LIKE ?";
+            $params[] = '%' . $filters['cabania_ubicacion'] . '%';
+        }
+        
+        if (!empty($filters['cabania_capacidad'])) {
+            $where .= " AND cabania_capacidad >= ?";
+            $params[] = (int) $filters['cabania_capacidad'];
+        }
+        
+        if (!empty($filters['cabania_habitaciones'])) {
+            $where .= " AND cabania_cantidadhabitaciones >= ?";
+            $params[] = (int) $filters['cabania_habitaciones'];
+        }
+        
+        if (!empty($filters['cabania_banios'])) {
+            $where .= " AND cabania_cantidadbanios >= ?";
+            $params[] = (int) $filters['cabania_banios'];
+        }
+        
+        if (isset($filters['cabania_estado']) && $filters['cabania_estado'] !== '') {
+            $where .= " AND cabania_estado = ?";
+            $params[] = (int) $filters['cabania_estado'];
+        }
+        
+        // Query para contar total (para estadísticas)
+        $countSql = "SELECT COUNT(*) as total FROM {$this->table} WHERE $where";
+        $totalResult = $this->queryWithParams($countSql, $params);
+        $totalRow = $totalResult->fetch_assoc();
+        $total = (int) $totalRow['total'];
+        
+        // Query para obtener TODOS los registros (sin LIMIT)
+        $dataSql = "SELECT * FROM {$this->table} WHERE $where ORDER BY cabania_nombre ASC";
+        $dataResult = $this->queryWithParams($dataSql, $params);
+        
+        $data = [];
+        while ($row = $dataResult->fetch_assoc()) {
+            $data[] = $row;
+        }
+        
+        return [
+            'data' => $data,
+            'total' => $total
+        ];
+    }
+
+    /**
      * Obtener cabañas con paginación usando parámetros preparados
      */
     private function paginateWithParams($page = 1, $perPage = 10, $where = "1=1", $orderBy = null, $params = [])

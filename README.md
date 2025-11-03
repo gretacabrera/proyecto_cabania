@@ -6,31 +6,43 @@ Desarrollado con PHP utilizando arquitectura MVC personalizada y paradigma de pr
 
 **Proyecto:** SIRCA - Sistema Integral de Reservas de Cabañas y Alojamientos  
 **Institución:** ISRMM - Desarrollo de Software  
-**Integrantes:** Hernan Lopez, Greta Cabrera  
-**Fecha:** Septiembre 2025
+**Integrantes:** Hernan Lopez, Greta Cabrera, Horacio Ortiz
+**Fecha:** Octubre 2025
 
 ---
 
 ## 🎯 **Descripción del Proyecto**
 
-Sistema web completo para la gestión integral de un complejo de cabañas que incluye:
+**Casa de Palos** es un sistema web integral para la gestión completa de un complejo de cabañas turísticas. Desarrollado con arquitectura MVC personalizada, proporciona una solución robusta tanto para la gestión administrativa como para la experiencia del huésped.
 
-### **Funcionalidades Principales**
-- **🏠 Gestión de Cabañas**: CRUD completo con estados, disponibilidad y categorías
-- **📅 Sistema de Reservas Online**: Proceso completo paso a paso para huéspedes
-- **👥 Gestión de Huéspedes**: Registro, seguimiento y historial de clientes  
-- **🛍️ Productos y Servicios**: Catálogo completo con inventario y consumos
-- **🔐 Autenticación Multi-Perfil**: Admin, recepcionista, huésped con permisos específicos
-- **📊 Sistema de Reportes**: Analytics completos y reportes ejecutivos
-- **💳 Procesamiento de Pagos**: Simulación de múltiples métodos de pago
-- **📧 Notificaciones**: Sistema automatizado de emails con PHPMailer
+### **🌟 Funcionalidades Principales**
 
-### **Características Técnicas**
-- **Arquitectura MVC**: Framework personalizado con separación clara de responsabilidades
-- **Base de Datos**: MySQL con diseño relacional optimizado
-- **Frontend**: HTML5, CSS3, Bootstrap 5, JavaScript ES6+
-- **Backend**: PHP 7.4+ con POO, patrones de diseño y mejores prácticas
-- **Seguridad**: Validaciones, escape de datos, consultas preparadas, CSRF protection
+#### **Para Huéspedes (Sistema Público)**
+- **🌐 Catálogo Público**: Exploración de cabañas con filtros avanzados
+- **📅 Sistema de Reservas Online**: Proceso completo de 5 pasos con validaciones
+- **💳 Simulación de Pagos**: Tarjeta, transferencia bancaria, efectivo
+- **✨ Servicios Adicionales**: Spa, restaurante, tours y actividades
+- **💬 Sistema de Comentarios**: Feedback y puntuación de estadías
+- **📧 Confirmaciones Automáticas**: Emails con detalles de reserva
+
+#### **Para Administración (Panel Interno)**
+- **🏠 Gestión de Cabañas**: CRUD completo con estados, fotos y disponibilidad
+- **📊 Control de Reservas**: Seguimiento completo desde creación hasta finalización
+- **👥 Gestión de Huéspedes**: Registro, historial y condiciones especiales
+- **🛍️ Inventario Completo**: Productos, servicios, marcas y categorías
+- **🔐 Multi-Perfil**: Administrador, recepcionista, huésped con permisos granulares
+- **📈 Reportes Avanzados**: Dashboard, analytics, consumos, demografía
+- **⚙️ Configuración**: Estados, métodos de pago, períodos, tipos de servicios
+- **🧾 **Sistema de Facturación**: Numeración automática correlativa por tipo de comprobante
+
+### **🛠️ Stack Tecnológico**
+- **Backend**: PHP 8.0+ con Programación Orientada a Objetos
+- **Arquitectura**: MVC personalizado con patrón Active Record
+- **Base de Datos**: MySQL 8.0 con 24 tablas relacionales + numeración automática
+- **Frontend**: HTML5, CSS3, Bootstrap 5.3, JavaScript ES6+
+- **Dependencias**: PHPMailer para emails, SweetAlert2 para UX
+- **Seguridad**: Consultas preparadas, escape de datos, CSRF protection, validaciones
+- **Facturación**: Sistema automático de numeración correlativa por tipo de comprobante
 
 ## 💻 **Requisitos del Sistema**
 
@@ -57,63 +69,140 @@ upload_max_filesize = 32M
 post_max_size = 32M
 max_execution_time = 300
 session.gc_maxlifetime = 3600
+date.timezone = America/Argentina/Buenos_Aires
 ```
+
+### **Configuración de Base de Datos**
+La base de datos incluye **24 tablas principales** organizadas en módulos:
+
+#### **📊 Entidades Principales (9 tablas)**
+- `cabania` - Información de cabañas del complejo
+- `reserva` - Reservas de huéspedes con estados dinámicos  
+- `persona` - Datos personales de huéspedes y usuarios
+- `usuario` - Usuarios del sistema (admin/recepcionista)
+- `producto` - Inventario de productos vendibles
+- `servicio` - Servicios ofrecidos (spa, tours, etc.)
+- `consumo` - Registro de consumos de huéspedes
+- `comentario` - Feedback y puntuaciones
+- `factura` - Facturas con numeración automática correlativa
+
+#### **⚙️ Tablas de Configuración (10 tablas)**
+- `categoria` - Categorías de productos
+- `marca` - Marcas de productos
+- `estadopersona` - Estados de huéspedes
+- `estadoproducto` - Estados de productos  
+- `estadoreserva` - Estados de reservas (8 estados dinámicos)
+- `condicionsalud` - Condiciones médicas especiales
+- `metododepago` - Métodos de pago disponibles
+- `periodo` - Períodos y temporadas
+- `tipocontacto` - Tipos de contacto
+- `tiposervicio` - Tipos de servicios
+
+#### **🔐 Sistema de Seguridad (7 tablas)**
+- `perfil` - Roles del sistema (admin, recepcionista, huésped)
+- `modulo` - Módulos del sistema
+- `perfil_modulo` - Permisos por perfil
+- `menu` - Menús por perfil
+- `contacto` - Información de contacto
+- `pago` - Registro de transacciones
+- `tipocomprobante` - Tipos de facturas (A, B, C, Ticket) con numeración automática
 
 ## 🏗️ **Arquitectura del Sistema**
 
 ### **Estructura del Proyecto**
 ```
 proyecto_cabania/
-├── 📁 Controllers/         # 27 Controladores MVC activos (públicos y administrativos) + 1 deprecated
-│   ├── HomeController.php     # Página principal
-│   ├── AuthController.php     # Autenticación
-│   ├── ReservasController.php # Reservas online completas
-│   ├── CabaniasController.php # Gestión de cabañas
-│   └── ... (24 más)
-├── 📁 Models/             # 25 Modelos de datos con relaciones
-│   ├── Reserva.php           # Modelo principal de reservas
-│   ├── Cabania.php           # Gestión de cabañas
-│   ├── Usuario.php           # Usuarios del sistema
-│   └── ... (22 más)
-├── 📁 Views/              # Sistema completo de vistas organizadas
-│   ├── 📁 public/            # 7 módulos públicos
-│   │   ├── home.php             # Página de inicio
-│   │   ├── 📁 auth/             # Login, registro
-│   │   ├── 📁 catalogo/         # Catálogo público
-│   │   ├── 📁 reservas/         # Sistema completo (5 vistas)
-│   │   │   ├── confirmar.php       # Paso 1: Confirmación
-│   │   │   ├── servicios.php       # Paso 2: Servicios adicionales
-│   │   │   ├── resumen.php         # Paso 3: Vista previa
-│   │   │   ├── pago.php            # Paso 4: Procesamiento
-│   │   │   └── exito.php           # Paso 5: Confirmación final
-│   │   └── ... (más módulos)
-│   ├── 📁 admin/             # 24 módulos administrativos
-│   │   ├── 📁 configuracion/    # 10 módulos básicos
-│   │   ├── 📁 operaciones/      # 5 módulos de negocio
-│   │   ├── 📁 seguridad/        # 5 módulos de sistema
-│   │   └── 📁 reportes/         # 4 reportes especializados
-│   └── 📁 shared/            # Componentes compartidos
-├── 📁 Core/               # 11 clases del framework personalizado
-│   ├── Application.php       # Bootstrap de la aplicación
-│   ├── Router.php           # Sistema de enrutamiento
-│   ├── Controller.php       # Clase base de controladores
-│   ├── Model.php            # Clase base de modelos
-│   ├── View.php             # Motor de renderizado
-│   ├── Database.php         # Gestión de conexiones
-│   ├── Auth.php             # Autenticación y autorización
-│   └── ... (más componentes)
-├── 📁 assets/             # Recursos frontend
-│   ├── 📁 css/              # Estilos por módulo
-│   ├── 📁 js/               # JavaScript por funcionalidad
-│   └── 📁 images/           # Imágenes del sistema
-├── 📁 imagenes/           # Archivos de usuarios
-│   ├── 📁 cabanias/         # Fotos de cabañas
-│   └── 📁 productos/        # Imágenes de productos
-├── 📁 vendor/             # Dependencias (Composer)
-├── 📄 bd.sql              # Estructura de base de datos
-├── 📄 index.php           # Punto de entrada
-├── 📄 .htaccess           # Configuración Apache
-└── 📄 README.md           # Documentación principal
+├── 📁 Controllers/            # 27 Controladores MVC organizados por funcionalidad
+│   ├── 🌐 Públicos (6):
+│   │   ├── HomeController.php        # Página principal y landing
+│   │   ├── AuthController.php        # Login, registro, recuperación
+│   │   ├── CatalogoController.php    # Catálogo público de cabañas
+│   │   ├── ReservasController.php    # Sistema de reservas online (5 pasos)
+│   │   ├── ComentariosController.php # Feedback de huéspedes
+│   │   └── ... (2 más)
+│   ├── ⚙️ Configuración (10):
+│   │   ├── CategoriasController.php  # Categorías de productos
+│   │   ├── EstadosReservasController.php # Estados dinámicos de reservas
+│   │   ├── MetodosPagosController.php # Métodos de pago
+│   │   └── ... (7 más)
+│   ├── 🏢 Operaciones (5):
+│   │   ├── CabaniasController.php    # Gestión de cabañas
+│   │   ├── ProductosController.php   # Inventario y productos
+│   │   ├── ServiciosController.php   # Servicios ofrecidos
+│   │   └── ... (2 más)
+│   ├── 🔐 Seguridad (5):
+│   │   ├── UsuariosController.php    # Gestión de usuarios
+│   │   ├── PerfilesController.php    # Roles y permisos
+│   │   └── ... (3 más)
+│   └── 📊 Reportes (1):
+│       └── ReportesController.php    # Analytics y dashboard
+│
+├── 📁 Models/                 # 25 Modelos con Active Record y relaciones
+│   ├── 🏠 Negocio Principal:
+│   │   ├── Cabania.php              # Cabañas con disponibilidad
+│   │   ├── Reserva.php              # Reservas transaccionales
+│   │   ├── Usuario.php              # Autenticación multi-perfil
+│   │   ├── Persona.php              # Datos de huéspedes
+│   │   └── ... (4 más)
+│   ├── 🛍️ Comercial:
+│   │   ├── Producto.php             # Inventario con stock
+│   │   ├── Servicio.php             # Servicios con categorías
+│   │   ├── Consumo.php              # Registro de ventas
+│   │   └── ... (3 más)
+│   └── ⚙️ Sistema:
+│       ├── EstadoReserva.php        # Estados dinámicos sin hardcode
+│       ├── Perfil.php               # Sistema de roles
+│       └── ... (15 más)
+│
+├── 📁 Views/                  # Sistema organizado en 3 secciones
+│   ├── 🌐 public/                   # Experiencia del huésped (7 módulos)
+│   │   ├── home.php                    # Landing page optimizada
+│   │   ├── 📁 auth/                    # Autenticación de usuarios
+│   │   ├── 📁 catalogo/                # Exploración de cabañas
+│   │   ├── 📁 reservas/                # 🔥 Sistema de 5 pasos:
+│   │   │   ├── confirmar.php              # ✅ Validación de datos
+│   │   │   ├── servicios.php              # 🛍️ Servicios adicionales
+│   │   │   ├── resumen.php                # 📋 Vista previa completa
+│   │   │   ├── pago.php                   # 💳 Simulación de pagos
+│   │   │   └── exito.php                  # 🎉 Confirmación final
+│   │   ├── 📁 comentarios/             # Sistema de feedback
+│   │   └── ... (3 más)
+│   ├── 🏢 admin/                    # Panel administrativo (24 módulos)
+│   │   ├── 📁 configuracion/           # Configuración básica (10)
+│   │   ├── 📁 operaciones/             # Gestión diaria (5)
+│   │   ├── 📁 seguridad/               # Administración (5)
+│   │   └── 📁 reportes/                # Analytics (4)
+│   └── 📁 shared/                   # Componentes reutilizables
+│       ├── 📁 layouts/                 # Plantillas base
+│       ├── 📁 components/              # Elementos comunes
+│       └── 📁 errors/                  # Páginas de error
+│
+├── 📁 Core/                   # Framework MVC personalizado (13 componentes)
+│   ├── Application.php              # Bootstrap y ciclo de vida
+│   ├── Router.php                   # Enrutamiento con URLs amigables
+│   ├── Controller.php               # Clase base con funcionalidades
+│   ├── Model.php                    # Active Record con CRUD
+│   ├── View.php                     # Motor de renderizado seguro
+│   ├── Database.php                 # Singleton con pool de conexiones
+│   ├── Auth.php                     # Autenticación multi-perfil
+│   ├── Validator.php                # Sistema de validaciones
+│   ├── EmailService.php             # Servicio de emails con PHPMailer
+│   └── ... (4 más)
+│
+├── 📁 assets/                 # Recursos frontend organizados
+│   ├── 📁 css/                      # Estilos por módulo (7 archivos)
+│   ├── 📁 js/                       # JavaScript funcional (7 archivos)
+│   └── 📁 images/                   # Recursos del sistema
+├── 📁 imagenes/               # Contenido de usuarios
+│   ├── 📁 cabanias/                 # Fotos de las 8 cabañas
+│   └── 📁 productos/                # Imágenes de productos
+├── 📁 vendor/                 # Dependencias (PHPMailer via Composer)
+├── 📄 bd.sql                  # Base de datos completa (24 tablas)
+├── 📄 composer.json           # Gestión de dependencias
+├── 📄 index.php               # Punto de entrada con manejo de errores
+├── 📄 .htaccess               # Configuración Apache con seguridad
+├── 📄 DER.png                 # Diagrama de entidad-relación
+└── 📄 README.md               # Documentación completa
 ```
 
 ### **Componentes del Framework MVC Personalizado**
@@ -144,7 +233,6 @@ proyecto_cabania/
 - **Operaciones**: Cabañas, Productos, Servicios (5)
 - **Administración**: Usuarios, Perfiles, Módulos (5)
 - **Reportes**: Analytics y reportes (1)
-- ~~**Sistema**: ModuleController (eliminado)~~
 
 #### **🖼️ Sistema de Vistas** (31+ elementos)
 - **Público**: 7 módulos con sistema completo de reservas
@@ -318,42 +406,140 @@ Password: huesped123
 - ✅ Comentarios y feedback
 - ❌ Módulos administrativos
 
-### **📋 Flujo de Reserva Online (Huéspedes)**
+### **� Sistema de Reservas Online - Experiencia Completa**
 
-#### **Paso 1: Selección en Catálogo**
-1. Navegar a `/catalogo`
-2. Filtrar por fechas y capacidad
-3. Seleccionar cabaña disponible
-4. Hacer clic en "Reservar"
+El sistema de reservas es el **corazón del proyecto**, implementando un flujo transaccional completo de 5 pasos optimizado para la conversión:
 
-#### **Paso 2: Confirmación (`/reservas/confirmar`)**
-- ✅ Validar datos de cabaña y fechas
-- ✅ Configurar número de huéspedes
-- ✅ Agregar observaciones especiales
-- ✅ Calcular costo base por noches
+#### **🎯 Flujo de Usuario (Huésped)**
 
-#### **Paso 3: Servicios Adicionales (`/reservas/servicios`)**  
-- 🎯 Seleccionar servicios extras (opcional)
-- 🎯 Ver precios actualizados en tiempo real
-- 🎯 Opción "Omitir" para continuar sin servicios
+**Pre-Reserva: Exploración**
+1. **Catálogo Público** (`/catalogo`) - Sin autenticación requerida
+   - Filtros avanzados: fechas, capacidad, precio
+   - Galería de fotos con descripciones detalladas
+   - Disponibilidad en tiempo real
+   - Precios dinámicos por temporada
 
-#### **Paso 4: Resumen (`/reservas/resumen`)**
-- 📊 Vista previa completa de la reserva
-- 📊 Desglose de costos detallado
-- 📊 Aceptar términos y condiciones
-- 📊 Botones "Modificar" o "Proceder al Pago"
+**Reserva: Proceso Guiado (Requiere login como huésped)**
 
-#### **Paso 5: Pago (`/reservas/pago`)**
-- 💳 **Tarjeta de Crédito**: Validación con ejemplo de rechazo
-- 🏦 **Transferencia Bancaria**: Con datos completos
-- 💵 **Efectivo**: Pago diferido al check-in
-- ⚡ Procesamiento transaccional completo
+**Paso 1: Confirmación de Datos** (`/reservas/confirmar`)
+- ✅ Validación de cabaña seleccionada y fechas
+- 👥 Configuración de huéspedes (adultos/niños)  
+- 📝 Observaciones especiales opcionales
+- 💰 Cálculo automático: noches × precio base
+- 🔒 Validaciones: capacidad máxima, disponibilidad
 
-#### **Paso 6: Confirmación (`/reservas/exito`)**
-- 🎉 Confirmación con número de reserva
-- 📧 Email automático con detalles
+**Paso 2: Servicios Adicionales** (`/reservas/servicios`)
+- 🛍️ Catálogo de servicios por categorías (Spa, Tours, Restaurante)
+- ➕ Selección múltiple con cantidades
+- 💵 Actualización de precios en tiempo real
+- ⏭️ Opción "Omitir" para continuar sin servicios
+- 📊 Preview del total actualizado
+
+**Paso 3: Resumen Completo** (`/reservas/resumen`)
+- � Vista previa detallada de toda la reserva
+- � Desglose financiero completo (alojamiento + servicios + impuestos)
+- ℹ️ Información práctica (horarios, políticas, contacto)
+- ☑️ Aceptación obligatoria de términos y condiciones
+- � Botones "Modificar Reserva" y "Cancelar"
+
+**Paso 4: Procesamiento de Pago** (`/reservas/pago`)
+- 💳 **Tarjeta de Crédito**: Con validación real (rechazo simulado para testing)
+- 🏦 **Transferencia Bancaria**: Datos completos de cuenta
+- 💵 **Efectivo**: Pago diferido al momento del check-in
+- 🔐 Validaciones por método específico
+- ⚡ Procesamiento transaccional con rollback automático
+
+**Paso 5: Confirmación Exitosa** (`/reservas/exito`)
+- 🎉 Mensaje de éxito con animación
+- 🎫 Número de reserva único generado
+- 📧 Email de confirmación automático (PHPMailer)
 - 📱 Información práctica para la estadía
-- 🎫 Opción de descargar comprobante
+- 💾 Opción de descargar/imprimir comprobante
+
+#### **⚙️ Estados Dinámicos (Sin Hardcode)**
+El sistema maneja **8 estados** de reserva completamente dinámicos:
+- 🟡 **PENDIENTE** → Creada, esperando pago
+- 🟢 **CONFIRMADA** → Pago procesado exitosamente  
+- 🔵 **EN_CURSO** → Check-in realizado
+- ⚫ **FINALIZADA** → Check-out completado
+- 🔴 **ANULADA** → Cancelada por administrador
+- ⏰ **EXPIRADA** → Vencimiento automático por tiempo
+- 🟠 **CANCELADA** → Cancelada por huésped
+- 🟣 **PENDIENTE_PAGO** → Esperando confirmación de pago
+
+### **⚡ Sistema de Transacciones Atómicas**
+
+El sistema implementa **dos transacciones críticas** para garantizar la integridad de datos en el proceso de reservas online:
+
+#### **🏠 Transacción 1: Reserva Temporal + Servicios**
+**Ubicación:** `Models/Reserva.php` → `createReservationWithServices()`
+
+```php
+$this->db->transaction(function() {
+    // 1. Verificar disponibilidad de cabaña
+    // 2. Crear reserva en estado PENDIENTE (20 min expiración)
+    // 3. Crear relación huésped-reserva
+    // 4. Crear servicios como consumos
+    // 5. Rollback automático si hay errores
+});
+```
+
+**Características:**
+- ✅ **Una sola operación atómica** para reserva + servicios seleccionados
+- ✅ **Estado inicial PENDIENTE** con expiración automática de 20 minutos
+- ✅ **Verificación de disponibilidad** antes de crear la reserva
+- ✅ **Rollback automático** si falla cualquier paso del proceso
+
+#### **💳 Transacción 2: Confirmación de Pago Completa**
+**Ubicación:** `Models/Reserva.php` → `confirmPayment()`
+
+```php
+$this->db->transaction(function() {
+    // 1. Verificar reserva en estado PENDIENTE
+    // 2. Registrar pago con método seleccionado
+    // 3. Cambiar estado reserva a CONFIRMADA
+    // 4. Cambiar estado cabaña a OCUPADA
+    // 5. Generar factura completa con detalles
+    // 6. Rollback automático si hay errores
+});
+```
+
+**Características:**
+- ✅ **Transacción completa** que procesa pago, factura y cambios de estado
+- ✅ **Generación de factura** con número automático y detalles
+- ✅ **Actualización de estados** de reserva y cabaña
+- ✅ **Manejo robusto de errores** con logging detallado
+
+#### **🛡️ Beneficios de la Implementación ACID**
+- **Atomicidad:** Las operaciones se completan totalmente o no se ejecutan
+- **Consistencia:** Estados siempre coherentes entre todas las tablas
+- **Aislamiento:** Transacciones concurrentes no interfieren entre sí
+- **Durabilidad:** Una vez confirmada, la transacción es permanente
+
+### **🧾 Sistema de Facturación Automática**
+
+#### **Numeración Correlativa por Tipo de Comprobante**
+El sistema implementa un moderno sistema de numeración automática sin hardcode:
+
+- **FACTURA A**: `FACA-00000001`, `FACA-00000002`, etc.
+- **FACTURA B**: `FACB-00000001`, `FACB-00000002`, etc.  
+- **FACTURA C**: `FACC-00000001`, `FACC-00000002`, etc.
+- **TICKET USUARIO FINAL**: `TICK-00000001`, `TICK-00000002`, etc.
+
+#### **Características del Sistema**
+- ✅ **Numeración Automática**: Generación transparente sin intervención manual
+- ✅ **Correlativa por Tipo**: Cada tipo de comprobante maneja su propia secuencia
+- ✅ **Sin Duplicados**: Índice único que previene números duplicados
+- ✅ **Transaccional**: Generación segura con rollback automático
+- ✅ **Formato Estándar**: Prefijo de 4 caracteres + 8 dígitos correlativos
+- ✅ **Base de Datos Simplificada**: Usa estructura existente sin tablas adicionales
+
+#### **Implementación Técnica**
+```php
+// Generación automática en Models/Factura.php
+$numero = $factura->generateNumeroFactura($tipoComprobante);
+// Resultado: "FACA-00000001" (dependiendo del tipo)
+```
 
 ### **🔧 Panel Administrativo**
 
@@ -430,7 +616,41 @@ class ExampleController extends Controller {
 }
 ```
 
-### **🔧 Extensión del Framework**
+### **� Sistema de Estados de Reserva**
+
+#### **Estados Dinámicos Sin Hardcode**
+El sistema maneja 8 estados de reserva de forma completamente dinámica:
+- **PENDIENTE** → Reserva creada, esperando confirmación
+- **CONFIRMADA** → Pago procesado exitosamente  
+- **EN CURSO** → Check-in realizado, estadía activa
+- **FINALIZADA** → Check-out completado
+- **ANULADA** → Cancelada por administrador
+- **EXPIRADA** → Reserva pendiente que venció automáticamente
+- **CANCELADA** → Cancelada por el huésped
+- **PENDIENTE DE PAGO** → Esperando confirmación de pago
+
+#### **Herramientas de Gestión**
+```bash
+# Sistema de Estados
+php scripts/estados_console.php validate    # Validar sistema de estados
+php scripts/estados_console.php report      # Generar reporte completo  
+php scripts/estados_console.php migrate     # Migrar estados faltantes
+php scripts/estados_console.php check       # Verificar integridad completa
+
+# Mantenimiento del Sistema  
+php scripts/cleanup.php logs               # Limpiar logs antiguos
+php scripts/cleanup.php cache              # Limpiar cache
+php scripts/cleanup.php temp               # Limpiar archivos temporales
+php scripts/cleanup.php all                # Limpieza completa
+```
+
+#### **Componentes del Sistema**
+- **EstadoReserva (Modelo)**: Lógica centralizada sin hardcode integrada
+- **Métodos Estáticos**: Acceso directo desde el modelo principal
+- **Migración Inteligente**: Scripts seguros de actualización
+- **Consola de Gestión**: Herramientas de diagnóstico
+
+### **�🔧 Extensión del Framework**
 
 #### **Crear Nuevo Controlador**
 ```bash
@@ -639,6 +859,7 @@ if (password_verify($inputPassword, $storedHash)) {
 - ✅ Sistema de autenticación multi-perfil
 - ✅ Motor de plantillas con layouts
 - ✅ Validaciones y helpers globales
+- ✅ **Sistema de facturación automática** con numeración correlativa
 
 #### **Modelos de Datos**
 - ✅ **25 modelos** implementados con relaciones
@@ -663,16 +884,20 @@ if (password_verify($inputPassword, $storedHash)) {
 
 #### **Funcionalidades de Negocio**
 - ✅ Catálogo público de cabañas
-- ✅ Sistema transaccional de reservas
+- ✅ Sistema transaccional de reservas con expiración automática
 - ✅ Gestión completa de huéspedes
 - ✅ Inventario de productos y servicios
 - ✅ Simulación de pasarela de pagos
 - ✅ Sistema de reportes básico
+- ✅ **Sistema de Estados Dinámico**: Gestión sin hardcode con 8 estados
+- ✅ **Sistema de Facturación**: Numeración automática correlativa por tipo (FACA, FACB, FACC, TICK)
 
 ### **⏳ En Desarrollo Activo**
 
 #### **Sistema de Reservas Online** 
-- 🔄 Integración con controladores específicos
+- ✅ Sistema de estados dinámico sin hardcode implementado
+- ✅ Expiración automática de reservas pendientes
+- ✅ Cancelación por huéspedes y anulación por admin
 - 🔄 Testing completo del flujo transaccional
 - 🔄 Optimización de validaciones en tiempo real
 - 🔄 Integración real con PHPMailer
@@ -700,10 +925,65 @@ Para información detallada sobre cada componente, consultar:
 - **[Core/README.md](Core/README.md)** - Framework y arquitectura interna
 - **[Models/README.md](Models/README.md)** - Modelos de datos y relaciones  
 - **[Views/README.md](Views/README.md)** - Sistema de vistas y flujos
+- **[ESTADOS_RESERVA_README.md](ESTADOS_RESERVA_README.md)** - Sistema de estados sin hardcode
+
+---
+
+---
+
+## 📞 **Información del Proyecto**
+
+### **Detalles Académicos**
+- **Proyecto:** SIRCA - Sistema Integral de Reservas de Cabañas y Alojamientos
+- **Institución:** ISRMM - Instituto Superior de Desarrollo de Software
+- **Cátedra:** Desarrollo de Software - Programación Orientada a Objetos
+- **Integrantes:** Hernan Lopez, Greta Cabrera
+- **Repositorio:** [gretacabrera/proyecto_cabania](https://github.com/gretacabrera/proyecto_cabania)
+
+### **Estado Actual del Desarrollo**
+- **Versión:** 2.1 (Octubre 2025)
+- **Estado:** ✅ Completamente funcional y documentado
+- **Cobertura:** 100% de funcionalidades implementadas
+- **Testing:** Validado en entorno de desarrollo local
+
+### **Tecnologías Implementadas**
+- **Backend:** PHP 8.0+ con MVC personalizado
+- **Frontend:** HTML5, CSS3, Bootstrap 5.3, JavaScript ES6+
+- **Base de Datos:** MySQL 8.0 (24 tablas relacionales)
+- **Dependencias:** PHPMailer, SweetAlert2, Font Awesome
+- **Servidor Web:** Apache 2.4 con mod_rewrite
+- **Control de Versiones:** Git con GitHub
+
+### **Métricas del Proyecto**
+- **Líneas de Código:** ~15,000 líneas (estimado)
+- **Archivos PHP:** 65+ archivos organizados
+- **Controladores:** 27 controladores activos
+- **Modelos:** 25 modelos con relaciones
+- **Vistas:** 39+ elementos organizados
+- **Base de Datos:** 24 tablas con datos de ejemplo
+- **Facturación:** Sistema automático con 4 tipos de comprobantes
+
+### **🆕 Últimas Actualizaciones**
+
+#### **Noviembre 2025 - Sistema de Transacciones Atómicas**
+- ✅ **Transacciones ACID**: Implementadas dos transacciones críticas para reservas online
+- ✅ **Reserva + Servicios**: Operación atómica que incluye reserva temporal y servicios seleccionados
+- ✅ **Confirmación de Pago**: Transacción completa que procesa pago, genera factura y actualiza estados
+- ✅ **Rollback Automático**: Manejo robusto de errores con reversión automática de cambios
+- ✅ **Logging Detallado**: Sistema de logs para monitoreo y debugging de transacciones
+- ✅ **Código Limpio**: Eliminación de métodos de validación innecesarios y números de transacción redundantes
+
+#### **Noviembre 2025 - Sistema de Facturación Automática**
+- ✅ **Numeración Correlativa**: Implementado sistema automático por tipo de comprobante
+- ✅ **Base de Datos**: Migración exitosa con clave única para prevenir duplicados
+- ✅ **Modelo Factura**: Mejorado con método `generateNumeroFactura()` transaccional
+- ✅ **Formatos Estándar**: FACA-00000001, FACB-00000001, FACC-00000001, TICK-00000001
+- ✅ **Arquitectura Simplificada**: Sin tablas adicionales, usa estructura existente
+- ✅ **Documentación**: Guía completa de implementación incluida
 
 ---
 
 *Proyecto desarrollado como parte del programa de Desarrollo de Software - ISRMM*  
-*Casa de Palos Cabañas - Sistema Integral de Gestión*  
-*Actualizado: 25 de Septiembre de 2025*
+*Casa de Palos Cabañas - Sistema Integral de Gestión de Turismo Rural*  
+*Documentación actualizada: 1 de Noviembre de 2025*
 ```

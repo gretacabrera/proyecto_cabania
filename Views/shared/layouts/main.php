@@ -20,7 +20,8 @@
     <link href="<?= asset('assets/css/main.css') ?>" rel="stylesheet">
     <link href="<?= asset('assets/css/components.css') ?>" rel="stylesheet">
     <link href="<?= asset('assets/css/forms.css') ?>" rel="stylesheet">
-    <link href="<?= asset('assets/css/public.css') ?>" rel="stylesheet"><?php if (isset($isAdminArea) && $isAdminArea): ?>
+    <link href="<?= asset('assets/css/public.css') ?>" rel="stylesheet">
+    <link href="<?= asset('assets/css/dashboard.css') ?>" rel="stylesheet"><?php if (isset($isAdminArea) && $isAdminArea): ?>
     <link href="<?= asset('assets/css/admin.css') ?>" rel="stylesheet"><?php endif; ?>
 </head>
 <body class="home">

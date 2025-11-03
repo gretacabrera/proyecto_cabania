@@ -110,6 +110,8 @@ class Application
         // Rutas administrativas de cabañas (requieren autenticación)
         $this->router->get('/cabanias', 'CabaniasController@index');
         $this->router->any('/cabanias/create', 'CabaniasController@create');
+        $this->router->get('/cabanias/exportar', 'CabaniasController@exportar');
+        $this->router->get('/cabanias/exportar-pdf', 'CabaniasController@exportarPdf');
         $this->router->get('/cabanias/{id}', 'CabaniasController@show');
         $this->router->any('/cabanias/{id}/edit', 'CabaniasController@edit');
         $this->router->post('/cabanias/{id}/delete', 'CabaniasController@delete');
@@ -126,10 +128,15 @@ class Application
         $this->router->post('/reservas/procesar-servicios', 'ReservasController@procesarServicios');
         $this->router->get('/reservas/resumen', 'ReservasController@resumen');
         $this->router->post('/reservas/proceder-pago', 'ReservasController@procederPago');
-        $this->router->get('/reservas/pago', 'ReservasController@pago');
-        $this->router->post('/reservas/pago', 'ReservasController@pago');
+        $this->router->get('/reservas/pasarela', 'ReservasController@pasarela');
+        $this->router->post('/reservas/pasarela', 'ReservasController@pasarela');
+        $this->router->post('/reservas/procesar-pasarela', 'ReservasController@procesarPasarela');
         $this->router->post('/reservas/confirmar-pago', 'ReservasController@confirmarPago');
         $this->router->get('/reservas/exito', 'ReservasController@exito');
+        $this->router->get('/reservas/exito/{id}', 'ReservasController@exito');
+        $this->router->get('/reservas/limpiar-expiradas', 'ReservasController@limpiarReservasExpiradas'); // Para cron job
+        $this->router->post('/reservas/{id}/cancelar', 'ReservasController@cancelarReserva'); // Cancelar por huésped
+        $this->router->post('/reservas/{id}/anular', 'ReservasController@anularReserva'); // Anular por admin
         $this->router->get('/reservas/{id}', 'ReservasController@show');
         $this->router->any('/reservas/{id}/edit', 'ReservasController@edit');
         $this->router->post('/reservas/{id}/change-status', 'ReservasController@changeStatus');
@@ -167,12 +174,13 @@ class Application
         // Rutas de servicios
         $this->router->get('/servicios', 'ServiciosController@index');
         $this->router->any('/servicios/create', 'ServiciosController@create');
+        $this->router->get('/servicios/exportar', 'ServiciosController@exportar');
+        $this->router->get('/servicios/exportar-pdf', 'ServiciosController@exportarPdf');
         $this->router->get('/servicios/{id}', 'ServiciosController@show');
         $this->router->any('/servicios/{id}/edit', 'ServiciosController@edit');
-        $this->router->get('/servicios/{id}/delete', 'ServiciosController@delete');
-        $this->router->get('/servicios/{id}/restore', 'ServiciosController@restore');
-        $this->router->get('/servicios/search', 'ServiciosController@search');
-        $this->router->get('/servicios/{id}/toggle-status', 'ServiciosController@toggleStatus');
+        $this->router->post('/servicios/{id}/delete', 'ServiciosController@delete');
+        $this->router->post('/servicios/{id}/restore', 'ServiciosController@restore');
+        $this->router->post('/servicios/{id}/estado', 'ServiciosController@cambiarEstado');
 
         // Rutas de marcas
         $this->router->get('/marcas', 'MarcasController@index');

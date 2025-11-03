@@ -226,4 +226,18 @@ class Persona extends Model
     {
         return $this->createHuespedForPersona($personaId);
     }
+    
+    /**
+     * Buscar persona por nombre de usuario
+     */
+    public function findByUsuario($nombreUsuario)
+    {
+        $sql = "SELECT p.* 
+                FROM persona p
+                LEFT JOIN usuario u ON p.id_persona = u.rela_persona
+                WHERE u.usuario_nombre = ? AND u.usuario_estado = 1";
+        
+        $result = $this->query($sql, [$nombreUsuario]);
+        return $result->fetch_assoc();
+    }
 }

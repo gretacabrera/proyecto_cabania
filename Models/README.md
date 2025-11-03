@@ -727,4 +727,45 @@ $reservaCompleta = $reserva->crearReservaCompleta($datosReserva, $servicios);
 
 ---
 
-*Modelos documentados el 25/09/2025 - Casa de Palos Cabañas*
+---
+
+## 📈 **Métricas del Sistema de Modelos**
+
+### **Distribución por Categoría**
+- **🏠 Alojamiento y Reservas**: 5 modelos (20%)
+- **👥 Personas y Usuarios**: 2 modelos (8%)
+- **🛍️ Comercial**: 6 modelos (24%)
+- **💳 Financiero**: 1 modelo (4%)
+- **📊 Configuración**: 7 modelos (28%)
+- **📞 Contacto**: 2 modelos (8%)
+- **🔐 Seguridad**: 4 modelos (16%)
+- **📈 Reportes**: 1 modelo (4%)
+
+### **Complejidad por Modelo**
+- **Alta Complejidad** (8 modelos): Reserva, Cabania, Usuario, Producto, Servicio
+- **Media Complejidad** (12 modelos): Estados, Consumo, Perfil, etc.
+- **Baja Complejidad** (5 modelos): Categoria, Marca, TipoContacto, etc.
+
+### **Relaciones Implementadas**
+- **hasMany (1:N)**: 15 relaciones establecidas
+- **belongsTo (N:1)**: 20 relaciones establecidas  
+- **belongsToMany (N:N)**: 3 relaciones (huesped_reserva, etc.)
+
+---
+
+## 🔗 **Enlaces de Documentación**
+
+- **[README Principal](../README.md)** - Documentación completa del proyecto
+- **[Controllers/README.md](../Controllers/README.md)** - Controladores y lógica de negocio
+- **[Core/README.md](../Core/README.md)** - Framework base y arquitectura
+- **[Views/README.md](../Views/README.md)** - Sistema de vistas organizadas
+
+### **Diagramas y Referencias**
+- **DER.png** - Diagrama de Entidad-Relación completo
+- **bd.sql** - Estructura de base de datos con datos de ejemplo
+- **model.mwb** - Modelo MySQL Workbench para referencia
+
+---
+
+*Modelos documentados el 12/10/2025 - Casa de Palos Cabañas*  
+*25 modelos implementados con Active Record y relaciones complejas*

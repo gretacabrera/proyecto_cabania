@@ -68,79 +68,188 @@ class Servicio extends Model
     }
 
     /**
-     * Obtener servicios con filtros y paginación
+     * Obtener servicios con filtros y paginación según patrón estándar
      */
-    public function getWithFilters($filters = [], $page = 1, $perPage = 20)
+    public function getWithDetails($page = 1, $perPage = 10, $filters = [])
     {
-        $conditions = [];
-        $joins = [];
+        $where = "s.servicio_estado IS NOT NULL";
+        $params = [];
         
-        // Join con tabla de tipos de servicio
-        $joins[] = "LEFT JOIN tiposervicio ts ON s.rela_tiposervicio = ts.id_tiposervicio";
+        // Aplicar filtros
+        if (!empty($filters['servicio_nombre'])) {
+            $where .= " AND s.servicio_nombre LIKE ?";
+            $params[] = '%' . $filters['servicio_nombre'] . '%';
+        }
         
-        // Filtro de búsqueda
-        if (!empty($filters['search'])) {
-            $search = addslashes($filters['search']);
-            $conditions[] = "(s.servicio_nombre LIKE '%{$search}%' OR s.servicio_descripcion LIKE '%{$search}%' OR ts.tiposervicio_nombre LIKE '%{$search}%')";
+        if (!empty($filters['servicio_descripcion'])) {
+            $where .= " AND s.servicio_descripcion LIKE ?";
+            $params[] = '%' . $filters['servicio_descripcion'] . '%';
         }
-
-        // Filtro por estado
-        if (isset($filters['estado'])) {
-            $conditions[] = "s.servicio_estado = " . (int)$filters['estado'];
-        }
-
-        // Filtro por tipo de servicio
-        if (!empty($filters['tipo_servicio'])) {
-            $conditions[] = "s.rela_tiposervicio = " . (int)$filters['tipo_servicio'];
-        }
-
-        // Filtro por rango de precio
+        
         if (!empty($filters['precio_min'])) {
-            $conditions[] = "s.servicio_precio >= " . (float)$filters['precio_min'];
+            $where .= " AND s.servicio_precio >= ?";
+            $params[] = (float) $filters['precio_min'];
         }
+        
         if (!empty($filters['precio_max'])) {
-            $conditions[] = "s.servicio_precio <= " . (float)$filters['precio_max'];
+            $where .= " AND s.servicio_precio <= ?";
+            $params[] = (float) $filters['precio_max'];
         }
-
-        $whereClause = !empty($conditions) ? 'WHERE ' . implode(' AND ', $conditions) : '';
-        $joinClause = implode(' ', $joins);
         
-        // Ordenamiento
-        $orderBy = $filters['orderBy'] ?? 'servicio_nombre';
-        $orderDir = $filters['orderDir'] ?? 'ASC';
-        $orderClause = "ORDER BY s.{$orderBy} {$orderDir}";
+        if (!empty($filters['rela_tiposervicio'])) {
+            $where .= " AND s.rela_tiposervicio = ?";
+            $params[] = (int) $filters['rela_tiposervicio'];
+        }
+        
+        if (isset($filters['servicio_estado']) && $filters['servicio_estado'] !== '') {
+            $where .= " AND s.servicio_estado = ?";
+            $params[] = (int) $filters['servicio_estado'];
+        }
+        
+        return $this->paginateWithDetailsAndParams($page, $perPage, $where, "s.servicio_nombre ASC", $params);
+    }
 
-        // Contar total de registros
-        $countSql = "SELECT COUNT(*) as total FROM {$this->table} s {$joinClause} {$whereClause}";
-        $countResult = $this->db->query($countSql);
-        $totalRecords = $countResult->fetch_assoc()['total'];
-
-        // Calcular paginación
-        $totalPages = ceil($totalRecords / $perPage);
-        $offset = ($page - 1) * $perPage;
-
-        // Consulta principal
-        $sql = "SELECT s.*, ts.tiposervicio_nombre, ts.tiposervicio_descripcion
-                FROM {$this->table} s 
-                {$joinClause}
-                {$whereClause}
-                {$orderClause}
-                LIMIT {$perPage} OFFSET {$offset}";
-
-        $result = $this->db->query($sql);
+    /**
+     * Obtener todos los servicios con filtros para exportación (sin paginación)
+     */
+    public function getAllWithDetailsForExport($filters = [])
+    {
+        $where = "s.servicio_estado IS NOT NULL";
+        $params = [];
+        
+        // Aplicar los mismos filtros que getWithDetails
+        if (!empty($filters['servicio_nombre'])) {
+            $where .= " AND s.servicio_nombre LIKE ?";
+            $params[] = '%' . $filters['servicio_nombre'] . '%';
+        }
+        
+        if (!empty($filters['servicio_descripcion'])) {
+            $where .= " AND s.servicio_descripcion LIKE ?";
+            $params[] = '%' . $filters['servicio_descripcion'] . '%';
+        }
+        
+        if (!empty($filters['precio_min'])) {
+            $where .= " AND s.servicio_precio >= ?";
+            $params[] = (float) $filters['precio_min'];
+        }
+        
+        if (!empty($filters['precio_max'])) {
+            $where .= " AND s.servicio_precio <= ?";
+            $params[] = (float) $filters['precio_max'];
+        }
+        
+        if (!empty($filters['rela_tiposervicio'])) {
+            $where .= " AND s.rela_tiposervicio = ?";
+            $params[] = (int) $filters['rela_tiposervicio'];
+        }
+        
+        if (isset($filters['servicio_estado']) && $filters['servicio_estado'] !== '') {
+            $where .= " AND s.servicio_estado = ?";
+            $params[] = (int) $filters['servicio_estado'];
+        }
+        
+        // Query para contar total (para estadísticas)
+        $countSql = "SELECT COUNT(*) as total 
+                     FROM {$this->table} s 
+                     LEFT JOIN tiposervicio ts ON s.rela_tiposervicio = ts.id_tiposervicio 
+                     WHERE $where";
+        $totalResult = $this->queryWithParams($countSql, $params);
+        $totalRow = $totalResult->fetch_assoc();
+        $total = (int) $totalRow['total'];
+        
+        // Query para obtener TODOS los registros (sin LIMIT)
+        $dataSql = "SELECT s.*, ts.tiposervicio_descripcion
+                    FROM {$this->table} s 
+                    LEFT JOIN tiposervicio ts ON s.rela_tiposervicio = ts.id_tiposervicio 
+                    WHERE $where 
+                    ORDER BY s.servicio_nombre ASC";
+        $dataResult = $this->queryWithParams($dataSql, $params);
+        
         $data = [];
-        
-        while ($row = $result->fetch_assoc()) {
+        while ($row = $dataResult->fetch_assoc()) {
             $data[] = $row;
         }
-
+        
         return [
             'data' => $data,
-            'totalRecords' => $totalRecords,
-            'totalPages' => $totalPages,
-            'currentPage' => $page,
-            'perPage' => $perPage
+            'total' => $total
         ];
+    }
+
+    /**
+     * Obtener servicios con paginación incluyendo detalles del tipo, usando parámetros preparados
+     */
+    private function paginateWithDetailsAndParams($page = 1, $perPage = 10, $where = "s.servicio_estado IS NOT NULL", $orderBy = null, $params = [])
+    {
+        $offset = ($page - 1) * $perPage;
+        $limit = (int) $perPage;
+        
+        // Query para contar total
+        $countSql = "SELECT COUNT(*) as total 
+                     FROM {$this->table} s 
+                     LEFT JOIN tiposervicio ts ON s.rela_tiposervicio = ts.id_tiposervicio 
+                     WHERE $where";
+        $totalResult = $this->queryWithParams($countSql, $params);
+        $totalRow = $totalResult->fetch_assoc();
+        $total = (int) $totalRow['total'];
+        
+        // Query para obtener registros con información del tipo
+        $orderClause = $orderBy ? "ORDER BY $orderBy" : '';
+        $dataSql = "SELECT s.*, ts.tiposervicio_descripcion
+                    FROM {$this->table} s 
+                    LEFT JOIN tiposervicio ts ON s.rela_tiposervicio = ts.id_tiposervicio 
+                    WHERE $where 
+                    $orderClause 
+                    LIMIT $limit OFFSET $offset";
+        $dataResult = $this->queryWithParams($dataSql, $params);
+        
+        $data = [];
+        while ($row = $dataResult->fetch_assoc()) {
+            $data[] = $row;
+        }
+        
+        $totalPages = ceil($total / $perPage);
+        
+        return [
+            'data' => $data,
+            'total' => $total,
+            'current_page' => $page,
+            'total_pages' => $totalPages,
+            'per_page' => $perPage,
+            'offset' => $offset,
+            'limit' => $limit
+        ];
+    }
+
+    /**
+     * Ejecutar query con parámetros preparados
+     */
+    private function queryWithParams($sql, $params = [])
+    {
+        $stmt = $this->db->prepare($sql);
+        if (!$stmt) {
+            throw new \Exception("Error preparando consulta: " . $this->db->error);
+        }
+        
+        if (!empty($params)) {
+            $types = '';
+            foreach ($params as $param) {
+                if (is_int($param)) {
+                    $types .= 'i';
+                } elseif (is_float($param)) {
+                    $types .= 'd';
+                } else {
+                    $types .= 's';
+                }
+            }
+            $stmt->bind_param($types, ...$params);
+        }
+        
+        if (!$stmt->execute()) {
+            throw new \Exception("Error ejecutando consulta: " . $stmt->error);
+        }
+        
+        return $stmt->get_result();
     }
 
     /**
@@ -192,11 +301,11 @@ class Servicio extends Model
     }
 
     /**
-     * Obtener servicio con sus relaciones
+     * Obtener servicio específico con sus relaciones
      */
-    public function getWithDetails($id)
+    public function getServiceWithDetails($id)
     {
-        $sql = "SELECT s.*, ts.tiposervicio_nombre, ts.tiposervicio_descripcion
+        $sql = "SELECT s.*, ts.tiposervicio_descripcion
                 FROM {$this->table} s
                 LEFT JOIN tiposervicio ts ON s.rela_tiposervicio = ts.id_tiposervicio
                 WHERE s.{$this->primaryKey} = " . (int)$id;
@@ -229,7 +338,9 @@ class Servicio extends Model
         $sql = "SELECT c.*, r.reserva_numero, p.persona_nombre, p.persona_apellido
                 FROM consumo c
                 JOIN reserva r ON c.rela_reserva = r.id_reserva
-                JOIN persona p ON r.rela_persona = p.id_persona
+                JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
+                JOIN huesped h ON hr.rela_huesped = h.id_huesped
+                JOIN persona p ON h.rela_persona = p.id_persona
                 WHERE c.rela_servicio = " . (int)$servicioId . "
                 ORDER BY c.id_consumo DESC
                 LIMIT 50";

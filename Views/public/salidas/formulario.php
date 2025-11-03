@@ -234,7 +234,7 @@ include __DIR__ . '/../layouts/header.php';
                                 </a>
                                 <a href="/reservas" class="btn btn-outline-primary">
                                     <i class="fas fa-calendar-alt"></i>
-                                    Gestionar Reservas
+                                    Mis Reservas
                                 </a>
                             </div>
                         </div>

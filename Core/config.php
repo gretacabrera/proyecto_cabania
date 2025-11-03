@@ -46,11 +46,22 @@ return [
     ],
     
     'mail' => [
-        'host' => getenv('MAIL_HOST') ?: 'smtp.gmail.com',
-        'port' => getenv('MAIL_PORT') ?: 587,
-        'username' => getenv('MAIL_USERNAME') ?: '',
-        'password' => getenv('MAIL_PASSWORD') ?: '',
-        'encryption' => getenv('MAIL_ENCRYPTION') ?: 'tls',
-        'from_name' => 'SIRCA Software',
+        'host' => getenv('MAIL_HOST'),
+        'port' => getenv('MAIL_PORT'),
+        'username' => getenv('MAIL_USERNAME'),
+        'password' => getenv('MAIL_PASSWORD'),
+        'encryption' => getenv('MAIL_ENCRYPTION'),
+        'from_name' => getenv('MAIL_FROM_NAME'),
+    ],
+    
+    'complejo' => [
+        'nombre' => getenv('COMPLEJO_NOMBRE'),
+        'direccion' => getenv('COMPLEJO_DIRECCION'),
+        'telefono' => getenv('COMPLEJO_TELEFONO'),
+        'email' => getenv('COMPLEJO_EMAIL'),
+        'politicas' => [
+            'check_in' => getenv('COMPLEJO_CHECKIN'),
+            'check_out' => getenv('COMPLEJO_CHECKOUT')
+        ]
     ],
 ];

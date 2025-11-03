@@ -33,7 +33,7 @@ class Ingreso extends Model
                     WHERE u.usuario_nombre = '$escaped_usuario'
                     AND er.estadoreserva_descripcion = 'confirmada'
                     AND NOW() BETWEEN r.reserva_fhinicio AND r.reserva_fhfin
-                    AND r.reserva_estado = 1";
+                    AND er.estadoreserva_estado = 1";
 
             $result = $this->db->query($query);
             $reservas = [];
@@ -127,7 +127,7 @@ class Ingreso extends Model
                      LEFT JOIN estadoreserva er ON r.rela_estadoreserva = er.id_estadoreserva
                      WHERE r.id_reserva = " . (int)$id_reserva . "
                      AND er.estadoreserva_descripcion = 'confirmada'
-                     AND r.reserva_estado = 1
+                     AND er.estadoreserva_estado = 1
                      AND NOW() BETWEEN r.reserva_fhinicio AND r.reserva_fhfin";
 
             $result = $this->db->query($query);
@@ -151,7 +151,7 @@ class Ingreso extends Model
                             COUNT(*) as cantidad
                      FROM reserva r
                      LEFT JOIN estadoreserva er ON r.rela_estadoreserva = er.id_estadoreserva
-                     WHERE r.reserva_estado = 1
+                     WHERE er.estadoreserva_estado = 1
                      GROUP BY er.estadoreserva_descripcion
                      ORDER BY cantidad DESC";
 
@@ -168,7 +168,7 @@ class Ingreso extends Model
                      LEFT JOIN estadoreserva er ON r.rela_estadoreserva = er.id_estadoreserva
                      WHERE er.estadoreserva_descripcion IN ('en curso', 'finalizada')
                      AND r.reserva_fhinicio >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
-                     AND r.reserva_estado = 1
+                     AND er.estadoreserva_estado = 1
                      GROUP BY DATE_FORMAT(r.reserva_fhinicio, '%Y-%m')
                      ORDER BY mes DESC";
 
@@ -185,7 +185,7 @@ class Ingreso extends Model
                      LEFT JOIN cabania c ON r.rela_cabania = c.id_cabania
                      LEFT JOIN estadoreserva er ON r.rela_estadoreserva = er.id_estadoreserva
                      WHERE er.estadoreserva_descripcion IN ('en curso', 'finalizada')
-                     AND r.reserva_estado = 1
+                     AND er.estadoreserva_estado = 1
                      GROUP BY c.id_cabania
                      ORDER BY usos DESC
                      LIMIT 10";
@@ -214,7 +214,7 @@ class Ingreso extends Model
     public function buscarIngresos($criterios)
     {
         try {
-            $where_conditions = ["r.reserva_estado = 1"];
+            $where_conditions = ["er.estadoreserva_estado = 1"];
             
             // Filtro por fechas
             if (!empty($criterios['fecha_desde'])) {
@@ -286,7 +286,14 @@ class Ingreso extends Model
                            c.cabania_nombre, c.cabania_ubicacion, c.cabania_precio,
                            er.estadoreserva_descripcion,
                            p.persona_nombre, p.persona_apellido, p.persona_documento,
-                           p.persona_telefono, p.persona_email,
+                           (SELECT ct.contacto_descripcion FROM contacto ct 
+                            LEFT JOIN tipocontacto tc ON ct.rela_tipocontacto = tc.id_tipocontacto 
+                            WHERE tc.tipocontacto_descripcion = 'telefono' AND ct.rela_persona = p.id_persona 
+                            LIMIT 1) as persona_telefono,
+                           (SELECT ct.contacto_descripcion FROM contacto ct 
+                            LEFT JOIN tipocontacto tc ON ct.rela_tipocontacto = tc.id_tipocontacto 
+                            WHERE tc.tipocontacto_descripcion = 'email' AND ct.rela_persona = p.id_persona 
+                            LIMIT 1) as persona_email,
                            u.usuario_nombre,
                            DATEDIFF(r.reserva_fhfin, r.reserva_fhinicio) as dias_estadia,
                            (c.cabania_precio * 
@@ -302,7 +309,7 @@ class Ingreso extends Model
                     LEFT JOIN persona p ON h.rela_persona = p.id_persona
                     LEFT JOIN usuario u ON u.rela_persona = p.id_persona
                     WHERE r.id_reserva = " . (int)$id_reserva . "
-                    AND r.reserva_estado = 1";
+                    AND er.estadoreserva_estado = 1";
 
             $result = $this->db->query($query);
             $reserva = $result->fetch_assoc();
@@ -365,7 +372,7 @@ class Ingreso extends Model
                      LEFT JOIN usuario u ON u.rela_persona = p.id_persona
                      WHERE r.id_reserva = " . (int)$id_reserva . "
                      AND u.usuario_nombre = '$escaped_usuario'
-                     AND r.reserva_estado = 1";
+                     AND er.estadoreserva_estado = 1";
 
             $result = $this->db->query($query);
             $row = $result->fetch_assoc();

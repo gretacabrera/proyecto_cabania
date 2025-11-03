@@ -79,9 +79,14 @@
                     </div>
                     <div class="col"></div> <!-- Espaciador para empujar el botón a la derecha -->
                     <div class="col-auto">
-                        <button onclick="exportarCabanias()" class="btn btn-success btn-sm">
-                            <i class="fas fa-file-excel me-1"></i> Exportar
-                        </button>
+                        <div class="btn-group" role="group">
+                            <button type="button" onclick="exportarCabanias(event)" class="btn btn-success btn-sm" title="Exportar a Excel">
+                                <i class="fas fa-file-excel me-1"></i> Excel
+                            </button>
+                            <button type="button" onclick="exportarCabaniasPDF(event)" class="btn btn-danger btn-sm" title="Exportar a PDF">
+                                <i class="fas fa-file-pdf me-1"></i> PDF
+                            </button>
+                        </div>
                     </div>
                 </div>
             </form>
@@ -101,6 +106,84 @@
                     </a>
                 </div>
             <?php else: ?>
+                <!-- Información de paginación y navegación superior -->
+                <?php if (isset($pagination) && $pagination['total'] > 0): ?>
+                    <?php 
+                    $perPage = (int) ($_GET['per_page'] ?? 10);
+                    $start = (($pagination['current_page'] - 1) * $perPage) + 1;
+                    $end = min($pagination['current_page'] * $perPage, $pagination['total']);
+                    
+                    // Función para renderizar la paginación
+                    $renderPagination = function($showInfo = true) use ($pagination, $start, $end) {
+                    ?>
+                        <div class="row align-items-center">
+                            <?php if ($showInfo): ?>
+                                <div class="col-sm-6">
+                                    <span class="text-muted small">
+                                        Mostrando <?= $start ?> a <?= $end ?> de <?= $pagination['total'] ?> entradas
+                                    </span>
+                                </div>
+                            <?php endif; ?>
+                            <div class="col-sm-<?= $showInfo ? '6' : '12' ?>">
+                                <?php if ($pagination['total_pages'] > 1): ?>
+                                    <nav aria-label="Paginación" class="d-flex justify-content-<?= $showInfo ? 'end' : 'center' ?>">
+                                        <ul class="pagination pagination-sm mb-0">
+                                            <?php if ($pagination['current_page'] > 1): ?>
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $pagination['current_page'] - 1])) ?>">Anterior</a>
+                                                </li>
+                                            <?php endif; ?>
+                                            
+                                            <?php 
+                                            $startPage = max(1, $pagination['current_page'] - 2);
+                                            $endPage = min($pagination['total_pages'], $pagination['current_page'] + 2);
+                                            
+                                            if ($startPage > 1): ?>
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => 1])) ?>">1</a>
+                                                </li>
+                                                <?php if ($startPage > 2): ?>
+                                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                                <?php endif; ?>
+                                            <?php endif; ?>
+                                            
+                                            <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
+                                                <li class="page-item <?= $i == $pagination['current_page'] ? 'active' : '' ?>">
+                                                    <?php if ($i == $pagination['current_page']): ?>
+                                                        <span class="page-link bg-primary text-white border-primary"><?= $i ?></span>
+                                                    <?php else: ?>
+                                                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $i])) ?>"><?= $i ?></a>
+                                                    <?php endif; ?>
+                                                </li>
+                                            <?php endfor; ?>
+                                            
+                                            <?php if ($endPage < $pagination['total_pages']): ?>
+                                                <?php if ($endPage < $pagination['total_pages'] - 1): ?>
+                                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                                <?php endif; ?>
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $pagination['total_pages']])) ?>"><?= $pagination['total_pages'] ?></a>
+                                                </li>
+                                            <?php endif; ?>
+                                            
+                                            <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $pagination['current_page'] + 1])) ?>">Siguiente</a>
+                                                </li>
+                                            <?php endif; ?>
+                                        </ul>
+                                    </nav>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php }; ?>
+                    
+                    <!-- Paginación superior -->
+                    <div class="card-header bg-light border-bottom py-2">
+                        <?php $renderPagination(true); ?>
+                    </div>
+                <?php endif; ?>
+
                 <div class="table-responsive">
                     <table id="tablaCabanias" class="table table-hover mb-0">
                         <thead class="table-light">
@@ -216,48 +299,14 @@
                         </tbody>
                     </table>
                 </div>
+                
+                <!-- Paginación inferior -->
+                <?php if (isset($pagination) && $pagination['total'] > 0): ?>
+                    <div class="card-footer bg-white border-top py-3">
+                        <?php $renderPagination(true); ?>
+                    </div>
+                <?php endif; ?>
             <?php endif; ?>
-
-        <!-- Paginación estilo moderno -->
-        <?php if (isset($pagination) && $pagination['total_pages'] > 1): ?>
-            <div class="card-footer bg-white border-top py-3">
-                <div class="row align-items-center">
-                    <div class="col-sm-6">
-                        <?php 
-                        $perPage = (int) ($_GET['per_page'] ?? 10);
-                        $start = (($pagination['current_page'] - 1) * $perPage) + 1;
-                        $end = min($pagination['current_page'] * $perPage, $pagination['total']);
-                        ?>
-                        <span class="text-muted small">
-                            Mostrando <?= $start ?> a <?= $end ?> de <?= $pagination['total'] ?> entradas
-                        </span>
-                    </div>
-                    <div class="col-sm-6">
-                        <nav aria-label="Paginación" class="d-flex justify-content-end">
-                            <ul class="pagination pagination-sm mb-0">
-                                <?php if ($pagination['current_page'] > 1): ?>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $pagination['current_page'] - 1])) ?>">Anterior</a>
-                                    </li>
-                                <?php endif; ?>
-                                
-                                <?php for ($i = 1; $i <= min(5, $pagination['total_pages']); $i++): ?>
-                                    <li class="page-item <?= $i == $pagination['current_page'] ? 'active' : '' ?>">
-                                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $i])) ?>"><?= $i ?></a>
-                                    </li>
-                                <?php endfor; ?>
-                                
-                                <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $pagination['current_page'] + 1])) ?>">Siguiente</a>
-                                    </li>
-                                <?php endif; ?>
-                            </ul>
-                        </nav>
-                    </div>
-                </div>
-            </div>
-        <?php endif; ?>
     </div>
 </div>
 
@@ -365,145 +414,115 @@ function cambiarEstadoCabania(id, nuevoEstado, nombre) {
 }
 
 // Función para exportar cabañas a Excel (.xlsx)
-function exportarCabanias() {
-    const tabla = document.getElementById('tablaCabanias');
-    if (!tabla) {
-        alert('No se encontró la tabla para exportar');
-        return;
+function exportarCabanias(event) {
+    // Prevenir comportamiento por defecto del botón
+    if (event) {
+        event.preventDefault();
     }
     
-    // Extraer datos de la tabla
-    const filas = tabla.querySelectorAll('tbody tr');
-    if (filas.length === 0) {
-        alert('No hay datos para exportar');
-        return;
+    // Mostrar mensaje de procesamiento
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Generando archivo...',
+            text: 'Por favor espere mientras se procesa la exportación',
+            icon: 'info',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
     }
     
-    // Preparar datos para Excel
-    const datos = [];
+    // Obtener los parámetros actuales de la URL (filtros y paginación)
+    const urlParams = new URLSearchParams(window.location.search);
     
-    // Agregar encabezados
-    datos.push(['Código', 'Cabaña', 'Capacidad', 'Habitaciones', 'Baños', 'Precio', 'Estado']);
+    // Crear la URL de exportación manteniendo todos los filtros
+    const baseExportUrl = '<?= url('/cabanias/exportar') ?>';
+    const exportUrl = baseExportUrl + '?' + urlParams.toString();
     
-    // Extraer datos de cada fila
-    filas.forEach(fila => {
-        const celdas = fila.querySelectorAll('td');
-        if (celdas.length >= 7) {
-            const fila_datos = [
-                celdas[0].textContent.trim(), // Código
-                celdas[1].querySelector('.fw-medium') ? celdas[1].querySelector('.fw-medium').textContent.trim() : celdas[1].textContent.trim(), // Cabaña
-                celdas[2].textContent.trim(), // Capacidad
-                celdas[3].textContent.trim(), // Habitaciones
-                celdas[4].textContent.trim(), // Baños
-                celdas[5].querySelector('.fw-medium') ? celdas[5].querySelector('.fw-medium').textContent.trim() : celdas[5].textContent.trim(), // Precio
-                celdas[6].textContent.trim().replace(/\s+/g, ' ') // Estado
-            ];
-            
-            // Limpiar datos
-            const fila_limpia = fila_datos.map(dato => 
-                dato.replace(/[\n\r\t]/g, ' ').replace(/\s+/g, ' ').trim()
-            );
-            
-            datos.push(fila_limpia);
-        }
-    });
+    // Crear un enlace temporal para la descarga
+    const link = document.createElement('a');
+    link.href = exportUrl;
+    link.style.display = 'none';
+    document.body.appendChild(link);
     
-    // Verificar si SheetJS está disponible
-    if (typeof XLSX === 'undefined') {
-        // Fallback: exportar como CSV si no está disponible SheetJS
-        exportarComoCSV(datos);
-        return;
-    }
+    // Simular clic para iniciar descarga
+    link.click();
     
-    try {
-        // Crear libro de trabajo Excel
-        const libro = XLSX.utils.book_new();
-        const hoja = XLSX.utils.aoa_to_sheet(datos);
-        
-        // Configurar ancho de columnas
-        hoja['!cols'] = [
-            { wch: 12 }, // Código
-            { wch: 30 }, // Cabaña
-            { wch: 12 }, // Capacidad
-            { wch: 15 }, // Habitaciones
-            { wch: 10 }, // Baños
-            { wch: 15 }, // Precio
-            { wch: 12 } // Estado
-        ];
-        
-        // Estilo para encabezados
-        const rango = XLSX.utils.decode_range(hoja['!ref']);
-        for (let col = rango.s.c; col <= rango.e.c; col++) {
-            const celda = XLSX.utils.encode_cell({r: 0, c: col});
-            if (!hoja[celda]) continue;
-            
-            hoja[celda].s = {
-                font: { bold: true },
-                fill: { fgColor: { rgb: "E3F2FD" } },
-                alignment: { horizontal: "center" }
-            };
-        }
-        
-        // Agregar la hoja al libro
-        XLSX.utils.book_append_sheet(libro, hoja, "Cabañas");
-        
-        // Generar nombre de archivo con fecha
-        const fecha = new Date().toISOString().split('T')[0];
-        const nombreArchivo = `cabanias_${fecha}.xlsx`;
-        
-        // Descargar archivo
-        XLSX.writeFile(libro, nombreArchivo);
-        
-        // Mostrar mensaje de éxito
+    // Limpiar el enlace temporal
+    document.body.removeChild(link);
+    
+    // Cerrar mensaje de carga después de un momento
+    setTimeout(() => {
         if (typeof Swal !== 'undefined') {
             Swal.fire({
-                title: '¡Exportación exitosa!',
-                text: `Se han exportado ${filas.length} registros de cabañas a Excel`,
+                title: '¡Exportación iniciada!',
+                text: 'El archivo se descargará automáticamente',
                 icon: 'success',
-                timer: 2500,
+                timer: 2000,
                 showConfirmButton: false
             });
         } else {
-            alert(`Exportación exitosa: ${filas.length} registros exportados a Excel`);
+            alert('Exportación iniciada - El archivo se descargará automáticamente');
         }
-        
-    } catch (error) {
-        console.error('Error al exportar a Excel:', error);
-        // Fallback a CSV en caso de error
-        exportarComoCSV(datos);
-    }
+    }, 1000);
 }
 
-// Función fallback para exportar como CSV
-function exportarComoCSV(datos) {
-    let csv = datos.map(fila => 
-        fila.map(celda => '"' + String(celda).replace(/"/g, '""') + '"').join(',')
-    ).join('\n');
+// Función para exportar cabañas a PDF
+function exportarCabaniasPDF(event) {
+    // Prevenir comportamiento por defecto del botón
+    if (event) {
+        event.preventDefault();
+    }
     
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    
-    const fecha = new Date().toISOString().split('T')[0];
-    link.setAttribute('download', `cabanias_${fecha}.csv`);
-    
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    
+    // Mostrar mensaje de procesamiento
     if (typeof Swal !== 'undefined') {
         Swal.fire({
-            title: 'Exportado como CSV',
-            text: 'No se pudo exportar a Excel, se descargó como CSV',
+            title: 'Generando PDF...',
+            text: 'Por favor espere mientras se procesa la exportación',
             icon: 'info',
-            timer: 2500,
-            showConfirmButton: false
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
         });
-    } else {
-        alert('Exportado como CSV (Excel no disponible)');
     }
+    
+    // Obtener los parámetros actuales de la URL (filtros y paginación)
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // Crear la URL de exportación PDF manteniendo todos los filtros
+    const basePdfUrl = '<?= url('/cabanias/exportar-pdf') ?>';
+    const pdfUrl = basePdfUrl + '?' + urlParams.toString();
+    
+    // Crear un enlace temporal para la descarga
+    const link = document.createElement('a');
+    link.href = pdfUrl;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    
+    // Simular clic para iniciar descarga
+    link.click();
+    
+    // Limpiar el enlace temporal
+    document.body.removeChild(link);
+    
+    // Cerrar mensaje de carga después de un momento
+    setTimeout(() => {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: '¡PDF generado!',
+                text: 'El archivo PDF se descargará automáticamente',
+                icon: 'success',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        } else {
+            alert('PDF generado - El archivo se descargará automáticamente');
+        }
+    }, 1000);
 }
+
 </script>

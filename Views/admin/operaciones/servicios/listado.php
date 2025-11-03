@@ -1,181 +1,327 @@
-<?php
-// Los datos ya vienen preparados desde el controlador
-// Variables disponibles:
-// $servicios - array con los servicios paginados
-// $paginacion - información de paginación  
-// $tipos_servicio - tipos de servicio para el select
-// $filtros_aplicados - filtros actualmente activos
-
-// Configuración de paginación (recibida del controlador)
-$registros_por_pagina = $paginacion['registros_por_pagina'] ?? 10;
-$pagina_actual = $paginacion['pagina_actual'] ?? 1;
+<?php 
+$perPage = (int) ($_GET['per_page'] ?? 10);
+$start = (($pagination['current_page'] - 1) * $perPage) + 1;
+$end = min($pagination['current_page'] * $perPage, $pagination['total']);
 ?>
 
-<h1>Gestión de Servicios</h1>
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-concierge-bell text-primary me-2"></i>
+                Gestión de Servicios
+            </h2>
+        </div>
+        <div>
+            <a href="<?= url('/servicios/create') ?>" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Nuevo Servicio
+            </a>
+        </div>
+    </div>
 
-<!-- Formulario de búsqueda -->
-<div class="search-container">
-    <form method="post" action="<?php echo $_SERVER['REQUEST_URI']; ?>" class="search-form">
-        <div class="search-fields">
-            <div class="form-group">
-                <label for="servicio_nombre">Nombre del servicio:</label>
-                <input type="text" id="servicio_nombre" name="servicio_nombre" 
-                       value="<?php echo isset($filtros_aplicados["servicio_nombre"]) ? htmlspecialchars($filtros_aplicados["servicio_nombre"]) : ''; ?>">
+    <!-- Card principal -->
+    <div class="card shadow">
+        <!-- Filtros de búsqueda -->
+        <div class="card-header bg-light border-bottom">
+            <div class="row">
+                <div class="col-12">
+                    <button class="btn btn-link text-dark fw-bold p-0" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosCollapse">
+                        <i class="fas fa-filter me-2"></i>Filtros de búsqueda
+                        <i class="fas fa-chevron-down ms-2"></i>
+                    </button>
+                </div>
             </div>
             
-            <div class="form-group">
-                <label for="servicio_descripcion">Descripción:</label>
-                <input type="text" id="servicio_descripcion" name="servicio_descripcion" 
-                       value="<?php echo isset($filtros_aplicados["servicio_descripcion"]) ? htmlspecialchars($filtros_aplicados["servicio_descripcion"]) : ''; ?>">
-            </div>
-            
-            <div class="form-group">
-                <label for="rela_tiposervicio">Tipo de Servicio:</label>
-                <select name="rela_tiposervicio" id="rela_tiposervicio">
-                    <option value="">Seleccione un tipo...</option>
-                    <?php
-                        if (isset($tipos_servicio) && is_array($tipos_servicio)) {
-                            foreach ($tipos_servicio as $tipo) {
-                                $selected = (isset($filtros_aplicados["rela_tiposervicio"]) && $filtros_aplicados["rela_tiposervicio"] == $tipo["id_tiposervicio"]) ? "selected" : "";
-                                echo "<option value='".$tipo["id_tiposervicio"]."' $selected>".htmlspecialchars($tipo["tiposervicio_descripcion"])."</option>";
-                            }
-                        }
-                    ?>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="servicio_estado">Estado:</label>
-                <select name="servicio_estado" id="servicio_estado">
-                    <option value="">Todos los estados</option>
-                    <option value="1" <?php echo (isset($filtros_aplicados["servicio_estado"]) && $filtros_aplicados["servicio_estado"] == "1") ? "selected" : ""; ?>>Activo</option>
-                    <option value="0" <?php echo (isset($filtros_aplicados["servicio_estado"]) && $filtros_aplicados["servicio_estado"] == "0") ? "selected" : ""; ?>>Inactivo</option>
-                </select>
+            <div class="collapse show" id="filtrosCollapse">
+                <form method="GET" action="<?= url('/servicios') ?>" class="mt-3">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label for="servicio_nombre" class="form-label small text-muted">Nombre</label>
+                            <input type="text" class="form-control form-control-sm" id="servicio_nombre" name="servicio_nombre" 
+                                   value="<?= htmlspecialchars($filters['servicio_nombre'] ?? '') ?>" placeholder="Buscar por nombre...">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="precio_min" class="form-label small text-muted">Precio mín.</label>
+                            <input type="number" class="form-control form-control-sm" id="precio_min" name="precio_min" 
+                                   value="<?= htmlspecialchars($filters['precio_min'] ?? '') ?>" placeholder="0.00" step="0.01" min="0">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="precio_max" class="form-label small text-muted">Precio máx.</label>
+                            <input type="number" class="form-control form-control-sm" id="precio_max" name="precio_max" 
+                                   value="<?= htmlspecialchars($filters['precio_max'] ?? '') ?>" placeholder="0.00" step="0.01" min="0">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="rela_tiposervicio" class="form-label small text-muted">Tipo</label>
+                            <select class="form-select form-select-sm" id="rela_tiposervicio" name="rela_tiposervicio">
+                                <option value="">Todos los tipos</option>
+                                <?php if (isset($tipos_servicios) && is_array($tipos_servicios)): ?>
+                                    <?php foreach ($tipos_servicios as $tipo): ?>
+                                        <option value="<?= $tipo['id_tiposervicio'] ?>" <?= ($filters['rela_tiposervicio'] ?? '') == $tipo['id_tiposervicio'] ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($tipo['tiposervicio_descripcion']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="estado" class="form-label small text-muted">Estado</label>
+                            <select class="form-select form-select-sm" id="estado" name="estado">
+                                <option value="">Todos</option>
+                                <option value="1" <?= ($filters['estado'] ?? '') === '1' ? 'selected' : '' ?>>Activo</option>
+                                <option value="0" <?= ($filters['estado'] ?? '') === '0' ? 'selected' : '' ?>>Inactivo</option>
+                            </select>
+                        </div>
+                        <div class="col-md-1">
+                            <label class="form-label small text-muted d-block">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-2">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <a href="<?= url('/servicios') ?>" class="btn btn-outline-secondary btn-sm">
+                                        <i class="fas fa-times me-1"></i>Limpiar filtros
+                                    </a>
+                                </div>
+                                <div>
+                                    <div class="btn-group">
+                                        <select name="per_page" class="form-select form-select-sm" onchange="this.form.submit()">
+                                            <option value="5" <?= $perPage == 5 ? 'selected' : '' ?>>5 por página</option>
+                                            <option value="10" <?= $perPage == 10 ? 'selected' : '' ?>>10 por página</option>
+                                            <option value="25" <?= $perPage == 25 ? 'selected' : '' ?>>25 por página</option>
+                                            <option value="50" <?= $perPage == 50 ? 'selected' : '' ?>>50 por página</option>
+                                        </select>
+                                    </div>
+                                    <div class="btn-group ms-2">
+                                        <a href="<?= url('/servicios/exportar?' . http_build_query($filters)) ?>" class="btn btn-success btn-sm">
+                                            <i class="fas fa-file-excel me-1"></i>Excel
+                                        </a>
+                                        <a href="<?= url('/servicios/exportar-pdf?' . http_build_query($filters)) ?>" class="btn btn-danger btn-sm">
+                                            <i class="fas fa-file-pdf me-1"></i>PDF
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
             </div>
         </div>
-        
-        <div class="search-buttons">
-            <input type="submit" value="Buscar" class="btn btn-search">
-            <button type="button" onclick="limpiarFiltros()" class="btn btn-clear">Limpiar</button>
+
+        <!-- Paginación superior -->
+        <?php 
+        $renderPagination = function($showInfo = true) use ($pagination, $start, $end) {
+        ?>
+            <div class="row align-items-center">
+                <?php if ($showInfo): ?>
+                    <div class="col-sm-6">
+                        <span class="text-muted small">
+                            Mostrando <?= $start ?> a <?= $end ?> de <?= $pagination['total'] ?> entradas
+                        </span>
+                    </div>
+                <?php endif; ?>
+                
+                <div class="col-sm-<?= $showInfo ? '6' : '12' ?>">
+                    <?php if ($pagination['total_pages'] > 1): ?>
+                        <nav aria-label="Paginación" class="d-flex justify-content-<?= $showInfo ? 'end' : 'center' ?>">
+                            <ul class="pagination pagination-sm mb-0">
+                                <?php if ($pagination['current_page'] > 1): ?>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $pagination['current_page'] - 1])) ?>">Anterior</a>
+                                    </li>
+                                <?php endif; ?>
+                                
+                                <?php 
+                                $startPage = max(1, $pagination['current_page'] - 2);
+                                $endPage = min($pagination['total_pages'], $pagination['current_page'] + 2);
+                                
+                                if ($startPage > 1): ?>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => 1])) ?>">1</a>
+                                    </li>
+                                    <?php if ($startPage > 2): ?>
+                                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                                    <?php endif; ?>
+                                <?php endif; ?>
+                                
+                                <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
+                                    <li class="page-item <?= $i == $pagination['current_page'] ? 'active' : '' ?>">
+                                        <?php if ($i == $pagination['current_page']): ?>
+                                            <span class="page-link bg-primary text-white border-primary"><?= $i ?></span>
+                                        <?php else: ?>
+                                            <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $i])) ?>"><?= $i ?></a>
+                                        <?php endif; ?>
+                                    </li>
+                                <?php endfor; ?>
+                                
+                                <?php if ($endPage < $pagination['total_pages']): ?>
+                                    <?php if ($endPage < $pagination['total_pages'] - 1): ?>
+                                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                                    <?php endif; ?>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $pagination['total_pages']])) ?>"><?= $pagination['total_pages'] ?></a>
+                                    </li>
+                                <?php endif; ?>
+                                
+                                <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $pagination['current_page'] + 1])) ?>">Siguiente</a>
+                                    </li>
+                                <?php endif; ?>
+                            </ul>
+                        </nav>
+                    <?php endif; ?>
+                </div>
+            </div>
+        <?php }; ?>
+
+        <?php if (isset($pagination) && $pagination['total'] > 0): ?>
+            <div class="card-header bg-light border-bottom py-2">
+                <?php $renderPagination(true); ?>
+            </div>
+        <?php endif; ?>
+
+        <!-- Tabla de datos -->
+        <div class="table-responsive">
+            <?php if (empty($servicios)): ?>
+                <!-- Estado vacío -->
+                <div class="text-center py-5">
+                    <i class="fas fa-concierge-bell fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No se encontraron servicios</h5>
+                    <p class="text-muted">No hay servicios que coincidan con los criterios de búsqueda.</p>
+                    <a href="<?= url('/servicios/create') ?>" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Crear primer servicio
+                    </a>
+                </div>
+            <?php else: ?>
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="border-0 py-3">
+                                <i class="fas fa-concierge-bell me-2"></i>Servicio
+                            </th>
+                            <th class="border-0 py-3">
+                                <i class="fas fa-tag me-2"></i>Tipo
+                            </th>
+                            <th class="border-0 py-3">
+                                <i class="fas fa-dollar-sign me-2"></i>Precio
+                            </th>
+                            <th class="border-0 py-3">
+                                <i class="fas fa-toggle-on me-2"></i>Estado
+                            </th>
+                            <th class="border-0 py-3 text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($servicios as $servicio): ?>
+                            <tr>
+                                <td class="border-0 py-3">
+                                    <div>
+                                        <h6 class="mb-1"><?= htmlspecialchars($servicio['servicio_nombre']) ?></h6>
+                                        <?php if (!empty($servicio['servicio_descripcion'])): ?>
+                                            <small class="text-muted"><?= htmlspecialchars(substr($servicio['servicio_descripcion'], 0, 100)) ?><?= strlen($servicio['servicio_descripcion']) > 100 ? '...' : '' ?></small>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                                <td class="border-0 py-3">
+                                    <?php if (!empty($servicio['tiposervicio_descripcion'])): ?>
+                                        <span class="badge bg-info text-dark">
+                                            <?= htmlspecialchars($servicio['tiposervicio_descripcion']) ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="text-muted">No especificado</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="border-0 py-3">
+                                    <span class="fw-bold text-success">
+                                        $<?= number_format($servicio['servicio_precio'], 2, ',', '.') ?>
+                                    </span>
+                                </td>
+                                <td class="border-0 py-3">
+                                    <?php if ($servicio['servicio_estado'] == 1): ?>
+                                        <span class="badge bg-success">Activo</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-danger">Inactivo</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="border-0 py-3 text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="<?= url('/servicios/' . $servicio['id_servicio']) ?>" 
+                                           class="btn btn-outline-primary" title="Ver detalle">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="<?= url('/servicios/' . $servicio['id_servicio'] . '/edit') ?>" 
+                                           class="btn btn-outline-warning" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" 
+                                                class="btn btn-outline-<?= $servicio['servicio_estado'] ? 'danger' : 'success' ?>" 
+                                                onclick="cambiarEstado(<?= $servicio['id_servicio'] ?>, <?= $servicio['servicio_estado'] ?>)"
+                                                title="<?= $servicio['servicio_estado'] ? 'Desactivar' : 'Activar' ?>">
+                                            <i class="fas fa-<?= $servicio['servicio_estado'] ? 'times' : 'check' ?>"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
         </div>
-    </form>
+
+        <!-- Paginación inferior -->
+        <?php if (isset($pagination) && $pagination['total'] > 0): ?>
+            <div class="card-footer bg-white border-top py-3">
+                <?php $renderPagination(true); ?>
+            </div>
+        <?php endif; ?>
+    </div>
 </div>
 
-<!-- Botones de acción -->
-<div class="botonera-abm">
-    <button class="abm-button alta-button" onclick="window.location.href='/proyecto_cabania/servicios/create'">Nuevo Servicio</button>
-</div>
-
-<!-- Selector de registros por página -->
-<div class="form-controls-container">
-    <form method="get" class="inline-form">
-        <!-- Mantener filtros existentes -->
-        <?php if (isset($filtros_aplicados["servicio_nombre"]) && $filtros_aplicados["servicio_nombre"] != ""): ?>
-            <input type="hidden" name="servicio_nombre" value="<?php echo htmlspecialchars($filtros_aplicados["servicio_nombre"]); ?>">
-        <?php endif; ?>
-        <?php if (isset($filtros_aplicados["servicio_descripcion"]) && $filtros_aplicados["servicio_descripcion"] != ""): ?>
-            <input type="hidden" name="servicio_descripcion" value="<?php echo htmlspecialchars($filtros_aplicados["servicio_descripcion"]); ?>">
-        <?php endif; ?>
-        <?php if (isset($filtros_aplicados["rela_tiposervicio"]) && $filtros_aplicados["rela_tiposervicio"] != ""): ?>
-            <input type="hidden" name="rela_tiposervicio" value="<?php echo htmlspecialchars($filtros_aplicados["rela_tiposervicio"]); ?>">
-        <?php endif; ?>
-        <?php if (isset($filtros_aplicados["servicio_estado"]) && $filtros_aplicados["servicio_estado"] != ""): ?>
-            <input type="hidden" name="servicio_estado" value="<?php echo htmlspecialchars($filtros_aplicados["servicio_estado"]); ?>">
-        <?php endif; ?>
-        
-        <label for="registros_por_pagina">Mostrar:</label>
-        <select name="registros_por_pagina" id="registros_por_pagina" onchange="this.form.submit()">
-            <option value="10" <?php echo $registros_por_pagina == 10 ? 'selected' : ''; ?>>10 registros</option>
-            <option value="25" <?php echo $registros_por_pagina == 25 ? 'selected' : ''; ?>>25 registros</option>
-            <option value="50" <?php echo $registros_por_pagina == 50 ? 'selected' : ''; ?>>50 registros</option>
-        </select>
-    </form>
-</div>
-
-<?php
-// Verificar que los datos necesarios estén disponibles  
-if (!isset($servicios)) {
-    echo "<div class='alert alert-error'>Error: No se pudieron cargar los servicios.</div>";
-    exit;
-}
-
-// Los filtros, queries y permisos ya fueron procesados en el controlador
-// Solo necesitamos mostrar los datos que nos llegaron
-?>
-
-<!-- Información de registros -->
-<div class="pagination-info">
-    <?php echo mostrar_info_paginacion($paginacion); ?>
-</div>
-
-<table class="data-table"> 
-    <thead>
-        <tr>
-            <th><font face="Arial">Nombre</font></th>
-            <th><font face="Arial">Descripción</font></th>
-            <th><font face="Arial">Tipo de Servicio</font></th>
-            <th><font face="Arial">Precio</font></th>
-            <th><font face="Arial">Estado</font></th>
-            <th><font face="Arial">Acciones</font></th>
-        </tr>
-    </thead>
-    <tbody>
-    <?php
-    if (empty($servicios)) {
-        echo "<tr><td colspan='6' class='no-records-message'>No se encontraron servicios</td></tr>";
-    } else {
-        foreach ($servicios as $row) {
-            echo "<tr>";
-            echo "<td>".htmlspecialchars($row["servicio_nombre"])."</td>";
-            echo "<td>".htmlspecialchars($row["servicio_descripcion"])."</td>";
-            echo "<td>".htmlspecialchars($row["tiposervicio_descripcion"] ?? 'No especificado')."</td>";
-            echo "<td>$".number_format($row["servicio_precio"], 2)."</td>";
-            echo "<td>".($row["servicio_estado"] ? "Activo" : "Inactivo")."</td>";
-            
-            echo "<td>";
-            echo "<button class='abm-button mod-button' onclick='window.location.href=\"/proyecto_cabania/servicios/".$row["id_servicio"]."/edit\"'>Editar</button>";
-            
-            // Mostrar botones según estado y permisos
-            if ($row["servicio_estado"]) {
-                if (es_administrador()) {
-                    echo "<button class='abm-button baja-button' onclick='confirmarAccion(\"/proyecto_cabania/servicios/".$row["id_servicio"]."/delete\", \"dar de baja este servicio\")'>Eliminar</button>";
+<script>
+function cambiarEstado(id, estadoActual) {
+    const accion = estadoActual ? 'desactivar' : 'activar';
+    const mensaje = `¿Está seguro que desea ${accion} este servicio?`;
+    
+    Swal.fire({
+        title: '¿Confirmar acción?',
+        text: mensaje,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, ' + accion,
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`<?= url('/servicios') ?>/${id}/estado`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ estado: estadoActual ? 0 : 1 })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire('¡Éxito!', data.message, 'success').then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire('Error', data.message, 'error');
                 }
-            } else {
-                if (es_administrador()) {
-                    echo "<button class='abm-button alta-button' onclick='confirmarAccion(\"/proyecto_cabania/servicios/".$row["id_servicio"]."/restore\", \"recuperar este servicio\")'>Recuperar</button>";
-                }
-            }
-            
-            echo "</td>";
-            echo "</tr>";
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire('Error', 'No se pudo completar la acción', 'error');
+            });
         }
-    }
-    ?>
-    </tbody>
-</table>
-
-<?php
-// Generar enlaces de paginación
-$parametros_url = [];
-if (isset($_REQUEST["servicio_nombre"]) && $_REQUEST["servicio_nombre"] != "") {
-    $parametros_url['servicio_nombre'] = $_REQUEST["servicio_nombre"];
+    });
 }
-if (isset($_REQUEST["servicio_descripcion"]) && $_REQUEST["servicio_descripcion"] != "") {
-    $parametros_url['servicio_descripcion'] = $_REQUEST["servicio_descripcion"];
-}
-if (isset($_REQUEST["rela_tiposervicio"]) && $_REQUEST["rela_tiposervicio"] != "") {
-    $parametros_url['rela_tiposervicio'] = $_REQUEST["rela_tiposervicio"];
-}
-if (isset($_REQUEST["servicio_estado"]) && $_REQUEST["servicio_estado"] != "") {
-    $parametros_url['servicio_estado'] = $_REQUEST["servicio_estado"];
-}
-if (isset($_REQUEST["registros_por_pagina"]) && $_REQUEST["registros_por_pagina"] != "") {
-    $parametros_url['registros_por_pagina'] = $_REQUEST["registros_por_pagina"];
-}
-
-echo generar_enlaces_paginacion($paginacion, $_SERVER['REQUEST_URI'], $parametros_url);
-
-$mysql->close();
-?>
-
-<?php $this->endSection(); ?>
+</script>

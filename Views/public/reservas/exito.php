@@ -26,84 +26,126 @@
                             Confirmación Enviada por Email
                         </h5>
                         <p class="mb-0">
+                            <?php 
+                            $emailMostrar = '';
+                            
+                            // Debug temporal - remover en producción
+                            error_log("DEBUG Vista Éxito - Email en reserva: '" . ($reserva['huesped_email'] ?? 'VACÍO') . "'");
+                            error_log("DEBUG Vista Éxito - Email en sesión: '" . ($_SESSION['user']['usuario_email'] ?? 'VACÍO') . "'");
+                            
+                            // Priorizar email del huésped de la reserva
+                            if (!empty($reserva['huesped_email'])) {
+                                $emailMostrar = $reserva['huesped_email'];
+                            } 
+                            // Fallback a datos de sesión del usuario
+                            elseif (!empty($_SESSION['user']['usuario_email'])) {
+                                $emailMostrar = $_SESSION['user']['usuario_email'];
+                            }
+                            // Último fallback genérico
+                            else {
+                                $emailMostrar = 'tu email registrado';
+                            }
+                            ?>
                             Hemos enviado los detalles completos de tu reserva a: 
-                            <strong><?= htmlspecialchars($reserva['huesped_email']) ?></strong>
+                            <strong><?= htmlspecialchars($emailMostrar) ?></strong>
                         </p>
                     </div>
 
-                    <!-- Datos de la Reserva -->
-                    <div class="row g-4">
-                        <!-- Información de la Reserva -->
-                        <div class="col-md-6">
-                            <div class="card bg-light h-100">
-                                <div class="card-header bg-primary text-white">
-                                    <h6 class="mb-0">
-                                        <i class="fas fa-info-circle me-2"></i>
-                                        Detalles de la Reserva
-                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="mb-3">
-                                        <small class="text-muted">Número de Reserva</small>
-                                        <div class="fw-bold fs-5 text-primary">#<?= $reserva['numero_reserva'] ?></div>
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <small class="text-muted">Estado</small>
-                                        <div>
-                                            <span class="badge bg-success fs-6">CONFIRMADA</span>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <small class="text-muted">Fecha de Confirmación</small>
-                                        <div class="fw-bold"><?= date('d/m/Y H:i', strtotime($reserva['fecha_confirmacion'])) ?></div>
-                                    </div>
-                                    
-                                    <div class="mb-0">
-                                        <small class="text-muted">Método de Pago</small>
-                                        <div class="fw-bold"><?= htmlspecialchars($reserva['metodo_pago']) ?></div>
-                                    </div>
-                                </div>
-                            </div>
+                    <!-- Detalles Completos de la Reserva -->
+                    <div class="card bg-light">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                Detalles de la Reserva
+                            </h5>
                         </div>
+                        <div class="card-body">
+                            <div class="row g-0">
+                                <div class="col-12">
+                                    <div class="list-group list-group-flush">
+                                        <!-- Fecha y hora de confirmación -->
+                                        <div class="list-group-item d-flex justify-content-between align-items-start border-0 px-0 py-3">
+                                            <div class="fw-medium text-dark">Fecha y hora de confirmación</div>
+                                            <div class="text-end">
+                                                <div class="fw-bold"><?= date('d/m/Y H:i', strtotime($reserva_exitosa['fecha_confirmacion'] ?? date('Y-m-d H:i:s'))) ?></div>
+                                            </div>
+                                        </div>
 
-                        <!-- Información del Alojamiento -->
-                        <div class="col-md-6">
-                            <div class="card bg-light h-100">
-                                <div class="card-header bg-primary text-white">
-                                    <h6 class="mb-0">
-                                        <i class="fas fa-home me-2"></i>
-                                        Alojamiento
-                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                    <h6 class="text-primary"><?= htmlspecialchars($reserva['cabania_nombre']) ?></h6>
-                                    
-                                    <div class="mb-2">
-                                        <small class="text-muted">Fechas de Estadía</small>
-                                        <div class="fw-bold">
-                                            <i class="fas fa-calendar-check text-success me-1"></i>
-                                            <?= date('d/m/Y', strtotime($reserva['fecha_ingreso'])) ?> - 
-                                            <?= date('d/m/Y', strtotime($reserva['fecha_salida'])) ?>
+                                        <!-- Cabaña seleccionada -->
+                                        <div class="list-group-item d-flex justify-content-between align-items-start border-0 px-0 py-3">
+                                            <div class="fw-medium text-dark">Cabaña seleccionada</div>
+                                            <div class="text-end">
+                                                <div class="fw-bold"><?= htmlspecialchars($reserva_exitosa['cabania_nombre'] ?? $cabania['cabania_nombre'] ?? 'Cabaña') ?></div>
+                                            </div>
                                         </div>
-                                        <small class="text-success"><?= $reserva['noches'] ?> noche<?= $reserva['noches'] > 1 ? 's' : '' ?></small>
-                                    </div>
-                                    
-                                    <div class="mb-2">
-                                        <small class="text-muted">Huéspedes</small>
-                                        <div>
-                                            <i class="fas fa-users text-info me-1"></i>
-                                            <?= $reserva['adultos'] ?> adulto<?= $reserva['adultos'] > 1 ? 's' : '' ?>
-                                            <?php if ($reserva['ninos'] > 0): ?>
-                                                + <?= $reserva['ninos'] ?> niño<?= $reserva['ninos'] > 1 ? 's' : '' ?>
-                                            <?php endif; ?>
+
+                                        <!-- Fechas de la estadía -->
+                                        <div class="list-group-item d-flex justify-content-between align-items-start border-0 px-0 py-3">
+                                            <div class="fw-medium text-dark">Fechas de la estadía</div>
+                                            <div class="text-end">
+                                                <?php 
+                                                $fechaInicio = $reserva['reserva_fhinicio'] ?? $reserva['fecha_ingreso'] ?? null;
+                                                $fechaFin = $reserva['reserva_fhfin'] ?? $reserva['fecha_salida'] ?? null;
+                                                $noches = 0;
+                                                if ($fechaInicio && $fechaFin) {
+                                                    $inicio = new DateTime($fechaInicio);
+                                                    $fin = new DateTime($fechaFin);
+                                                    $noches = $inicio->diff($fin)->days;
+                                                }
+                                                ?>
+                                                <div class="fw-bold">
+                                                    <?= $fechaInicio ? date('d/m/Y', strtotime($fechaInicio)) : 'N/A' ?> - 
+                                                    <?= $fechaFin ? date('d/m/Y', strtotime($fechaFin)) : 'N/A' ?>
+                                                </div>
+                                                <small class="text-muted"><?= $noches ?> noche<?= $noches > 1 ? 's' : '' ?></small>
+                                            </div>
                                         </div>
-                                    </div>
-                                    
-                                    <div class="mb-0">
-                                        <small class="text-muted">Total Pagado</small>
-                                        <div class="fw-bold fs-5 text-success">$<?= number_format($reserva['total'], 0, ',', '.') ?></div>
+
+                                        <!-- Cantidad de huéspedes -->
+                                        <div class="list-group-item d-flex justify-content-between align-items-start border-0 px-0 py-3">
+                                            <div class="fw-medium text-dark">Cantidad de huéspedes</div>
+                                            <div class="text-end">
+                                                <div class="fw-bold">
+                                                    <?= $reserva['adultos'] ?? $reserva['cantidad_personas'] ?? 1 ?> adulto<?= ($reserva['adultos'] ?? $reserva['cantidad_personas'] ?? 1) > 1 ? 's' : '' ?>
+                                                    <?php if (($reserva['ninos'] ?? 0) > 0): ?>
+                                                        + <?= $reserva['ninos'] ?? 0 ?> niño<?= ($reserva['ninos'] ?? 0) > 1 ? 's' : '' ?>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Total abonado -->
+                                        <div class="list-group-item d-flex justify-content-between align-items-start border-0 px-0 py-3">
+                                            <div class="fw-medium text-dark">Total abonado</div>
+                                            <div class="text-end">
+                                                <div class="fw-bold fs-5">$<?= number_format($reserva_exitosa['total_pagado'] ?? $reserva['total'] ?? 0, 0, ',', '.') ?></div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Método de pago -->
+                                        <div class="list-group-item d-flex justify-content-between align-items-start border-0 px-0 py-3">
+                                            <div class="fw-medium text-dark">Método de pago</div>
+                                            <div class="text-end">
+                                                <div class="fw-bold"><?= htmlspecialchars($reserva_exitosa['metodo_pago'] ?? $reserva['metodo_pago'] ?? 'N/A') ?></div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Horarios de check-in y check-out -->
+                                        <div class="list-group-item d-flex justify-content-between align-items-start border-0 px-0 py-3">
+                                            <div class="fw-medium text-dark">Horarios check-in / check-out</div>
+                                            <div class="text-end">
+                                                <div class="fw-bold">15:00 hs / 11:00 hs</div>
+                                                <small class="text-muted">Recepción 24 hs</small>
+                                            </div>
+                                        </div>
+
+                                        <!-- Políticas de cancelación -->
+                                        <div class="list-group-item d-flex justify-content-between align-items-start border-0 px-0 py-3">
+                                            <div class="fw-medium text-dark">Políticas de cancelación</div>
+                                            <div class="text-end">
+                                                <div class="fw-bold">Gratuita hasta 48 hs antes</div>
+                                                <small class="text-muted d-block">Sin penalidad</small>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -111,7 +153,7 @@
                     </div>
 
                     <!-- Servicios Adicionales -->
-                    <?php if (!empty($reserva['servicios'])): ?>
+                    <?php if (!empty($reserva['servicios']) && is_array($reserva['servicios'])): ?>
                         <div class="card mt-4">
                             <div class="card-header bg-info text-white">
                                 <h6 class="mb-0">
@@ -137,76 +179,18 @@
                         </div>
                     <?php endif; ?>
 
-                    <!-- Información Importante -->
-                    <div class="card mt-4 border-warning">
-                        <div class="card-header bg-warning text-dark">
-                            <h6 class="mb-0">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                Información Importante para tu Estadía
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <h6 class="text-primary">
-                                        <i class="fas fa-clock me-1"></i>
-                                        Horarios
-                                    </h6>
-                                    <ul class="list-unstyled mb-0">
-                                        <li><strong>Check-in:</strong> 15:00 hs</li>
-                                        <li><strong>Check-out:</strong> 11:00 hs</li>
-                                        <li><strong>Recepción:</strong> 24 hs</li>
-                                    </ul>
-                                </div>
-                                <div class="col-md-6">
-                                    <h6 class="text-primary">
-                                        <i class="fas fa-map-marker-alt me-1"></i>
-                                        Ubicación
-                                    </h6>
-                                    <p class="mb-2">Casa de Palos Cabañas<br>
-                                    Ruta Nacional 40, Km 2054<br>
-                                    El Calafate, Santa Cruz</p>
-                                    <a href="https://maps.google.com" target="_blank" class="btn btn-outline-primary btn-sm">
-                                        <i class="fas fa-external-link-alt me-1"></i>
-                                        Ver en Google Maps
-                                    </a>
-                                </div>
-                                <div class="col-12">
-                                    <h6 class="text-primary">
-                                        <i class="fas fa-suitcase me-1"></i>
-                                        Qué llevar
-                                    </h6>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <ul class="list-unstyled">
-                                                <li><i class="fas fa-check text-success me-1"></i> Documento de identidad</li>
-                                                <li><i class="fas fa-check text-success me-1"></i> Ropa de abrigo (recomendado)</li>
-                                                <li><i class="fas fa-check text-success me-1"></i> Protector solar</li>
-                                            </ul>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <ul class="list-unstyled">
-                                                <li><i class="fas fa-check text-success me-1"></i> Cámara fotográfica</li>
-                                                <li><i class="fas fa-check text-success me-1"></i> Medicamentos personales</li>
-                                                <li><i class="fas fa-check text-success me-1"></i> Calzado cómodo para caminar</li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+
 
                     <!-- Botones de Acción -->
                     <div class="row mt-4">
                         <div class="col-md-4">
-                            <a href="/reservas/comprobante/<?= $reserva['id'] ?>" target="_blank" class="btn btn-outline-primary w-100">
+                            <a href="/reservas/comprobante/<?= $reserva_exitosa['reserva_id'] ?? $reserva['id_reserva'] ?? '' ?>" target="_blank" class="btn btn-outline-primary w-100">
                                 <i class="fas fa-file-pdf me-1"></i>
                                 Descargar Comprobante
                             </a>
                         </div>
                         <div class="col-md-4">
-                            <a href="/perfil/reservas" class="btn btn-outline-info w-100">
+                            <a href="/reservas" class="btn btn-outline-info w-100">
                                 <i class="fas fa-history me-1"></i>
                                 Ver Mis Reservas
                             </a>
@@ -219,57 +203,10 @@
                         </div>
                     </div>
 
-                    <!-- Política de Cancelación -->
-                    <div class="mt-4 p-3 bg-light rounded">
-                        <h6 class="text-muted">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Política de Cancelación
-                        </h6>
-                        <p class="small text-muted mb-0">
-                            Puedes cancelar tu reserva sin costo hasta 48 horas antes de la fecha de check-in. 
-                            Para cancelaciones, contáctanos a través de los medios indicados arriba.
-                        </p>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Sugerencias y Promociones -->
-            <div class="card mt-4">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0 text-primary">
-                        <i class="fas fa-star me-2"></i>
-                        Mejora tu Experiencia
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <div class="text-center">
-                                <i class="fas fa-hiking fa-2x text-success mb-2"></i>
-                                <h6>Tours y Excursiones</h6>
-                                <p class="small text-muted">Descubre los mejores lugares de El Calafate</p>
-                                <a href="/tours" class="btn btn-outline-success btn-sm">Ver Tours</a>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="text-center">
-                                <i class="fas fa-utensils fa-2x text-warning mb-2"></i>
-                                <h6>Restaurante</h6>
-                                <p class="small text-muted">Disfruta de nuestra cocina patagónica</p>
-                                <a href="/restaurante" class="btn btn-outline-warning btn-sm">Ver Menú</a>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="text-center">
-                                <i class="fas fa-spa fa-2x text-info mb-2"></i>
-                                <h6>Spa & Wellness</h6>
-                                <p class="small text-muted">Relájate después de tus aventuras</p>
-                                <a href="/spa" class="btn btn-outline-info btn-sm">Conocer Más</a>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
+            
         </div>
     </div>
 </div>

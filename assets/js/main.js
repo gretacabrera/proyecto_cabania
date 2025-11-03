@@ -5553,16 +5553,16 @@ function validarFechasReserva() {
 
 // Validación para formulario de reserva
 function validarFormularioReserva(form) {
-    // Validar DNI
-    const dni = form.querySelector('input[name="persona_dni"]');
-    if (dni && dni.value) {
-        const dniValue = parseInt(dni.value);
-        if (isNaN(dniValue) || dniValue <= 0) {
-            alert('Ingrese un DNI válido');
-            dni.focus();
-            return false;
-        }
-    }
+    // Validación DNI comentada: campo persona_dni no existe en BD
+    // const dni = form.querySelector('input[name="persona_dni"]');
+    // if (dni && dni.value) {
+    //     const dniValue = parseInt(dni.value);
+    //     if (isNaN(dniValue) || dniValue <= 0) {
+    //         alert('Ingrese un DNI válido');
+    //         dni.focus();
+    //         return false;
+    //     }
+    // }
     
     // Validar fechas
     if (!validarFechasReserva()) {

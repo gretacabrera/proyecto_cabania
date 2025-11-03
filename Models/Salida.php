@@ -244,8 +244,14 @@ class Salida extends Model
                     c.cabania_descripcion,
                     p.persona_nombre,
                     p.persona_apellido,
-                    p.persona_telefono,
-                    p.persona_email,
+                    (SELECT ct.contacto_descripcion FROM contacto ct 
+                     LEFT JOIN tipocontacto tc ON ct.rela_tipocontacto = tc.id_tipocontacto 
+                     WHERE tc.tipocontacto_descripcion = 'telefono' AND ct.rela_persona = p.id_persona 
+                     LIMIT 1) as persona_telefono,
+                    (SELECT ct.contacto_descripcion FROM contacto ct 
+                     LEFT JOIN tipocontacto tc ON ct.rela_tipocontacto = tc.id_tipocontacto 
+                     WHERE tc.tipocontacto_descripcion = 'email' AND ct.rela_persona = p.id_persona 
+                     LIMIT 1) as persona_email,
                     er.estadoreserva_descripcion,
                     DATE_FORMAT(r.reserva_fhinicio, '%d/%m/%Y %H:%i') as fecha_inicio_formateada,
                     DATE_FORMAT(r.reserva_fhfin, '%d/%m/%Y %H:%i') as fecha_fin_formateada,

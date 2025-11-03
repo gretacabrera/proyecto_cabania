@@ -142,8 +142,11 @@ class Auth
     public static function getUserProfile()
     {
         if (!self::check()) {
+            error_log('DEBUG Auth::getUserProfile: Usuario no autenticado');
             return null;
         }
+
+        error_log('DEBUG Auth::getUserProfile: Usuario autenticado: ' . $_SESSION["usuario_nombre"]);
 
         $db = Database::getInstance();
         $stmt = $db->prepare("SELECT p.perfil_descripcion
@@ -156,7 +159,10 @@ class Auth
         $result = $stmt->get_result();
         $row = $result->fetch_assoc();
         
-        return $row ? $row["perfil_descripcion"] : null;
+        $profile = $row ? $row["perfil_descripcion"] : null;
+        error_log('DEBUG Auth::getUserProfile: Perfil detectado: ' . ($profile ?? 'NULL'));
+        
+        return $profile;
     }
 
     /**

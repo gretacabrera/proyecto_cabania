@@ -2,7 +2,7 @@
 $title = 'Detalle de Reserva';
 $currentModule = 'reservas';
 
-require_once 'app/Views/layouts/header.php';
+require_once __DIR__ . '/../../../shared/layouts/header.php';
 ?>
 
 <div class="container mt-4">
@@ -32,10 +32,11 @@ require_once 'app/Views/layouts/header.php';
                                     <td><strong>Nombre:</strong></td>
                                     <td><?= htmlspecialchars($reserva['persona_nombre'] . ' ' . $reserva['persona_apellido']) ?></td>
                                 </tr>
-                                <tr>
+                                <!-- Campo DNI eliminado: persona_dni no existe en BD -->
+                                <!-- <tr>
                                     <td><strong>DNI:</strong></td>
                                     <td><?= $reserva['persona_dni'] ?></td>
-                                </tr>
+                                </tr> -->
                                 <tr>
                                     <td><strong>Email:</strong></td>
                                     <td><?= htmlspecialchars($reserva['persona_email'] ?? 'No disponible') ?></td>
@@ -312,4 +313,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<?php require_once 'app/Views/layouts/footer.php'; ?>
+<?php require_once __DIR__ . '/../../../shared/layouts/footer.php'; ?>

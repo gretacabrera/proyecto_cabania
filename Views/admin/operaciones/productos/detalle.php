@@ -1,339 +1,309 @@
-<?php
-// Los datos ya vienen preparados desde el controlador
-// Variables disponibles:
-// $producto - datos completos del producto con relaciones
-// $error_message - mensaje de error (si aplica)
-
-if (isset($error_message)) {
-    echo '<div class="alert alert-error">' . htmlspecialchars($error_message) . '</div>';
-    exit;
-}
-
-if (!$producto) {
-    echo '<div class="alert alert-error">Producto no encontrado</div>';
-    exit;
-}
+<?php 
+/**
+ * Vista de detalle del producto
+ * Muestra información completa con estadísticas y acciones
+ */
 ?>
 
-<h1>Detalle del Producto</h1>
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-box mr-2"></i>
+                <?= $title ?>
+            </h1>
+            <p class="text-muted mb-0">Información completa del producto</p>
+        </div>
+        <div class="btn-group">
+            <a href="<?= url('/productos') ?>" class="btn btn-secondary">
+                <i class="fas fa-arrow-left mr-1"></i>
+                Volver al Listado
+            </a>
+            <a href="<?= url('/productos/' . $producto['id_producto'] . '/edit') ?>" class="btn btn-warning">
+                <i class="fas fa-edit mr-1"></i>
+                Editar
+            </a>
+        </div>
+    </div>
 
-<div class="product-detail-container">
-    <div class="product-header">
-        <div class="product-image">
-            <?php if (!empty($producto['producto_foto'])): ?>
-                <img src="/proyecto_cabania/imagenes/productos/<?php echo $producto['producto_foto']; ?>" 
-                     alt="<?php echo htmlspecialchars($producto['producto_nombre']); ?>"
-                     class="product-main-image">
-            <?php else: ?>
-                <div class="no-image">
-                    <i class="fa fa-image"></i>
-                    <p>Sin imagen disponible</p>
+    <div class="row">
+        <!-- Información principal del producto -->
+        <div class="col-lg-8">
+            <!-- Datos básicos -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        Información del Producto
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center mb-3">
+                            <?php if (!empty($producto['producto_foto'])): ?>
+                                <img src="<?= url('/imagenes/productos/' . $producto['producto_foto']) ?>" 
+                                     alt="<?= htmlspecialchars($producto['producto_nombre']) ?>"
+                                     class="img-fluid rounded shadow"
+                                     style="max-height: 250px; width: auto;">
+                            <?php else: ?>
+                                <div class="bg-light rounded p-4 text-muted" style="height: 200px;">
+                                    <i class="fas fa-image fa-3x mb-2"></i>
+                                    <p>Sin imagen</p>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                        
+                        <div class="col-md-8">
+                            <h4 class="text-primary mb-3"><?= htmlspecialchars($producto['producto_nombre']) ?></h4>
+                            
+                            <div class="row mb-3">
+                                <div class="col-sm-6">
+                                    <strong>Precio:</strong>
+                                    <div class="h5 text-success mt-1">$<?= number_format($producto['producto_precio'], 2) ?></div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <strong>Stock Disponible:</strong>
+                                    <div class="mt-1">
+                                        <span class="badge <?= getStockBadgeClass($producto['producto_stock']) ?> badge-lg">
+                                            <?= $producto['producto_stock'] ?> unidades
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-sm-6">
+                                    <strong>Categoría:</strong>
+                                    <p class="mb-0"><?= htmlspecialchars($producto['categoria_descripcion'] ?? 'No especificada') ?></p>
+                                </div>
+                                <div class="col-sm-6">
+                                    <strong>Marca:</strong>
+                                    <p class="mb-0"><?= htmlspecialchars($producto['marca_descripcion'] ?? 'No especificada') ?></p>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <strong>Estado:</strong>
+                                <div class="mt-1">
+                                    <?php 
+                                    $estadoBadgeClass = match($producto['rela_estadoproducto']) {
+                                        1 => 'badge-success',  // Disponible
+                                        2 => 'badge-warning',  // Stock mínimo
+                                        3 => 'badge-danger',   // Sin stock
+                                        4 => 'badge-secondary', // Baja
+                                        default => 'badge-light'
+                                    };
+                                    ?>
+                                    <span class="badge <?= $estadoBadgeClass ?> badge-lg">
+                                        <?= htmlspecialchars($producto['estadoproducto_descripcion'] ?? 'No especificado') ?>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div>
+                        <h6 class="text-primary">Descripción</h6>
+                        <p class="text-justify"><?= nl2br(htmlspecialchars($producto['producto_descripcion'])) ?></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadísticas de consumos -->
+            <?php if (isset($estadisticas['consumos'])): ?>
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-chart-line mr-2"></i>
+                            Estadísticas de Ventas
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-4">
+                                <div class="card border-primary">
+                                    <div class="card-body">
+                                        <i class="fas fa-shopping-cart fa-2x text-primary mb-2"></i>
+                                        <h5 class="text-primary"><?= number_format($estadisticas['consumos']['total_consumos']) ?></h5>
+                                        <p class="card-text">Total Ventas</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="card border-info">
+                                    <div class="card-body">
+                                        <i class="fas fa-boxes fa-2x text-info mb-2"></i>
+                                        <h5 class="text-info"><?= number_format($estadisticas['consumos']['cantidad_vendida']) ?></h5>
+                                        <p class="card-text">Unidades Vendidas</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="card border-success">
+                                    <div class="card-body">
+                                        <i class="fas fa-dollar-sign fa-2x text-success mb-2"></i>
+                                        <h5 class="text-success">$<?= number_format($estadisticas['consumos']['ingresos_total'], 2) ?></h5>
+                                        <p class="card-text">Ingresos Totales</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             <?php endif; ?>
         </div>
-        
-        <div class="product-info">
-            <h2><?php echo htmlspecialchars($producto['producto_nombre']); ?></h2>
-            
-            <div class="product-meta">
-                <div class="meta-item">
-                    <label>Categoría:</label>
-                    <span><?php echo htmlspecialchars($producto['categoria_descripcion'] ?? 'No especificada'); ?></span>
+
+        <!-- Panel lateral de acciones -->
+        <div class="col-lg-4">
+            <!-- Acciones rápidas -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-cogs mr-2"></i>
+                        Acciones Rápidas
+                    </h6>
                 </div>
-                
-                <div class="meta-item">
-                    <label>Marca:</label>
-                    <span><?php echo htmlspecialchars($producto['marca_descripcion'] ?? 'No especificada'); ?></span>
-                </div>
-                
-                <div class="meta-item">
-                    <label>Estado:</label>
-                    <span class="status-<?php echo $producto['rela_estadoproducto']; ?>">
-                        <?php echo htmlspecialchars($producto['estadoproducto_descripcion'] ?? 'No especificado'); ?>
-                    </span>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="<?= url('/productos/' . $producto['id_producto'] . '/edit') ?>" 
+                           class="btn btn-warning btn-block">
+                            <i class="fas fa-edit mr-2"></i>
+                            Editar Producto
+                        </a>
+                        
+                        <?php if ($producto['rela_estadoproducto'] != 4): ?>
+                            <button type="button" 
+                                    class="btn btn-danger btn-block" 
+                                    onclick="cambiarEstado(<?= $producto['id_producto'] ?>, 4, 'dar de baja')">
+                                <i class="fas fa-times mr-2"></i>
+                                Dar de Baja
+                            </button>
+                        <?php else: ?>
+                            <button type="button" 
+                                    class="btn btn-success btn-block" 
+                                    onclick="cambiarEstado(<?= $producto['id_producto'] ?>, 1, 'reactivar')">
+                                <i class="fas fa-check mr-2"></i>
+                                Reactivar Producto
+                            </button>
+                        <?php endif; ?>
+                        
+                        <hr>
+                        
+                        <a href="<?= url('/productos') ?>" class="btn btn-secondary btn-block">
+                            <i class="fas fa-list mr-2"></i>
+                            Ver Todos los Productos
+                        </a>
+                    </div>
                 </div>
             </div>
-            
-            <div class="product-pricing">
-                <div class="price-item">
-                    <label>Precio:</label>
-                    <span class="price">$<?php echo number_format($producto['producto_precio'], 2); ?></span>
+
+            <!-- Información adicional -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-info mr-2"></i>
+                        Información Técnica
+                    </h6>
                 </div>
-                
-                <div class="price-item">
-                    <label>Stock Disponible:</label>
-                    <span class="stock <?php echo $producto['producto_stock'] <= 5 ? 'low-stock' : ''; ?>">
-                        <?php echo $producto['producto_stock']; ?> unidades
-                    </span>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr>
+                            <td><strong>ID Producto:</strong></td>
+                            <td><?= $producto['id_producto'] ?></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Categoría ID:</strong></td>
+                            <td><?= $producto['rela_categoria'] ?></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Marca ID:</strong></td>
+                            <td><?= $producto['rela_marca'] ?></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Estado ID:</strong></td>
+                            <td><?= $producto['rela_estadoproducto'] ?></td>
+                        </tr>
+                    </table>
                 </div>
             </div>
+
+            <!-- Alertas de inventario -->
+            <?php if ($producto['producto_stock'] <= 5): ?>
+                <div class="card shadow mb-4 border-warning">
+                    <div class="card-header bg-warning py-3">
+                        <h6 class="m-0 font-weight-bold text-white">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            Alerta de Inventario
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <?php if ($producto['producto_stock'] <= 0): ?>
+                            <div class="alert alert-danger mb-0">
+                                <strong>Sin Stock:</strong> Este producto no tiene unidades disponibles.
+                            </div>
+                        <?php else: ?>
+                            <div class="alert alert-warning mb-0">
+                                <strong>Stock Bajo:</strong> Quedan solo <?= $producto['producto_stock'] ?> unidades disponibles.
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
         </div>
-    </div>
-    
-    <div class="product-description">
-        <h3>Descripción</h3>
-        <p><?php echo nl2br(htmlspecialchars($producto['producto_descripcion'])); ?></p>
-    </div>
-    
-    <div class="product-actions">
-        <button class="btn btn-primary" data-action="navegar-editar-producto" data-id="<?php echo $producto['id_producto']; ?>">
-            <i class="fa fa-edit"></i> Editar Producto
-        </button>
-        
-        <?php if ($producto['rela_estadoproducto'] != 4): ?>
-            <button class="btn btn-danger" data-action="confirmar-eliminacion-producto" data-id="<?php echo $producto['id_producto']; ?>">
-                <i class="fa fa-trash"></i> Eliminar Producto
-            </button>
-        <?php else: ?>
-            <button class="btn btn-success" data-action="confirmar-recuperacion-producto" data-id="<?php echo $producto['id_producto']; ?>">
-                <i class="fa fa-undo"></i> Recuperar Producto
-            </button>
-        <?php endif; ?>
-        
-        <button class="btn btn-secondary" data-action="navegar-listado-productos">
-            <i class="fa fa-arrow-left"></i> Volver al Listado
-        </button>
-    </div>
-    
-    <div class="product-details">
-        <h3>Información Adicional</h3>
-        <table class="details-table">
-            <tr>
-                <td><strong>ID del Producto:</strong></td>
-                <td><?php echo $producto['id_producto']; ?></td>
-            </tr>
-            <tr>
-                <td><strong>Fecha de Creación:</strong></td>
-                <td><?php echo isset($producto['fecha_creacion']) ? date('d/m/Y H:i', strtotime($producto['fecha_creacion'])) : 'No disponible'; ?></td>
-            </tr>
-            <tr>
-                <td><strong>Última Actualización:</strong></td>
-                <td><?php echo isset($producto['fecha_actualizacion']) ? date('d/m/Y H:i', strtotime($producto['fecha_actualizacion'])) : 'No disponible'; ?></td>
-            </tr>
-        </table>
     </div>
 </div>
 
+<script>
+// Función para cambiar estado
+function cambiarEstado(id, nuevoEstado, accion) {
+    Swal.fire({
+        title: '¿Está seguro?',
+        text: `¿Desea ${accion} este producto?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, continuar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch('<?= url('/productos/') ?>' + id + '/cambiar-estado', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'estado=' + nuevoEstado
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire('¡Éxito!', data.message, 'success').then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            })
+            .catch(error => {
+                Swal.fire('Error', 'Ocurrió un error inesperado', 'error');
+            });
+        }
+    });
+}
+</script>
+
 <?php
-$mysql->close();
+// Función auxiliar para clases de badges de stock
+function getStockBadgeClass($stock) {
+    if ($stock <= 0) return 'badge-danger';
+    if ($stock <= 10) return 'badge-warning';
+    return 'badge-success';
+}
+
+$this->endSection();
 ?>
-
-<?php $this->endSection(); ?>
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-}
-
-.product-header {
-    display: flex;
-    gap: 30px;
-    margin-bottom: 30px;
-    padding-bottom: 30px;
-    border-bottom: 2px solid #eee;
-}
-
-.product-image {
-    flex: 0 0 300px;
-}
-
-.product-main-image {
-    width: 100%;
-    max-width: 300px;
-    height: auto;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.no-image {
-    width: 300px;
-    height: 300px;
-    background-color: #f8f9fa;
-    border: 2px dashed #dee2e6;
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: #6c757d;
-}
-
-.no-image i {
-    font-size: 48px;
-    margin-bottom: 10px;
-}
-
-.product-info {
-    flex: 1;
-}
-
-.product-info h2 {
-    color: #333;
-    margin-bottom: 20px;
-    font-size: 28px;
-}
-
-.product-meta {
-    margin-bottom: 20px;
-}
-
-.meta-item {
-    display: flex;
-    margin-bottom: 10px;
-}
-
-.meta-item label {
-    font-weight: bold;
-    min-width: 100px;
-    color: #555;
-}
-
-.meta-item span {
-    color: #333;
-}
-
-.status-1 { color: #28a745; }
-.status-2 { color: #ffc107; }
-.status-3 { color: #dc3545; }
-.status-4 { color: #6c757d; }
-
-.product-pricing {
-    background-color: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-}
-
-.price-item {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 10px;
-}
-
-.price-item:last-child {
-    margin-bottom: 0;
-}
-
-.price {
-    font-size: 24px;
-    font-weight: bold;
-    color: #28a745;
-}
-
-.stock {
-    font-weight: bold;
-}
-
-.low-stock {
-    color: #dc3545;
-}
-
-.product-description {
-    margin-bottom: 30px;
-    padding: 20px;
-    background-color: #fff;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-}
-
-.product-description h3 {
-    color: #333;
-    margin-bottom: 15px;
-}
-
-.product-actions {
-    text-align: center;
-    margin-bottom: 30px;
-}
-
-.btn {
-    display: inline-block;
-    padding: 10px 20px;
-    margin: 0 5px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    text-decoration: none;
-    font-size: 14px;
-    transition: background-color 0.3s;
-}
-
-.btn i {
-    margin-right: 5px;
-}
-
-.btn-primary {
-    background-color: #007bff;
-    color: white;
-}
-
-.btn-primary:hover {
-    background-color: #0056b3;
-}
-
-.btn-danger {
-    background-color: #dc3545;
-    color: white;
-}
-
-.btn-danger:hover {
-    background-color: #c82333;
-}
-
-.btn-success {
-    background-color: #28a745;
-    color: white;
-}
-
-.btn-success:hover {
-    background-color: #218838;
-}
-
-.btn-secondary {
-    background-color: #6c757d;
-    color: white;
-}
-
-.btn-secondary:hover {
-    background-color: #545b62;
-}
-
-.product-details {
-    background-color: #f8f9fa;
-    padding: 20px;
-    border-radius: 8px;
-}
-
-.product-details h3 {
-    color: #333;
-    margin-bottom: 15px;
-}
-
-.details-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.details-table td {
-    padding: 8px 12px;
-    border-bottom: 1px solid #dee2e6;
-}
-
-.details-table tr:last-child td {
-    border-bottom: none;
-}
-
-@media (max-width: 768px) {
-    .product-header {
-        flex-direction: column;
-    }
-    
-    .product-image {
-        flex: none;
-    }
-    
-    .product-main-image,
-    .no-image {
-        max-width: 100%;
-        width: 100%;
-    }
-}

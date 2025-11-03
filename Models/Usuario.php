@@ -425,6 +425,86 @@ class Usuario extends Model
     }
 
     /**
+     * Verificar si el usuario actual tiene perfil de huésped
+     */
+    public function esPerfilHuesped($usuarioData = null)
+    {
+        $perfil = null;
+        
+        if ($usuarioData && isset($usuarioData['perfil_descripcion'])) {
+            $perfil = $usuarioData['perfil_descripcion'];
+        } elseif (isset($_SESSION['user']['perfil_descripcion'])) {
+            $perfil = $_SESSION['user']['perfil_descripcion'];
+        } else {
+            return true; // Por defecto, usuarios sin perfil definido son huéspedes
+        }
+        
+        $perfilLower = strtolower($perfil);
+        return strpos($perfilLower, 'huesped') !== false || 
+               strpos($perfilLower, 'huésped') !== false || 
+               strpos($perfilLower, 'cliente') !== false;
+    }
+
+    /**
+     * Verificar si el usuario actual tiene perfil de cajero
+     */
+    public function esPerfilCajero($usuarioData = null)
+    {
+        $perfil = null;
+        
+        if ($usuarioData && isset($usuarioData['perfil_descripcion'])) {
+            $perfil = $usuarioData['perfil_descripcion'];
+        } elseif (isset($_SESSION['user']['perfil_descripcion'])) {
+            $perfil = $_SESSION['user']['perfil_descripcion'];
+        } else {
+            return false;
+        }
+        
+        $perfilLower = strtolower($perfil);
+        return strpos($perfilLower, 'cajero') !== false || 
+               strpos($perfilLower, 'caja') !== false;
+    }
+
+    /**
+     * Obtener tipo de perfil del usuario (huesped, cajero, admin, etc.)
+     */
+    public function getTipoPerfil($usuarioData = null)
+    {
+        if ($this->esPerfilHuesped($usuarioData)) {
+            return 'huesped';
+        } elseif ($this->esPerfilCajero($usuarioData)) {
+            return 'cajero';
+        } else {
+            return 'admin'; // Otros perfiles se consideran administrativos
+        }
+    }
+
+    /**
+     * Verificar si el usuario tiene permisos para un tipo específico de operación
+     */
+    public function tienePermisoPara($operacion, $usuarioData = null)
+    {
+        $tipoPerfil = $this->getTipoPerfil($usuarioData);
+        
+        switch ($operacion) {
+            case 'pago_manual':
+                return $tipoPerfil === 'cajero' || $tipoPerfil === 'admin';
+            
+            case 'reserva_online':
+                return true; // Todos pueden hacer reservas online
+            
+            case 'acceso_admin':
+                return $tipoPerfil === 'cajero' || $tipoPerfil === 'admin';
+            
+            case 'todos_metodos_pago':
+                return $tipoPerfil === 'cajero' || $tipoPerfil === 'admin';
+            
+            default:
+                return false;
+        }
+    }
+
+    /**
      * Obtener perfiles disponibles
      */
     public function getPerfiles()

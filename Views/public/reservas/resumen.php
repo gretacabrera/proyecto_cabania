@@ -6,11 +6,7 @@
 ?>
 
 <div class="container-fluid py-4">
-    <div class="row justi                                    <!-- Total a Pagar -->
-                                    <div class="d-flex justify-content-between mb-2 fs-5">
-                                        <strong class="text-success">Total a Pagar</strong>
-                                        <strong class="text-success">$<?= number_format($reserva['total_general'], 0, ',', '.') ?></strong>
-                                    </div>ter">
+    <div class="row justify-content-center">
         <div class="col-lg-10 col-md-12">
             <div class="card shadow">
                 <div class="card-header bg-primary text-white">
@@ -22,6 +18,16 @@
                 </div>
                 
                 <div class="card-body p-4">
+                    <!-- Mostrar mensajes de error si existen -->
+                    <?php if (isset($_SESSION['error_message'])): ?>
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Error en el pago:</strong> <?= htmlspecialchars($_SESSION['error_message']) ?>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        <?php unset($_SESSION['error_message']); ?>
+                    <?php endif; ?>
+                    
                     <!-- Progress Bar -->
                     <div class="progress mb-4" style="height: 8px;">
                         <div class="progress-bar bg-primary" role="progressbar" style="width: 75%"></div>
@@ -213,7 +219,7 @@
                         </div>
                         <div class="col-md-4">
                             <form method="POST" action="/reservas/cancelar" class="d-inline w-100">
-                                <input type="hidden" name="reserva_temp_id" value="<?= htmlspecialchars($reserva['temp_id']) ?>">
+                                <input type="hidden" name="reserva_temp_id" value="<?= htmlspecialchars($reserva['temp_id'] ?? '') ?>">
                                 <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
                                 <button type="submit" class="btn btn-outline-danger w-100" 
                                         onclick="return confirm('¿Está seguro que desea cancelar esta reserva?')">
@@ -223,28 +229,16 @@
                             </form>
                         </div>
                         <div class="col-md-4">
-                            <form method="POST" action="<?= $this->url('/reservas/pago') ?>" class="d-inline w-100">
-                                <input type="hidden" name="reserva_temp_id" value="<?= htmlspecialchars($reserva['temp_id']) ?>">
+                            <form method="POST" action="<?= $this->url('/reservas/proceder-pago') ?>" class="d-inline w-100">
                                 <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
-                                <button type="submit" class="btn btn-success w-100">
-                                    <i class="fas fa-credit-card me-1"></i>
-                                    Proceder al Pago
+                                <button type="submit" class="btn btn-success w-100" id="btnProcederPago">
+                                    <i class="fas fa-shield-alt me-1"></i>
+                                    Pagar Ahora
                                 </button>
                             </form>
                         </div>
                     </div>
 
-                    <!-- Términos y Condiciones -->
-                    <div class="mt-4">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="terminos" required>
-                            <label class="form-check-label small text-muted" for="terminos">
-                                Al proceder al pago, acepto los 
-                                <a href="/terminos" target="_blank">términos y condiciones</a> 
-                                y la <a href="/privacidad" target="_blank">política de privacidad</a> de Casa de Palos Cabañas.
-                            </label>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -253,14 +247,49 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const checkboxTerminos = document.getElementById('terminos');
-    const btnPagar = document.querySelector('button[type="submit"]');
-    
-    checkboxTerminos.addEventListener('change', function() {
-        btnPagar.disabled = !this.checked;
+    const btnPagar = document.getElementById('btnProcederPago');
+
+    // Agregar efecto al hacer clic en "Pagar Ahora"
+    btnPagar.closest('form').addEventListener('submit', function(e) {
+        // Prevenir envío inicial para mostrar confirmación
+        e.preventDefault();
+        
+        // Mostrar SweetAlert de confirmación
+        Swal.fire({
+            title: '¿Proceder al pago?',
+            text: 'Será redirigido a la pasarela de pago segura',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, continuar',
+            cancelButtonText: 'Revisar datos'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Deshabilitar botón y mostrar loading
+                btnPagar.disabled = true;
+                btnPagar.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Redirigiendo...';
+                
+                // Mostrar loading final
+                Swal.fire({
+                    title: 'Redirigiendo...',
+                    text: 'Conectando con la pasarela de pago segura',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    willOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+                
+                // Enviar formulario después de un momento
+                setTimeout(() => {
+                    this.submit();
+                }, 1500);
+            }
+        });
     });
-    
-    // Inicialmente deshabilitar el botón hasta que se acepten términos
-    btnPagar.disabled = true;
 });
 </script>
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

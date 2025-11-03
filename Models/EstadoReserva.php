@@ -12,6 +12,83 @@ class EstadoReserva extends Model
     protected $table = 'estadoreserva';
     protected $primaryKey = 'id_estadoreserva';
 
+    // Nombres de estados de reserva
+    const PENDIENTE = 'pendiente';
+    const CONFIRMADA = 'confirmada';
+    const EN_CURSO = 'en curso';
+    const PENDIENTE_PAGO = 'pendiente de pago';
+    const FINALIZADA = 'finalizada';
+    const ANULADA = 'anulada';
+    const EXPIRADA = 'expirada';
+    const CANCELADA = 'cancelada';
+    
+    // Cache para IDs de estados
+    private $estadosCache = null;
+    private $estadosInvertidos = null;
+
+    /**
+     * Cargar estados en cache (método optimizado)
+     */
+    private function loadEstados()
+    {
+        if ($this->estadosCache === null) {
+            $estados = $this->findAll("estadoreserva_estado = 1");
+            
+            $this->estadosCache = [];
+            $this->estadosInvertidos = [];
+            
+            foreach ($estados as $estado) {
+                $nombre = $estado['estadoreserva_descripcion'];
+                $id = $estado['id_estadoreserva'];
+                
+                $this->estadosCache[$nombre] = $id;
+                $this->estadosInvertidos[$id] = $nombre;
+            }
+        }
+    }
+    
+    /**
+     * Obtener ID de estado por nombre
+     */
+    public function getId($nombre)
+    {
+        $this->loadEstados();
+        return isset($this->estadosCache[$nombre]) ? $this->estadosCache[$nombre] : null;
+    }
+    
+    /**
+     * Obtener nombre de estado por ID  
+     */
+    public function getName($id)
+    {
+        $this->loadEstados();
+        return isset($this->estadosInvertidos[$id]) ? $this->estadosInvertidos[$id] : null;
+    }
+    
+    /**
+     * Verificar si un estado existe
+     */
+    public function existe($nombre)
+    {
+        $this->loadEstados();
+        return isset($this->estadosCache[$nombre]);
+    }
+    
+    /**
+     * Obtener múltiples IDs por nombres
+     */
+    public function getIds($nombres)
+    {
+        $this->loadEstados();
+        $ids = [];
+        foreach ($nombres as $nombre) {
+            if (isset($this->estadosCache[$nombre])) {
+                $ids[] = $this->estadosCache[$nombre];
+            }
+        }
+        return $ids;
+    }
+
     /**
      * Obtener estados activos
      */
@@ -70,13 +147,7 @@ class EstadoReserva extends Model
         return ceil($total / $perPage);
     }
 
-    /**
-     * Buscar por ID
-     */
-    public function findById($id)
-    {
-        return $this->find($id);
-    }
+
 
     /**
      * Verificar si el estado está en uso
@@ -153,5 +224,130 @@ class EstadoReserva extends Model
         }
         
         return $stats;
+    }
+
+    // ==================================================
+    // MÉTODOS DE LÓGICA DE NEGOCIO OPTIMIZADOS
+    // ==================================================
+
+    /**
+     * Verificar si una reserva puede ser cancelada por el huésped
+     */
+    public function puedeSerCancelada($estadoActual)
+    {
+        $nombreEstado = $this->getName($estadoActual);
+        
+        $estadosCancelables = [
+            self::PENDIENTE,
+            self::CONFIRMADA
+        ];
+        
+        return in_array($nombreEstado, $estadosCancelables);
+    }
+
+    /**
+     * Verificar si una reserva puede ser anulada por el administrador
+     */
+    public function puedeSerAnulada($estadoActual)
+    {
+        $nombreEstado = $this->getName($estadoActual);
+        
+        $estadosNoAnulables = [
+            self::FINALIZADA,
+            self::ANULADA,
+            self::CANCELADA,
+            self::EXPIRADA
+        ];
+        
+        return !in_array($nombreEstado, $estadosNoAnulables);
+    }
+
+    /**
+     * Verificar si una reserva está expirada o puede expirar
+     */
+    public function puedeExpirar($estadoActual)
+    {
+        return $this->getName($estadoActual) === self::PENDIENTE;
+    }
+
+    /**
+     * Verificar si una reserva ya está expirada
+     */
+    public function estaExpirada($estadoActual)
+    {
+        return $this->getName($estadoActual) === self::EXPIRADA;
+    }
+
+    /**
+     * Obtener estados que bloquean disponibilidad de cabaña
+     */
+    public function getEstadosQueBloquean()
+    {
+        return $this->getIds([
+            self::PENDIENTE,
+            self::CONFIRMADA,
+            self::EN_CURSO
+        ]);
+    }
+
+    /**
+     * Verificar si un estado nunca expira
+     */
+    public function nuncaExpira($estadoActual)
+    {
+        $nombreEstado = $this->getName($estadoActual);
+        
+        $estadosQueNuncaExpiran = [
+            self::CONFIRMADA,
+            self::EN_CURSO,
+            self::FINALIZADA,
+            self::ANULADA,
+            self::CANCELADA,
+            self::EXPIRADA
+        ];
+        
+        return in_array($nombreEstado, $estadosQueNuncaExpiran);
+    }
+
+    /**
+     * Obtener descripción amigable del estado
+     */
+    public function getDescripcion($estadoActual)
+    {
+        $nombreEstado = $this->getName($estadoActual);
+        
+        $descripciones = [
+            self::PENDIENTE => 'Pendiente de confirmación',
+            self::CONFIRMADA => 'Confirmada',
+            self::EN_CURSO => 'En curso',
+            self::PENDIENTE_PAGO => 'Pendiente de pago',
+            self::FINALIZADA => 'Finalizada',
+            self::ANULADA => 'Anulada por administrador',
+            self::EXPIRADA => 'Expirada automáticamente',
+            self::CANCELADA => 'Cancelada por huésped'
+        ];
+        
+        return isset($descripciones[$nombreEstado]) ? $descripciones[$nombreEstado] : ucfirst($nombreEstado);
+    }
+
+    /**
+     * Obtener clase CSS para el estado
+     */
+    public function getCssClass($estadoActual)
+    {
+        $nombreEstado = $this->getName($estadoActual);
+        
+        $clases = [
+            self::PENDIENTE => 'warning',
+            self::CONFIRMADA => 'success',
+            self::EN_CURSO => 'info',
+            self::PENDIENTE_PAGO => 'warning',
+            self::FINALIZADA => 'secondary',
+            self::ANULADA => 'danger',
+            self::EXPIRADA => 'dark',
+            self::CANCELADA => 'danger'
+        ];
+        
+        return isset($clases[$nombreEstado]) ? $clases[$nombreEstado] : 'secondary';
     }
 }
