@@ -149,7 +149,7 @@ function getStockBadgeClass($stock) {
                             <?php if ($showInfo): ?>
                                 <div class="col-sm-6">
                                     <span class="text-muted small">
-                                        Mostrando <?= $start ?> a <?= $end ?> de <?= $pagination['total'] ?> entradas
+                                        Mostrando <?= $start ?> a <?= $end ?> de <?= $pagination['total'] ?> registros
                                     </span>
                                 </div>
                             <?php endif; ?>
@@ -217,7 +217,7 @@ function getStockBadgeClass($stock) {
                     <table class="table table-hover mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th class="border-0 py-3">Producto</th>
+                                <th class="border-0 py-3">Nombre</th>
                                 <th class="border-0 py-3">Categoría</th>
                                 <th class="border-0 py-3">Stock</th>
                                 <th class="border-0 py-3">Precio</th>
@@ -230,18 +230,6 @@ function getStockBadgeClass($stock) {
                                 <tr>
                                     <td class="border-0 py-3">
                                         <div class="d-flex align-items-center">
-                                            <div class="flex-shrink-0 me-3">
-                                                <?php if (!empty($producto['producto_foto'])): ?>
-                                                    <img src="<?= url('/imagenes/productos/' . $producto['producto_foto']) ?>" 
-                                                         alt="<?= htmlspecialchars($producto['producto_nombre']) ?>"
-                                                         class="rounded" style="width: 40px; height: 40px; object-fit: cover;">
-                                                <?php else: ?>
-                                                    <div class="bg-light rounded d-flex align-items-center justify-content-center" 
-                                                         style="width: 40px; height: 40px;">
-                                                        <i class="fas fa-box text-muted"></i>
-                                                    </div>
-                                                <?php endif; ?>
-                                            </div>
                                             <div>
                                                 <div class="fw-bold text-dark"><?= htmlspecialchars($producto['producto_nombre']) ?></div>
                                                 <small class="text-muted"><?= htmlspecialchars($producto['marca_descripcion'] ?? 'Sin marca') ?></small>
@@ -343,7 +331,7 @@ function cambiarEstadoProducto(id, nuevoEstado, nombreProducto) {
         cancelButtonText: 'Cancelar'
     }).then((result) => {
         if (result.isConfirmed) {
-            fetch('<?= url('/productos/') ?>' + id + '/cambiar-estado', {
+            fetch('<?= url('/productos/') ?>' + id + '/estado', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',

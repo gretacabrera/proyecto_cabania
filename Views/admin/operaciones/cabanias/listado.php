@@ -120,7 +120,7 @@
                             <?php if ($showInfo): ?>
                                 <div class="col-sm-6">
                                     <span class="text-muted small">
-                                        Mostrando <?= $start ?> a <?= $end ?> de <?= $pagination['total'] ?> entradas
+                                        Mostrando <?= $start ?> a <?= $end ?> de <?= $pagination['total'] ?> registros
                                     </span>
                                 </div>
                             <?php endif; ?>

@@ -154,12 +154,13 @@ class Application
         // Rutas de productos
         $this->router->get('/productos', 'ProductosController@index');
         $this->router->any('/productos/create', 'ProductosController@create');
+        $this->router->get('/productos/exportar', 'ProductosController@exportar');
+        $this->router->get('/productos/exportar-pdf', 'ProductosController@exportarPdf');
         $this->router->get('/productos/{id}', 'ProductosController@show');
         $this->router->any('/productos/{id}/edit', 'ProductosController@edit');
-        $this->router->get('/productos/{id}/delete', 'ProductosController@delete');
-        $this->router->get('/productos/{id}/restore', 'ProductosController@restore');
-        $this->router->get('/productos/search', 'ProductosController@search');
-        $this->router->get('/productos/{id}/toggle-status', 'ProductosController@toggleStatus');
+        $this->router->post('/productos/{id}/delete', 'ProductosController@delete');
+        $this->router->post('/productos/{id}/restore', 'ProductosController@restore');
+        $this->router->post('/productos/{id}/estado', 'ProductosController@cambiarEstado');
 
         // Rutas de usuarios
         $this->router->get('/usuarios', 'UsuariosController@index');

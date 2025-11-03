@@ -2,21 +2,20 @@
 /**
  * Vista: Formulario de Producto
  * Descripción: Formulario para crear/editar productos
- * Siguiendo el patrón exacto del módulo de Cabañas
+ * Autor: Sistema MVC
+ * Fecha: <?php echo date('Y-m-d'); ?>
  */
 
 $isEdit = isset($producto) && !empty($producto);
 ?>
 
-<div class="content-wrapper">
+<div class="container-fluid">
     <!-- Acciones principales -->
-    <div class="page-actions">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <a href="<?= url('/productos') ?>" class="btn btn-primary">
-                    <i class="fas fa-arrow-left"></i> Volver al listado
-                </a>
-            </div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="<?= url('/productos') ?>" class="btn btn-primary">
+                <i class="fas fa-arrow-left"></i> Volver al listado
+            </a>
         </div>
     </div>
 
@@ -48,12 +47,9 @@ $isEdit = isset($producto) && !empty($producto);
                                         <i class="fas fa-tag"></i> Nombre del Producto
                                     </label>
                                     <input type="text" class="form-control" id="producto_nombre" name="producto_nombre" 
-                                           value="<?= htmlspecialchars($producto['producto_nombre'] ?? '') ?>" 
-                                           required maxlength="100" 
-                                           placeholder="Nombre completo del producto">
-                                    <div class="invalid-feedback">
-                                        Por favor ingrese el nombre del producto.
-                                    </div>
+                                           value="<?= htmlspecialchars($producto['producto_nombre'] ?? '') ?>"
+                                           required maxlength="100" placeholder="Nombre completo del producto">
+                                    <div class="invalid-feedback"></div>
                                 </div>
                             </div>
 
@@ -61,17 +57,28 @@ $isEdit = isset($producto) && !empty($producto);
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="producto_stock" class="required">
-                                        <i class="fas fa-boxes"></i> Stock Inicial
+                                        <i class="fas fa-boxes"></i> Stock
                                     </label>
                                     <input type="number" class="form-control" id="producto_stock" name="producto_stock" 
-                                           value="<?= $producto['producto_stock'] ?? '0' ?>" 
-                                           required min="0" max="9999" 
-                                           placeholder="0">
-                                    <div class="invalid-feedback">
-                                        Ingrese la cantidad en stock (0 o mayor).
-                                    </div>
+                                           value="<?= $producto['producto_stock'] ?? '0' ?>"
+                                           required min="0" max="9999" placeholder="0">
+                                    <div class="invalid-feedback"></div>
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- Descripción -->
+                        <div class="form-group">
+                            <label for="producto_descripcion" class="required">
+                                <i class="fas fa-align-left"></i> Descripción
+                            </label>
+                            <textarea class="form-control" id="producto_descripcion" name="producto_descripcion" 
+                                      rows="4" required maxlength="500" 
+                                      placeholder="Describe las características principales del producto..."><?= htmlspecialchars($producto['producto_descripcion'] ?? '') ?></textarea>
+                            <div class="invalid-feedback"></div>
+                            <small class="form-text text-muted">
+                                <span id="contadorDescripcion">0</span> / 500 caracteres
+                            </small>
                         </div>
 
                         <div class="row">
@@ -82,14 +89,13 @@ $isEdit = isset($producto) && !empty($producto);
                                         <i class="fas fa-dollar-sign"></i> Precio
                                     </label>
                                     <div class="input-group">
-                                        <span class="input-group-text">$</span>
-                                        <input type="number" class="form-control" id="producto_precio" name="producto_precio" 
-                                               value="<?= $producto['producto_precio'] ?? '' ?>" 
-                                               required min="0.01" max="999999.99" step="0.01" 
-                                               placeholder="0.00">
-                                        <div class="invalid-feedback">
-                                            Ingrese un precio válido mayor a $0.00.
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text">$</span>
                                         </div>
+                                        <input type="number" class="form-control" id="producto_precio" name="producto_precio" 
+                                               value="<?= $producto['producto_precio'] ?? '' ?>"
+                                               required min="0.01" max="999999.99" step="0.01" placeholder="0.00">
+                                        <div class="invalid-feedback"></div>
                                     </div>
                                 </div>
                             </div>
@@ -109,9 +115,7 @@ $isEdit = isset($producto) && !empty($producto);
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
-                                    <div class="invalid-feedback">
-                                        Por favor seleccione una categoría.
-                                    </div>
+                                    <div class="invalid-feedback"></div>
                                 </div>
                             </div>
 
@@ -130,27 +134,7 @@ $isEdit = isset($producto) && !empty($producto);
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
-                                    <div class="invalid-feedback">
-                                        Por favor seleccione una marca.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Descripción -->
-                        <div class="row">
-                            <div class="col-12">
-                                <div class="form-group">
-                                    <label for="producto_descripcion" class="required">
-                                        <i class="fas fa-align-left"></i> Descripción
-                                    </label>
-                                    <textarea class="form-control" id="producto_descripcion" name="producto_descripcion" 
-                                              rows="4" required maxlength="500" 
-                                              placeholder="Descripción detallada del producto..."><?= htmlspecialchars($producto['producto_descripcion'] ?? '') ?></textarea>
-                                    <small class="form-text text-muted">Máximo 500 caracteres.</small>
-                                    <div class="invalid-feedback">
-                                        Por favor ingrese una descripción del producto.
-                                    </div>
+                                    <div class="invalid-feedback"></div>
                                 </div>
                             </div>
                         </div>
@@ -176,18 +160,66 @@ $isEdit = isset($producto) && !empty($producto);
                             </div>
                         <?php endif; ?>
 
+                        <!-- Imagen del producto -->
+                        <div class="form-group">
+                            <label for="producto_foto">
+                                <i class="fas fa-camera"></i> Imagen del Producto
+                            </label>
+                            
+                            <?php if ($isEdit && !empty($producto['producto_foto'])): ?>
+                            <div class="current-image mb-3">
+                                <div class="card">
+                                    <div class="card-header py-2">
+                                        <small class="text-muted">Imagen actual</small>
+                                    </div>
+                                    <div class="card-body text-center py-2">
+                                        <img src="<?= url('/imagenes/productos/' . $producto['producto_foto']) ?>" 
+                                             alt="<?= htmlspecialchars($producto['producto_nombre']) ?>" 
+                                             class="img-fluid rounded" style="max-height: 200px;">
+                                    </div>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+                            
+                            <div class="custom-file">
+                                <input type="file" class="custom-file-input" id="producto_foto" name="producto_foto" 
+                                       accept="image/jpeg,image/jpg,image/png,image/gif">
+                                <label class="custom-file-label" for="producto_foto">
+                                    <?= $isEdit ? 'Cambiar imagen (opcional)' : 'Seleccionar imagen' ?>
+                                </label>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <small class="form-text text-muted">
+                                Formatos permitidos: JPG, PNG, GIF. Tamaño máximo: 5MB
+                            </small>
+                            
+                            <!-- Preview de nueva imagen -->
+                            <div id="previewImagen" class="mt-3" style="display: none;">
+                                <div class="card">
+                                    <div class="card-header py-2">
+                                        <small class="text-muted">Vista previa</small>
+                                    </div>
+                                    <div class="card-body text-center py-2">
+                                        <img id="imgPreview" src="" alt="Preview" 
+                                             class="img-fluid rounded" style="max-height: 200px;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Botones de acción -->
-                        <div class="form-actions mt-4">
-                            <div class="btn-group">
-                                <button type="submit" class="btn btn-success">
-                                    <i class="fas fa-save"></i> <?= $isEdit ? 'Actualizar' : 'Guardar' ?> Producto
-                                </button>
-                                <button type="button" class="btn btn-info" onclick="limpiarFormulario()">
-                                    <i class="fas fa-broom"></i> Limpiar
-                                </button>
-                                <a href="<?= url('/productos') ?>" class="btn btn-secondary">
-                                    <i class="fas fa-times"></i> Cancelar
-                                </a>
+                        <div class="form-group mt-4">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <button type="submit" class="btn btn-success btn-lg">
+                                        <i class="fas fa-save"></i> 
+                                        <?= $isEdit ? 'Actualizar Producto' : 'Crear Producto' ?>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-lg ml-2" 
+                                            onclick="limpiarFormulario()">
+                                        <i class="fas fa-eraser"></i> Limpiar
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </form>
@@ -195,70 +227,55 @@ $isEdit = isset($producto) && !empty($producto);
             </div>
         </div>
 
-        <!-- Panel lateral -->
+        <!-- Panel lateral con información -->
         <div class="col-lg-4">
-            <!-- Imagen del producto -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h6 class="card-title mb-0">
-                        <i class="fas fa-image"></i> Imagen del Producto
-                    </h6>
-                </div>
-                <div class="card-body text-center">
-                    <div class="image-preview mb-3">
-                        <?php if ($isEdit && !empty($producto['producto_foto'])): ?>
-                            <img id="imagePreview" src="<?= url('/imagenes/productos/' . $producto['producto_foto']) ?>" 
-                                 alt="Vista previa" class="img-fluid rounded shadow" 
-                                 style="max-width: 100%; max-height: 250px;">
-                        <?php else: ?>
-                            <div id="imagePreview" class="bg-light border border-dashed rounded p-4" style="min-height: 200px;">
-                                <i class="fas fa-image fa-3x text-muted mb-2"></i>
-                                <p class="text-muted mb-0">Vista previa de imagen</p>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="producto_foto" class="btn btn-outline-primary btn-sm mb-0">
-                            <i class="fas fa-upload"></i> Seleccionar Imagen
-                        </label>
-                        <input type="file" id="producto_foto" name="producto_foto" 
-                               class="form-control-file d-none" 
-                               accept="image/jpeg,image/jpg,image/png,image/gif">
-                        <small class="form-text text-muted d-block mt-2">
-                            Formatos: JPG, PNG, GIF<br>
-                            Tamaño máximo: 2MB
-                        </small>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Información adicional -->
             <div class="card">
                 <div class="card-header">
                     <h6 class="card-title mb-0">
-                        <i class="fas fa-lightbulb"></i> Consejos
+                        <i class="fas fa-info-circle"></i> Información
                     </h6>
                 </div>
                 <div class="card-body">
-                    <ul class="list-unstyled mb-0 small text-muted">
-                        <li class="mb-2">
-                            <i class="fas fa-check text-success"></i>
-                            Usa nombres descriptivos para facilitar las búsquedas
-                        </li>
-                        <li class="mb-2">
-                            <i class="fas fa-check text-success"></i>
-                            La descripción ayuda a los usuarios a entender el producto
-                        </li>
-                        <li class="mb-2">
-                            <i class="fas fa-check text-success"></i>
-                            Las imágenes mejoran la presentación del catálogo
-                        </li>
-                        <li class="mb-0">
-                            <i class="fas fa-check text-success"></i>
-                            Mantén el stock actualizado para evitar problemas
-                        </li>
-                    </ul>
+                    <div class="info-section">
+                        <h6><i class="fas fa-lightbulb text-warning"></i> Consejos</h6>
+                        <ul class="list-unstyled small text-muted">
+                            <li>• Use nombres descriptivos para facilitar las búsquedas</li>
+                            <li>• La descripción debe ayudar a entender el producto</li>
+                            <li>• Las imágenes mejoran la presentación del catálogo</li>
+                            <li>• Mantén el stock actualizado para evitar problemas</li>
+                        </ul>
+                    </div>
+
+                    <hr>
+
+                    <div class="info-section">
+                        <h6><i class="fas fa-chart-line text-info"></i> Estadísticas</h6>
+                        <br>
+                        <?php if ($isEdit): ?>
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <div class="stat-item">
+                                        <div class="stat-value">
+                                            <?= $estadisticas['consumos']['total_consumos'] ?? '0' ?>
+                                        </div>
+                                        <div class="stat-label small text-muted">Ventas</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="stat-item">
+                                        <div class="stat-value">
+                                            $<?= number_format($estadisticas['consumos']['ingresos_total'] ?? 0, 2) ?>
+                                        </div>
+                                        <div class="stat-label small text-muted">Ingresos</div>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php else: ?>
+                            <p class="small text-muted">
+                                Las estadísticas estarán disponibles después de crear el producto.
+                            </p>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
         </div>
@@ -267,20 +284,43 @@ $isEdit = isset($producto) && !empty($producto);
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Vista previa de imagen
+    // Manejo del archivo de imagen
     const fileInput = document.getElementById('producto_foto');
-    const imagePreview = document.getElementById('imagePreview');
+    const fileLabel = document.querySelector('.custom-file-label');
+    const previewContainer = document.getElementById('previewImagen');
+    const imgPreview = document.getElementById('imgPreview');
     
     fileInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (file) {
+            // Actualizar texto del label
+            fileLabel.textContent = file.name;
+            
+            // Mostrar vista previa
             const reader = new FileReader();
             reader.onload = function(e) {
-                imagePreview.innerHTML = `<img src="${e.target.result}" alt="Vista previa" class="img-fluid rounded shadow" style="max-width: 100%; max-height: 250px;">`;
+                imgPreview.src = e.target.result;
+                previewContainer.style.display = 'block';
             };
             reader.readAsDataURL(file);
+        } else {
+            fileLabel.textContent = '<?= $isEdit ? 'Cambiar imagen (opcional)' : 'Seleccionar imagen' ?>';
+            previewContainer.style.display = 'none';
         }
     });
+
+    // Contador de caracteres para descripción
+    const descripcionTextarea = document.getElementById('producto_descripcion');
+    const contadorDescripcion = document.getElementById('contadorDescripcion');
+    
+    function actualizarContador() {
+        const longitud = descripcionTextarea.value.length;
+        contadorDescripcion.textContent = longitud;
+        contadorDescripcion.className = longitud > 450 ? 'text-warning' : 'text-muted';
+    }
+    
+    descripcionTextarea.addEventListener('input', actualizarContador);
+    actualizarContador(); // Ejecutar al cargar
 
     // Validación del formulario
     const form = document.getElementById('formProducto');
@@ -299,14 +339,15 @@ function limpiarFormulario() {
     form.reset();
     form.classList.remove('was-validated');
     
-    // Limpiar vista previa de imagen
-    const imagePreview = document.getElementById('imagePreview');
-    imagePreview.innerHTML = `
-        <div class="bg-light border border-dashed rounded p-4" style="min-height: 200px;">
-            <i class="fas fa-image fa-3x text-muted mb-2"></i>
-            <p class="text-muted mb-0">Vista previa de imagen</p>
-        </div>
-    `;
+    // Resetear label del archivo
+    const fileLabel = document.querySelector('.custom-file-label');
+    fileLabel.textContent = 'Seleccionar imagen';
+    
+    // Ocultar vista previa
+    document.getElementById('previewImagen').style.display = 'none';
+    
+    // Resetear contador
+    document.getElementById('contadorDescripcion').textContent = '0';
 }
 </script>
 
@@ -316,15 +357,15 @@ function limpiarFormulario() {
     color: #dc3545;
 }
 
-.form-actions {
-    border-top: 1px solid #dee2e6;
-    padding-top: 1rem;
+.info-section h6 {
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
 }
 
-.image-preview {
-    border: 1px solid #dee2e6;
-    border-radius: 0.375rem;
-    padding: 0.5rem;
+.stat-item .stat-value {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #495057;
 }
 
 .card-title {

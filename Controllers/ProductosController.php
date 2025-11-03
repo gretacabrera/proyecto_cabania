@@ -139,14 +139,25 @@ class ProductosController extends Controller
             return $this->redirect('/productos/create', 'El stock debe ser un número entero positivo o cero', 'error');
         }
 
-        // Manejo de imagen
-        if (isset($_FILES['producto_foto']) && $_FILES['producto_foto']['error'] === UPLOAD_ERR_OK) {
-            $uploadResult = $this->handleImageUpload($_FILES['producto_foto'], 'productos');
-            if ($uploadResult['success']) {
-                $data['producto_foto'] = $uploadResult['filename'];
-            } else {
-                return $this->redirect('/productos/create', $uploadResult['message'], 'error');
+        // Manejar subida de foto
+        $producto_foto = null;
+        if (isset($_FILES['producto_foto']) && $_FILES['producto_foto']['error'] == 0) {
+            $target_dir = "imagenes/productos/";
+            if (!file_exists($target_dir)) {
+                mkdir($target_dir, 0777, true);
             }
+            
+            $file_extension = strtolower(pathinfo($_FILES["producto_foto"]["name"], PATHINFO_EXTENSION));
+            $new_filename = uniqid() . '.' . $file_extension;
+            $target_file = $target_dir . $new_filename;
+            
+            if (move_uploaded_file($_FILES["producto_foto"]["tmp_name"], $target_file)) {
+                $producto_foto = $new_filename;
+            }
+        }
+        
+        if ($producto_foto) {
+            $data['producto_foto'] = $producto_foto;
         } else {
             $data['producto_foto'] = 'default.jpg';
         }
@@ -178,12 +189,16 @@ class ProductosController extends Controller
         $marcas = $this->marcaModel->findAll('marca_estado = 1', 'marca_descripcion ASC');
         $estadosProducto = $this->estadoProductoModel->findAll('estadoproducto_estado = 1', 'estadoproducto_descripcion ASC');
 
+        // Obtener estadísticas del producto
+        $estadisticas = $this->productoModel->getProductStatistics($id);
+
         $data = [
             'title' => 'Editar Producto',
             'producto' => $producto,
             'categorias' => $categorias,
             'marcas' => $marcas,
             'estadosProducto' => $estadosProducto,
+            'estadisticas' => $estadisticas,
             'isEdit' => true,
             'isAdminArea' => true
         ];
@@ -234,21 +249,29 @@ class ProductosController extends Controller
             return $this->redirect("/productos/{$id}/edit", 'El stock debe ser un número entero positivo o cero', 'error');
         }
 
-        // Manejo de imagen (opcional en edición)
-        if (isset($_FILES['producto_foto']) && $_FILES['producto_foto']['error'] === UPLOAD_ERR_OK) {
-            $uploadResult = $this->handleImageUpload($_FILES['producto_foto'], 'productos');
-            if ($uploadResult['success']) {
-                // Eliminar imagen anterior si no es la default
-                if ($producto['producto_foto'] && $producto['producto_foto'] !== 'default.jpg') {
-                    $oldImagePath = '../imagenes/productos/' . $producto['producto_foto'];
-                    if (file_exists($oldImagePath)) {
-                        unlink($oldImagePath);
-                    }
-                }
-                $data['producto_foto'] = $uploadResult['filename'];
-            } else {
-                return $this->redirect("/productos/{$id}/edit", $uploadResult['message'], 'error');
+        // Manejar subida de foto
+        $producto_foto = $producto['producto_foto']; // Mantener foto actual por defecto
+        if (isset($_FILES['producto_foto']) && $_FILES['producto_foto']['error'] == 0) {
+            $target_dir = "imagenes/productos/";
+            if (!file_exists($target_dir)) {
+                mkdir($target_dir, 0777, true);
             }
+            
+            $file_extension = strtolower(pathinfo($_FILES["producto_foto"]["name"], PATHINFO_EXTENSION));
+            $new_filename = uniqid() . '.' . $file_extension;
+            $target_file = $target_dir . $new_filename;
+            
+            if (move_uploaded_file($_FILES["producto_foto"]["tmp_name"], $target_file)) {
+                // Eliminar foto anterior si existe
+                if ($producto['producto_foto'] && file_exists($target_dir . $producto['producto_foto'])) {
+                    unlink($target_dir . $producto['producto_foto']);
+                }
+                $producto_foto = $new_filename;
+            }
+        }
+        
+        if ($producto_foto) {
+            $data['producto_foto'] = $producto_foto;
         }
 
         if ($this->productoModel->update($id, $data)) {
@@ -376,22 +399,23 @@ class ProductosController extends Controller
     {
         $this->requirePermission('productos');
 
-        $filters = [
-            'producto_nombre' => $this->get('producto_nombre'),
-            'rela_categoria' => $this->get('rela_categoria'),
-            'rela_marca' => $this->get('rela_marca'),
-            'rela_estadoproducto' => $this->get('rela_estadoproducto'),
-            'precio_min' => $this->get('precio_min'),
-            'precio_max' => $this->get('precio_max')
-        ];
+        try {
+            $filters = [
+                'producto_nombre' => $this->get('producto_nombre'),
+                'rela_categoria' => $this->get('rela_categoria'),
+                'rela_marca' => $this->get('rela_marca'),
+                'rela_estadoproducto' => $this->get('rela_estadoproducto'),
+                'precio_min' => $this->get('precio_min'),
+                'precio_max' => $this->get('precio_max')
+            ];
 
-        $result = $this->productoModel->getAllWithDetailsForExport($filters);
-        $productos = $result['data'];
+            $result = $this->productoModel->getAllWithDetailsForExport($filters);
+            $productos = $result['data'];
 
-        if (empty($productos)) {
-            $this->redirect('/productos', 'No hay datos para exportar', 'error');
-            return;
-        }
+            if (empty($productos)) {
+                $this->redirect('/productos', 'No hay datos para exportar', 'error');
+                return;
+            }
 
         // Crear archivo Excel
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
@@ -423,24 +447,30 @@ class ProductosController extends Controller
 
         $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
         
-        $filename = 'productos_' . date('Y-m-d_H-i-s') . '.xlsx';
-        $filepath = '../temp/' . $filename;
-        
-        // Crear directorio si no existe
-        if (!file_exists('../temp')) {
-            mkdir('../temp', 0777, true);
-        }
-        
-        $writer->save($filepath);
+            $filename = 'productos_' . date('Y-m-d_H-i-s') . '.xlsx';
+            $filepath = '../temp/' . $filename;
+            
+            // Crear directorio si no existe
+            if (!file_exists('../temp')) {
+                mkdir('../temp', 0777, true);
+            }
+            
+            $writer->save($filepath);
 
-        // Descargar archivo
-        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="' . $filename . '"');
-        header('Cache-Control: max-age=0');
-        
-        readfile($filepath);
-        unlink($filepath);
-        exit;
+            // Descargar archivo
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $filename . '"');
+            header('Cache-Control: max-age=0');
+            
+            readfile($filepath);
+            unlink($filepath);
+            exit;
+
+        } catch (\Exception $e) {
+            error_log("Error al exportar productos: " . $e->getMessage());
+            $this->redirect('/productos', 'Error al exportar: ' . $e->getMessage(), 'error');
+            return;
+        }
     }
 
     /**
@@ -450,22 +480,23 @@ class ProductosController extends Controller
     {
         $this->requirePermission('productos');
 
-        $filters = [
-            'producto_nombre' => $this->get('producto_nombre'),
-            'rela_categoria' => $this->get('rela_categoria'),
-            'rela_marca' => $this->get('rela_marca'),
-            'rela_estadoproducto' => $this->get('rela_estadoproducto'),
-            'precio_min' => $this->get('precio_min'),
-            'precio_max' => $this->get('precio_max')
-        ];
+        try {
+            $filters = [
+                'producto_nombre' => $this->get('producto_nombre'),
+                'rela_categoria' => $this->get('rela_categoria'),
+                'rela_marca' => $this->get('rela_marca'),
+                'rela_estadoproducto' => $this->get('rela_estadoproducto'),
+                'precio_min' => $this->get('precio_min'),
+                'precio_max' => $this->get('precio_max')
+            ];
 
-        $result = $this->productoModel->getAllWithDetailsForExport($filters);
-        $productos = $result['data'];
+            $result = $this->productoModel->getAllWithDetailsForExport($filters);
+            $productos = $result['data'];
 
-        if (empty($productos)) {
-            $this->redirect('/productos', 'No hay datos para exportar', 'error');
-            return;
-        }
+            if (empty($productos)) {
+                $this->redirect('/productos', 'No hay datos para exportar', 'error');
+                return;
+            }
 
         // Crear PDF
         $pdf = new \TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
@@ -519,42 +550,18 @@ class ProductosController extends Controller
         $pdf->Cell(0, 5, 'Total de productos: ' . $result['total'], 0, 1, 'L');
         $pdf->Cell(0, 5, 'Generado: ' . date('d/m/Y H:i:s'), 0, 1, 'L');
 
-        $filename = 'productos_' . date('Y-m-d_H-i-s') . '.pdf';
-        $pdf->Output($filename, 'D');
-        exit;
-    }
+            $filename = 'productos_' . date('Y-m-d_H-i-s') . '.pdf';
+            $pdf->Output($filename, 'D');
+            exit;
 
-    /**
-     * Manejo de subida de imágenes
-     */
-    private function handleImageUpload($file, $directory)
-    {
-        $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
-        $maxSize = 5 * 1024 * 1024; // 5MB
-
-        if (!in_array($file['type'], $allowedTypes)) {
-            return ['success' => false, 'message' => 'Tipo de archivo no permitido. Solo se permiten JPG, PNG y GIF'];
-        }
-
-        if ($file['size'] > $maxSize) {
-            return ['success' => false, 'message' => 'El archivo es demasiado grande. Máximo 5MB'];
-        }
-
-        $uploadDir = "../imagenes/{$directory}/";
-        if (!file_exists($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
-        }
-
-        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-        $filename = uniqid() . '_' . time() . '.' . $extension;
-        $uploadPath = $uploadDir . $filename;
-
-        if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
-            return ['success' => true, 'filename' => $filename];
-        } else {
-            return ['success' => false, 'message' => 'Error al subir el archivo'];
+        } catch (\Exception $e) {
+            error_log("Error al exportar productos a PDF: " . $e->getMessage());
+            $this->redirect('/productos', 'Error al exportar PDF: ' . $e->getMessage(), 'error');
+            return;
         }
     }
+
+
 
     /**
      * Obtener texto del estado

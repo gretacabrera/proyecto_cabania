@@ -1,266 +1,250 @@
-<?php 
+<?php
 /**
- * Vista de detalle del producto
- * Muestra información completa con estadísticas y acciones
+ * Vista: Detalle de Producto
+ * Descripción: Muestra información completa de un producto
+ * Autor: Sistema MVC
+ * Fecha: 2025-11-03
  */
+
+// Validar que existe el producto
+if (!isset($producto) || empty($producto)) {
+    echo '<div class="alert alert-danger">Producto no encontrado.</div>';
+    return;
+}
+
+// Función auxiliar para clases de badges de stock
+function getStockBadgeClass($stock) {
+    if ($stock <= 0) return 'badge-danger';
+    if ($stock <= 10) return 'badge-warning';
+    return 'badge-success';
+}
 ?>
 
 <div class="container-fluid">
-    <!-- Header -->
+    <!-- Acciones principales -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h3 mb-0 text-gray-800">
-                <i class="fas fa-box mr-2"></i>
-                <?= $title ?>
-            </h1>
-            <p class="text-muted mb-0">Información completa del producto</p>
-        </div>
-        <div class="btn-group">
-            <a href="<?= url('/productos') ?>" class="btn btn-secondary">
-                <i class="fas fa-arrow-left mr-1"></i>
-                Volver al Listado
-            </a>
-            <a href="<?= url('/productos/' . $producto['id_producto'] . '/edit') ?>" class="btn btn-warning">
-                <i class="fas fa-edit mr-1"></i>
-                Editar
-            </a>
+            <div>
+                <a href="<?= url('/productos') ?>" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i> Volver al listado
+                </a>
+            </div>
+            <div class="action-buttons">
+                <a href="<?= url('/productos/' . $producto['id_producto'] . '/edit') ?>"
+                   class="btn btn-warning">
+                    <i class="fas fa-edit"></i> Editar Producto
+                </a>
+                
+                <?php if ($producto['rela_estadoproducto'] != 4): ?>
+                    <!-- Producto activo: puede dar de baja -->
+                    <button class="btn btn-danger ml-2"
+                            onclick="cambiarEstadoProducto(<?= $producto['id_producto'] ?>, 4, '<?= addslashes($producto['producto_nombre']) ?>')">
+                        <i class="fas fa-ban"></i> Dar de Baja
+                    </button>
+                <?php else: ?>
+                    <!-- Producto dado de baja: puede reactivar -->
+                    <button class="btn btn-success ml-2"
+                            onclick="cambiarEstadoProducto(<?= $producto['id_producto'] ?>, 1, '<?= addslashes($producto['producto_nombre']) ?>')">
+                        <i class="fas fa-check"></i> Reactivar
+                    </button>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 
     <div class="row">
-        <!-- Información principal del producto -->
+        <!-- Información principal -->
         <div class="col-lg-8">
             <!-- Datos básicos -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">
-                        <i class="fas fa-info-circle mr-2"></i>
-                        Información del Producto
-                    </h6>
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle"></i> Información General
+                    </h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-4 text-center mb-3">
-                            <?php if (!empty($producto['producto_foto'])): ?>
-                                <img src="<?= url('/imagenes/productos/' . $producto['producto_foto']) ?>" 
-                                     alt="<?= htmlspecialchars($producto['producto_nombre']) ?>"
-                                     class="img-fluid rounded shadow"
-                                     style="max-height: 250px; width: auto;">
-                            <?php else: ?>
-                                <div class="bg-light rounded p-4 text-muted" style="height: 200px;">
-                                    <i class="fas fa-image fa-3x mb-2"></i>
-                                    <p>Sin imagen</p>
-                                </div>
-                            <?php endif; ?>
+                        <div class="col-md-3">
+                            <div class="info-group">
+                                <i class="fas fa-barcode text-muted"></i> ID:
+                                <code><?= htmlspecialchars($producto['id_producto']) ?></code>
+                            </div>
                         </div>
-                        
-                        <div class="col-md-8">
-                            <h4 class="text-primary mb-3"><?= htmlspecialchars($producto['producto_nombre']) ?></h4>
-                            
-                            <div class="row mb-3">
-                                <div class="col-sm-6">
-                                    <strong>Precio:</strong>
-                                    <div class="h5 text-success mt-1">$<?= number_format($producto['producto_precio'], 2) ?></div>
-                                </div>
-                                <div class="col-sm-6">
-                                    <strong>Stock Disponible:</strong>
-                                    <div class="mt-1">
-                                        <span class="badge <?= getStockBadgeClass($producto['producto_stock']) ?> badge-lg">
-                                            <?= $producto['producto_stock'] ?> unidades
-                                        </span>
-                                    </div>
-                                </div>
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <i class="fas fa-tag text-muted"></i> Nombre:
+                                <strong><?= htmlspecialchars($producto['producto_nombre']) ?></strong>
                             </div>
-                            
-                            <div class="row mb-3">
-                                <div class="col-sm-6">
-                                    <strong>Categoría:</strong>
-                                    <p class="mb-0"><?= htmlspecialchars($producto['categoria_descripcion'] ?? 'No especificada') ?></p>
-                                </div>
-                                <div class="col-sm-6">
-                                    <strong>Marca:</strong>
-                                    <p class="mb-0"><?= htmlspecialchars($producto['marca_descripcion'] ?? 'No especificada') ?></p>
-                                </div>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <strong>Estado:</strong>
-                                <div class="mt-1">
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-group">
+                                <label class="info-label">
                                     <?php 
-                                    $estadoBadgeClass = match($producto['rela_estadoproducto']) {
-                                        1 => 'badge-success',  // Disponible
-                                        2 => 'badge-warning',  // Stock mínimo
-                                        3 => 'badge-danger',   // Sin stock
-                                        4 => 'badge-secondary', // Baja
-                                        default => 'badge-light'
-                                    };
+                                    $estadoBadgeClass = 'badge-light';
+                                    $estadoIcono = 'fas fa-question';
+                                    $estadoIconoColor = 'text-muted';
+                                    switch($producto['rela_estadoproducto']) {
+                                        case 1: 
+                                            $estadoBadgeClass = 'badge-success';
+                                            $estadoIcono = 'fas fa-toggle-on';
+                                            $estadoIconoColor = 'text-success';
+                                            break;
+                                        case 2: 
+                                            $estadoBadgeClass = 'badge-warning';
+                                            $estadoIcono = 'fas fa-exclamation-triangle';
+                                            $estadoIconoColor = 'text-warning';
+                                            break;
+                                        case 3: 
+                                            $estadoBadgeClass = 'badge-danger';
+                                            $estadoIcono = 'fas fa-times-circle';
+                                            $estadoIconoColor = 'text-danger';
+                                            break;
+                                        case 4: 
+                                            $estadoBadgeClass = 'badge-secondary';
+                                            $estadoIcono = 'fas fa-toggle-off';
+                                            $estadoIconoColor = 'text-danger';
+                                            break;
+                                    }
                                     ?>
+                                    <i class="<?= $estadoIcono ?> <?= $estadoIconoColor ?>"></i> Estado: 
                                     <span class="badge <?= $estadoBadgeClass ?> badge-lg">
+                                        <i class="<?= str_replace('toggle-', '', str_replace('times-circle', 'times', str_replace('exclamation-triangle', 'exclamation-triangle', $estadoIcono))) ?>"></i> 
                                         <?= htmlspecialchars($producto['estadoproducto_descripcion'] ?? 'No especificado') ?>
                                     </span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <br>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="info-group">
+                                <label class="info-label">
+                                    <i class="fas fa-align-left text-muted"></i> Descripción:
+                                </label>
+                                <div class="info-value">
+                                    <?= nl2br(htmlspecialchars($producto['producto_descripcion'])) ?>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <hr>
-                    
-                    <div>
-                        <h6 class="text-primary">Descripción</h6>
-                        <p class="text-justify"><?= nl2br(htmlspecialchars($producto['producto_descripcion'])) ?></p>
+                    <br>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="info-label">
+                                    <i class="fas fa-list text-muted"></i> Categoría:
+                                </label>
+                                <div class="info-value">
+                                    <?= htmlspecialchars($producto['categoria_descripcion'] ?? 'No especificada') ?>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="info-label">
+                                    <i class="fas fa-trademark text-muted"></i> Marca:
+                                </label>
+                                <div class="info-value">
+                                    <?= htmlspecialchars($producto['marca_descripcion'] ?? 'No especificada') ?>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+                <!-- Características -->
+                <div class="card-body">
+                    <div class="row">
+                        <div class="text-center">
+                            <i class="fas fa-boxes fa-2x text-primary"></i>
+                            <?= $producto['producto_stock'] ?> En Stock
+                        </div>
+                        <div class="ml-4 text-center">
+                            <i class="fas fa-dollar-sign fa-2x text-success"></i>
+                            $<?= number_format($producto['producto_precio'], 2) ?> c/Unidad
+                        </div>
+                    </div>
+                </div>
+                <!-- Foto -->
+                <?php if (!empty($producto['producto_foto']) && $producto['producto_foto'] !== 'default.jpg'): ?>
+                    <div class="card-body text-center">
+                        <img src="<?= url('/imagenes/productos/' . $producto['producto_foto']) ?>"
+                            alt="Foto de <?= htmlspecialchars($producto['producto_nombre']) ?>"
+                            class="img-fluid rounded shadow-sm" style="max-height: 400px;">
+                    </div>
+                <?php endif; ?>
             </div>
-
-            <!-- Estadísticas de consumos -->
-            <?php if (isset($estadisticas['consumos'])): ?>
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">
-                            <i class="fas fa-chart-line mr-2"></i>
-                            Estadísticas de Ventas
-                        </h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="row text-center">
-                            <div class="col-md-4">
-                                <div class="card border-primary">
-                                    <div class="card-body">
-                                        <i class="fas fa-shopping-cart fa-2x text-primary mb-2"></i>
-                                        <h5 class="text-primary"><?= number_format($estadisticas['consumos']['total_consumos']) ?></h5>
-                                        <p class="card-text">Total Ventas</p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-4">
-                                <div class="card border-info">
-                                    <div class="card-body">
-                                        <i class="fas fa-boxes fa-2x text-info mb-2"></i>
-                                        <h5 class="text-info"><?= number_format($estadisticas['consumos']['cantidad_vendida']) ?></h5>
-                                        <p class="card-text">Unidades Vendidas</p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-4">
-                                <div class="card border-success">
-                                    <div class="card-body">
-                                        <i class="fas fa-dollar-sign fa-2x text-success mb-2"></i>
-                                        <h5 class="text-success">$<?= number_format($estadisticas['consumos']['ingresos_total'], 2) ?></h5>
-                                        <p class="card-text">Ingresos Totales</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            <?php endif; ?>
         </div>
 
-        <!-- Panel lateral de acciones -->
+        <!-- Panel lateral -->
         <div class="col-lg-4">
-            <!-- Acciones rápidas -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">
-                        <i class="fas fa-cogs mr-2"></i>
-                        Acciones Rápidas
+            <!-- Estadísticas rápidas -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-chart-bar"></i> Estadísticas
                     </h6>
                 </div>
                 <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a href="<?= url('/productos/' . $producto['id_producto'] . '/edit') ?>" 
-                           class="btn btn-warning btn-block">
-                            <i class="fas fa-edit mr-2"></i>
-                            Editar Producto
-                        </a>
-                        
-                        <?php if ($producto['rela_estadoproducto'] != 4): ?>
-                            <button type="button" 
-                                    class="btn btn-danger btn-block" 
-                                    onclick="cambiarEstado(<?= $producto['id_producto'] ?>, 4, 'dar de baja')">
-                                <i class="fas fa-times mr-2"></i>
-                                Dar de Baja
-                            </button>
-                        <?php else: ?>
-                            <button type="button" 
-                                    class="btn btn-success btn-block" 
-                                    onclick="cambiarEstado(<?= $producto['id_producto'] ?>, 1, 'reactivar')">
-                                <i class="fas fa-check mr-2"></i>
-                                Reactivar Producto
-                            </button>
-                        <?php endif; ?>
-                        
-                        <hr>
-                        
-                        <a href="<?= url('/productos') ?>" class="btn btn-secondary btn-block">
-                            <i class="fas fa-list mr-2"></i>
-                            Ver Todos los Productos
-                        </a>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="metric-box">
+                                <div class="metric-value text-primary"><?= number_format($estadisticas['consumos']['total_consumos'] ?? 0) ?></div>
+                                <div class="metric-label">Ventas totales</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="metric-box">
+                                <div class="metric-value text-success"><?= number_format($estadisticas['consumos']['cantidad_vendida'] ?? 0) ?></div>
+                                <div class="metric-label">Unidades vendidas</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="row text-center">
+                        <div class="col-12">
+                            <div class="metric-box">
+                                <div class="metric-value text-warning">$<?= number_format($estadisticas['consumos']['ingresos_total'] ?? 0, 2) ?></div>
+                                <div class="metric-label">Ingresos totales</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Información adicional -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">
-                        <i class="fas fa-info mr-2"></i>
-                        Información Técnica
+            <!-- Acciones adicionales -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-cogs"></i> Acciones Rápidas
                     </h6>
                 </div>
                 <div class="card-body">
-                    <table class="table table-sm table-borderless mb-0">
-                        <tr>
-                            <td><strong>ID Producto:</strong></td>
-                            <td><?= $producto['id_producto'] ?></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Categoría ID:</strong></td>
-                            <td><?= $producto['rela_categoria'] ?></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Marca ID:</strong></td>
-                            <td><?= $producto['rela_marca'] ?></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Estado ID:</strong></td>
-                            <td><?= $producto['rela_estadoproducto'] ?></td>
-                        </tr>
-                    </table>
+                    <div class="btn-group-vertical w-100">
+                        <a href="<?= url('/productos/' . $producto['id_producto'] . '/edit') ?>"
+                           class="btn btn-outline-warning mb-2">
+                            <i class="fas fa-edit"></i> Editar Producto
+                        </a>
+                        <?php if (!empty($producto['producto_foto']) && $producto['producto_foto'] !== 'default.jpg'): ?>
+                            <a href="<?= url('/imagenes/productos/' . $producto['producto_foto']) ?>"
+                                target="_blank" class="btn btn-outline-secondary mb-2">
+                                <i class="fas fa-eye"></i> Ver Imagen Completa
+                            </a>
+                        <?php endif; ?>
+                        <a href="<?= url('/productos') ?>" class="btn btn-outline-primary">
+                            <i class="fas fa-list"></i> Ver Todos los Productos
+                        </a>
+                    </div>
                 </div>
             </div>
-
-            <!-- Alertas de inventario -->
-            <?php if ($producto['producto_stock'] <= 5): ?>
-                <div class="card shadow mb-4 border-warning">
-                    <div class="card-header bg-warning py-3">
-                        <h6 class="m-0 font-weight-bold text-white">
-                            <i class="fas fa-exclamation-triangle mr-2"></i>
-                            Alerta de Inventario
-                        </h6>
-                    </div>
-                    <div class="card-body">
-                        <?php if ($producto['producto_stock'] <= 0): ?>
-                            <div class="alert alert-danger mb-0">
-                                <strong>Sin Stock:</strong> Este producto no tiene unidades disponibles.
-                            </div>
-                        <?php else: ?>
-                            <div class="alert alert-warning mb-0">
-                                <strong>Stock Bajo:</strong> Quedan solo <?= $producto['producto_stock'] ?> unidades disponibles.
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            <?php endif; ?>
         </div>
     </div>
 </div>
 
 <script>
 // Función para cambiar estado
-function cambiarEstado(id, nuevoEstado, accion) {
+function cambiarEstadoProducto(id, nuevoEstado, accion) {
     Swal.fire({
         title: '¿Está seguro?',
         text: `¿Desea ${accion} este producto?`,
@@ -272,7 +256,7 @@ function cambiarEstado(id, nuevoEstado, accion) {
         cancelButtonText: 'Cancelar'
     }).then((result) => {
         if (result.isConfirmed) {
-            fetch('<?= url('/productos/') ?>' + id + '/cambiar-estado', {
+            fetch('<?= url('/productos/') ?>' + id + '/estado', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -297,13 +281,144 @@ function cambiarEstado(id, nuevoEstado, accion) {
 }
 </script>
 
-<?php
-// Función auxiliar para clases de badges de stock
-function getStockBadgeClass($stock) {
-    if ($stock <= 0) return 'badge-danger';
-    if ($stock <= 10) return 'badge-warning';
-    return 'badge-success';
+<!-- JavaScript para funcionalidades -->
+<script>
+function cambiarEstadoProducto(id, nuevoEstado, nombre) {
+    let accion, mensaje, color;
+    
+    switch(nuevoEstado) {
+        case 1:
+            accion = 'activar';
+            mensaje = 'El producto estará disponible para la venta';
+            color = '#28a745';
+            break;
+        case 4:
+            accion = 'dar de baja';
+            mensaje = 'El producto ya no estará disponible para la venta';
+            color = '#dc3545';
+            break;
+        default:
+            accion = 'cambiar estado de';
+            mensaje = 'Se cambiará el estado del producto';
+            color = '#007bff';
+    }
+
+    Swal.fire({
+        title: '¿Está seguro?',
+        html: `¿Desea <strong>${accion}</strong> el producto "<em>${nombre}</em>"?<br><small class="text-muted">${mensaje}</small>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: color,
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: `Sí, ${accion}`,
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true,
+        focusConfirm: false,
+        focusCancel: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Mostrar loading
+            Swal.fire({
+                title: 'Procesando...',
+                html: 'Actualizando estado del producto',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // Realizar petición AJAX
+            fetch(`<?= url('/productos/') ?>${id}/estado`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: `estado=${nuevoEstado}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: '¡Éxito!',
+                        text: data.message,
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        // Recargar la página para mostrar los cambios
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Error',
+                        text: data.message || 'No se pudo actualizar el estado del producto',
+                        icon: 'error',
+                        confirmButtonText: 'Entendido'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    title: 'Error de conexión',
+                    text: 'No se pudo conectar con el servidor. Verifique su conexión a internet.',
+                    icon: 'error',
+                    confirmButtonText: 'Entendido'
+                });
+            });
+        }
+    });
+}
+</script>
+
+<style>
+/* Estilos personalizados siguiendo el patrón de cabañas */
+.info-group {
+    margin-bottom: 0.75rem;
 }
 
-$this->endSection();
-?>
+.info-group .info-label {
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 0.25rem;
+    display: block;
+}
+
+.info-group .info-value {
+    color: #212529;
+    margin-left: 1.5rem;
+}
+
+.metric-box {
+    padding: 0.5rem;
+}
+
+.metric-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+}
+
+.metric-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.card-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.badge-lg {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+}
+
+.btn-group-vertical .btn {
+    border-radius: 0.25rem !important;
+}
+</style>

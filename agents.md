@@ -62,9 +62,16 @@ Para cada entidad XXXX, se deben generar los siguientes archivos siguiendo la es
 - **Tabla responsiva** con datos formateados
 - **Badges de estado** con colores semánticos
 - **Botones de acción** (Ver, Editar, Cambiar Estado)
-- **Paginación** con información de registros
+- **Paginación dual** (superior e inferior idénticas)
 - **Exportación** (Excel y PDF)
 - **Estado vacío** cuando no hay registros
+
+#### ⚠️ CRÍTICO - Compatibilidad Bootstrap:
+**SIEMPRE verificar versión de Bootstrap antes de implementar:**
+- El proyecto usa **Bootstrap 4** (NO Bootstrap 5)
+- Clases específicas: `custom-file-input`, `custom-file-label`, `card-header`, `table-light`
+- **Nunca usar** clases de Bootstrap 5: `form-select`, `btn-close`, etc.
+- **Validar siempre** en navegador antes de finalizar
 
 #### Filtros estándar:
 ```php
@@ -78,7 +85,7 @@ $filters = [
 
 #### Paginación:
 - Registros por página: 5, 10, 25, 50 (por defecto 10)
-- Información: "Mostrando X a Y de Z entradas"
+- Información: "Mostrando X a Y de Z registros"
 - Navegación: Anterior/Siguiente + números de página
 
 #### Exportación:
@@ -248,6 +255,82 @@ public function getWithDetails($page = 1, $perPage = 10, $filters = [])
 - Validación: Tipos MIME, tamaño máximo
 - Vista previa: Mostrar imagen actual y nueva
 - Gestión: Crear directorio si no existe, eliminar archivo anterior
+
+## ⚠️ CRÍTICO - Manejo de Imágenes
+
+### Principio Fundamental
+**SIEMPRE seguir exactamente el patrón del módulo Cabañas para el manejo de imágenes. NO crear métodos auxiliares complejos.**
+
+### Implementación Obligatoria
+
+#### En el método `store()` (Crear):
+```php
+// Manejar subida de foto
+$entidad_foto = null;
+if (isset($_FILES['entidad_foto']) && $_FILES['entidad_foto']['error'] == 0) {
+    $target_dir = "imagenes/entidades/";
+    if (!file_exists($target_dir)) {
+        mkdir($target_dir, 0777, true);
+    }
+    
+    $file_extension = strtolower(pathinfo($_FILES["entidad_foto"]["name"], PATHINFO_EXTENSION));
+    $new_filename = uniqid() . '.' . $file_extension;
+    $target_file = $target_dir . $new_filename;
+    
+    if (move_uploaded_file($_FILES["entidad_foto"]["tmp_name"], $target_file)) {
+        $entidad_foto = $new_filename;
+    }
+}
+
+if ($entidad_foto) {
+    $data['entidad_foto'] = $entidad_foto;
+} else {
+    $data['entidad_foto'] = 'default.jpg'; // Solo si aplica
+}
+```
+
+#### En el método `update()` (Editar):
+```php
+// Manejar subida de foto
+$entidad_foto = $entidad['entidad_foto']; // Mantener foto actual por defecto
+if (isset($_FILES['entidad_foto']) && $_FILES['entidad_foto']['error'] == 0) {
+    $target_dir = "imagenes/entidades/";
+    if (!file_exists($target_dir)) {
+        mkdir($target_dir, 0777, true);
+    }
+    
+    $file_extension = strtolower(pathinfo($_FILES["entidad_foto"]["name"], PATHINFO_EXTENSION));
+    $new_filename = uniqid() . '.' . $file_extension;
+    $target_file = $target_dir . $new_filename;
+    
+    if (move_uploaded_file($_FILES["entidad_foto"]["tmp_name"], $target_file)) {
+        // Eliminar foto anterior si existe
+        if ($entidad['entidad_foto'] && file_exists($target_dir . $entidad['entidad_foto'])) {
+            unlink($target_dir . $entidad['entidad_foto']);
+        }
+        $entidad_foto = $new_filename;
+    }
+}
+
+if ($entidad_foto) {
+    $data['entidad_foto'] = $entidad_foto;
+}
+```
+
+### Características del Patrón:
+- ✅ **Manejo directo**: Sin métodos auxiliares complicados
+- ✅ **Nombres únicos**: `uniqid()` + extensión original
+- ✅ **Directorios automáticos**: `mkdir()` si no existe
+- ✅ **Limpieza automática**: `unlink()` de archivos anteriores
+- ✅ **Rutas relativas**: `imagenes/entidades/` desde root
+- ✅ **Validación simple**: Solo `$_FILES['error'] == 0`
+
+### ❌ Patrones Prohibidos:
+- Métodos como `handleImageUpload()` con arrays de retorno
+- Validaciones complejas de MIME types en el controlador
+- Rutas absolutas o con `../` 
+- Arrays de configuración para directorios
+- Validación de tamaño en PHP (usar HTML5)
 
 ## Estados y Workflows
 
@@ -582,7 +665,7 @@ $renderPagination = function($showInfo = true) use ($pagination, $start, $end) {
             <!-- INFORMACIÓN DE REGISTROS (siempre visible) -->
             <div class="col-sm-6">
                 <span class="text-muted small">
-                    Mostrando <?= $start ?> a <?= $end ?> de <?= $pagination['total'] ?> entradas
+                    Mostrando <?= $start ?> a <?= $end ?> de <?= $pagination['total'] ?> registros
                 </span>
             </div>
         <?php endif; ?>
@@ -665,17 +748,17 @@ $end = min($pagination['current_page'] * $perPage, $pagination['total']);
 ### Comportamiento por Casos de Uso
 
 #### **Caso 1: Una Sola Página (1-10 registros)**
-- ✅ **Información visible:** "Mostrando 1 a 8 de 8 entradas"
+- ✅ **Información visible:** "Mostrando 1 a 8 de 8 registros"
 - ❌ **Sin navegación:** No muestra botones de página
 - 🎯 **UX:** Interfaz limpia sin elementos innecesarios
 
 #### **Caso 2: Múltiples Páginas (11+ registros)**
-- ✅ **Información completa:** "Mostrando 11 a 20 de 45 entradas"
+- ✅ **Información completa:** "Mostrando 11 a 20 de 45 registros"
 - ✅ **Navegación completa:** Botones Anterior/Siguiente + números de página
 - ✅ **Página actual destacada:** Fondo azul (`bg-primary text-white border-primary`)
 - ✅ **Navegación inteligente:** Elipsis (...) cuando hay muchas páginas
 
-#### **Caso 3: Sin Registros (0 entradas)**
+#### **Caso 3: Sin Registros (0 registros)**
 - ✅ **Estado vacío:** Mensaje contextual con CTA para crear registro
 - ❌ **Sin paginación:** No muestra información ni navegación
 
@@ -943,5 +1026,140 @@ Crear `test_rutas_[entidad].php` para verificar configuración:
 
 ---
 
+## 🔧 Problemas Comunes y Soluciones (Lecciones Aprendidas)
+
+### 1. **Error "Producto no encontrado" en Exportaciones**
+
+**Síntoma:** Exportaciones fallan con mensaje "No hay datos para exportar"
+**Causa:** Rutas `/exportar` y `/exportar-pdf` no definidas en `Application.php`
+**Solución:**
+```php
+// Añadir ANTES de las rutas con parámetros
+$this->router->get('/entidad/exportar', 'EntidadController@exportar');
+$this->router->get('/entidad/exportar-pdf', 'EntidadController@exportarPdf');
+```
+
+### 2. **Problemas de Compatibilidad Bootstrap 4 vs 5**
+
+**Síntoma:** Elementos no se muestran correctamente, estilos rotos
+**Causa:** Uso de clases de Bootstrap 5 en proyecto Bootstrap 4
+**Solución Crítica:**
+- ✅ **Bootstrap 4**: `custom-file-input`, `custom-file-label`, `card-header`
+- ❌ **Bootstrap 5**: `form-select`, `btn-close`, `form-floating`
+- **VALIDAR SIEMPRE** en navegador antes de finalizar
+
+### 3. **Funcionalidad de Imágenes No Funciona**
+
+**Síntoma:** Imágenes no se guardan, errores en `handleImageUpload()`
+**Causa:** Métodos auxiliares complejos en lugar del patrón directo de Cabañas
+**Solución Obligatoria:**
+- ❌ **NO usar** `handleImageUpload()` con arrays de retorno
+- ✅ **SÍ usar** manejo directo como en CabañasController
+- ✅ Código directo en `store()` y `update()`
+
+### 4. **Paginación Inconsistente**
+
+**Síntoma:** Paginación solo arriba o abajo, información faltante
+**Causa:** No seguir patrón dual idéntico
+**Solución:**
+- ✅ Paginación **superior e inferior IDÉNTICAS**
+- ✅ Información **siempre visible** (incluso con 1 página)
+- ✅ Sin navegación cuando hay una sola página
+
+### 5. **Títulos Duplicados en Vistas**
+
+**Síntoma:** Títulos aparecen dos veces en la interfaz
+**Causa:** Header duplicado en vista de detalle
+**Solución:**
+- ✅ Un solo `<h1>` por vista
+- ✅ Verificar estructura de headers vs breadcrumbs
+
+### 6. **JavaScript/AJAX No Funciona**
+
+**Síntoma:** Botones de estado, exportaciones no responden
+**Causa:** URLs incorrectas, rutas no definidas
+**Solución:**
+- ✅ URLs en JavaScript deben coincidir con rutas de `Application.php`
+- ✅ Verificar métodos POST para AJAX
+- ✅ Usar `<?= url('/ruta') ?>` para consistencia
+
+### 7. **Campos de Formulario No Validados**
+
+**Síntoma:** Formulario acepta datos vacíos o incorrectos
+**Causa:** Falta validación HTML5 y backend
+**Solución:**
+- ✅ Atributos `required`, `maxlength`, `min`, `max` en HTML
+- ✅ Validación en métodos `store()` y `update()`
+- ✅ Mensajes de error específicos con `redirect()`
+
+## 📋 Checklist de Finalización de CRUD
+
+**Antes de considerar terminado cualquier CRUD, verificar:**
+
+### **Arquitectura y Estructura**
+- [ ] ✅ **Controlador** implementa todos los métodos obligatorios
+- [ ] ✅ **Modelo** tiene `getWithDetails()` y `getAllWithDetailsForExport()`
+- [ ] ✅ **Vistas** incluyen `listado.php`, `formulario.php`, `detalle.php`
+- [ ] ✅ **Rutas** definidas correctamente en `Application.php`
+
+### **Funcionalidad Core**
+- [ ] ✅ **CRUD básico** funciona (crear, leer, actualizar, eliminar)
+- [ ] ✅ **Filtros** aplican correctamente en listado
+- [ ] ✅ **Paginación** funciona con información completa
+- [ ] ✅ **Exportaciones** (Excel y PDF) descargan correctamente
+- [ ] ✅ **Estados** cambian via AJAX con confirmación
+
+### **Consistencia Visual**
+- [ ] ✅ **Bootstrap 4** clases correctas (NO Bootstrap 5)
+- [ ] ✅ **Diseño** idéntico al módulo Cabañas
+- [ ] ✅ **Iconografía** contextual y apropiada
+- [ ] ✅ **Badges** con colores semánticos correctos
+- [ ] ✅ **Responsive** funciona en móvil y desktop
+
+### **Manejo de Imágenes**
+- [ ] ✅ **Subida** funciona en crear y editar
+- [ ] ✅ **Eliminación** automática de archivos anteriores
+- [ ] ✅ **Vista previa** se muestra correctamente
+- [ ] ✅ **Directorio** se crea automáticamente
+- [ ] ✅ **Nombres únicos** con `uniqid()`
+
+### **Validaciones y Seguridad**
+- [ ] ✅ **Permisos** verificados con `requirePermission()`
+- [ ] ✅ **Validación HTML5** en formularios
+- [ ] ✅ **Sanitización** de datos con `htmlspecialchars()`
+- [ ] ✅ **SQL seguro** con parámetros preparados
+- [ ] ✅ **Manejo errores** con try-catch en exportaciones
+
+### **Experiencia de Usuario**
+- [ ] ✅ **Mensajes** apropiados para todas las acciones
+- [ ] ✅ **Confirmaciones** para acciones destructivas
+- [ ] ✅ **Estado vacío** cuando no hay registros
+- [ ] ✅ **Navegación** intuitiva entre vistas
+- [ ] ✅ **Rendimiento** aceptable en listados grandes
+
+---
+
+## 🎯 Metodología de Contraste con Cabañas
+
+### Proceso Obligatorio
+
+**ANTES de implementar cualquier componente:**
+
+1. **Leer y analizar** el archivo correspondiente en Cabañas
+2. **Identificar patrones** específicos y estructuras clave  
+3. **Adaptar inteligentemente** a la nueva entidad
+4. **Generar código** manteniendo consistencia 100%
+5. **Revisar diferencias** y corregir desviaciones
+
+### Criterios de Calidad por Similitud
+
+- **Consistencia Visual**: 90% similitud con Cabañas
+- **Consistencia Funcional**: 100% similitud con Cabañas  
+- **Consistencia de Código**: 100% similitud con Cabañas
+
+**NUNCA generar código sin haber consultado primero la referencia de Cabañas.**
+
+---
+
 *Documento generado a partir del análisis del módulo Cabañas - Proyecto Sistema de Gestión de Cabañas*
-*Actualizado con Especificaciones de Paginación Optimizada y Enrutamiento - Noviembre 2025*
+*Actualizado con Lecciones Aprendidas y Checklist de Finalización - Noviembre 2025*
