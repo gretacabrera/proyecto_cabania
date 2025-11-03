@@ -1,54 +1,42 @@
 <?php
-// Mostrar mensajes del sistema modernos
+// Convertir mensajes del sistema a nuestro nuevo sistema JavaScript minimalista
 if (isset($_GET['mensaje']) && isset($_GET['tipo'])):
     $tipo = $_GET['tipo'];
     $mensaje = $_GET['mensaje'];
     
-    // Configurar iconos y clases según el tipo
-    $config = [
-        'exito' => [
-            'clase' => 'alert-success',
-            'icono' => 'fas fa-check-circle',
-            'color' => 'success'
-        ],
-        'error' => [
-            'clase' => 'alert-danger',
-            'icono' => 'fas fa-exclamation-triangle',
-            'color' => 'danger'
-        ],
-        'warning' => [
-            'clase' => 'alert-warning',
-            'icono' => 'fas fa-exclamation-circle',
-            'color' => 'warning'
-        ],
-        'info' => [
-            'clase' => 'alert-info',
-            'icono' => 'fas fa-info-circle',
-            'color' => 'info'
-        ]
+    // Mapear tipos del sistema a nuestros tipos JavaScript
+    $tipoMapping = [
+        'exito' => 'success',
+        'error' => 'error', 
+        'warning' => 'warning',
+        'info' => 'info',
+        'aviso' => 'warning'
     ];
     
-    $alertConfig = $config[$tipo] ?? $config['info'];
-?>
-    <div class="modern-alert alert <?= $alertConfig['clase'] ?> alert-dismissible fade show" 
-         id="mensaje-global" 
-         role="alert">
-        <div class="alert-content">
-            <div class="alert-icon">
-                <i class="<?= $alertConfig['icono'] ?>"></i>
-            </div>
-            <div class="alert-message">
-                <strong><?= ucfirst($tipo === 'exito' ? 'Éxito' : ($tipo === 'error' ? 'Error' : ucfirst($tipo))) ?>:</strong>
-                <?= e($mensaje) ?>
-            </div>
-            <button type="button" class="alert-close" onclick="cerrarMensaje()" aria-label="Cerrar">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="alert-progress">
-            <div class="progress-bar" id="progress-bar"></div>
-        </div>
-    </div>
+    $tipoJS = $tipoMapping[$tipo] ?? 'info';
+    $tituloMapping = [
+        'exito' => 'Operación exitosa',
+        'error' => 'Error',
+        'warning' => 'Advertencia', 
+        'info' => 'Información',
+        'aviso' => 'Aviso'
+    ];
     
-
+    $titulo = $tituloMapping[$tipo] ?? 'Información';
+?>
+    <script>
+        // Mostrar mensaje automáticamente cuando la página cargue
+        document.addEventListener('DOMContentLoaded', function() {
+            // Pequeña espera para que el sistema de mensajes esté listo
+            setTimeout(function() {
+                if (typeof window.showMessage === 'function') {
+                    // Usar directamente el mensaje como título, sin texto secundario
+                    window.showMessage('<?= $tipoJS ?>', '<?= addslashes($mensaje) ?>', '');
+                } else {
+                    // Fallback si el sistema no está listo
+                    console.log('Sistema de mensajes no disponible, mensaje: <?= addslashes($mensaje) ?>');
+                }
+            }, 100);
+        });
+    </script>
 <?php endif; ?>

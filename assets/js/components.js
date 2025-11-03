@@ -1,6 +1,37 @@
 /**
  * Components JavaScript - Casa de Palos Cabañas
  * JavaScript para componentes reutilizables
+ * 
+ * SISTEMA DE MENSAJES SUTILES
+ * ===========================
+ * 
+ * Uso básico:
+ * window.showMessage(type, title, text, permanent?)
+ * 
+ * Tipos disponibles:
+ * - success: Operaciones exitosas
+ * - error: Errores y problemas
+ * - warning: Advertencias
+ * - info: Información general
+ * - loading: Procesos en curso
+ * - upload/download: Transferencias de archivos
+ * - save/delete/edit: Operaciones CRUD
+ * 
+ * Funciones de conveniencia:
+ * - window.showSuccess(title, text)
+ * - window.showError(title, text)
+ * - window.showWarning(title, text)
+ * - window.showInfo(title, text)
+ * - window.showSaveSuccess(entityName?)
+ * - window.showDeleteSuccess(entityName?)
+ * - window.showLoadingMessage(action?)
+ * - window.clearAllMessages()
+ * 
+ * Ejemplos:
+ * window.showSuccess('Producto guardado', 'El producto se registró correctamente');
+ * window.showError('Error de validación', 'Revisa los campos obligatorios');
+ * window.showLoadingMessage('guardando datos');
+ * window.showMessage('upload', 'Subiendo archivo...', 'Por favor espera', true);
  */
 
 // ===========================================
@@ -39,44 +70,68 @@ class MessageSystem {
     }
 
     hideMessage(messageElement) {
+        // Animación de salida simple
         messageElement.style.opacity = '0';
-        messageElement.style.transform = 'translateY(-10px)';
         
+        // Remover elemento del DOM
         setTimeout(() => {
             if (messageElement.parentNode) {
                 messageElement.parentNode.removeChild(messageElement);
             }
-        }, 300);
+        }, 200);
     }
 
     showMessage(type, title, text, permanent = false) {
+        // Crear contenedor de mensajes si no existe
+        let container = document.querySelector('.messages-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'messages-container';
+            document.body.appendChild(container);
+        }
+
+        // Usar el título para mostrar el mensaje principal
+        const displayText = title;
+        
         const messageHTML = `
-            <div class="message ${type} ${permanent ? 'permanent' : ''}" style="opacity: 0; transform: translateY(-10px);">
-                <div class="message-icon">
+            <div class="subtle-message ${type} ${permanent ? 'permanent' : ''}" style="opacity: 0;">
+                <div class="subtle-message-icon">
                     <i class="fas ${this.getMessageIcon(type)}"></i>
                 </div>
-                <div class="message-content">
-                    <div class="message-title">${title}</div>
-                    <div class="message-text">${text}</div>
+                <div class="subtle-message-content">
+                    <div class="subtle-message-title">${displayText}</div>
                 </div>
-                ${!permanent ? '<button class="message-close">&times;</button>' : ''}
+                <div class="subtle-message-progress ${permanent ? 'hidden' : ''}"></div>
+                ${!permanent ? '<button class="subtle-message-close" aria-label="Cerrar mensaje"><i class="fas fa-times"></i></button>' : ''}
             </div>
         `;
 
-        const container = document.querySelector('.messages-container') || document.body;
         const messageElement = document.createElement('div');
         messageElement.innerHTML = messageHTML;
         const message = messageElement.firstElementChild;
         
         container.appendChild(message);
         
-        // Trigger animation
+        // Configurar evento de cierre
+        const closeBtn = message.querySelector('.subtle-message-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => this.hideMessage(message));
+        }
+
+        // Animación de entrada
         setTimeout(() => {
             message.style.opacity = '1';
-            message.style.transform = 'translateY(0)';
         }, 50);
 
         if (!permanent) {
+            // Animación de barra de progreso
+            const progressBar = message.querySelector('.subtle-message-progress');
+            if (progressBar) {
+                setTimeout(() => {
+                    progressBar.style.width = '0%';
+                }, 100);
+            }
+
             setTimeout(() => {
                 this.hideMessage(message);
             }, 5000);
@@ -88,9 +143,17 @@ class MessageSystem {
     getMessageIcon(type) {
         const icons = {
             'success': 'fa-check-circle',
-            'error': 'fa-times-circle',
+            'error': 'fa-times-circle', 
             'warning': 'fa-exclamation-triangle',
-            'info': 'fa-info-circle'
+            'info': 'fa-info-circle',
+            // Iconos adicionales para casos específicos
+            'loading': 'fa-spinner fa-spin',
+            'upload': 'fa-cloud-upload-alt',
+            'download': 'fa-cloud-download-alt',
+            'save': 'fa-save',
+            'delete': 'fa-trash-alt',
+            'edit': 'fa-edit',
+            'notification': 'fa-bell'
         };
         return icons[type] || 'fa-info-circle';
     }
@@ -540,6 +603,53 @@ document.addEventListener('DOMContentLoaded', function() {
             window.loadingManager.hideButtonLoading(button);
         } else {
             window.loadingManager.hidePageLoading();
+        }
+    };
+
+    // ===========================================
+    // UTILIDADES ADICIONALES PARA MENSAJES
+    // ===========================================
+
+    // Funciones de conveniencia para mensajes comunes
+    window.showSuccess = function(title, text, permanent = false) {
+        return window.showMessage('success', title, text, permanent);
+    };
+
+    window.showError = function(title, text, permanent = false) {
+        return window.showMessage('error', title, text, permanent);
+    };
+
+    window.showWarning = function(title, text, permanent = false) {
+        return window.showMessage('warning', title, text, permanent);
+    };
+
+    window.showInfo = function(title, text, permanent = false) {
+        return window.showMessage('info', title, text, permanent);
+    };
+
+    // Funciones para casos específicos
+    window.showSaveSuccess = function(entityName = 'registro') {
+        return window.showMessage('save', 'Guardado exitoso', `El ${entityName} se ha guardado correctamente`);
+    };
+
+    window.showDeleteSuccess = function(entityName = 'registro') {
+        return window.showMessage('delete', 'Eliminación exitosa', `El ${entityName} se ha eliminado correctamente`);
+    };
+
+    window.showLoadingMessage = function(action = 'procesando') {
+        return window.showMessage('loading', 'Procesando...', `Por favor espere mientras se está ${action}`, true);
+    };
+
+    // Función para limpiar todos los mensajes
+    window.clearAllMessages = function() {
+        const container = document.querySelector('.messages-container');
+        if (container) {
+            const messages = container.querySelectorAll('.subtle-message');
+            messages.forEach(message => {
+                if (window.messageSystem) {
+                    window.messageSystem.hideMessage(message);
+                }
+            });
         }
     };
 

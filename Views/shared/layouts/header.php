@@ -12,7 +12,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     
     <!-- Estilos CSS Centralizados -->
-    <link href="<?= $this->asset('assets/css/main.css') ?>" rel="stylesheet">
+    <link href="<?= $this->asset('assets/css/main.css?v=' . time()) ?>" rel="stylesheet">
     <link href="<?= $this->asset('assets/css/components.css') ?>" rel="stylesheet">
     <link href="<?= $this->asset('assets/css/forms.css') ?>" rel="stylesheet">
     <link href="<?= $this->asset('assets/css/admin.css') ?>" rel="stylesheet">
@@ -26,7 +26,7 @@
     
     <!-- JavaScript Centralizado -->
     <script src="<?= $this->asset('assets/js/main.js') ?>"></script>
-    <script src="<?= $this->asset('assets/js/components.js') ?>"></script>
+    <script src="<?= $this->asset('assets/js/components.js?v=' . time()) ?>"></script>
     <script src="<?= $this->asset('assets/js/forms.js') ?>"></script>
     <script src="<?= $this->asset('assets/js/admin.js') ?>"></script>
 </head>

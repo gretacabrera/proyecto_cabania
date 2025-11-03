@@ -178,13 +178,13 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (!descripcionVal) {
                 e.preventDefault();
-                Swal.fire('Error', 'La descripción es obligatoria', 'error');
+                SwalPresets.warning('Campo requerido', 'La descripción es obligatoria');
                 return false;
             }
             
             if (descripcionVal.length > 255) {
                 e.preventDefault();
-                Swal.fire('Error', 'La descripción no puede exceder 255 caracteres', 'error');
+                SwalPresets.warning('Descripción muy larga', 'La descripción no puede exceder 255 caracteres');
                 return false;
             }
         });
@@ -192,15 +192,10 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function limpiarFormulario() {
-    Swal.fire({
-        title: '¿Limpiar formulario?',
-        text: 'Se perderán todos los datos ingresados',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Sí, limpiar',
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
+    SwalPresets.confirm(
+        '¿Limpiar formulario?',
+        'Se perderán todos los datos ingresados',
+        () => {
             document.getElementById('formCondicionSalud').reset();
             const charCount = document.getElementById('charCount');
             if (charCount) {
@@ -208,7 +203,10 @@ function limpiarFormulario() {
                 charCount.classList.remove('text-danger');
                 charCount.classList.add('text-muted');
             }
+            
+            // Toast sutil de confirmación
+            SwalPresets.toast('Formulario limpiado', 'info', 2000);
         }
-    });
+    );
 }
 </script>

@@ -120,7 +120,7 @@ class AdminDashboard {
         setTimeout(() => {
             this.animateStatCards();
             window.hideLoading();
-            window.showMessage('success', 'Dashboard actualizado', 'Los datos se han actualizado correctamente');
+            window.showSuccess('Dashboard actualizado', 'Los datos se han actualizado correctamente');
         }, 1000);
     }
 
@@ -290,7 +290,7 @@ class AdminTables {
                 const selectedRows = Array.from(this.tables.get(table).selectedRows);
                 
                 if (selectedRows.length === 0) {
-                    window.showMessage('warning', 'Sin selección', 'Selecciona al menos un elemento');
+                    window.showWarning('Sin selección', 'Selecciona al menos un elemento');
                     return;
                 }
 
@@ -310,7 +310,7 @@ class AdminTables {
             // Aquí iría la llamada AJAX para ejecutar la acción
             console.log(`Ejecutando acción masiva: ${action}`, ids);
             
-            window.showMessage('success', 'Acción completada', `Se han procesado ${ids.length} elementos`);
+            window.showSuccess('Acción completada', `Se han procesado ${ids.length} elementos`);
             
             // Recargar la tabla o eliminar filas localmente según la acción
             if (action === 'delete') {
@@ -533,11 +533,11 @@ class AdminReports {
             link.click();
             document.body.removeChild(link);
             
-            window.showMessage('success', 'Exportación completada', 'El reporte se ha descargado correctamente');
+            window.showMessage('download', 'Exportación completada', 'El reporte se ha descargado correctamente');
             
         } catch (error) {
             console.error('Error exporting report:', error);
-            window.showMessage('error', 'Error de exportación', 'No se pudo generar el reporte');
+            window.showError('Error de exportación', 'No se pudo generar el reporte');
         } finally {
             window.hideLoading();
         }

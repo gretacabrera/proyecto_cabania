@@ -165,15 +165,22 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 /**
- * Limpiar formulario
+ * Limpiar formulario con confirmación sutil
  */
 function limpiarFormulario() {
-    if (confirm('¿Está seguro que desea limpiar todos los campos del formulario?')) {
-        document.getElementById('formCategoria').reset();
-        document.getElementById('contadorDescripcion').textContent = '0';
-        document.getElementById('formCategoria').classList.remove('was-validated');
-        document.getElementById('categoria_descripcion').focus();
-    }
+    SwalPresets.confirm(
+        '¿Limpiar formulario?',
+        'Se perderán todos los datos ingresados',
+        () => {
+            document.getElementById('formCategoria').reset();
+            document.getElementById('contadorDescripcion').textContent = '0';
+            document.getElementById('formCategoria').classList.remove('was-validated');
+            document.getElementById('categoria_descripcion').focus();
+            
+            // Toast sutil de confirmación
+            SwalPresets.toast('Formulario limpiado', 'info', 2000);
+        }
+    );
 }
 </script>
 

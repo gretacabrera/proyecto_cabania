@@ -108,7 +108,7 @@ $renderPagination = function($showInfo = true) use ($pagination, $start, $end) {
                     </div>
                     <div class="col-auto ms-auto">
                         <label class="form-label small mb-1">Estado</label>
-                        <select name="categoria_estado" class="form-select form-select-sm" style="width: 120px;">
+                        <select name="categoria_estado" class="form-control form-control-sm" style="width: 120px;">
                             <option value="">Todos</option>
                             <option value="1" <?= ($_GET['categoria_estado'] ?? '') == '1' ? 'selected' : '' ?>>Activa</option>
                             <option value="0" <?= ($_GET['categoria_estado'] ?? '') == '0' ? 'selected' : '' ?>>Inactiva</option>
@@ -130,7 +130,7 @@ $renderPagination = function($showInfo = true) use ($pagination, $start, $end) {
                         <label class="form-label small mb-1 text-muted">Registros por página</label>
                     </div>
                     <div class="col-auto">
-                        <select name="per_page" class="form-select form-select-sm" style="width: 80px;" 
+                        <select name="per_page" class="form-control form-control-sm" style="width: 80px;" 
                                 onchange="this.form.submit()">
                             <option value="5" <?= ($_GET['per_page'] ?? '10') == '5' ? 'selected' : '' ?>>5</option>
                             <option value="10" <?= ($_GET['per_page'] ?? '10') == '10' ? 'selected' : '' ?>>10</option>
@@ -240,65 +240,21 @@ $renderPagination = function($showInfo = true) use ($pagination, $start, $end) {
 
 <script>
 /**
- * Cambiar estado de categoría
+ * Cambiar estado de categoría usando utilidades sutiles
  */
 function cambiarEstado(id, nuevoEstado) {
-    const estadoTexto = nuevoEstado === 1 ? 'activa' : 'inactiva';
-    
-    Swal.fire({
-        title: '¿Estás seguro?',
-        text: `La categoría será marcada como ${estadoTexto}`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Sí, cambiar estado',
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            fetch(`<?= $this->url('/categorias') ?>/${id}/estado`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({ estado: nuevoEstado })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    Swal.fire(
-                        '¡Actualizado!',
-                        data.message,
-                        'success'
-                    ).then(() => {
-                        location.reload();
-                    });
-                } else {
-                    Swal.fire(
-                        'Error',
-                        data.message || 'Error al cambiar el estado',
-                        'error'
-                    );
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                Swal.fire(
-                    'Error',
-                    'Error de conexión. Inténtalo de nuevo.',
-                    'error'
-                );
-            });
-        }
-    });
+    // Usar la utilidad CRUD estándar para cambio de estado
+    CrudUtils.changeStatus(id, nuevoEstado, 'categoría', '<?= $this->url('/categorias') ?>');
 }
 
 /**
- * Exportar categorías a Excel
+ * Exportar categorías a Excel con confirmación sutil
  */
 function exportarCategorias(event) {
     event.preventDefault();
+    
+    // Toast informativo
+    SwalPresets.toast('Preparando archivo Excel...', 'info', 2000);
     
     // Obtener parámetros de filtros actuales
     const params = new URLSearchParams(window.location.search);
@@ -306,20 +262,30 @@ function exportarCategorias(event) {
     
     const url = `<?= $this->url('/categorias/exportar') ?>?${params.toString()}`;
     
-    // Crear enlace temporal para descarga
-    const link = document.createElement('a');
-    link.href = url;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Pequeño delay para que se vea el toast
+    setTimeout(() => {
+        const link = document.createElement('a');
+        link.href = url;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Confirmación de descarga iniciada
+        setTimeout(() => {
+            SwalPresets.toast('Descarga iniciada', 'success', 1500);
+        }, 500);
+    }, 800);
 }
 
 /**
- * Exportar categorías a PDF
+ * Exportar categorías a PDF con confirmación sutil
  */
 function exportarCategoriasPDF(event) {
     event.preventDefault();
+    
+    // Toast informativo
+    SwalPresets.toast('Generando archivo PDF...', 'info', 2000);
     
     // Obtener parámetros de filtros actuales
     const params = new URLSearchParams(window.location.search);
@@ -327,12 +293,19 @@ function exportarCategoriasPDF(event) {
     
     const url = `<?= $this->url('/categorias/exportar-pdf') ?>?${params.toString()}`;
     
-    // Crear enlace temporal para descarga
-    const link = document.createElement('a');
-    link.href = url;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Pequeño delay para que se vea el toast
+    setTimeout(() => {
+        const link = document.createElement('a');
+        link.href = url;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Confirmación de descarga iniciada
+        setTimeout(() => {
+            SwalPresets.toast('Descarga iniciada', 'success', 1500);
+        }, 500);
+    }, 800);
 }
 </script>

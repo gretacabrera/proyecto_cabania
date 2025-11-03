@@ -619,6 +619,151 @@ function showModernToast(message, type = 'info', duration = 5000) {
     });
 }
 
+// ===========================
+// CONFIGURACIÓN GLOBAL SUTIL PARA SWEETALERT2
+// ===========================
+
+/**
+ * Configuración por defecto más sutil para SweetAlert2
+ */
+window.SwalDefaults = {
+    // Colores sutiles y modernos
+    confirmButtonColor: '#4f46e5',
+    cancelButtonColor: '#6b7280',
+    
+    // Fuente y tamaños más sutiles
+    customClass: {
+        popup: 'swal2-subtle-popup',
+        header: 'swal2-subtle-header',
+        title: 'swal2-subtle-title',
+        content: 'swal2-subtle-content',
+        actions: 'swal2-subtle-actions',
+        confirmButton: 'swal2-subtle-confirm',
+        cancelButton: 'swal2-subtle-cancel'
+    },
+    
+    // Animación más suave
+    showClass: {
+        popup: 'animate__animated animate__fadeInUp animate__faster'
+    },
+    hideClass: {
+        popup: 'animate__animated animate__fadeOutDown animate__faster'
+    },
+    
+    // Configuraciones por defecto
+    allowOutsideClick: true,
+    allowEscapeKey: true,
+    backdrop: true,
+    
+    // Iconos más sutiles
+    iconColor: '#6b7280'
+};
+
+/**
+ * Función wrapper para SweetAlert con configuración sutil
+ */
+window.SwalSutil = function(config) {
+    // Combinar configuración por defecto con la personalizada
+    const finalConfig = { ...SwalDefaults, ...config };
+    return Swal.fire(finalConfig);
+};
+
+/**
+ * Presets específicos para diferentes tipos de alertas
+ */
+window.SwalPresets = {
+    // Confirmación sutil
+    confirm: (title, text, callback) => {
+        return SwalSutil({
+            title: title || '¿Confirmar acción?',
+            text: text || '¿Está seguro de continuar?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, continuar',
+            cancelButtonText: 'Cancelar',
+            focusCancel: true
+        }).then((result) => {
+            if (result.isConfirmed && callback) {
+                callback();
+            }
+        });
+    },
+    
+    // Éxito sutil
+    success: (title, text, timer = 2000) => {
+        return SwalSutil({
+            title: title || '¡Éxito!',
+            text: text || 'La operación se completó correctamente',
+            icon: 'success',
+            timer: timer,
+            showConfirmButton: false,
+            toast: true,
+            position: 'top-end'
+        });
+    },
+    
+    // Error sutil
+    error: (title, text) => {
+        return SwalSutil({
+            title: title || 'Error',
+            text: text || 'Ocurrió un error inesperado',
+            icon: 'error',
+            confirmButtonText: 'Entendido'
+        });
+    },
+    
+    // Advertencia sutil
+    warning: (title, text) => {
+        return SwalSutil({
+            title: title || 'Atención',
+            text: text || 'Por favor revise la información',
+            icon: 'warning',
+            confirmButtonText: 'Entendido'
+        });
+    },
+    
+    // Información sutil
+    info: (title, text) => {
+        return SwalSutil({
+            title: title || 'Información',
+            text: text || '',
+            icon: 'info',
+            confirmButtonText: 'Entendido'
+        });
+    },
+    
+    // Loading sutil
+    loading: (title, text) => {
+        return SwalSutil({
+            title: title || 'Procesando...',
+            text: text || 'Por favor espere',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+    },
+    
+    // Toast sutil (notificación discreta)
+    toast: (title, icon = 'success', timer = 3000) => {
+        return SwalSutil({
+            toast: true,
+            position: 'top-end',
+            icon: icon,
+            title: title,
+            showConfirmButton: false,
+            timer: timer,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer);
+                toast.addEventListener('mouseleave', Swal.resumeTimer);
+            }
+        });
+    }
+};
+
 // Agregar CSS para efectos modernos
 const modernStyles = document.createElement('style');
 modernStyles.textContent = `
@@ -635,6 +780,103 @@ modernStyles.textContent = `
             transform: scale(4);
             opacity: 0;
         }
+    }
+    
+    /* Estilos sutiles para SweetAlert2 */
+    .swal2-subtle-popup {
+        border-radius: 16px !important;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    }
+    
+    .swal2-subtle-title {
+        font-size: 1.25rem !important;
+        font-weight: 600 !important;
+        color: #374151 !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .swal2-subtle-content {
+        color: #6b7280 !important;
+        font-size: 0.9rem !important;
+        line-height: 1.5 !important;
+    }
+    
+    .swal2-subtle-confirm {
+        background: linear-gradient(135deg, #4f46e5, #6366f1) !important;
+        border: none !important;
+        border-radius: 8px !important;
+        font-weight: 500 !important;
+        font-size: 0.875rem !important;
+        padding: 10px 20px !important;
+        box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3) !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    .swal2-subtle-confirm:hover {
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4) !important;
+    }
+    
+    .swal2-subtle-cancel {
+        background: #f3f4f6 !important;
+        color: #6b7280 !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 8px !important;
+        font-weight: 500 !important;
+        font-size: 0.875rem !important;
+        padding: 10px 20px !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    .swal2-subtle-cancel:hover {
+        background: #e5e7eb !important;
+        color: #374151 !important;
+        transform: translateY(-1px) !important;
+    }
+    
+    .swal2-subtle-actions {
+        gap: 12px !important;
+        margin-top: 1.5rem !important;
+    }
+    
+    /* Toast sutiles */
+    .swal2-toast.swal2-show {
+        background: rgba(255, 255, 255, 0.95) !important;
+        backdrop-filter: blur(10px) !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12) !important;
+    }
+    
+    .swal2-toast .swal2-title {
+        font-size: 0.875rem !important;
+        color: #374151 !important;
+    }
+    
+    /* Iconos más sutiles */
+    .swal2-icon.swal2-success [class^="swal2-success-line"] {
+        background-color: #10b981 !important;
+    }
+    
+    .swal2-icon.swal2-success .swal2-success-ring {
+        border-color: #10b981 !important;
+    }
+    
+    .swal2-icon.swal2-error [class^="swal2-x-mark-line"] {
+        background-color: #ef4444 !important;
+    }
+    
+    .swal2-icon.swal2-warning {
+        color: #f59e0b !important;
+    }
+    
+    .swal2-icon.swal2-info {
+        color: #3b82f6 !important;
+    }
+    
+    .swal2-icon.swal2-question {
+        color: #6366f1 !important;
     }
     
     .modern-confirm-header {
@@ -1146,6 +1388,87 @@ function initConsumoForm() {
 // Auto-inicializar el formulario de consumos
 document.addEventListener('DOMContentLoaded', initConsumoForm);
 
+// ===========================
+// DOCUMENTACIÓN DE ALERTAS SUTILES
+// ===========================
+
+/**
+ * GUÍA DE USO DE ALERTAS SUTILES
+ * 
+ * Este sistema reemplaza las alertas tradicionales con versiones más elegantes y sutiles.
+ * 
+ * USO BÁSICO:
+ * 
+ * 1. Confirmaciones simples:
+ *    SwalPresets.confirm('¿Confirmar acción?', 'Descripción opcional', callback);
+ * 
+ * 2. Mensajes de éxito:
+ *    SwalPresets.success('¡Éxito!', 'Operación completada');
+ *    SwalPresets.toast('Guardado correctamente', 'success');
+ * 
+ * 3. Errores:
+ *    SwalPresets.error('Error', 'Descripción del error');
+ * 
+ * 4. Warnings:
+ *    SwalPresets.warning('Atención', 'Revise la información');
+ * 
+ * 5. Loading/Procesando:
+ *    SwalPresets.loading('Procesando', 'Por favor espere...');
+ * 
+ * UTILIDADES PARA CRUDs:
+ * 
+ * 1. Cambiar estado:
+ *    CrudUtils.changeStatus(id, newStatus, 'entidad', '/endpoint');
+ * 
+ * 2. Eliminar:
+ *    CrudUtils.delete(id, 'entidad', '/endpoint');
+ * 
+ * 3. Éxito con recarga:
+ *    AlertUtils.successWithReload('Mensaje de éxito', 1500);
+ * 
+ * EJEMPLOS PRÁCTICOS:
+ * 
+ * // Cambiar estado de una categoría
+ * function cambiarEstado(id, nuevoEstado) {
+ *     CrudUtils.changeStatus(id, nuevoEstado, 'categoría', '/categorias');
+ * }
+ * 
+ * // Confirmación personalizada
+ * function eliminarElemento(id) {
+ *     SwalPresets.confirm(
+ *         '¿Eliminar elemento?',
+ *         'Esta acción no se puede deshacer',
+ *         () => {
+ *             // Lógica de eliminación aquí
+ *             AlertUtils.successWithReload('Elemento eliminado');
+ *         }
+ *     );
+ * }
+ * 
+ * // Toast discreto
+ * function guardarFormulario() {
+ *     // ... lógica de guardado
+ *     SwalPresets.toast('Formulario guardado', 'success', 2000);
+ * }
+ * 
+ * CARACTERÍSTICAS:
+ * 
+ * ✓ Diseño moderno y sutil (esquinas redondeadas, sombras suaves)
+ * ✓ Colores menos saturados y más elegantes
+ * ✓ Animaciones suaves de entrada y salida
+ * ✓ Toast notifications discretas en la esquina
+ * ✓ Loading spinners menos intrusivos
+ * ✓ Consistencia visual en todo el proyecto
+ * ✓ Responsive y accesible
+ * 
+ * MIGRACIÓN DESDE ALERTAS TRADICIONALES:
+ * 
+ * Reemplazar:
+ * - confirm() → SwalPresets.confirm()
+ * - alert() → SwalPresets.info() o SwalPresets.toast()
+ * - Swal.fire() básico → usar presets correspondientes
+ */
+
 /**
  * Función para mostrar mensajes de confirmación
  */
@@ -1571,6 +1894,131 @@ function cargarContenido(url, containerId, callback = null) {
         if (callback) callback();
     });
 }
+
+// ===========================
+// FUNCIONES DE UTILIDAD PARA ALERTAS SUTILES
+// ===========================
+
+/**
+ * Funciones de conveniencia para las alertas más comunes
+ */
+window.AlertUtils = {
+    // Confirmación de eliminación
+    confirmDelete: (entityName, callback) => {
+        SwalPresets.confirm(
+            `¿Eliminar ${entityName}?`,
+            'Esta acción no se puede deshacer',
+            callback
+        );
+    },
+    
+    // Confirmación de cambio de estado
+    confirmStatusChange: (action, entityName, callback) => {
+        SwalPresets.confirm(
+            `¿${action.charAt(0).toUpperCase() + action.slice(1)} ${entityName}?`,
+            `El ${entityName} será ${action === 'activar' ? 'activado' : 'desactivado'}`,
+            callback
+        );
+    },
+    
+    // Éxito con recarga automática
+    successWithReload: (message, delay = 1500) => {
+        SwalPresets.toast(message, 'success', delay);
+        setTimeout(() => location.reload(), delay);
+    },
+    
+    // Validación de formulario fallida
+    validationError: (message = 'Por favor revise los campos marcados') => {
+        SwalPresets.warning('Datos incompletos', message);
+    },
+    
+    // Operación guardada exitosamente
+    saveSuccess: (entityName = 'registro') => {
+        SwalPresets.toast(`${entityName.charAt(0).toUpperCase() + entityName.slice(1)} guardado correctamente`, 'success');
+    },
+    
+    // Error de servidor
+    serverError: (message = 'Error de conexión con el servidor') => {
+        SwalPresets.error('Error del servidor', message);
+    },
+    
+    // Procesando con loading
+    processing: (message = 'Procesando información...') => {
+        SwalPresets.loading('Procesando', message);
+    },
+    
+    // Cerrar cualquier alert abierto
+    close: () => {
+        Swal.close();
+    }
+};
+
+/**
+ * Funciones específicas para CRUDs comunes
+ */
+window.CrudUtils = {
+    // Cambio de estado estándar
+    changeStatus: (id, newStatus, entityName, endpoint) => {
+        const action = newStatus == 1 ? 'activar' : 'desactivar';
+        
+        AlertUtils.confirmStatusChange(action, entityName, () => {
+            AlertUtils.processing('Actualizando estado...');
+            
+            fetch(`${endpoint}/${id}/estado`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ estado: newStatus })
+            })
+            .then(response => response.json())
+            .then(data => {
+                AlertUtils.close();
+                
+                if (data.success) {
+                    AlertUtils.successWithReload(`${entityName.charAt(0).toUpperCase() + entityName.slice(1)} actualizado correctamente`);
+                } else {
+                    SwalPresets.error('Error', data.message || 'Error al cambiar el estado');
+                }
+            })
+            .catch(error => {
+                AlertUtils.close();
+                console.error('Error:', error);
+                AlertUtils.serverError();
+            });
+        });
+    },
+    
+    // Eliminar con confirmación
+    delete: (id, entityName, endpoint) => {
+        AlertUtils.confirmDelete(entityName, () => {
+            AlertUtils.processing(`Eliminando ${entityName}...`);
+            
+            fetch(`${endpoint}/${id}/delete`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                AlertUtils.close();
+                
+                if (data.success) {
+                    AlertUtils.successWithReload(`${entityName.charAt(0).toUpperCase() + entityName.slice(1)} eliminado correctamente`);
+                } else {
+                    SwalPresets.error('Error', data.message || 'Error al eliminar');
+                }
+            })
+            .catch(error => {
+                AlertUtils.close();
+                console.error('Error:', error);
+                AlertUtils.serverError();
+            });
+        });
+    }
+};
 
 // ========================================
 // VALIDACIÓN DE FORMULARIOS ESPECÍFICOS

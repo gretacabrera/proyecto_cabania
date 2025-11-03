@@ -411,62 +411,16 @@ $renderPagination = function($showInfo = true) use ($pagination, $start, $end) {
 
 <script>
 function cambiarEstado(id, nuevoEstado) {
-    const estadoTexto = nuevoEstado == 1 ? 'activar' : 'desactivar';
-    const confirmText = `¿Está seguro que desea ${estadoTexto} esta condición de salud?`;
-    
-    Swal.fire({
-        title: '¿Confirmar acción?',
-        text: confirmText,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Sí, ' + estadoTexto,
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            fetch(`<?= url('/condiciones_salud') ?>/${id}/estado`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({ estado: nuevoEstado })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    Swal.fire({
-                        title: '¡Éxito!',
-                        text: data.message,
-                        icon: 'success',
-                        timer: 1500,
-                        showConfirmButton: false
-                    }).then(() => {
-                        location.reload();
-                    });
-                } else {
-                    Swal.fire({
-                        title: 'Error',
-                        text: data.error || 'Error al cambiar el estado',
-                        icon: 'error'
-                    });
-                }
-            })
-            .catch(error => {
-                Swal.fire({
-                    title: 'Error',
-                    text: 'Error de conexión',
-                    icon: 'error'
-                });
-            });
-        }
-    });
+    // Usar la utilidad CRUD estándar para cambio de estado
+    CrudUtils.changeStatus(id, nuevoEstado, 'condición de salud', '<?= url('/condiciones_salud') ?>');
 }
 
-// Función para exportar a Excel
+// Función para exportar a Excel con alertas sutiles
 function exportarCondiciones(event) {
     event.preventDefault();
+    
+    // Toast informativo sutil
+    SwalPresets.toast('Preparando archivo Excel...', 'info', 2000);
     
     // Obtener filtros actuales
     const params = new URLSearchParams(window.location.search);
@@ -474,27 +428,23 @@ function exportarCondiciones(event) {
     
     const url = `<?= url('/condiciones_salud/exportar') ?>?${params.toString()}`;
     
-    Swal.fire({
-        title: 'Exportando...',
-        text: 'Generando archivo Excel',
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-        showConfirmButton: false,
-        willOpen: () => {
-            Swal.showLoading();
-        }
-    });
-    
-    window.location.href = url;
-    
+    // Delay para mostrar el toast
     setTimeout(() => {
-        Swal.close();
-    }, 2000);
+        window.location.href = url;
+        
+        // Confirmación de descarga
+        setTimeout(() => {
+            SwalPresets.toast('Descarga iniciada', 'success', 1500);
+        }, 500);
+    }, 800);
 }
 
-// Función para exportar a PDF
+// Función para exportar a PDF con alertas sutiles
 function exportarCondicionesPDF(event) {
     event.preventDefault();
+    
+    // Toast informativo sutil
+    SwalPresets.toast('Generando archivo PDF...', 'info', 2000);
     
     // Obtener filtros actuales
     const params = new URLSearchParams(window.location.search);
@@ -502,21 +452,14 @@ function exportarCondicionesPDF(event) {
     
     const url = `<?= url('/condiciones_salud/exportar-pdf') ?>?${params.toString()}`;
     
-    Swal.fire({
-        title: 'Exportando...',
-        text: 'Generando archivo PDF',
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-        showConfirmButton: false,
-        willOpen: () => {
-            Swal.showLoading();
-        }
-    });
-    
-    window.location.href = url;
-    
+    // Delay para mostrar el toast
     setTimeout(() => {
-        Swal.close();
-    }, 2000);
+        window.location.href = url;
+        
+        // Confirmación de descarga
+        setTimeout(() => {
+            SwalPresets.toast('Descarga iniciada', 'success', 1500);
+        }, 500);
+    }, 800);
 }
 </script>

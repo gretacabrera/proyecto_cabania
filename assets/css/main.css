@@ -5828,9 +5828,11 @@ body.auth, body.login {
 }
 
 /* ===========================
-   MENSAJES Y ALERTAS MODERNAS
+   MENSAJES Y ALERTAS MODERNAS - DESHABILITADO
+   (USANDO NUEVO SISTEMA MINIMALISTA)
    =========================== */
-
+   
+/* COMENTADO PARA EVITAR CONFLICTOS CON EL NUEVO SISTEMA
 .modern-alert {
     border: none;
     border-radius: var(--radius-xl);
@@ -5851,7 +5853,9 @@ body.auth, body.login {
     transform: translateY(-100%);
     opacity: 0;
 }
+*/
 
+/* COMENTADO - SISTEMA ANTERIOR
 .alert-content {
     display: flex;
     align-items: flex-start;
@@ -5859,7 +5863,9 @@ body.auth, body.login {
     padding: var(--space-lg);
     position: relative;
 }
+*/
 
+/*
 .alert-icon {
     flex-shrink: 0;
     display: flex;
@@ -5870,6 +5876,7 @@ body.auth, body.login {
     border-radius: var(--radius-full);
     font-size: var(--text-lg);
 }
+*/
 
 .alert-success .alert-icon {
     background: var(--success-100);
@@ -7093,5 +7100,260 @@ body.auth, body.login {
     .btn-cancel, .btn-confirm {
         width: 100%;
         justify-content: center;
+    }
+}
+
+/* ===========================================
+   SISTEMA DE MENSAJES SUTILES
+   =========================================== */
+
+.messages-container {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-width: 280px;
+    pointer-events: none;
+}
+
+.subtle-message {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    transition: all 0.2s ease;
+    pointer-events: all;
+    font-size: 13px;
+    min-height: 36px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.subtle-message:hover {
+    background: #ffffff;
+    border-color: #dee2e6;
+}
+
+/* Tipos de mensajes */
+.subtle-message.success {
+    border-left: 2px solid #28a745;
+}
+
+.subtle-message.success .subtle-message-icon {
+    color: #28a745;
+}
+
+.subtle-message.error {
+    border-left: 2px solid #dc3545;
+}
+
+.subtle-message.error .subtle-message-icon {
+    color: #dc3545;
+}
+
+.subtle-message.warning {
+    border-left: 2px solid #ffc107;
+}
+
+.subtle-message.warning .subtle-message-icon {
+    color: #e0a800;
+}
+
+.subtle-message.info {
+    border-left: 2px solid #17a2b8;
+}
+
+.subtle-message.info .subtle-message-icon {
+    color: #17a2b8;
+}
+
+/* Tipos de mensajes específicos - simplificados */
+.subtle-message.loading .subtle-message-icon {
+    color: #6c757d;
+}
+
+.subtle-message.upload .subtle-message-icon, 
+.subtle-message.download .subtle-message-icon {
+    color: #17a2b8;
+}
+
+.subtle-message.save .subtle-message-icon {
+    color: #28a745;
+}
+
+.subtle-message.delete .subtle-message-icon {
+    color: #dc3545;
+}
+
+.subtle-message.edit .subtle-message-icon {
+    color: #6c757d;
+}
+
+.subtle-message.notification .subtle-message-icon {
+    color: #6c757d;
+}
+
+/* Icono del mensaje */
+.subtle-message-icon {
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 11px;
+    line-height: 1;
+}
+
+/* Contenido del mensaje */
+.subtle-message-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.subtle-message-title {
+    font-size: 12px;
+    font-weight: 400;
+    color: #495057;
+    line-height: 1.2;
+    margin: 0;
+}
+
+.subtle-message-text {
+    display: none; /* Ocultar texto secundario para máximo minimalismo */
+}
+
+/* Botón de cierre */
+.subtle-message-close {
+    background: none;
+    border: none;
+    color: #adb5bd;
+    font-size: 10px;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+.subtle-message-close:hover {
+    color: #6c757d;
+}
+
+/* Barra de progreso */
+.subtle-message-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 1px;
+    width: 100%;
+    background: #dee2e6;
+    transition: width 5s linear;
+}
+
+/* Todas las barras de progreso usan el mismo color gris */
+
+.subtle-message.loading .subtle-message-progress {
+    background: #8b5cf6;
+}
+
+.subtle-message.upload .subtle-message-progress, 
+.subtle-message.download .subtle-message-progress {
+    background: #06b6d4;
+}
+
+.subtle-message.save .subtle-message-progress {
+    background: #10b981;
+}
+
+.subtle-message.delete .subtle-message-progress {
+    background: #f97316;
+}
+
+.subtle-message.edit .subtle-message-progress {
+    background: #6366f1;
+}
+
+.subtle-message.notification .subtle-message-progress {
+    background: #ec4899;
+}
+
+.subtle-message-progress.hidden {
+    display: none;
+}
+
+/* Mensajes permanentes */
+.subtle-message.permanent {
+    border-style: dashed;
+    border-width: 2px;
+}
+
+.subtle-message.permanent .subtle-message-progress {
+    display: none;
+}
+
+/* Animaciones especiales */
+.subtle-message {
+    animation: fadeInSimple 0.2s ease-out;
+}
+
+@keyframes fadeInSimple {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .messages-container {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+    
+    .subtle-message {
+        padding: 14px 16px;
+        gap: 10px;
+        border-radius: 8px;
+    }
+    
+    .subtle-message-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+    }
+    
+    .subtle-message-title {
+        font-size: 13px;
+    }
+    
+    .subtle-message-text {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .messages-container {
+        top: 5px;
+        right: 5px;
+        left: 5px;
+    }
+    
+    .subtle-message {
+        padding: 12px 14px;
     }
 }

@@ -1,0 +1,181 @@
+/* ===========================================
+   OVERRIDE DE ESTILOS DE ALERTAS ANTERIOR
+   =========================================== */
+
+/* Ocultar completamente las alertas del sistema anterior */
+.modern-alert,
+.alert-success,
+.alert-danger, 
+.alert-warning,
+.alert-info {
+    display: none !important;
+}
+
+/* Asegurar que nuestro sistema funcione correctamente */
+.messages-container {
+    position: fixed !important;
+    top: 15px !important;
+    right: 15px !important;
+    z-index: 9999 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    max-width: 350px !important;
+    pointer-events: none !important;
+}
+
+.subtle-message {
+    background: #f8f9fa !important;
+    border: 1px solid #e9ecef !important;
+    border-radius: 4px !important;
+    padding: 8px 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    position: relative !important;
+    transition: all 0.2s ease !important;
+    pointer-events: all !important;
+    font-size: 13px !important;
+    min-height: 36px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+.subtle-message:hover {
+    background: #ffffff !important;
+    border-color: #dee2e6 !important;
+}
+
+/* Tipos de mensajes */
+.subtle-message.success {
+    border-left: 2px solid #28a745 !important;
+}
+
+.subtle-message.success .subtle-message-icon {
+    color: #28a745 !important;
+}
+
+.subtle-message.error {
+    border-left: 2px solid #dc3545 !important;
+}
+
+.subtle-message.error .subtle-message-icon {
+    color: #dc3545 !important;
+}
+
+.subtle-message.warning {
+    border-left: 2px solid #ffc107 !important;
+}
+
+.subtle-message.warning .subtle-message-icon {
+    color: #e0a800 !important;
+}
+
+.subtle-message.info {
+    border-left: 2px solid #17a2b8 !important;
+}
+
+.subtle-message.info .subtle-message-icon {
+    color: #17a2b8 !important;
+}
+
+/* Icono del mensaje */
+.subtle-message-icon {
+    width: 16px !important;
+    height: 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
+}
+
+/* Contenido del mensaje */
+.subtle-message-content {
+    flex: 1 !important;
+    min-width: 0 !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.subtle-message-title {
+    font-size: 12px !important;
+    font-weight: 400 !important;
+    color: #495057 !important;
+    line-height: 1.2 !important;
+    margin: 0 !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+    white-space: normal !important;
+}
+
+.subtle-message-text {
+    display: none !important;
+}
+
+/* Botón de cierre */
+.subtle-message-close {
+    background: none !important;
+    border: none !important;
+    color: #adb5bd !important;
+    font-size: 10px !important;
+    cursor: pointer !important;
+    padding: 0 !important;
+    margin-left: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 14px !important;
+    height: 14px !important;
+    flex-shrink: 0 !important;
+}
+
+.subtle-message-close:hover {
+    color: #6c757d !important;
+}
+
+/* Barra de progreso */
+.subtle-message-progress {
+    position: absolute !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    height: 1px !important;
+    width: 100% !important;
+    background: #dee2e6 !important;
+    transition: width 5s linear !important;
+}
+
+.subtle-message-progress.hidden {
+    display: none !important;
+}
+
+/* Animaciones */
+.subtle-message {
+    animation: fadeInSimple 0.2s ease-out !important;
+}
+
+@keyframes fadeInSimple {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .messages-container {
+        top: 10px !important;
+        right: 10px !important;
+        left: 10px !important;
+        max-width: none !important;
+    }
+    
+    .subtle-message {
+        padding: 12px 14px !important;
+    }
+}

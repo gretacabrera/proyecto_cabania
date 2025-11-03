@@ -17,12 +17,14 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
     <!-- Estilos CSS Centralizados -->
-    <link href="<?= asset('assets/css/main.css') ?>" rel="stylesheet">
+    <link href="<?= asset('assets/css/main.css?v=' . time()) ?>" rel="stylesheet">
     <link href="<?= asset('assets/css/components.css') ?>" rel="stylesheet">
     <link href="<?= asset('assets/css/forms.css') ?>" rel="stylesheet">
     <link href="<?= asset('assets/css/public.css') ?>" rel="stylesheet">
     <link href="<?= asset('assets/css/dashboard.css') ?>" rel="stylesheet"><?php if (isset($isAdminArea) && $isAdminArea): ?>
     <link href="<?= asset('assets/css/admin.css') ?>" rel="stylesheet"><?php endif; ?>
+    <!-- Override para mensajes minimalistas -->
+    <link href="<?= asset('assets/css/messages-override.css?v=' . time()) ?>" rel="stylesheet">
 </head>
 <body class="home">
     <!-- Navegación moderna -->
@@ -42,8 +44,8 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="<?= asset('assets/js/main.js') ?>"></script>
-    <script src="<?= asset('assets/js/components.js') ?>"></script>
+    <script src="<?= asset('assets/js/main.js?v=' . time()) ?>"></script>
+    <script src="<?= asset('assets/js/components.js?v=' . time()) ?>"></script>
     <script src="<?= asset('assets/js/forms.js') ?>"></script>
     <script src="<?= asset('assets/js/public.js') ?>"></script><?php if (isset($isAdminArea) && $isAdminArea): ?>
     <script src="<?= asset('assets/js/admin.js') ?>"></script><?php endif; ?>
