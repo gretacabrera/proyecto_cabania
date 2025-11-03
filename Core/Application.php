@@ -299,16 +299,15 @@ class Application
         $this->router->get('/periodos/stats', 'PeriodosController@stats');
 
         // Rutas de condiciones de salud
-        $this->router->get('/condiciones-salud', 'CondicionesSaludController@index');
-        $this->router->any('/condiciones-salud/create', 'CondicionesSaludController@create');
-        $this->router->post('/condiciones-salud', 'CondicionesSaludController@store');
-        $this->router->any('/condiciones-salud/{id}/edit', 'CondicionesSaludController@edit');
-        $this->router->post('/condiciones-salud/{id}', 'CondicionesSaludController@update');
-        $this->router->get('/condiciones-salud/stats', 'CondicionesSaludController@stats');
-        $this->router->get('/condiciones-salud/search', 'CondicionesSaludController@search');
-        $this->router->get('/condiciones-salud/{id}/toggle-status', 'CondicionesSaludController@toggleStatus');
-        $this->router->get('/condiciones-salud/{id}', 'CondicionesSaludController@show');
-        $this->router->get('/condiciones-salud/export', 'CondicionesSaludController@export');
+        $this->router->get('/condiciones_salud', 'CondicionesSaludController@index');
+        $this->router->any('/condiciones_salud/create', 'CondicionesSaludController@create');
+        $this->router->get('/condiciones_salud/exportar', 'CondicionesSaludController@exportar');
+        $this->router->get('/condiciones_salud/exportar-pdf', 'CondicionesSaludController@exportarPdf');
+        $this->router->get('/condiciones_salud/{id}', 'CondicionesSaludController@show');
+        $this->router->any('/condiciones_salud/{id}/edit', 'CondicionesSaludController@edit');
+        $this->router->post('/condiciones_salud/{id}/delete', 'CondicionesSaludController@delete');
+        $this->router->post('/condiciones_salud/{id}/restore', 'CondicionesSaludController@restore');
+        $this->router->post('/condiciones_salud/{id}/estado', 'CondicionesSaludController@cambiarEstado');
 
         // Rutas de comentarios
         $this->router->get('/comentarios', 'ComentariosController@index');

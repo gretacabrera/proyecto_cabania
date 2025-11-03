@@ -1,127 +1,338 @@
-<?= $this->extend('layouts/main') ?>
+<?php 
+$perPage = (int) ($_GET['per_page'] ?? 10);
+$start = (($pagination['current_page'] - 1) * $perPage) + 1;
+$end = min($pagination['current_page'] * $perPage, $pagination['total']);
 
-<?= $this->section('title') ?>
-<?= $title ?>
-<?= $this->endSection() ?>
-
-<?= $this->section('content') ?>
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h3 class="card-title"><?= $title ?></h3>
-                    <a href="/categorias/create" class="btn btn-success">
-                        <i class="fas fa-plus"></i> Nueva Categoría
-                    </a>
-                </div>
-                <div class="card-body">
-                    <!-- Formulario de búsqueda -->
-                    <form method="GET" action="/categorias" class="mb-3">
-                        <div class="row">
-                            <div class="col-md-8">
-                                <input type="text" name="buscar" class="form-control" 
-                                       placeholder="Buscar por nombre o descripción..." 
-                                       value="<?= htmlspecialchars($search) ?>">
-                            </div>
-                            <div class="col-md-4">
-                                <button type="submit" class="btn btn-primary">Buscar</button>
-                                <?php if (!empty($search)): ?>
-                                    <a href="/categorias" class="btn btn-secondary">Limpiar</a>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    </form>
-
-                    <!-- Tabla de categorías -->
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-striped">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Nombre</th>
-                                    <th>Descripción</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php if (!empty($categorias)): ?>
-                                    <?php foreach ($categorias as $categoria): ?>
-                                        <tr>
-                                            <td><?= $categoria['id_categoria'] ?></td>
-                                            <td><?= htmlspecialchars($categoria['categoria_nombre']) ?></td>
-                                            <td><?= htmlspecialchars($categoria['categoria_descripcion'] ?? '') ?></td>
-                                            <td>
-                                                <span class="badge badge-<?= $categoria['categoria_estado'] == 1 ? 'success' : 'danger' ?>">
-                                                    <?= $categoria['categoria_estado'] == 1 ? 'Activo' : 'Inactivo' ?>
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div class="btn-group" role="group">
-                                                    <a href="/categorias/<?= $categoria['id_categoria'] ?>/edit" 
-                                                       class="btn btn-sm btn-warning">
-                                                        <i class="fas fa-edit"></i>
-                                                    </a>
-                                                    <?php if ($categoria['categoria_estado'] == 1): ?>
-                                                        <a href="/categorias/<?= $categoria['id_categoria'] ?>/delete" 
-                                                           class="btn btn-sm btn-danger"
-                                                           onclick="return confirm('¿Está seguro de eliminar esta categoría?')">
-                                                            <i class="fas fa-trash"></i>
-                                                        </a>
-                                                    <?php else: ?>
-                                                        <a href="/categorias/<?= $categoria['id_categoria'] ?>/restore" 
-                                                           class="btn btn-sm btn-success"
-                                                           onclick="return confirm('¿Está seguro de restaurar esta categoría?')">
-                                                            <i class="fas fa-undo"></i>
-                                                        </a>
-                                                    <?php endif; ?>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
+$renderPagination = function($showInfo = true) use ($pagination, $start, $end) {
+?>
+    <div class="row align-items-center">
+        <?php if ($showInfo): ?>
+            <!-- INFORMACIÓN DE REGISTROS (siempre visible) -->
+            <div class="col-sm-6">
+                <span class="text-muted small">
+                    Mostrando <?= $start ?> a <?= $end ?> de <?= $pagination['total'] ?> registros
+                </span>
+            </div>
+        <?php endif; ?>
+        
+        <div class="col-sm-<?= $showInfo ? '6' : '12' ?>">
+            <!-- NAVEGACIÓN (solo si hay múltiples páginas) -->
+            <?php if ($pagination['total_pages'] > 1): ?>
+                <nav aria-label="Paginación" class="d-flex justify-content-<?= $showInfo ? 'end' : 'center' ?>">
+                    <ul class="pagination pagination-sm mb-0">
+                        <!-- Botón Anterior -->
+                        <?php if ($pagination['current_page'] > 1): ?>
+                            <li class="page-item">
+                                <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $pagination['current_page'] - 1])) ?>">Anterior</a>
+                            </li>
+                        <?php endif; ?>
+                        
+                        <!-- Navegación inteligente con elipsis -->
+                        <?php 
+                        $startPage = max(1, $pagination['current_page'] - 2);
+                        $endPage = min($pagination['total_pages'], $pagination['current_page'] + 2);
+                        
+                        // Primera página + elipsis
+                        if ($startPage > 1): ?>
+                            <li class="page-item">
+                                <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => 1])) ?>">1</a>
+                            </li>
+                            <?php if ($startPage > 2): ?>
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                        
+                        <!-- Páginas del rango actual -->
+                        <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
+                            <li class="page-item <?= $i == $pagination['current_page'] ? 'active' : '' ?>">
+                                <?php if ($i == $pagination['current_page']): ?>
+                                    <!-- Página actual: destacada y no clickeable -->
+                                    <span class="page-link bg-primary text-white border-primary"><?= $i ?></span>
                                 <?php else: ?>
-                                    <tr>
-                                        <td colspan="5" class="text-center">No se encontraron categorías</td>
-                                    </tr>
+                                    <!-- Otras páginas: enlaces normales -->
+                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $i])) ?>"><?= $i ?></a>
                                 <?php endif; ?>
-                            </tbody>
-                        </table>
-                    </div>
+                            </li>
+                        <?php endfor; ?>
+                        
+                        <!-- Última página + elipsis -->
+                        <?php if ($endPage < $pagination['total_pages']): ?>
+                            <?php if ($endPage < $pagination['total_pages'] - 1): ?>
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                            <?php endif; ?>
+                            <li class="page-item">
+                                <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $pagination['total_pages']])) ?>"><?= $pagination['total_pages'] ?></a>
+                            </li>
+                        <?php endif; ?>
+                        
+                        <!-- Botón Siguiente -->
+                        <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
+                            <li class="page-item">
+                                <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $pagination['current_page'] + 1])) ?>">Siguiente</a>
+                            </li>
+                        <?php endif; ?>
+                    </ul>
+                </nav>
+            <?php endif; ?>
+        </div>
+    </div>
+<?php }; ?>
 
-                    <!-- Paginación -->
-                    <?php if ($totalPages > 1): ?>
-                        <nav aria-label="Paginación">
-                            <ul class="pagination justify-content-center">
-                                <?php if ($currentPage > 1): ?>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page=1<?= !empty($search) ? '&buscar=' . urlencode($search) : '' ?>">Primero</a>
-                                    </li>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page=<?= $currentPage - 1 ?><?= !empty($search) ? '&buscar=' . urlencode($search) : '' ?>">Anterior</a>
-                                    </li>
-                                <?php endif; ?>
-                                
-                                <?php for ($i = max(1, $currentPage - 2); $i <= min($totalPages, $currentPage + 2); $i++): ?>
-                                    <li class="page-item <?= $i == $currentPage ? 'active' : '' ?>">
-                                        <a class="page-link" href="?page=<?= $i ?><?= !empty($search) ? '&buscar=' . urlencode($search) : '' ?>"><?= $i ?></a>
-                                    </li>
-                                <?php endfor; ?>
-                                
-                                <?php if ($currentPage < $totalPages): ?>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page=<?= $currentPage + 1 ?><?= !empty($search) ? '&buscar=' . urlencode($search) : '' ?>">Siguiente</a>
-                                    </li>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page=<?= $totalPages ?><?= !empty($search) ? '&buscar=' . urlencode($search) : '' ?>">Último</a>
-                                    </li>
-                                <?php endif; ?>
-                            </ul>
-                        </nav>
-                    <?php endif; ?>
+<div class="container-fluid">
+    <!-- Encabezado moderno similar al diseño de referencia -->
+    <div class="card border-0 shadow-sm">
+        <!-- Header oscuro -->
+        <div class="card-header text-dark py-3 mb-0">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h4 class="mb-0">Gestión de Categorías</h4>
+                </div>
+                <div class="col-auto">
+                    <a href="<?= $this->url('/categorias/create') ?>" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-1"></i>Nueva Categoría
+                    </a>
                 </div>
             </div>
         </div>
+        <!-- Filtros compactos -->
+        <div class="card-body pb-0">
+            <form method="GET" action="<?= $this->url('/categorias') ?>" class="mb-3">
+                <div class="row g-2 align-items-end">
+                    <div class="col-auto">
+                        <label class="form-label small mb-1 text-muted">Filtros de búsqueda</label>
+                    </div>
+                    <div class="col-auto">
+                        <label class="form-label small mb-1">Descripción</label>
+                        <input type="text" name="categoria_descripcion" class="form-control form-control-sm" 
+                               placeholder="Buscar categoría" value="<?= htmlspecialchars($_GET['categoria_descripcion'] ?? '') ?>" style="width: 200px;">
+                    </div>
+                    <div class="col-auto ms-auto">
+                        <label class="form-label small mb-1">Estado</label>
+                        <select name="categoria_estado" class="form-select form-select-sm" style="width: 120px;">
+                            <option value="">Todos</option>
+                            <option value="1" <?= ($_GET['categoria_estado'] ?? '') == '1' ? 'selected' : '' ?>>Activa</option>
+                            <option value="0" <?= ($_GET['categoria_estado'] ?? '') == '0' ? 'selected' : '' ?>>Inactiva</option>
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <div class="btn-group">
+                            <button type="submit" class="btn btn-primary btn-sm" title="Buscar">
+                                <i class="fas fa-search"></i>
+                            </button>
+                            <a href="<?= $this->url('/categorias') ?>" class="btn btn-info btn-sm" title="Limpiar filtros">
+                                <i class="fas fa-times"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-auto">
+                        <label class="form-label small mb-1 text-muted">Registros por página</label>
+                    </div>
+                    <div class="col-auto">
+                        <select name="per_page" class="form-select form-select-sm" style="width: 80px;" 
+                                onchange="this.form.submit()">
+                            <option value="5" <?= ($_GET['per_page'] ?? '10') == '5' ? 'selected' : '' ?>>5</option>
+                            <option value="10" <?= ($_GET['per_page'] ?? '10') == '10' ? 'selected' : '' ?>>10</option>
+                            <option value="25" <?= ($_GET['per_page'] ?? '10') == '25' ? 'selected' : '' ?>>25</option>
+                            <option value="50" <?= ($_GET['per_page'] ?? '10') == '50' ? 'selected' : '' ?>>50</option>
+                        </select>
+                    </div>
+                    <div class="col"></div> <!-- Espaciador para empujar el botón a la derecha -->
+                    <div class="col-auto">
+                        <div class="btn-group" role="group">
+                            <button type="button" onclick="exportarCategorias(event)" class="btn btn-success btn-sm" title="Exportar a Excel">
+                                <i class="fas fa-file-excel me-1"></i> Excel
+                            </button>
+                            <button type="button" onclick="exportarCategoriasPDF(event)" class="btn btn-danger btn-sm" title="Exportar a PDF">
+                                <i class="fas fa-file-pdf me-1"></i> PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- PAGINACIÓN SUPERIOR -->
+        <?php if (isset($pagination) && $pagination['total'] > 0): ?>
+            <div class="card-header bg-light border-bottom py-2">
+                <?php $renderPagination(true); ?>
+            </div>
+        <?php endif; ?>
+
+        <!-- Tabla estilo moderno -->
+        <div class="card-body p-0">
+            <?php if (empty($categorias)): ?>
+                <div class="empty-state py-5 text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-tags fa-3x text-muted opacity-50"></i>
+                    </div>
+                    <h5 class="text-muted">No hay categorías para mostrar</h5>
+                    <p class="text-muted mb-4">Comienza agregando la primera categoría del sistema.</p>
+                    <a href="<?= $this->url('/categorias/create') ?>" class="btn btn-primary">
+                        Crear Primera Categoría
+                    </a>
+                </div>
+            <?php else: ?>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="thead-light">
+                            <tr>
+                                <th class="border-0 py-3">Descripción</th>
+                                <th class="border-0 py-3">Estado</th>
+                                <th class="border-0 py-3 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($categorias as $categoria): ?>
+                                <tr>
+                                    <td class="border-0 py-3">
+                                        <span class="fw-medium"><?= htmlspecialchars($categoria['categoria_descripcion']) ?></span>
+                                    </td>
+                                    <td class="border-0 py-3">
+                                        <?php if ($categoria['categoria_estado'] == 1): ?>
+                                            <span class="badge badge-success">Activa</span>
+                                        <?php else: ?>
+                                            <span class="badge badge-danger">Inactiva</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="border-0 py-3 text-center">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="<?= $this->url('/categorias/' . $categoria['id_categoria']) ?>" 
+                                               class="btn btn-outline-primary" title="Ver detalle">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="<?= $this->url('/categorias/' . $categoria['id_categoria'] . '/edit') ?>" 
+                                               class="btn btn-outline-warning" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <?php if ($categoria['categoria_estado'] == 1): ?>
+                                                <button type="button" class="btn btn-outline-danger" 
+                                                        title="Desactivar"
+                                                        onclick="cambiarEstado(<?= $categoria['id_categoria'] ?>, 0)">
+                                                    <i class="fas fa-ban"></i>
+                                                </button>
+                                            <?php else: ?>
+                                                <button type="button" class="btn btn-outline-success" 
+                                                        title="Activar"
+                                                        onclick="cambiarEstado(<?= $categoria['id_categoria'] ?>, 1)">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            <?php endif; ?>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- PAGINACIÓN INFERIOR -->
+        <?php if (isset($pagination) && $pagination['total'] > 0): ?>
+            <div class="card-footer bg-white border-top py-3">
+                <?php $renderPagination(true); ?>
+            </div>
+        <?php endif; ?>
     </div>
 </div>
-<?= $this->endSection() ?>
+
+<script>
+/**
+ * Cambiar estado de categoría
+ */
+function cambiarEstado(id, nuevoEstado) {
+    const estadoTexto = nuevoEstado === 1 ? 'activa' : 'inactiva';
+    
+    Swal.fire({
+        title: '¿Estás seguro?',
+        text: `La categoría será marcada como ${estadoTexto}`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, cambiar estado',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`<?= $this->url('/categorias') ?>/${id}/estado`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ estado: nuevoEstado })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire(
+                        '¡Actualizado!',
+                        data.message,
+                        'success'
+                    ).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire(
+                        'Error',
+                        data.message || 'Error al cambiar el estado',
+                        'error'
+                    );
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire(
+                    'Error',
+                    'Error de conexión. Inténtalo de nuevo.',
+                    'error'
+                );
+            });
+        }
+    });
+}
+
+/**
+ * Exportar categorías a Excel
+ */
+function exportarCategorias(event) {
+    event.preventDefault();
+    
+    // Obtener parámetros de filtros actuales
+    const params = new URLSearchParams(window.location.search);
+    params.delete('page'); // Remover página para exportar todos los resultados
+    
+    const url = `<?= $this->url('/categorias/exportar') ?>?${params.toString()}`;
+    
+    // Crear enlace temporal para descarga
+    const link = document.createElement('a');
+    link.href = url;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+/**
+ * Exportar categorías a PDF
+ */
+function exportarCategoriasPDF(event) {
+    event.preventDefault();
+    
+    // Obtener parámetros de filtros actuales
+    const params = new URLSearchParams(window.location.search);
+    params.delete('page'); // Remover página para exportar todos los resultados
+    
+    const url = `<?= $this->url('/categorias/exportar-pdf') ?>?${params.toString()}`;
+    
+    // Crear enlace temporal para descarga
+    const link = document.createElement('a');
+    link.href = url;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+</script>

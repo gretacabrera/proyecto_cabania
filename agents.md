@@ -51,6 +51,75 @@ Para cada entidad XXXX, se deben generar los siguientes archivos siguiendo la es
 - `formulario.php` - Formulario para crear/editar (reutilizable)
 - `detalle.php` - Vista de información completa
 
+## Especificaciones de UI y Estructura de Contenedores
+
+### Filtros de Listado
+**Elementos SELECT obligatorios:**
+- **Clase requerida:** `class="form-control form-control-sm"`
+- **Aplicación:** Todos los filtros desplegables (estado, registros por página, categorías, etc.)
+- **Compatibilidad:** Bootstrap 4 (versión actual del proyecto)
+
+### Contenedores de Vista de Detalle
+**Estructura estándar obligatoria:**
+1. **"Información General"** - Datos básicos de la entidad (código, nombre, estado, etc.)
+2. **"Estadísticas"** - Métricas de uso, contadores, gráficos relacionados
+3. **"Acciones Rápidas"** - Panel lateral con botones de acción contextual
+
+### Contenedores de Vista de Formulario
+**Estructura estándar obligatoria:**
+1. **"Modificar datos del [entidad]"** - Formulario principal con campos de datos
+2. **"Información"** - Panel lateral dividido en:
+   - **"Consejos"** - Ayuda contextual y buenas prácticas
+   - **"Estadísticas"** - Información técnica y métricas (solo en edición)
+
+**Ejemplo de aplicación:**
+```html
+<!-- DETALLE: Tres contenedores principales -->
+<div class="card">
+    <div class="card-header"><h5><i class="fas fa-info-circle"></i> Información General</h5></div>
+    <!-- contenido -->
+</div>
+
+<div class="card">
+    <div class="card-header"><h5><i class="fas fa-chart-bar"></i> Estadísticas</h5></div>
+    <!-- contenido -->
+</div>
+
+<div class="card">
+    <div class="card-header"><h6><i class="fas fa-bolt"></i> Acciones Rápidas</h6></div>
+    <!-- contenido -->
+</div>
+
+<!-- FORMULARIO: Dos columnas principales -->
+<div class="col-lg-8">
+    <div class="card">
+        <div class="card-header"><h5>Modificar datos del producto</h5></div>
+        <!-- formulario -->
+    </div>
+</div>
+
+<div class="col-lg-4">
+    <div class="card">
+        <div class="card-header"><h6>Información</h6></div>
+        <div class="card-body">
+            <!-- Sección Consejos -->
+            <div class="alert alert-info">
+                <h6><i class="fas fa-lightbulb"></i> Consejos</h6>
+                <!-- contenido -->
+            </div>
+            
+            <!-- Sección Estadísticas (solo en edición) -->
+            <?php if ($isEdit): ?>
+            <div class="alert alert-warning">
+                <h6><i class="fas fa-chart-line"></i> Estadísticas</h6>
+                <!-- contenido -->
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+```
+
 ## Componentes de Funcionalidad Estándar
 
 ### 1. Listado (listado.php)
@@ -69,8 +138,12 @@ Para cada entidad XXXX, se deben generar los siguientes archivos siguiendo la es
 #### ⚠️ CRÍTICO - Compatibilidad Bootstrap:
 **SIEMPRE verificar versión de Bootstrap antes de implementar:**
 - El proyecto usa **Bootstrap 4** (NO Bootstrap 5)
-- Clases específicas: `custom-file-input`, `custom-file-label`, `card-header`, `thead-light`
-- **Nunca usar** clases de Bootstrap 5: `form-select`, `btn-close`, etc.
+- **Clases Bootstrap 4:** `form-control`, `custom-file-input`, `card-header`, `thead-light`, `badge-success`
+- **NUNCA usar Bootstrap 5:** `form-select`, `btn-close`, `form-floating`, `bg-success` (en badges)
+- **Correcciones comunes:**
+  - `form-select` → `form-control`
+  - `bg-success` → `badge-success` (para badges)
+  - `bg-danger` → `badge-danger` (para badges)
 - **Validar siempre** en navegador antes de finalizar
 
 #### ⚠️ CRÍTICO - Presentación de Datos:
@@ -461,6 +534,15 @@ Para generar un CRUD completo, usar la siguiente instrucción:
 - **Claves foráneas**: Por convención `rela_`
 - **Campos de fecha**: Por tipo DATE/DATETIME
 - **Campos opcionales**: Por constraint NULL
+
+#### ⚠️ CRÍTICO - Campos de Código:
+**Solo generar campos de código si existen en la estructura de la tabla:**
+- **SI la tabla tiene** campo `entidad_codigo` → Incluir en filtros, listados y formularios
+- **SI la tabla NO tiene** campo código → NO generar este campo en ninguna vista del CRUD
+- **Verificar siempre** la estructura real de la tabla antes de implementar
+- **Usar ID técnico** formateado como código alternativo solo cuando no existe campo código real
+- **Ejemplo**: `condicionsalud` no tiene campo código → usar `CS-001` basado en ID
+- **Ejemplo**: `producto` tiene campo código → usar `producto_codigo` directamente
 
 ### Validaciones Automáticas
 - **Requeridos**: NOT NULL en la tabla

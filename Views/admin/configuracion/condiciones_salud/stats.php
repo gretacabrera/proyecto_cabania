@@ -11,10 +11,10 @@ require_once 'app/Views/layouts/header.php';
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2><i class="fas fa-chart-bar"></i> Estadísticas de Condiciones de Salud</h2>
                 <div>
-                    <a href="/condiciones-salud" class="btn btn-secondary">
+                    <a href="/condiciones_salud" class="btn btn-secondary">
                         <i class="fas fa-list"></i> Ver Listado
                     </a>
-                    <a href="/condiciones-salud/create" class="btn btn-primary">
+                    <a href="/condiciones_salud/create" class="btn btn-primary">
                         <i class="fas fa-plus"></i> Nueva Condición
                     </a>
                 </div>
@@ -286,7 +286,7 @@ require_once 'app/Views/layouts/header.php';
                         <div class="text-center py-4">
                             <i class="fas fa-heart-pulse fa-3x text-muted mb-3"></i>
                             <p class="text-muted">No hay condiciones registradas en el sistema.</p>
-                            <a href="/condiciones-salud/create" class="btn btn-primary">
+                            <a href="/condiciones_salud/create" class="btn btn-primary">
                                 <i class="fas fa-plus"></i> Crear Primera Condición
                             </a>
                         </div>

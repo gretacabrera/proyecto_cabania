@@ -49,7 +49,7 @@ class CategoriasController extends Controller
             'isAdminArea' => true
         ];
 
-        return $this->render('admin/operaciones/categorias/listado', $data, 'main');
+        return $this->render('admin/configuracion/categorias/listado', $data, 'main');
     }
 
     /**
@@ -68,7 +68,7 @@ class CategoriasController extends Controller
             'isAdminArea' => true
         ];
 
-        return $this->render('admin/operaciones/categorias/formulario', $data, 'main');
+        return $this->render('admin/configuracion/categorias/formulario', $data, 'main');
     }
 
     /**
@@ -123,7 +123,7 @@ class CategoriasController extends Controller
             'isAdminArea' => true
         ];
 
-        return $this->render('admin/operaciones/categorias/detalle', $data, 'main');
+        return $this->render('admin/configuracion/categorias/detalle', $data, 'main');
     }
 
     /**
@@ -142,13 +142,17 @@ class CategoriasController extends Controller
             return $this->update($id);
         }
 
+        // Obtener estadísticas de la categoría
+        $estadisticas = $this->categoriaModel->getStatistics($id);
+
         $data = [
             'title' => 'Editar Categoría',
             'categoria' => $categoria,
+            'estadisticas' => $estadisticas,
             'isAdminArea' => true
         ];
 
-        return $this->render('admin/operaciones/categorias/formulario', $data, 'main');
+        return $this->render('admin/configuracion/categorias/formulario', $data, 'main');
     }
 
     /**

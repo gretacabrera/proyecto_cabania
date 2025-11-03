@@ -2,96 +2,135 @@
 
 namespace App\Controllers;
 
-require_once 'app/Models/CondicionSalud.php';
-
+use App\Core\Controller;
 use App\Models\CondicionSalud;
 
-class CondicionesSaludController
+/**
+ * Controlador para el manejo de condiciones de salud
+ */
+class CondicionesSaludController extends Controller
 {
-    private $condicionSaludModel;
+    protected $condicionSaludModel;
 
     public function __construct()
     {
+        parent::__construct();
         $this->condicionSaludModel = new CondicionSalud();
     }
 
     /**
-     * Mostrar listado de condiciones de salud
+     * Listar condiciones de salud
      */
     public function index()
     {
+        $this->requirePermission('condiciones_salud');
+
+        $page = (int) $this->get('page', 1);
+        $perPage = (int) $this->get('per_page', 10);
+        
+        // Validar que perPage esté dentro de los valores permitidos
+        $allowedPerPage = [5, 10, 25, 50];
+        if (!in_array($perPage, $allowedPerPage)) {
+            $perPage = 10;
+        }
+        
         $filters = [
-            'condicionsalud_descripcion' => $_GET['condicionsalud_descripcion'] ?? '',
-            'condicionsalud_estado' => isset($_GET['condicionsalud_estado']) ? $_GET['condicionsalud_estado'] : ''
+            'condicionsalud_descripcion' => $this->get('condicionsalud_descripcion'),
+            'condicionsalud_estado' => $this->get('condicionsalud_estado')
         ];
 
-        $page = (int) ($_GET['page'] ?? 1);
-        $limit = (int) ($_GET['limit'] ?? 10);
-        $orderBy = $_GET['order_by'] ?? 'condicionsalud_descripcion';
-        $orderDir = $_GET['order_dir'] ?? 'ASC';
-
-        $result = $this->condicionSaludModel->getWithFilters($filters, $page, $limit, $orderBy, $orderDir);
+        $result = $this->condicionSaludModel->getWithDetails($page, $perPage, $filters);
 
         $data = [
+            'title' => 'Gestión de Condiciones de Salud',
             'condiciones' => $result['data'],
-            'pagination' => [
-                'current_page' => $result['current_page'],
-                'total_pages' => $result['pages'],
-                'per_page' => $result['per_page'],
-                'total_records' => $result['total']
-            ],
+            'pagination' => $result,
             'filters' => $filters,
-            'orderBy' => $orderBy,
-            'orderDir' => $orderDir
+            'isAdminArea' => true
         ];
 
-        $this->render('admin/configuracion/condiciones_salud/listado', $data);
+        return $this->render('admin/configuracion/condiciones_salud/listado', $data, 'main');
     }
 
     /**
-     * Mostrar formulario para nueva condición
+     * Mostrar formulario de nueva condición de salud
      */
     public function create()
     {
+        $this->requirePermission('condiciones_salud');
+
+        if ($this->isPost()) {
+            return $this->store();
+        }
+
         $data = [
-            'condicionsalud_descripcion' => '',
-            'condicionsalud_estado' => 1
+            'title' => 'Nueva Condición de Salud',
+            'isAdminArea' => true
         ];
 
-        $this->render('admin/configuracion/condiciones_salud/formulario', ['data' => $data]);
+        return $this->render('admin/configuracion/condiciones_salud/formulario', $data, 'main');
     }
 
     /**
-     * Procesar creación de nueva condición
+     * Guardar nueva condición de salud
      */
     public function store()
     {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: /condiciones-salud');
-            exit;
+        $this->requirePermission('condiciones_salud');
+
+        $data = [
+            'condicionsalud_descripcion' => $this->post('condicionsalud_descripcion'),
+            'condicionsalud_estado' => 1 // Nueva condición siempre activa
+        ];
+
+        if (empty($data['condicionsalud_descripcion'])) {
+            $this->redirect('/condiciones_salud/create', 'Complete los campos obligatorios', 'error');
         }
 
-        $data = $this->sanitizeInput($_POST);
-        $errors = $this->validateInput($data);
-
-        if (empty($errors)) {
-            $data['condicionsalud_estado'] = 1; // Nueva condición siempre activa
-            $sanitizedData = $this->condicionSaludModel->sanitizeData($data);
-
-            if ($this->condicionSaludModel->create($sanitizedData)) {
-                $_SESSION['flash_message'] = 'Condición de salud creada exitosamente.';
-                $_SESSION['flash_type'] = 'success';
-                header('Location: /condiciones-salud');
-                exit;
+        try {
+            if ($this->condicionSaludModel->create($data)) {
+                $this->redirect('/condiciones_salud', 'Condición de salud creada correctamente', 'exito');
             } else {
-                $errors[] = 'Error al crear la condición de salud. Por favor, intente nuevamente.';
+                $this->redirect('/condiciones_salud/create', 'Error al crear la condición de salud', 'error');
             }
+        } catch (\Exception $e) {
+            $this->redirect('/condiciones_salud/create', 'Error: ' . $e->getMessage(), 'error');
+        }
+    }
+
+    /**
+     * Ver detalle de condición de salud
+     */
+    public function show($id)
+    {
+        $this->requirePermission('condiciones_salud');
+
+        $condicion = $this->condicionSaludModel->find($id);
+        if (!$condicion) {
+            return $this->view->error(404);
         }
 
-        $this->render('admin/configuracion/condiciones_salud/formulario', [
-            'data' => $data,
-            'errors' => $errors
-        ]);
+        // Obtener estadísticas de la condición de salud (si falla, estadísticas vacías)
+        try {
+            $estadisticas = $this->condicionSaludModel->getStatistics($id);
+        } catch (\Exception $e) {
+            $estadisticas = [
+                'total_huespedes' => 0,
+                'huespedes_activos' => 0,
+                'total_reservas' => 0,
+                'reservas_activas' => 0,
+                'porcentaje_uso' => 0
+            ];
+        }
+
+        $data = [
+            'title' => 'Detalle de Condición de Salud',
+            'condicion' => $condicion,
+            'estadisticas' => $estadisticas,
+            'isAdminArea' => true
+        ];
+
+        return $this->render('admin/configuracion/condiciones_salud/detalle', $data, 'main');
     }
 
     /**
@@ -99,271 +138,301 @@ class CondicionesSaludController
      */
     public function edit($id)
     {
+        $this->requirePermission('condiciones_salud');
+
         $condicion = $this->condicionSaludModel->find($id);
-        
         if (!$condicion) {
-            $_SESSION['flash_message'] = 'Condición de salud no encontrada.';
-            $_SESSION['flash_type'] = 'error';
-            header('Location: /condiciones-salud');
-            exit;
+            return $this->view->error(404);
         }
 
-        $this->render('admin/configuracion/condiciones_salud/formulario', ['data' => $condicion]);
+        if ($this->isPost()) {
+            return $this->update($id);
+        }
+
+        // Obtener estadísticas de la condición de salud (si falla, estadísticas vacías)
+        try {
+            $estadisticas = $this->condicionSaludModel->getStatistics($id);
+        } catch (\Exception $e) {
+            $estadisticas = [
+                'total_huespedes' => 0,
+                'huespedes_activos' => 0,
+                'total_reservas' => 0,
+                'reservas_activas' => 0,
+                'porcentaje_uso' => 0
+            ];
+        }
+
+        $data = [
+            'title' => 'Editar Condición de Salud',
+            'condicion' => $condicion,
+            'estadisticas' => $estadisticas,
+            'isAdminArea' => true
+        ];
+
+        return $this->render('admin/configuracion/condiciones_salud/formulario', $data, 'main');
     }
 
     /**
-     * Procesar actualización de condición
+     * Actualizar condición de salud
      */
     public function update($id)
     {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: /condiciones-salud');
-            exit;
-        }
+        $this->requirePermission('condiciones_salud');
 
         $condicion = $this->condicionSaludModel->find($id);
         if (!$condicion) {
-            $_SESSION['flash_message'] = 'Condición de salud no encontrada.';
-            $_SESSION['flash_type'] = 'error';
-            header('Location: /condiciones-salud');
-            exit;
+            return $this->view->error(404);
         }
-
-        $data = $this->sanitizeInput($_POST);
-        $errors = $this->validateInput($data, true, $id);
-
-        if (empty($errors)) {
-            $sanitizedData = $this->condicionSaludModel->sanitizeData($data);
-
-            if ($this->condicionSaludModel->update($id, $sanitizedData)) {
-                $_SESSION['flash_message'] = 'Condición de salud actualizada exitosamente.';
-                $_SESSION['flash_type'] = 'success';
-                header('Location: /condiciones-salud');
-                exit;
-            } else {
-                $errors[] = 'Error al actualizar la condición de salud. Por favor, intente nuevamente.';
-            }
-        }
-
-        $data['id_condicionsalud'] = $id;
-        $this->render('admin/configuracion/condiciones_salud/formulario', [
-            'data' => $data,
-            'errors' => $errors
-        ]);
-    }
-
-    /**
-     * Cambiar estado de condición (activar/desactivar)
-     */
-    public function toggleStatus($id)
-    {
-        $condicion = $this->condicionSaludModel->find($id);
-        if (!$condicion) {
-            $_SESSION['flash_message'] = 'Condición de salud no encontrada.';
-            $_SESSION['flash_type'] = 'error';
-            header('Location: /condiciones-salud');
-            exit;
-        }
-
-        // Verificar si está en uso antes de desactivar
-        if ($condicion['condicionsalud_estado'] == 1 && $this->condicionSaludModel->isInUse($id)) {
-            $_SESSION['flash_message'] = 'No se puede desactivar una condición que está siendo utilizada por huéspedes.';
-            $_SESSION['flash_type'] = 'warning';
-        } else {
-            $newStatus = $condicion['condicionsalud_estado'] == 1 ? 0 : 1;
-            $statusText = $newStatus == 1 ? 'activada' : 'desactivada';
-
-            if ($this->condicionSaludModel->update($id, ['condicionsalud_estado' => $newStatus])) {
-                $_SESSION['flash_message'] = "Condición de salud {$statusText} exitosamente.";
-                $_SESSION['flash_type'] = 'success';
-            } else {
-                $_SESSION['flash_message'] = 'Error al cambiar el estado de la condición.';
-                $_SESSION['flash_type'] = 'error';
-            }
-        }
-
-        header('Location: /condiciones-salud');
-        exit;
-    }
-
-    /**
-     * Mostrar estadísticas de condiciones de salud
-     */
-    public function stats()
-    {
-        $stats = $this->condicionSaludModel->getStats();
-        $condicionesCriticas = $this->condicionSaludModel->getCondicionesCriticas();
-        $agrupadas = $this->condicionSaludModel->getGroupedByLetter();
-
-        // Obtener todas las condiciones para estadísticas detalladas
-        $todasCondiciones = $this->condicionSaludModel->getWithFilters([], 1, 1000)['data'];
 
         $data = [
-            'stats' => $stats,
-            'condiciones_criticas' => $condicionesCriticas,
-            'agrupadas_por_letra' => $agrupadas,
-            'condiciones_detalle' => $todasCondiciones
+            'condicionsalud_descripcion' => $this->post('condicionsalud_descripcion'),
+            'condicionsalud_estado' => $this->post('condicionsalud_estado')
         ];
 
-        $this->render('admin/configuracion/condiciones_salud/stats', $data);
-    }
-
-    /**
-     * Búsqueda AJAX de condiciones
-     */
-    public function search()
-    {
-        $term = $_GET['q'] ?? '';
-        $limit = (int) ($_GET['limit'] ?? 10);
-
-        if (strlen($term) < 2) {
-            header('Content-Type: application/json');
-            echo json_encode([]);
-            exit;
+        if (empty($data['condicionsalud_descripcion'])) {
+            $this->redirect('/condiciones_salud/' . $id . '/edit', 'Complete los campos obligatorios', 'error');
         }
 
-        $resultados = $this->condicionSaludModel->search($term, $limit);
-
-        header('Content-Type: application/json');
-        echo json_encode($resultados);
-        exit;
+        try {
+            if ($this->condicionSaludModel->update($id, $data)) {
+                $this->redirect('/condiciones_salud/' . $id, 'Condición de salud actualizada correctamente', 'exito');
+            } else {
+                $this->redirect('/condiciones_salud/' . $id . '/edit', 'Error al actualizar la condición de salud', 'error');
+            }
+        } catch (\Exception $e) {
+            $this->redirect('/condiciones_salud/' . $id . '/edit', 'Error: ' . $e->getMessage(), 'error');
+        }
     }
 
     /**
-     * Ver detalles de una condición y sus huéspedes asociados
+     * Baja lógica de condición de salud
      */
-    public function show($id)
+    public function delete($id)
     {
+        $this->requirePermission('condiciones_salud');
+
         $condicion = $this->condicionSaludModel->find($id);
         if (!$condicion) {
-            $_SESSION['flash_message'] = 'Condición de salud no encontrada.';
-            $_SESSION['flash_type'] = 'error';
-            header('Location: /condiciones-salud');
-            exit;
+            return $this->view->error(404);
         }
 
-        $huespedes = $this->condicionSaludModel->getHuespedes($id);
-
-        $data = [
-            'condicion' => $condicion,
-            'huespedes' => $huespedes
-        ];
-
-        $this->render('admin/configuracion/condiciones_salud/detalle', $data);
-    }
-
-    /**
-     * Validar datos de entrada
-     */
-    private function validateInput($data, $isUpdate = false, $id = null)
-    {
-        return $this->condicionSaludModel->validate($data, $isUpdate, $id);
-    }
-
-    /**
-     * Sanitizar datos de entrada
-     */
-    private function sanitizeInput($data)
-    {
-        $sanitized = [];
-
-        // Descripción
-        if (isset($data['condicionsalud_descripcion'])) {
-            $sanitized['condicionsalud_descripcion'] = trim($data['condicionsalud_descripcion']);
-            $sanitized['condicionsalud_descripcion'] = filter_var(
-                $sanitized['condicionsalud_descripcion'], 
-                FILTER_SANITIZE_STRING, 
-                FILTER_FLAG_NO_ENCODE_QUOTES
-            );
-        }
-
-        // Estado
-        if (isset($data['condicionsalud_estado'])) {
-            $sanitized['condicionsalud_estado'] = (int) $data['condicionsalud_estado'];
-        }
-
-        return $sanitized;
-    }
-
-    /**
-     * Renderizar vista
-     */
-    private function render($view, $data = [])
-    {
-        // Verificar permisos (implementar según sistema de permisos)
-        if (!$this->checkPermissions()) {
-            header('HTTP/1.1 403 Forbidden');
-            include 'app/Views/errors/403.php';
-            exit;
-        }
-
-        // Extraer datos para usar en la vista
-        extract($data);
-
-        // Incluir vista
-        $viewPath = "app/Views/{$view}.php";
-        if (file_exists($viewPath)) {
-            include $viewPath;
+        if ($this->condicionSaludModel->softDelete($id, 'condicionsalud_estado')) {
+            $this->redirect('/condiciones_salud', 'Condición de salud eliminada correctamente', 'exito');
         } else {
-            // Vista no encontrada
-            header('HTTP/1.1 404 Not Found');
-            include 'app/Views/errors/404.php';
-            exit;
+            $this->redirect('/condiciones_salud', 'Error al eliminar la condición de salud', 'error');
         }
     }
 
     /**
-     * Verificar permisos del usuario
+     * Restaurar condición de salud
      */
-    private function checkPermissions()
+    public function restore($id)
     {
-        // Implementar verificación de permisos según el sistema
-        // Por ahora retorna true, pero debería verificar sesión y permisos
-        return isset($_SESSION) && !empty($_SESSION);
+        $this->requirePermission('condiciones_salud');
+
+        if ($this->condicionSaludModel->restore($id, 'condicionsalud_estado')) {
+            $this->redirect('/condiciones_salud', 'Condición de salud restaurada correctamente', 'exito');
+        } else {
+            $this->redirect('/condiciones_salud', 'Error al restaurar la condición de salud', 'error');
+        }
     }
 
     /**
-     * Obtener condiciones críticas para alertas
+     * Cambiar estado (AJAX)
      */
-    public function getCriticas()
+    public function cambiarEstado($id)
     {
-        $condicionesCriticas = $this->condicionSaludModel->getCondicionesCriticas();
+        if (!$this->isAjax()) {
+            return $this->view->error(404);
+        }
+
+        $this->requirePermission('condiciones_salud');
         
-        header('Content-Type: application/json');
-        echo json_encode([
-            'success' => true,
-            'data' => $condicionesCriticas,
-            'count' => count($condicionesCriticas)
-        ]);
-        exit;
-    }
+        $input = json_decode(file_get_contents('php://input'), true);
+        $nuevoEstado = isset($input['estado']) ? (int)$input['estado'] : null;
 
-    /**
-     * Exportar condiciones a formato CSV
-     */
-    public function export()
-    {
-        $condiciones = $this->condicionSaludModel->getWithFilters([], 1, 1000)['data'];
+        if ($nuevoEstado === null || !in_array($nuevoEstado, [0, 1])) {
+            return $this->json(['error' => 'Estado inválido'], 400);
+        }
 
-        header('Content-Type: text/csv');
-        header('Content-Disposition: attachment; filename="condiciones_salud_' . date('Y-m-d') . '.csv"');
+        $condicion = $this->condicionSaludModel->find($id);
+        if (!$condicion) {
+            return $this->json(['error' => 'Condición de salud no encontrada'], 404);
+        }
 
-        $output = fopen('php://output', 'w');
-        
-        // Encabezados
-        fputcsv($output, ['ID', 'Descripción', 'Estado', 'Estado Texto']);
-
-        // Datos
-        foreach ($condiciones as $condicion) {
-            fputcsv($output, [
-                $condicion['id_condicionsalud'],
-                $condicion['condicionsalud_descripcion'],
-                $condicion['condicionsalud_estado'],
-                $condicion['condicionsalud_estado'] == 1 ? 'Activo' : 'Inactivo'
+        if ($this->condicionSaludModel->update($id, ['condicionsalud_estado' => $nuevoEstado])) {
+            $estadoTexto = $nuevoEstado == 1 ? 'Activo' : 'Inactivo';
+            return $this->json([
+                'success' => true,
+                'message' => 'Estado actualizado correctamente',
+                'nuevo_estado' => $nuevoEstado,
+                'estado_texto' => $estadoTexto
             ]);
+        } else {
+            return $this->json(['error' => 'Error al actualizar el estado'], 500);
         }
+    }
 
-        fclose($output);
-        exit;
+    /**
+     * Exportar condiciones de salud a Excel
+     */
+    public function exportar()
+    {
+        $this->requirePermission('condiciones_salud');
+
+        $filters = [
+            'condicionsalud_descripcion' => $this->get('condicionsalud_descripcion'),
+            'condicionsalud_estado' => $this->get('condicionsalud_estado')
+        ];
+
+        try {
+            $result = $this->condicionSaludModel->getAllWithDetailsForExport($filters);
+            $datos = $result['data'];
+
+            if (empty($datos)) {
+                $this->redirect('/condiciones_salud', 'No hay datos para exportar', 'error');
+                return;
+            }
+
+            require_once 'vendor/autoload.php';
+            
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            
+            // Encabezados
+            $headers = ['Descripción', 'Estado'];
+            $sheet->fromArray($headers, null, 'A1');
+            
+            // Estilo para encabezados
+            $headerStyle = [
+                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'color' => ['rgb' => '4472C4']],
+                'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER]
+            ];
+            $sheet->getStyle('A1:B1')->applyFromArray($headerStyle);
+            
+            // Datos
+            $row = 2;
+            foreach ($datos as $condicion) {
+                $estadoTexto = $condicion['condicionsalud_estado'] == 1 ? 'Activo' : 'Inactivo';
+                
+                $sheet->setCellValue('A' . $row, $condicion['condicionsalud_descripcion']);
+                $sheet->setCellValue('B' . $row, $estadoTexto);
+                
+                // Estilo alternado para filas
+                if ($row % 2 == 0) {
+                    $sheet->getStyle('A' . $row . ':B' . $row)->getFill()
+                          ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                          ->getStartColor()->setRGB('F8F9FA');
+                }
+                
+                $row++;
+            }
+            
+            // Ajustar ancho de columnas
+            foreach (range('A', 'B') as $col) {
+                $sheet->getColumnDimension($col)->setAutoSize(true);
+            }
+            
+            // Configurar respuesta
+            $filename = 'condiciones_salud_' . date('Y-m-d_H-i-s') . '.xlsx';
+            
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $filename . '"');
+            header('Cache-Control: max-age=0');
+            
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save('php://output');
+            
+        } catch (\Exception $e) {
+            $this->redirect('/condiciones_salud', 'Error al generar el archivo: ' . $e->getMessage(), 'error');
+        }
+    }
+
+    /**
+     * Exportar condiciones de salud a PDF
+     */
+    public function exportarPdf()
+    {
+        $this->requirePermission('condiciones_salud');
+
+        $filters = [
+            'condicionsalud_descripcion' => $this->get('condicionsalud_descripcion'),
+            'condicionsalud_estado' => $this->get('condicionsalud_estado')
+        ];
+
+        try {
+            $result = $this->condicionSaludModel->getAllWithDetailsForExport($filters);
+            $datos = $result['data'];
+
+            if (empty($datos)) {
+                $this->redirect('/condiciones_salud', 'No hay datos para exportar', 'error');
+                return;
+            }
+
+            require_once 'vendor/autoload.php';
+            
+            $pdf = new \TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+            
+            // Información del documento
+            $pdf->SetCreator('Sistema de Cabañas');
+            $pdf->SetAuthor('Sistema de Cabañas');
+            $pdf->SetTitle('Listado de Condiciones de Salud');
+            
+            // Configuraciones
+            $pdf->SetDefaultMonospacedFont(PDF_FONT_MONOSPACED);
+            $pdf->SetMargins(15, 27, 15);
+            $pdf->SetHeaderMargin(5);
+            $pdf->SetFooterMargin(10);
+            $pdf->SetAutoPageBreak(TRUE, 25);
+            $pdf->setImageScale(PDF_IMAGE_SCALE_RATIO);
+            
+            $pdf->AddPage();
+            
+            // Título
+            $pdf->SetFont('helvetica', 'B', 16);
+            $pdf->Cell(0, 15, 'Listado de Condiciones de Salud', 0, 1, 'C');
+            $pdf->Ln(5);
+            
+            // Información de filtros
+            $pdf->SetFont('helvetica', '', 10);
+            if (!empty($filters['condicionsalud_descripcion'])) {
+                $pdf->Cell(0, 5, 'Filtro descripción: ' . $filters['condicionsalud_descripcion'], 0, 1);
+            }
+            if ($filters['condicionsalud_estado'] !== '') {
+                $estadoTexto = $filters['condicionsalud_estado'] == '1' ? 'Activo' : 'Inactivo';
+                $pdf->Cell(0, 5, 'Filtro estado: ' . $estadoTexto, 0, 1);
+            }
+            $pdf->Cell(0, 5, 'Total registros: ' . count($datos), 0, 1);
+            $pdf->Cell(0, 5, 'Generado: ' . date('d/m/Y H:i:s'), 0, 1);
+            $pdf->Ln(5);
+            
+            // Encabezados de tabla
+            $pdf->SetFont('helvetica', 'B', 12);
+            $pdf->SetFillColor(68, 114, 196);
+            $pdf->SetTextColor(255);
+            $pdf->Cell(150, 8, 'Descripción', 1, 0, 'C', 1);
+            $pdf->Cell(30, 8, 'Estado', 1, 1, 'C', 1);
+            
+            // Datos
+            $pdf->SetFont('helvetica', '', 10);
+            $pdf->SetTextColor(0);
+            foreach ($datos as $i => $condicion) {
+                $fill = ($i % 2 == 0) ? 1 : 0;
+                $pdf->SetFillColor(248, 249, 250);
+                
+                $estadoTexto = $condicion['condicionsalud_estado'] == 1 ? 'Activo' : 'Inactivo';
+                
+                $pdf->Cell(150, 6, $condicion['condicionsalud_descripcion'], 1, 0, 'L', $fill);
+                $pdf->Cell(30, 6, $estadoTexto, 1, 1, 'C', $fill);
+            }
+            
+            // Salida del PDF
+            $filename = 'condiciones_salud_' . date('Y-m-d_H-i-s') . '.pdf';
+            $pdf->Output($filename, 'D');
+            
+        } catch (\Exception $e) {
+            $this->redirect('/condiciones_salud', 'Error al generar el PDF: ' . $e->getMessage(), 'error');
+        }
     }
 }
