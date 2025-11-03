@@ -75,7 +75,7 @@
                         <label class="form-label small mb-1 text-muted">Registros por página</label>
                     </div>
                     <div class="col-auto">
-                        <select name="per_page" class="form-control form-control-sm" style="width: 80px;" 
+                        <select name="per_page" class="form-select form-select-sm" style="width: 80px;" 
                                 onchange="this.form.submit()">
                             <?php $perPage = (int) ($_GET['per_page'] ?? 10); ?>
                             <option value="5" <?= $perPage == 5 ? 'selected' : '' ?>>5</option>

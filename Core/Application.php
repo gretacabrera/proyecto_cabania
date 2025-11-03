@@ -146,10 +146,13 @@ class Application
         // Rutas de categorías
         $this->router->get('/categorias', 'CategoriasController@index');
         $this->router->any('/categorias/create', 'CategoriasController@create');
+        $this->router->get('/categorias/exportar', 'CategoriasController@exportar');
+        $this->router->get('/categorias/exportar-pdf', 'CategoriasController@exportarPdf');
+        $this->router->get('/categorias/{id}', 'CategoriasController@show');
         $this->router->any('/categorias/{id}/edit', 'CategoriasController@edit');
-        $this->router->get('/categorias/{id}/delete', 'CategoriasController@delete');
-        $this->router->get('/categorias/{id}/restore', 'CategoriasController@restore');
-        $this->router->get('/categorias/search', 'CategoriasController@search');
+        $this->router->post('/categorias/{id}/delete', 'CategoriasController@delete');
+        $this->router->post('/categorias/{id}/restore', 'CategoriasController@restore');
+        $this->router->post('/categorias/{id}/estado', 'CategoriasController@cambiarEstado');
 
         // Rutas de productos
         $this->router->get('/productos', 'ProductosController@index');

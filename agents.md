@@ -73,6 +73,20 @@ Para cada entidad XXXX, se deben generar los siguientes archivos siguiendo la es
 - **Nunca usar** clases de Bootstrap 5: `form-select`, `btn-close`, etc.
 - **Validar siempre** en navegador antes de finalizar
 
+#### ⚠️ CRÍTICO - Presentación de Datos:
+**NUNCA mostrar IDs técnicos al usuario:**
+- **NO mostrar** campos como `id_producto`, `id_cabania` en interfaces
+- **SÍ mostrar** códigos de negocio como `producto_codigo`, `cabania_codigo`
+- **Usar nombres descriptivos** en lugar de IDs técnicos
+- **IDs solo para** enlaces internos y operaciones backend
+
+#### ⚠️ CRÍTICO - Uso de Emojis:
+**Usar emojis de forma moderada y profesional:**
+- **Máximo 2-3 emojis** por sección de documentación
+- **Solo emojis relevantes** al contexto (⚠️ para advertencias, ✅ para confirmaciones)
+- **NO usar** emojis decorativos excesivos (🎯🔥💯🚀)
+- **Mantener tono profesional** en toda la documentación
+
 #### Filtros estándar:
 ```php
 $filters = [
@@ -192,8 +206,9 @@ public function getWithDetails($page = 1, $perPage = 10, $filters = [])
 <table class="table table-hover mb-0">
     <thead class="thead-light">
         <tr>
-            <th class="border-0 py-3">Campo 1</th>
-            <th class="border-0 py-3">Campo 2</th>
+            <!-- NUNCA mostrar columnas de ID técnico (id_producto, id_cabania, etc.) -->
+            <th class="border-0 py-3">Código</th> <!-- Usar código de negocio -->
+            <th class="border-0 py-3">Campo Descriptivo</th>
             <th class="border-0 py-3">Estado</th>
             <th class="border-0 py-3 text-center">Acciones</th>
         </tr>
@@ -201,10 +216,11 @@ public function getWithDetails($page = 1, $perPage = 10, $filters = [])
     <tbody>
         <?php foreach ($registros as $registro): ?>
             <tr>
-                <td class="border-0 py-3"><?= htmlspecialchars($registro['campo1']) ?></td>
-                <td class="border-0 py-3"><?= htmlspecialchars($registro['campo2']) ?></td>
+                <!-- Mostrar código de negocio, NO el ID técnico -->
+                <td class="border-0 py-3"><?= htmlspecialchars($registro['entidad_codigo']) ?></td>
+                <td class="border-0 py-3"><?= htmlspecialchars($registro['campo_descriptivo']) ?></td>
                 <td class="border-0 py-3">
-                    <?php if ($registro['estado'] == 1): ?>
+                    <?php if ($registro['entidad_estado'] == 1): ?>
                         <span class="badge bg-success">Activo</span>
                     <?php else: ?>
                         <span class="badge bg-danger">Inactivo</span>
@@ -212,11 +228,12 @@ public function getWithDetails($page = 1, $perPage = 10, $filters = [])
                 </td>
                 <td class="border-0 py-3 text-center">
                     <div class="btn-group btn-group-sm">
-                        <a href="<?= url('/xxxx/' . $registro['id']) ?>" 
+                        <!-- ID técnico solo para enlaces internos (oculto al usuario) -->
+                        <a href="<?= url('/xxxx/' . $registro['id_entidad']) ?>" 
                            class="btn btn-outline-primary" title="Ver detalle">
                             <i class="fas fa-eye"></i>
                         </a>
-                        <a href="<?= url('/xxxx/' . $registro['id'] . '/edit') ?>" 
+                        <a href="<?= url('/xxxx/' . $registro['id_entidad'] . '/edit') ?>" 
                            class="btn btn-outline-warning" title="Editar">
                             <i class="fas fa-edit"></i>
                         </a>
@@ -748,19 +765,19 @@ $end = min($pagination['current_page'] * $perPage, $pagination['total']);
 ### Comportamiento por Casos de Uso
 
 #### **Caso 1: Una Sola Página (1-10 registros)**
-- ✅ **Información visible:** "Mostrando 1 a 8 de 8 registros"
-- ❌ **Sin navegación:** No muestra botones de página
-- 🎯 **UX:** Interfaz limpia sin elementos innecesarios
+- **Información visible:** "Mostrando 1 a 8 de 8 registros"
+- **Sin navegación:** No muestra botones de página
+- **UX:** Interfaz limpia sin elementos innecesarios
 
 #### **Caso 2: Múltiples Páginas (11+ registros)**
-- ✅ **Información completa:** "Mostrando 11 a 20 de 45 registros"
-- ✅ **Navegación completa:** Botones Anterior/Siguiente + números de página
-- ✅ **Página actual destacada:** Fondo azul (`bg-primary text-white border-primary`)
-- ✅ **Navegación inteligente:** Elipsis (...) cuando hay muchas páginas
+- **Información completa:** "Mostrando 11 a 20 de 45 registros"
+- **Navegación completa:** Botones Anterior/Siguiente + números de página
+- **Página actual destacada:** Fondo azul (`bg-primary text-white border-primary`)
+- **Navegación inteligente:** Elipsis (...) cuando hay muchas páginas
 
 #### **Caso 3: Sin Registros (0 registros)**
-- ✅ **Estado vacío:** Mensaje contextual con CTA para crear registro
-- ❌ **Sin paginación:** No muestra información ni navegación
+- **Estado vacío:** Mensaje contextual con CTA para crear registro
+- **Sin paginación:** No muestra información ni navegación
 
 ### Especificaciones Visuales
 
@@ -814,16 +831,16 @@ if (empty($datos)) {
 
 **Antes de finalizar cualquier vista de listado, verificar:**
 
-- [ ] ✅ **Información siempre visible** - Muestra conteo incluso con 1 página
-- [ ] ✅ **Paginación superior e inferior idénticas** - Misma estructura y contenido
-- [ ] ✅ **Sin navegación en página única** - Solo información, sin botones
-- [ ] ✅ **Página actual destacada** - Color azul distintivo y no clickeable
-- [ ] ✅ **Navegación inteligente** - Elipsis cuando hay muchas páginas
-- [ ] ✅ **Estructura de datos estándar** - Mismo formato en modelo
-- [ ] ✅ **Filtros respetados** - Totales incluyen filtros aplicados
-- [ ] ✅ **Exportaciones consistentes** - Usan estructura {'data': [], 'total': X}
-- [ ] ✅ **Validación de parámetros** - perPage y page validados
-- [ ] ✅ **Responsive** - Funciona en móvil y desktop
+- [ ] **Información siempre visible** - Muestra conteo incluso con 1 página
+- [ ] **Paginación superior e inferior idénticas** - Misma estructura y contenido
+- [ ] **Sin navegación en página única** - Solo información, sin botones
+- [ ] **Página actual destacada** - Color azul distintivo y no clickeable
+- [ ] **Navegación inteligente** - Elipsis cuando hay muchas páginas
+- [ ] **Estructura de datos estándar** - Mismo formato en modelo
+- [ ] **Filtros respetados** - Totales incluyen filtros aplicados
+- [ ] **Exportaciones consistentes** - Usan estructura {'data': [], 'total': X}
+- [ ] **Validación de parámetros** - perPage y page validados
+- [ ] **Responsive** - Funciona en móvil y desktop
 
 ### Patrones Prohibidos
 
@@ -983,12 +1000,12 @@ $this->router->get('/xxxx/exportar', 'XXXXController@exportar');        // Nunca
 
 **Checklist obligatorio antes de finalizar:**
 
-- [ ] ✅ **Todas las rutas** definidas en `Application.php` tienen métodos correspondientes en el controlador
-- [ ] ✅ **Todos los métodos** del controlador tienen rutas definidas (excepto métodos privados/helper)
-- [ ] ✅ **URLs en vistas** (HTML y JavaScript) coinciden con rutas definidas
-- [ ] ✅ **Parámetros de ruta** (`{id}`) se pasan correctamente a los métodos del controlador
-- [ ] ✅ **Métodos HTTP** apropiados (GET para formularios/listados, POST para acciones)
-- [ ] ✅ **Orden de rutas** correcto (específicas antes que paramétricas)
+- [ ] **Todas las rutas** definidas en `Application.php` tienen métodos correspondientes en el controlador
+- [ ] **Todos los métodos** del controlador tienen rutas definidas (excepto métodos privados/helper)
+- [ ] **URLs en vistas** (HTML y JavaScript) coinciden con rutas definidas
+- [ ] **Parámetros de ruta** (`{id}`) se pasan correctamente a los métodos del controlador
+- [ ] **Métodos HTTP** apropiados (GET para formularios/listados, POST para acciones)
+- [ ] **Orden de rutas** correcto (específicas antes que paramétricas)
 
 #### 8. **Problemas Comunes y Soluciones**
 
@@ -1044,8 +1061,8 @@ $this->router->get('/entidad/exportar-pdf', 'EntidadController@exportarPdf');
 **Síntoma:** Elementos no se muestran correctamente, estilos rotos
 **Causa:** Uso de clases de Bootstrap 5 en proyecto Bootstrap 4
 **Solución Crítica:**
-- ✅ **Bootstrap 4**: `custom-file-input`, `custom-file-label`, `card-header`
-- ❌ **Bootstrap 5**: `form-select`, `btn-close`, `form-floating`
+- **Bootstrap 4**: `custom-file-input`, `custom-file-label`, `card-header`
+- **Bootstrap 5**: `form-select`, `btn-close`, `form-floating` (NO usar)
 - **VALIDAR SIEMPRE** en navegador antes de finalizar
 
 ### 3. **Funcionalidad de Imágenes No Funciona**
@@ -1053,93 +1070,99 @@ $this->router->get('/entidad/exportar-pdf', 'EntidadController@exportarPdf');
 **Síntoma:** Imágenes no se guardan, errores en `handleImageUpload()`
 **Causa:** Métodos auxiliares complejos en lugar del patrón directo de Cabañas
 **Solución Obligatoria:**
-- ❌ **NO usar** `handleImageUpload()` con arrays de retorno
-- ✅ **SÍ usar** manejo directo como en CabañasController
-- ✅ Código directo en `store()` y `update()`
+- **NO usar** `handleImageUpload()` con arrays de retorno
+- **SÍ usar** manejo directo como en CabañasController
+- Código directo en `store()` y `update()`
 
 ### 4. **Paginación Inconsistente**
 
 **Síntoma:** Paginación solo arriba o abajo, información faltante
 **Causa:** No seguir patrón dual idéntico
 **Solución:**
-- ✅ Paginación **superior e inferior IDÉNTICAS**
-- ✅ Información **siempre visible** (incluso con 1 página)
-- ✅ Sin navegación cuando hay una sola página
+- Paginación **superior e inferior IDÉNTICAS**
+- Información **siempre visible** (incluso con 1 página)
+- Sin navegación cuando hay una sola página
 
 ### 5. **Títulos Duplicados en Vistas**
 
 **Síntoma:** Títulos aparecen dos veces en la interfaz
 **Causa:** Header duplicado en vista de detalle
 **Solución:**
-- ✅ Un solo `<h1>` por vista
-- ✅ Verificar estructura de headers vs breadcrumbs
+- Un solo `<h1>` por vista
+- Verificar estructura de headers vs breadcrumbs
 
 ### 6. **JavaScript/AJAX No Funciona**
 
 **Síntoma:** Botones de estado, exportaciones no responden
 **Causa:** URLs incorrectas, rutas no definidas
 **Solución:**
-- ✅ URLs en JavaScript deben coincidir con rutas de `Application.php`
-- ✅ Verificar métodos POST para AJAX
-- ✅ Usar `<?= url('/ruta') ?>` para consistencia
+- URLs en JavaScript deben coincidir con rutas de `Application.php`
+- Verificar métodos POST para AJAX
+- Usar `<?= url('/ruta') ?>` para consistencia
 
 ### 7. **Campos de Formulario No Validados**
 
 **Síntoma:** Formulario acepta datos vacíos o incorrectos
 **Causa:** Falta validación HTML5 y backend
 **Solución:**
-- ✅ Atributos `required`, `maxlength`, `min`, `max` en HTML
-- ✅ Validación en métodos `store()` y `update()`
-- ✅ Mensajes de error específicos con `redirect()`
+- Atributos `required`, `maxlength`, `min`, `max` en HTML
+- Validación en métodos `store()` y `update()`
+- Mensajes de error específicos con `redirect()`
 
-## 📋 Checklist de Finalización de CRUD
+## Checklist de Finalización de CRUD
 
 **Antes de considerar terminado cualquier CRUD, verificar:**
 
 ### **Arquitectura y Estructura**
-- [ ] ✅ **Controlador** implementa todos los métodos obligatorios
-- [ ] ✅ **Modelo** tiene `getWithDetails()` y `getAllWithDetailsForExport()`
-- [ ] ✅ **Vistas** incluyen `listado.php`, `formulario.php`, `detalle.php`
-- [ ] ✅ **Rutas** definidas correctamente en `Application.php`
+- [ ] **Controlador** implementa todos los métodos obligatorios
+- [ ] **Modelo** tiene `getWithDetails()` y `getAllWithDetailsForExport()`
+- [ ] **Vistas** incluyen `listado.php`, `formulario.php`, `detalle.php`
+- [ ] **Rutas** definidas correctamente en `Application.php`
+
+### **Presentación de Datos**
+- [ ] **Sin IDs técnicos** visibles al usuario (id_producto, id_cabania, etc.)
+- [ ] **Códigos de negocio** mostrados en lugar de IDs
+- [ ] **Nombres descriptivos** en columnas y campos
+- [ ] **IDs técnicos** solo para operaciones internas
 
 ### **Funcionalidad Core**
-- [ ] ✅ **CRUD básico** funciona (crear, leer, actualizar, eliminar)
-- [ ] ✅ **Filtros** aplican correctamente en listado
-- [ ] ✅ **Paginación** funciona con información completa
-- [ ] ✅ **Exportaciones** (Excel y PDF) descargan correctamente
-- [ ] ✅ **Estados** cambian via AJAX con confirmación
+- [ ] **CRUD básico** funciona (crear, leer, actualizar, eliminar)
+- [ ] **Filtros** aplican correctamente en listado
+- [ ] **Paginación** funciona con información completa
+- [ ] **Exportaciones** (Excel y PDF) descargan correctamente
+- [ ] **Estados** cambian via AJAX con confirmación
 
 ### **Consistencia Visual**
-- [ ] ✅ **Bootstrap 4** clases correctas (NO Bootstrap 5)
-- [ ] ✅ **Diseño** idéntico al módulo Cabañas
-- [ ] ✅ **Iconografía** contextual y apropiada
-- [ ] ✅ **Badges** con colores semánticos correctos
-- [ ] ✅ **Responsive** funciona en móvil y desktop
+- [ ] **Bootstrap 4** clases correctas (NO Bootstrap 5)
+- [ ] **Diseño** idéntico al módulo Cabañas
+- [ ] **Iconografía** contextual y apropiada
+- [ ] **Badges** con colores semánticos correctos
+- [ ] **Responsive** funciona en móvil y desktop
 
 ### **Manejo de Imágenes**
-- [ ] ✅ **Subida** funciona en crear y editar
-- [ ] ✅ **Eliminación** automática de archivos anteriores
-- [ ] ✅ **Vista previa** se muestra correctamente
-- [ ] ✅ **Directorio** se crea automáticamente
-- [ ] ✅ **Nombres únicos** con `uniqid()`
+- [ ] **Subida** funciona en crear y editar
+- [ ] **Eliminación** automática de archivos anteriores
+- [ ] **Vista previa** se muestra correctamente
+- [ ] **Directorio** se crea automáticamente
+- [ ] **Nombres únicos** con `uniqid()`
 
 ### **Validaciones y Seguridad**
-- [ ] ✅ **Permisos** verificados con `requirePermission()`
-- [ ] ✅ **Validación HTML5** en formularios
-- [ ] ✅ **Sanitización** de datos con `htmlspecialchars()`
-- [ ] ✅ **SQL seguro** con parámetros preparados
-- [ ] ✅ **Manejo errores** con try-catch en exportaciones
+- [ ] **Permisos** verificados con `requirePermission()`
+- [ ] **Validación HTML5** en formularios
+- [ ] **Sanitización** de datos con `htmlspecialchars()`
+- [ ] **SQL seguro** con parámetros preparados
+- [ ] **Manejo errores** con try-catch en exportaciones
 
 ### **Experiencia de Usuario**
-- [ ] ✅ **Mensajes** apropiados para todas las acciones
-- [ ] ✅ **Confirmaciones** para acciones destructivas
-- [ ] ✅ **Estado vacío** cuando no hay registros
-- [ ] ✅ **Navegación** intuitiva entre vistas
-- [ ] ✅ **Rendimiento** aceptable en listados grandes
+- [ ] **Mensajes** apropiados para todas las acciones
+- [ ] **Confirmaciones** para acciones destructivas
+- [ ] **Estado vacío** cuando no hay registros
+- [ ] **Navegación** intuitiva entre vistas
+- [ ] **Rendimiento** aceptable en listados grandes
 
 ---
 
-## 🎯 Metodología de Contraste con Cabañas
+## Metodología de Contraste con Cabañas
 
 ### Proceso Obligatorio
 
