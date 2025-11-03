@@ -118,7 +118,7 @@
                                     <div class="card-body">
                                         <div class="table-responsive">
                                             <table class="table table-sm">
-                                                <thead class="table-light">
+                                                <thead class="thead-light">
                                                     <tr>
                                                         <th>Servicio</th>
                                                         <th class="text-center">Cantidad</th>

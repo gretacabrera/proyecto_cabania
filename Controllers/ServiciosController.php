@@ -93,20 +93,15 @@ class ServiciosController extends Controller
         $data = [
             'servicio_nombre' => $this->post('servicio_nombre'),
             'servicio_descripcion' => $this->post('servicio_descripcion'),
-            'servicio_precio' => $this->post('servicio_precio'),
-            'rela_tiposervicio' => $this->post('rela_tiposervicio'),
+            'servicio_precio' => (float) $this->post('servicio_precio'),
+            'rela_tiposervicio' => (int) $this->post('rela_tiposervicio'),
             'servicio_estado' => 1
         ];
 
-        // Validaciones básicas
-        if (empty($data['servicio_nombre']) || empty($data['servicio_descripcion']) || empty($data['rela_tiposervicio'])) {
-            $this->redirect('/servicios/create', 'Complete los campos obligatorios', 'error');
-            return;
-        }
-
-        // Validar precio
-        if (!is_numeric($data['servicio_precio']) || $data['servicio_precio'] < 0) {
-            $this->redirect('/servicios/create', 'El precio debe ser un número mayor o igual a 0', 'error');
+        // Usar validaciones del modelo
+        $validation = $this->servicioModel->validate($data);
+        if ($validation !== true) {
+            $this->redirect('/servicios/create', $validation, 'error');
             return;
         }
 
@@ -135,7 +130,7 @@ class ServiciosController extends Controller
         }
 
         // Obtener estadísticas del servicio
-        $estadisticas = $this->servicioModel->getStatistics($id);
+        $estadisticas = $this->servicioModel->getServiceStats($id);
 
         $data = [
             'title' => 'Detalle de Servicio',
@@ -191,19 +186,14 @@ class ServiciosController extends Controller
         $data = [
             'servicio_nombre' => $this->post('servicio_nombre'),
             'servicio_descripcion' => $this->post('servicio_descripcion'),
-            'servicio_precio' => $this->post('servicio_precio'),
-            'rela_tiposervicio' => $this->post('rela_tiposervicio')
+            'servicio_precio' => (float) $this->post('servicio_precio'),
+            'rela_tiposervicio' => (int) $this->post('rela_tiposervicio')
         ];
 
-        // Validaciones básicas
-        if (empty($data['servicio_nombre']) || empty($data['servicio_descripcion']) || empty($data['rela_tiposervicio'])) {
-            $this->redirect("/servicios/$id/edit", 'Complete los campos obligatorios', 'error');
-            return;
-        }
-
-        // Validar precio
-        if (!is_numeric($data['servicio_precio']) || $data['servicio_precio'] < 0) {
-            $this->redirect("/servicios/$id/edit", 'El precio debe ser un número mayor o igual a 0', 'error');
+        // Usar validaciones del modelo
+        $validation = $this->servicioModel->validate($data, $id);
+        if ($validation !== true) {
+            $this->redirect("/servicios/$id/edit", $validation, 'error');
             return;
         }
 
@@ -523,7 +513,7 @@ class ServiciosController extends Controller
                     word-wrap: break-word;
                     overflow: hidden;
                 }
-                .nombre { width: 25%; }
+                .nombre { width: 15%; }
                 .descripcion { width: 35%; }
                 .precio { text-align: right; width: 15%; }
                 .tipo { width: 20%; }

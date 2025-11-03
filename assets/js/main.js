@@ -3895,7 +3895,7 @@ function initPerfilesModulosManagePermissions() {
             const row = this.closest('tr');
             if (this.checked) {
                 row.classList.add('table-success');
-                row.classList.remove('table-light');
+                row.classList.remove('thead-light');
             } else {
                 row.classList.remove('table-success');
             }
@@ -3912,7 +3912,7 @@ function initPerfilesModulosManagePermissions() {
             const row = checkbox.closest('tr');
             if (isChecked) {
                 row.classList.add('table-success');
-                row.classList.remove('table-light');
+                row.classList.remove('thead-light');
             } else {
                 row.classList.remove('table-success');
             }
@@ -4063,7 +4063,7 @@ function resetFormPerfilesModulos() {
         const row = checkbox.closest('tr');
         if (checkbox.checked) {
             row.classList.add('table-success');
-            row.classList.remove('table-light');
+            row.classList.remove('thead-light');
         } else {
             row.classList.remove('table-success');
         }

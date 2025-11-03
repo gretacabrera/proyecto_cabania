@@ -63,13 +63,7 @@ function getStockBadgeClass($stock) {
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-3">
-                            <div class="info-group">
-                                <i class="fas fa-barcode text-muted"></i> ID:
-                                <code><?= htmlspecialchars($producto['id_producto']) ?></code>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
+                        <div class="col-md-9">
                             <div class="info-group">
                                 <i class="fas fa-tag text-muted"></i> Nombre:
                                 <strong><?= htmlspecialchars($producto['producto_nombre']) ?></strong>

@@ -276,11 +276,11 @@ class Servicio extends Model
         $precios = $this->db->query($preciosSql)->fetch_assoc();
 
         // Servicios por tipo
-        $tiposSql = "SELECT ts.tiposervicio_nombre, COUNT(*) as cantidad
+        $tiposSql = "SELECT ts.tiposervicio_descripcion, COUNT(*) as cantidad
                      FROM {$this->table} s
                      JOIN tiposervicio ts ON s.rela_tiposervicio = ts.id_tiposervicio
                      WHERE s.servicio_estado = 1
-                     GROUP BY ts.id_tiposervicio, ts.tiposervicio_nombre
+                     GROUP BY ts.id_tiposervicio, ts.tiposervicio_descripcion
                      ORDER BY cantidad DESC";
         
         $result = $this->db->query($tiposSql);
@@ -315,11 +315,35 @@ class Servicio extends Model
     }
 
     /**
+     * Obtener estadísticas específicas de un servicio
+     */
+    public function getServiceStats($id)
+    {
+        $id = (int) $id;
+
+        // Conteo total de consumos del servicio
+        $consumosSql = "SELECT COUNT(*) as total_consumos,
+                               SUM(consumo_cantidad) as cantidad_total,
+                               SUM(consumo_total) as ingresos_total
+                        FROM consumo 
+                        WHERE rela_servicio = $id";
+
+        $result = $this->db->query($consumosSql);
+        $stats = $result->fetch_assoc();
+
+        return [
+            'total_consumos' => (int) ($stats['total_consumos'] ?? 0),
+            'cantidad_total' => (int) ($stats['cantidad_total'] ?? 0),
+            'ingresos_total' => (float) ($stats['ingresos_total'] ?? 0)
+        ];
+    }
+
+    /**
      * Obtener tipos de servicio activos
      */
     public function getTiposServicio()
     {
-        $sql = "SELECT * FROM tiposervicio WHERE tiposervicio_estado = 1 ORDER BY tiposervicio_nombre ASC";
+        $sql = "SELECT * FROM tiposervicio WHERE tiposervicio_estado = 1 ORDER BY tiposervicio_descripcion ASC";
         $result = $this->db->query($sql);
         
         $tipos = [];
@@ -434,7 +458,7 @@ class Servicio extends Model
      */
     public function getByPriceRange($minPrice, $maxPrice)
     {
-        $sql = "SELECT s.*, ts.tiposervicio_nombre
+        $sql = "SELECT s.*, ts.tiposervicio_descripcion
                 FROM {$this->table} s
                 LEFT JOIN tiposervicio ts ON s.rela_tiposervicio = ts.id_tiposervicio
                 WHERE s.servicio_precio >= " . (float)$minPrice . "

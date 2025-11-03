@@ -215,7 +215,7 @@ function getStockBadgeClass($stock) {
 
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
-                        <thead class="table-light">
+                        <thead class="thead-light">
                             <tr>
                                 <th class="border-0 py-3">Nombre</th>
                                 <th class="border-0 py-3">Categoría</th>

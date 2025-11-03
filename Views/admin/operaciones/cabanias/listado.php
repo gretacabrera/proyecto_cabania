@@ -186,7 +186,7 @@
 
                 <div class="table-responsive">
                     <table id="tablaCabanias" class="table table-hover mb-0">
-                        <thead class="table-light">
+                        <thead class="thead-light">
                             <tr>
                                 <th class="border-0 py-3">Código</th>
                                 <th class="border-0 py-3">Cabaña</th>

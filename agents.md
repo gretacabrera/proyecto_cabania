@@ -69,7 +69,7 @@ Para cada entidad XXXX, se deben generar los siguientes archivos siguiendo la es
 #### ⚠️ CRÍTICO - Compatibilidad Bootstrap:
 **SIEMPRE verificar versión de Bootstrap antes de implementar:**
 - El proyecto usa **Bootstrap 4** (NO Bootstrap 5)
-- Clases específicas: `custom-file-input`, `custom-file-label`, `card-header`, `table-light`
+- Clases específicas: `custom-file-input`, `custom-file-label`, `card-header`, `thead-light`
 - **Nunca usar** clases de Bootstrap 5: `form-select`, `btn-close`, etc.
 - **Validar siempre** en navegador antes de finalizar
 
@@ -190,7 +190,7 @@ public function getWithDetails($page = 1, $perPage = 10, $filters = [])
 
 ```php
 <table class="table table-hover mb-0">
-    <thead class="table-light">
+    <thead class="thead-light">
         <tr>
             <th class="border-0 py-3">Campo 1</th>
             <th class="border-0 py-3">Campo 2</th>

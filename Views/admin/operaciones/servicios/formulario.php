@@ -1,163 +1,133 @@
-<div class="container-fluid">
-    <!-- Breadcrumb -->
-    <nav aria-label="breadcrumb" class="mb-4">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item">
-                <a href="<?= url('/') ?>">
-                    <i class="fas fa-home"></i> Inicio
-                </a>
-            </li>
-            <li class="breadcrumb-item">
-                <a href="<?= url('/servicios') ?>">
-                    <i class="fas fa-concierge-bell"></i> Servicios
-                </a>
-            </li>
-            <li class="breadcrumb-item active" aria-current="page">
-                <?= isset($servicio) ? 'Editar Servicio' : 'Nuevo Servicio' ?>
-            </li>
-        </ol>
-    </nav>
+<?php
+/**
+ * Vista: Formulario de Servicio
+ * Descripción: Formulario para crear/editar servicios
+ * Autor: Sistema MVC
+ * Fecha: <?= date('Y-m-d') ?>
+ */
 
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="h3 mb-0 text-gray-800">
-                <i class="fas fa-<?= isset($servicio) ? 'edit' : 'plus' ?> text-primary me-2"></i>
-                <?= isset($servicio) ? 'Editar Servicio' : 'Nuevo Servicio' ?>
-            </h2>
-            <?php if (isset($servicio)): ?>
-                <small class="text-muted">ID: <?= $servicio['id_servicio'] ?></small>
-            <?php endif; ?>
-        </div>
-        <div>
-            <a href="<?= url('/servicios') ?>" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left me-2"></i>Volver al listado
-            </a>
+$isEdit = isset($servicio) && !empty($servicio);
+?>
+
+<div class="content-wrapper">
+    <!-- Acciones principales -->
+    <div class="page-actions">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <a href="<?= url('/servicios') ?>" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i> Volver al listado
+                </a>
+            </div>
         </div>
     </div>
 
     <div class="row">
-        <!-- Formulario principal -->
         <div class="col-lg-8">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">
-                        <i class="fas fa-info-circle me-2"></i>Datos del Servicio
+            <!-- Formulario principal -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-edit"></i> 
+                        <?= $isEdit ? 'Modificar datos del servicio' : 'Datos del nuevo servicio' ?>
                     </h5>
                 </div>
                 <div class="card-body">
-                    <form id="formServicio" method="POST" action="<?= isset($servicio) ? url('/servicios/' . $servicio['id_servicio']) : url('/servicios') ?>" novalidate>
-                        <?php if (isset($servicio)): ?>
-                            <input type="hidden" name="_method" value="PUT">
+                    <form id="formServicio" method="POST" 
+                          action="<?= $isEdit ? url('/servicios/' . $servicio['id_servicio'] . '/edit') : url('/servicios/create') ?>" 
+                          novalidate>
+                        
+                        <?php if ($isEdit): ?>
                             <input type="hidden" name="id_servicio" value="<?= $servicio['id_servicio'] ?>">
                         <?php endif; ?>
 
-                        <!-- Nombre del servicio -->
-                        <div class="row mb-3">
+                        <div class="row">
+                            <!-- Nombre -->
                             <div class="col-md-12">
-                                <label for="servicio_nombre" class="form-label">
-                                    Nombre del Servicio <span class="text-danger">*</span>
-                                </label>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="servicio_nombre" 
-                                       name="servicio_nombre" 
-                                       value="<?= htmlspecialchars($servicio['servicio_nombre'] ?? '') ?>"
-                                       required 
-                                       maxlength="100"
-                                       placeholder="Ej: Limpieza de cabaña, Desayuno continental, etc.">
-                                <div class="invalid-feedback">
-                                    Por favor ingrese el nombre del servicio.
-                                </div>
-                                <div class="form-text">
-                                    Máximo 100 caracteres. Sea descriptivo y específico.
+                                <div class="form-group">
+                                    <label for="servicio_nombre" class="required">
+                                        <i class="fas fa-concierge-bell"></i> Nombre del Servicio
+                                    </label>
+                                    <input type="text" class="form-control" id="servicio_nombre" name="servicio_nombre" 
+                                           value="<?= htmlspecialchars($servicio['servicio_nombre'] ?? '') ?>"
+                                           required maxlength="45" placeholder="Ej: Limpieza de cabaña, Desayuno continental">
+                                    <div class="invalid-feedback"></div>
+                                    <small class="form-text text-muted">Nombre descriptivo del servicio (máximo 45 caracteres)</small>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Descripción -->
-                        <div class="row mb-3">
+                        <div class="row">
+                            <!-- Descripción -->
                             <div class="col-md-12">
-                                <label for="servicio_descripcion" class="form-label">
-                                    Descripción <span class="text-danger">*</span>
-                                </label>
-                                <textarea class="form-control" 
-                                          id="servicio_descripcion" 
-                                          name="servicio_descripcion" 
-                                          rows="4"
-                                          required 
-                                          maxlength="500"
-                                          placeholder="Describe los detalles del servicio, qué incluye, duración, etc."><?= htmlspecialchars($servicio['servicio_descripcion'] ?? '') ?></textarea>
-                                <div class="invalid-feedback">
-                                    Por favor ingrese una descripción del servicio.
-                                </div>
-                                <div class="form-text">
-                                    Máximo 500 caracteres. Incluya detalles relevantes para los huéspedes.
+                                <div class="form-group">
+                                    <label for="servicio_descripcion" class="required">
+                                        <i class="fas fa-align-left"></i> Descripción
+                                    </label>
+                                    <textarea class="form-control" id="servicio_descripcion" name="servicio_descripcion" 
+                                              rows="4" required maxlength="400"
+                                              placeholder="Describe los detalles del servicio, qué incluye, duración, etc."><?= htmlspecialchars($servicio['servicio_descripcion'] ?? '') ?></textarea>
+                                    <div class="invalid-feedback"></div>
+                                    <small class="form-text text-muted">Descripción detallada del servicio (máximo 400 caracteres)</small>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Fila de precio y tipo -->
-                        <div class="row mb-3">
+                        <div class="row">
+                            <!-- Precio -->
                             <div class="col-md-6">
-                                <label for="servicio_precio" class="form-label">
-                                    Precio <span class="text-danger">*</span>
-                                </label>
-                                <div class="input-group">
-                                    <span class="input-group-text">$</span>
-                                    <input type="number" 
-                                           class="form-control" 
-                                           id="servicio_precio" 
-                                           name="servicio_precio" 
-                                           value="<?= isset($servicio) ? $servicio['servicio_precio'] : '' ?>"
-                                           required 
-                                           min="0" 
-                                           step="0.01"
-                                           placeholder="0.00">
-                                    <div class="invalid-feedback">
-                                        Por favor ingrese un precio válido.
+                                <div class="form-group">
+                                    <label for="servicio_precio" class="required">
+                                        <i class="fas fa-dollar-sign"></i> Precio
+                                    </label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text">$</span>
+                                        </div>
+                                        <input type="number" class="form-control" id="servicio_precio" name="servicio_precio" 
+                                               value="<?= isset($servicio) ? $servicio['servicio_precio'] : '' ?>"
+                                               required min="0" step="0.01" placeholder="0.00">
+                                        <div class="invalid-feedback"></div>
                                     </div>
-                                </div>
-                                <div class="form-text">
-                                    Precio en pesos argentinos. Use punto decimal para centavos.
+                                    <small class="form-text text-muted">Precio del servicio en pesos argentinos</small>
                                 </div>
                             </div>
+
+                            <!-- Tipo de Servicio -->
                             <div class="col-md-6">
-                                <label for="rela_tiposervicio" class="form-label">
-                                    Tipo de Servicio <span class="text-danger">*</span>
-                                </label>
-                                <select class="form-select" id="rela_tiposervicio" name="rela_tiposervicio" required>
-                                    <option value="">Seleccione el tipo de servicio</option>
-                                    <?php if (isset($tipos_servicios) && is_array($tipos_servicios)): ?>
-                                        <?php foreach ($tipos_servicios as $tipo): ?>
-                                            <option value="<?= $tipo['id_tiposervicio'] ?>" 
-                                                    <?= (isset($servicio) && $servicio['rela_tiposervicio'] == $tipo['id_tiposervicio']) ? 'selected' : '' ?>>
-                                                <?= htmlspecialchars($tipo['tiposervicio_descripcion']) ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    <?php endif; ?>
-                                </select>
-                                <div class="invalid-feedback">
-                                    Por favor seleccione un tipo de servicio.
+                                <div class="form-group">
+                                    <label for="rela_tiposervicio" class="required">
+                                        <i class="fas fa-tags"></i> Tipo de Servicio
+                                    </label>
+                                    <select class="form-control" id="rela_tiposervicio" name="rela_tiposervicio" required>
+                                        <option value="">Seleccione el tipo de servicio</option>
+                                        <?php if (isset($tiposServicio) && is_array($tiposServicio)): ?>
+                                            <?php foreach ($tiposServicio as $tipo): ?>
+                                                <option value="<?= $tipo['id_tiposervicio'] ?>" 
+                                                        <?= (isset($servicio) && $servicio['rela_tiposervicio'] == $tipo['id_tiposervicio']) ? 'selected' : '' ?>>
+                                                    <?= htmlspecialchars($tipo['tiposervicio_descripcion']) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
+                                    </select>
+                                    <div class="invalid-feedback"></div>
+                                    <small class="form-text text-muted">Categoría del servicio</small>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Botones de acción -->
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save me-2"></i>
-                                    <?= isset($servicio) ? 'Actualizar Servicio' : 'Crear Servicio' ?>
-                                </button>
-                                <button type="button" class="btn btn-outline-secondary" onclick="limpiarFormulario()">
-                                    <i class="fas fa-eraser me-2"></i>Limpiar
-                                </button>
-                            </div>
-                            <div>
-                                <a href="<?= url('/servicios') ?>" class="btn btn-outline-danger">
-                                    <i class="fas fa-times me-2"></i>Cancelar
-                                </a>
+                        <div class="form-group mt-4">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <button type="submit" class="btn btn-success btn-lg">
+                                        <i class="fas fa-save"></i> 
+                                        <?= $isEdit ? 'Actualizar Servicio' : 'Crear Servicio' ?>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-lg ml-2" 
+                                            onclick="limpiarFormulario()">
+                                        <i class="fas fa-eraser"></i> Limpiar
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </form>
@@ -165,90 +135,118 @@
             </div>
         </div>
 
-        <!-- Panel lateral -->
+        <!-- Panel lateral con información -->
         <div class="col-lg-4">
-            <!-- Información del servicio -->
-            <div class="card shadow mb-4">
-                <div class="card-header bg-info text-white">
-                    <h6 class="mb-0">
-                        <i class="fas fa-info-circle me-2"></i>Información
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-info-circle"></i> Información
                     </h6>
                 </div>
                 <div class="card-body">
-                    <?php if (isset($servicio)): ?>
-                        <!-- Información existente -->
-                        <div class="mb-3">
-                            <small class="text-muted d-block">Estado actual</small>
-                            <?php if ($servicio['servicio_estado'] == 1): ?>
-                                <span class="badge bg-success">Activo</span>
-                            <?php else: ?>
-                                <span class="badge bg-danger">Inactivo</span>
-                            <?php endif; ?>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <small class="text-muted d-block">Fecha de creación</small>
-                            <span><?= isset($servicio['servicio_fecha_creacion']) ? date('d/m/Y H:i', strtotime($servicio['servicio_fecha_creacion'])) : 'No disponible' ?></span>
-                        </div>
+                    <div class="info-section">
+                        <h6><i class="fas fa-lightbulb text-warning"></i> Consejos</h6>
+                        <ul class="list-unstyled small text-muted">
+                            <li>• Use nombres descriptivos para facilitar las búsquedas</li>
+                            <li>• La descripción debe explicar qué incluye el servicio</li>
+                            <li>• Asigne el tipo de servicio correcto para categorizar</li>
+                            <li>• Mantenga los precios actualizados para evitar confusiones</li>
+                        </ul>
+                    </div>
 
-                        <div class="mb-3">
-                            <small class="text-muted d-block">Última actualización</small>
-                            <span><?= isset($servicio['servicio_fecha_actualizacion']) ? date('d/m/Y H:i', strtotime($servicio['servicio_fecha_actualizacion'])) : 'No disponible' ?></span>
-                        </div>
-                    <?php else: ?>
-                        <!-- Ayuda para nuevo servicio -->
-                        <div class="mb-3">
-                            <h6 class="text-primary">
-                                <i class="fas fa-lightbulb me-2"></i>Consejos
-                            </h6>
-                            <ul class="list-unstyled small">
-                                <li class="mb-2">
-                                    <i class="fas fa-check text-success me-2"></i>
-                                    Use nombres descriptivos y claros
-                                </li>
-                                <li class="mb-2">
-                                    <i class="fas fa-check text-success me-2"></i>
-                                    Incluya detalles importantes en la descripción
-                                </li>
-                                <li class="mb-2">
-                                    <i class="fas fa-check text-success me-2"></i>
-                                    Establezca precios competitivos
-                                </li>
-                                <li class="mb-2">
-                                    <i class="fas fa-check text-success me-2"></i>
-                                    Seleccione el tipo de servicio correcto
-                                </li>
-                            </ul>
-                        </div>
-                    <?php endif; ?>
+                    <hr>
+
+                    <div class="info-section">
+                        <h6><i class="fas fa-chart-line text-info"></i> Estadísticas</h6>
+                        <br>
+                        <?php if ($isEdit): ?>
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <div class="stat-item">
+                                        <div class="stat-value">
+                                            <?= $estadisticas['consumos']['total_consumos'] ?? '0' ?>
+                                        </div>
+                                        <div class="stat-label small text-muted">Consumos</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="stat-item">
+                                        <div class="stat-value">
+                                            $<?= number_format($estadisticas['consumos']['ingresos_total'] ?? 0, 2) ?>
+                                        </div>
+                                        <div class="stat-label small text-muted">Ingresos</div>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php else: ?>
+                            <p class="small text-muted">
+                                Las estadísticas estarán disponibles después de crear el servicio.
+                            </p>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
-
-            <!-- Acciones rápidas -->
-            <?php if (isset($servicio)): ?>
-                <div class="card shadow">
-                    <div class="card-header bg-warning text-dark">
-                        <h6 class="mb-0">
-                            <i class="fas fa-bolt me-2"></i>Acciones Rápidas
-                        </h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="d-grid gap-2">
-                            <a href="<?= url('/servicios/' . $servicio['id_servicio']) ?>" class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-eye me-2"></i>Ver Detalle
-                            </a>
-                            <button type="button" class="btn btn-outline-<?= $servicio['servicio_estado'] ? 'danger' : 'success' ?> btn-sm" 
-                                    onclick="cambiarEstado(<?= $servicio['id_servicio'] ?>, <?= $servicio['servicio_estado'] ?>)">
-                                <i class="fas fa-<?= $servicio['servicio_estado'] ? 'times' : 'check' ?> me-2"></i>
-                                <?= $servicio['servicio_estado'] ? 'Desactivar' : 'Activar' ?>
-                            </button>
-                        </div>
+        </div>
                     </div>
                 </div>
-            <?php endif; ?>
+            </div>
         </div>
     </div>
 </div>
+
+<style>
+.required:after {
+    content: " *";
+    color: #e74c3c;
+}
+
+.content-wrapper {
+    padding: 20px;
+}
+
+.page-actions {
+    margin-bottom: 0;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.info-section {
+    margin-bottom: 1.5rem;
+}
+
+.info-section h6 {
+    color: #495057;
+    margin-bottom: 0.75rem;
+}
+
+.stat-item {
+    padding: 0.5rem 0;
+}
+
+.stat-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #495057;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+    text-transform: uppercase;
+}
+
+.list-group-flush .list-group-item {
+    border-left: 0;
+    border-right: 0;
+}
+
+.d-grid {
+    display: grid;
+    gap: 0.5rem;
+}
+</style>
 
 <script>
 // Validación del formulario
@@ -260,12 +258,12 @@ document.getElementById('formServicio').addEventListener('submit', function(e) {
         // Mostrar confirmación
         Swal.fire({
             title: '¿Confirmar acción?',
-            text: '<?= isset($servicio) ? "¿Desea actualizar este servicio?" : "¿Desea crear este servicio?" ?>',
+            text: '<?= $isEdit ? "¿Desea actualizar este servicio?" : "¿Desea crear este servicio?" ?>',
             icon: 'question',
             showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: '<?= isset($servicio) ? "Sí, actualizar" : "Sí, crear" ?>',
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<?= $isEdit ? "Sí, actualizar" : "Sí, crear" ?>',
             cancelButtonText: 'Cancelar'
         }).then((result) => {
             if (result.isConfirmed) {
@@ -284,8 +282,8 @@ function limpiarFormulario() {
         text: 'Se perderán todos los datos ingresados',
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
+        confirmButtonColor: '#17a2b8',
+        cancelButtonColor: '#6c757d',
         confirmButtonText: 'Sí, limpiar',
         cancelButtonText: 'Cancelar'
     }).then((result) => {
@@ -297,7 +295,7 @@ function limpiarFormulario() {
 }
 
 // Cambiar estado (solo para edición)
-<?php if (isset($servicio)): ?>
+<?php if ($isEdit): ?>
 function cambiarEstado(id, estadoActual) {
     const accion = estadoActual ? 'desactivar' : 'activar';
     const mensaje = `¿Está seguro que desea ${accion} este servicio?`;
@@ -307,8 +305,8 @@ function cambiarEstado(id, estadoActual) {
         text: mensaje,
         icon: 'question',
         showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
+        confirmButtonColor: '#17a2b8',
+        cancelButtonColor: '#6c757d',
         confirmButtonText: 'Sí, ' + accion,
         cancelButtonText: 'Cancelar'
     }).then((result) => {
@@ -354,19 +352,27 @@ document.getElementById('servicio_precio').addEventListener('input', function() 
 
 // Contador de caracteres para descripción
 document.getElementById('servicio_descripcion').addEventListener('input', function() {
-    const maxLength = 500;
+    const maxLength = 400;
     const currentLength = this.value.length;
     const remaining = maxLength - currentLength;
     
-    // Actualizar el texto de ayuda
-    const helpText = this.nextElementSibling.nextElementSibling;
-    if (remaining < 50) {
-        helpText.textContent = `${remaining} caracteres restantes`;
-        helpText.className = remaining < 10 ? 'form-text text-danger' : 'form-text text-warning';
-    } else {
-        helpText.textContent = `Máximo 500 caracteres. Incluya detalles relevantes para los huéspedes.`;
-        helpText.className = 'form-text';
+    // Buscar el elemento de ayuda
+    let helpText = this.parentNode.querySelector('.form-text');
+    if (helpText) {
+        if (remaining < 50) {
+            helpText.textContent = `${remaining} caracteres restantes`;
+            helpText.className = remaining < 10 ? 'form-text text-danger' : 'form-text text-warning';
+        } else {
+            helpText.textContent = 'Descripción detallada del servicio (máximo 400 caracteres)';
+            helpText.className = 'form-text text-muted';
+        }
     }
 });
-</script>
 
+// Inicializar tooltips si existe Bootstrap
+if (typeof $().tooltip === 'function') {
+    $(document).ready(function() {
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+}
+</script>
