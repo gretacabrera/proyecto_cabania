@@ -25,6 +25,7 @@ return [
         'username' => getenv('DB_USER') ?: 'root',
         'password' => getenv('DB_PASS') ?: '',
         'database' => getenv('DB_SCHEMA') ?: 'proyecto_cabania',
+        'port' => getenv('DB_PORT') ?: '3306',
         'charset' => 'utf8',
     ],
     

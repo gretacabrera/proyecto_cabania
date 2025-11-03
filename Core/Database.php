@@ -37,8 +37,13 @@ class Database
         $username = getenv('DB_USER');
         $password = getenv('DB_PASS');
         $schema = getenv('DB_SCHEMA');
+        $port = getenv('DB_PORT');
 
-        $this->connection = new mysqli($hostname, $username, $password, $schema);
+        // Establecer puerto por defecto si no está definido
+        $port = ($port !== false && $port !== '') ? (int) $port : 3306;
+
+        // Conexión mysqli con puerto personalizado
+        $this->connection = new mysqli($hostname, $username, $password, $schema, $port);
 
         if ($this->connection->connect_error) {
             die("Error de conexión a la base de datos: " . $this->connection->connect_error);
