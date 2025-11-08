@@ -26,7 +26,7 @@
     <!-- Override para mensajes minimalistas -->
     <link href="<?= asset('assets/css/messages-override.css?v=' . time()) ?>" rel="stylesheet">
 </head>
-<body class="home">
+<body class="<?= isset($isAdminArea) && $isAdminArea ? 'admin-area' : 'home' ?>">
     <!-- Navegación moderna -->
     <?php $this->component('menu'); ?>
     

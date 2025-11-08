@@ -3099,7 +3099,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Función para confirmar desactivación de estado de reserva
 function confirmarDesactivarEstadoReserva(id) {
     if (confirm('¿Está seguro de desactivar este estado de reserva?')) {
-        window.location.href = `/estados-reservas/eliminar/${id}`;
+        window.location.href = `/estados_reservas/eliminar/${id}`;
         return true;
     }
     return false;
@@ -3108,7 +3108,7 @@ function confirmarDesactivarEstadoReserva(id) {
 // Función para confirmar activación de estado de reserva
 function confirmarActivarEstadoReserva(id) {
     if (confirm('¿Está seguro de activar este estado de reserva?')) {
-        window.location.href = `/estados-reservas/restaurar/${id}`;
+        window.location.href = `/estados_reservas/restaurar/${id}`;
         return true;
     }
     return false;
@@ -3117,7 +3117,7 @@ function confirmarActivarEstadoReserva(id) {
 // Función para confirmar cambio de estado
 function confirmarCambiarEstadoReserva(id) {
     if (confirm('¿Está seguro de cambiar el estado?')) {
-        window.location.href = `/estados-reservas/toggle/${id}`;
+        window.location.href = `/estados_reservas/toggle/${id}`;
         return true;
     }
     return false;

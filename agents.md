@@ -507,25 +507,113 @@ CREATE TABLE `nombretabla` (
 
 ## Instrucción de Uso
 
+### ⚠️ CRÍTICO - Metodología de Creación de CRUDs
+
+**PROCESO OBLIGATORIO para generar cualquier CRUD:**
+
+#### Paso 1: Copiar Archivos Base de Cabañas
+**SIEMPRE comenzar copiando los archivos del módulo Cabañas como plantilla:**
+
+1. **Copiar** `Controllers/CabaniasController.php` → `Controllers/XXXXController.php`
+2. **Copiar** `Models/Cabania.php` → `Models/XXXX.php`
+3. **Copiar** toda la carpeta `Views/admin/operaciones/cabanias/` → `Views/admin/operaciones/xxxx/`
+
+#### Paso 2: Modificar Según la Entidad
+**Una vez copiados, realizar las siguientes adaptaciones:**
+
+**En el Controlador (`XXXXController.php`):**
+- Reemplazar nombre de clase: `CabaniasController` → `XXXXController`
+- Actualizar modelo: `$this->modelo = new Cabania()` → `$this->modelo = new XXXX()`
+- Actualizar rutas de vista: `'admin/operaciones/cabanias/xxx'` → `'admin/operaciones/xxxx/xxx'`
+- Actualizar permisos: `$this->requirePermission('cabanias')` → `$this->requirePermission('xxxx')`
+- Modificar nombres de campos según la tabla de la entidad
+- Actualizar directorio de imágenes si aplica: `imagenes/cabanias/` → `imagenes/xxxx/`
+
+**En el Modelo (`XXXX.php`):**
+- Reemplazar nombre de clase: `Cabania` → `XXXX`
+- Actualizar propiedades:
+  - `protected $table = 'cabania'` → `protected $table = 'tabla_entidad'`
+  - `protected $primaryKey = 'id_cabania'` → `protected $primaryKey = 'id_tabla_entidad'`
+- Modificar consultas SQL en `getWithDetails()` y `getAllWithDetailsForExport()`:
+  - Cambiar nombres de columnas según estructura de la tabla
+  - Actualizar JOINs con tablas relacionadas
+  - Adaptar filtros según campos disponibles
+  - Mantener estructura de respuesta idéntica
+
+**En las Vistas (listado.php, formulario.php, detalle.php):**
+- **listado.php:**
+  - Actualizar título de página
+  - Modificar filtros según campos de la entidad
+  - Cambiar columnas de la tabla según atributos
+  - Actualizar URLs: `/cabanias/` → `/xxxx/`
+  - Adaptar iconografía contextualmente
+  
+- **formulario.php:**
+  - Cambiar campos del formulario según estructura de tabla
+  - Actualizar nombres de campos: `cabania_xxx` → `entidad_xxx`
+  - Modificar validaciones HTML5 según tipos de datos
+  - Adaptar sección de "Consejos" al contexto de la entidad
+  - Ajustar sección de "Estadísticas" (solo en edición)
+  
+- **detalle.php:**
+  - Actualizar sección "Información General" con campos relevantes
+  - **INFERIR estadísticas apropiadas** según la naturaleza de la entidad
+  - Modificar "Acciones Rápidas" según operaciones disponibles
+  - Adaptar badges y estados según lógica de negocio
+
+#### Paso 3: Inferencia de Estadísticas
+
+**IMPORTANTE**: Las estadísticas deben ser específicas para cada entidad. Ejemplos:
+
+| Entidad | Estadísticas Apropiadas |
+|---------|------------------------|
+| **Cabañas** | Total reservas, Ingresos generados, Disponibilidad |
+| **Productos** | Stock actual, Unidades vendidas, Valor inventario |
+| **Servicios** | Veces contratado, Ingresos totales, Calificación promedio |
+| **Reservas** | Monto total, Días de estadía, Productos consumidos |
+| **Usuarios** | Reservas realizadas, Gasto total, Última actividad |
+
+**Regla general:** Mostrar métricas que respondan:
+- ¿Cuántas veces se ha usado/vendido/reservado?
+- ¿Qué valor monetario representa?
+- ¿Cuál es su estado/disponibilidad actual?
+- ¿Qué relación tiene con otras entidades?
+
+#### Paso 4: Verificación Final
+
+**Checklist de validación:**
+- [ ] Todos los nombres de clase y archivos actualizados
+- [ ] Nombres de tabla y campos coinciden con `bd.sql`
+- [ ] URLs y rutas apuntan a la nueva entidad
+- [ ] Filtros funcionan con los campos reales
+- [ ] Exportaciones incluyen columnas correctas
+- [ ] Estadísticas son relevantes y están bien calculadas
+- [ ] Permisos verifican el módulo correcto
+- [ ] Imágenes (si aplica) se guardan en directorio apropiado
+
+### Comando de Generación
+
 Para generar un CRUD completo, usar la siguiente instrucción:
 
 ```
 "Genera un CRUD para la entidad XXXX"
 ```
 
-**Esto significa:**
-1. Analizar la tabla correspondiente en `bd.sql`
-2. Crear modelo `Models/XXXX.php` con tabla inferida
-3. Crear controlador `Controllers/XXXXController.php` con todos los métodos
-4. Crear vistas en `Views/admin/operaciones/xxxx/`:
-   - `listado.php` - Con filtros específicos de la entidad
-   - `formulario.php` - Con campos apropiados según la tabla
-   - `detalle.php` - Con información completa y estadísticas
-5. Aplicar todos los patrones y funcionalidades definidas en este documento
-6. Respetar convenciones de nomenclatura y estructura
-7. Incluir validaciones frontend y backend
-8. Implementar exportaciones Excel y PDF
-9. Agregar JavaScript para interactividad
+**Esto significa ejecutar el proceso de 4 pasos:**
+1. ✅ **Copiar** archivos del módulo Cabañas
+2. ✅ **Analizar** tabla correspondiente en `bd.sql`
+3. ✅ **Modificar** controlador, modelo y vistas según atributos de la tabla
+4. ✅ **Inferir** estadísticas apropiadas para la entidad
+5. ✅ **Validar** que todo funcione correctamente
+
+### Ventajas de este Enfoque
+
+**Consistencia garantizada al 100%:**
+- Estructura de código idéntica
+- Patrones visuales uniformes
+- Funcionalidad probada y estable
+- Menor probabilidad de errores
+- Desarrollo más rápido y eficiente
 
 ### Campos que se Deben Inferir Automáticamente
 - **Campos de texto**: Por tipo VARCHAR/TEXT
