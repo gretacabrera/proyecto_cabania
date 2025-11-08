@@ -5,7 +5,7 @@ namespace App\Models;
 use App\Core\Model;
 
 /**
- * Modelo para la entidad EstadoReserva
+ * Modelo para el manejo de Estados de Reservas
  */
 class EstadoReserva extends Model
 {
@@ -87,6 +87,105 @@ class EstadoReserva extends Model
             }
         }
         return $ids;
+    }
+
+    /**
+     * Obtener estados de reservas con detalles, aplicando filtros y paginación
+     */
+    public function getWithDetails($page = 1, $perPage = 10, $filters = [])
+    {
+        $where = "1=1";
+        
+        // Aplicar filtros usando LIKE directo (sin prepared statements para compatibilidad)
+        if (!empty($filters['estadoreserva_descripcion'])) {
+            $descripcion = $this->db->real_escape_string($filters['estadoreserva_descripcion']);
+            $where .= " AND estadoreserva_descripcion LIKE '%" . $descripcion . "%'";
+        }
+
+        if (isset($filters['estadoreserva_estado']) && $filters['estadoreserva_estado'] !== '') {
+            $estado = (int) $filters['estadoreserva_estado'];
+            $where .= " AND estadoreserva_estado = " . $estado;
+        }
+
+        $result = $this->paginate($page, $perPage, $where, "estadoreserva_descripcion ASC");
+        
+        // Agregar el conteo de reservas a cada estado
+        if (isset($result['data'])) {
+            foreach ($result['data'] as &$estado) {
+                $estado['reservas_count'] = $this->getReservasCountByEstado($estado['id_estadoreserva']);
+            }
+        }
+        
+        return $result;
+    }
+
+    /**
+     * Obtener todos los estados de reservas con detalles para exportación (sin paginación)
+     */
+    public function getAllWithDetailsForExport($filters = [])
+    {
+        $where = "1=1";
+
+        // Aplicar filtros usando escape directo
+        if (!empty($filters['estadoreserva_descripcion'])) {
+            $descripcion = $this->db->real_escape_string($filters['estadoreserva_descripcion']);
+            $where .= " AND estadoreserva_descripcion LIKE '%" . $descripcion . "%'";
+        }
+
+        if (isset($filters['estadoreserva_estado']) && $filters['estadoreserva_estado'] !== '') {
+            $estado = (int) $filters['estadoreserva_estado'];
+            $where .= " AND estadoreserva_estado = " . $estado;
+        }
+
+        $sql = "SELECT * FROM {$this->table} WHERE {$where} ORDER BY estadoreserva_descripcion ASC";
+        $result = $this->db->query($sql);
+        
+        $records = [];
+        while ($row = $result->fetch_assoc()) {
+            $records[] = $row;
+        }
+
+        return [
+            'data' => $records,
+            'total' => count($records)
+        ];
+    }
+
+    /**
+     * Obtener el conteo de reservas por estado de reserva
+     */
+    public function getReservasCountByEstado($id_estadoreserva)
+    {
+        $id = (int) $id_estadoreserva;
+        $sql = "SELECT COUNT(*) as total FROM reserva WHERE rela_estadoreserva = {$id}";
+        $result = $this->db->query($sql);
+        $row = $result->fetch_assoc();
+        return $row['total'] ?? 0;
+    }
+
+    /**
+     * Obtener estadísticas generales de estados de reservas
+     */
+    public function getEstadisticas()
+    {
+        $sql = "SELECT 
+                    COUNT(*) as total_estados,
+                    SUM(CASE WHEN estadoreserva_estado = 1 THEN 1 ELSE 0 END) as activos,
+                    SUM(CASE WHEN estadoreserva_estado = 0 THEN 1 ELSE 0 END) as inactivos
+                FROM {$this->table}";
+        
+        $result = $this->db->query($sql);
+        return $result->fetch_assoc();
+    }
+
+    /**
+     * Validar si se puede cambiar el estado del estado de reserva
+     */
+    public function canChangeStatus($id_estadoreserva)
+    {
+        // Verificar si tiene reservas asociadas activas
+        $reservasCount = $this->getReservasCountByEstado($id_estadoreserva);
+        return $reservasCount === 0;
     }
 
     /**
@@ -349,5 +448,66 @@ class EstadoReserva extends Model
         ];
         
         return isset($clases[$nombreEstado]) ? $clases[$nombreEstado] : 'secondary';
+    }
+
+    /**
+     * Obtener estadísticas de un estado de reserva específico
+     */
+    public function getStatistics($id)
+    {
+        $stats = [
+            'total_reservas' => $this->getTotalReservasByEstado($id),
+            'reservas_mes_actual' => $this->getReservasMesActualByEstado($id),
+            'porcentaje_uso' => $this->getPorcentajeUsoByEstado($id)
+        ];
+        
+        return $stats;
+    }
+
+    /**
+     * Obtener total de reservas con este estado (histórico)
+     */
+    private function getTotalReservasByEstado($id)
+    {
+        $sql = "SELECT COUNT(*) as total FROM reserva WHERE rela_estadoreserva = ?";
+        $result = $this->query($sql, [$id]);
+        $row = $result->fetch_assoc();
+        return (int)($row['total'] ?? 0);
+    }
+
+    /**
+     * Obtener reservas del mes actual con este estado
+     */
+    private function getReservasMesActualByEstado($id)
+    {
+        $mesActual = date('Y-m');
+        $sql = "SELECT COUNT(*) as total 
+                FROM reserva 
+                WHERE rela_estadoreserva = ? 
+                AND DATE_FORMAT(reserva_fhinicio, '%Y-%m') = ?";
+        $result = $this->query($sql, [$id, $mesActual]);
+        $row = $result->fetch_assoc();
+        return (int)($row['total'] ?? 0);
+    }
+
+    /**
+     * Obtener porcentaje de uso de este estado respecto al total
+     */
+    private function getPorcentajeUsoByEstado($id)
+    {
+        $sql = "SELECT 
+                    (SELECT COUNT(*) FROM reserva WHERE rela_estadoreserva = ?) as estado_count,
+                    (SELECT COUNT(*) FROM reserva) as total_count";
+        $result = $this->query($sql, [$id]);
+        $row = $result->fetch_assoc();
+        
+        $estadoCount = (int)($row['estado_count'] ?? 0);
+        $totalCount = (int)($row['total_count'] ?? 0);
+        
+        if ($totalCount == 0) {
+            return 0;
+        }
+        
+        return round(($estadoCount / $totalCount) * 100, 1);
     }
 }

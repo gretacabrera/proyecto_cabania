@@ -261,12 +261,13 @@ class Application
         // Rutas de estados de reservas
         $this->router->get('/estados-reservas', 'EstadosReservasController@index');
         $this->router->any('/estados-reservas/create', 'EstadosReservasController@create');
+        $this->router->get('/estados-reservas/exportar', 'EstadosReservasController@exportar');
+        $this->router->get('/estados-reservas/exportar-pdf', 'EstadosReservasController@exportarPdf');
+        $this->router->get('/estados-reservas/{id}', 'EstadosReservasController@show');
         $this->router->any('/estados-reservas/{id}/edit', 'EstadosReservasController@edit');
-        $this->router->get('/estados-reservas/{id}/delete', 'EstadosReservasController@delete');
-        $this->router->get('/estados-reservas/{id}/restore', 'EstadosReservasController@restore');
-        $this->router->get('/estados-reservas/{id}/toggle-status', 'EstadosReservasController@toggleStatus');
-        $this->router->get('/estados-reservas/search', 'EstadosReservasController@search');
-        $this->router->get('/estados-reservas/stats', 'EstadosReservasController@stats');
+        $this->router->post('/estados-reservas/{id}/delete', 'EstadosReservasController@delete');
+        $this->router->post('/estados-reservas/{id}/restore', 'EstadosReservasController@restore');
+        $this->router->post('/estados-reservas/{id}/estado', 'EstadosReservasController@cambiarEstado');
 
         // Rutas de tipos de servicios
         $this->router->get('/tipos-servicios', 'TiposServiciosController@index');
