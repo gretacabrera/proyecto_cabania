@@ -54,10 +54,10 @@
                     </h6>
                 </div>
                 <div class="card-body">
-                    <?php if (!empty($estadisticas['estados_reservas'])): ?>
+                    <?php if (!empty($estadisticas['estados-reservas'])): ?>
                     <div class="row">
                         <?php 
-                        $totalReservas = array_sum(array_column($estadisticas['estados_reservas'], 'cantidad'));
+                        $totalReservas = array_sum(array_column($estadisticas['estados-reservas'], 'cantidad'));
                         $colores = [
                             'confirmada' => 'warning',
                             'en curso' => 'success', 
@@ -66,7 +66,7 @@
                             'pendiente de pago' => 'info'
                         ];
                         ?>
-                        <?php foreach ($estadisticas['estados_reservas'] as $estado): ?>
+                        <?php foreach ($estadisticas['estados-reservas'] as $estado): ?>
                         <?php 
                         $porcentaje = $totalReservas > 0 ? round(($estado['cantidad'] / $totalReservas) * 100, 1) : 0;
                         $colorClass = $colores[$estado['estado']] ?? 'secondary';

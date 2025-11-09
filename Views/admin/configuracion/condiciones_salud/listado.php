@@ -290,7 +290,7 @@ $renderPagination = function($showInfo = true) use ($pagination, $start, $end) {
                         
                         <div class="col-lg-2 col-md-6 mb-2">
                             <label class="sr-only">Estado</label>
-                            <select name="condicionsalud_estado" class="form-control form-control-sm">
+                            <select name="condicionsalud_estado" class="form-select form-select-sm">
                                 <option value="">Todos los estados</option>
                                 <option value="1" <?= ($filters['condicionsalud_estado'] ?? '') === '1' ? 'selected' : '' ?>>Activo</option>
                                 <option value="0" <?= ($filters['condicionsalud_estado'] ?? '') === '0' ? 'selected' : '' ?>>Inactivo</option>
@@ -299,7 +299,7 @@ $renderPagination = function($showInfo = true) use ($pagination, $start, $end) {
                         
                         <div class="col-lg-2 col-md-6 mb-2">
                             <label class="sr-only">Registros por página</label>
-                            <select name="per_page" class="form-control form-control-sm">
+                            <select name="per_page" class="form-select form-select-sm">
                                 <option value="5" <?= $perPage == 5 ? 'selected' : '' ?>>5 por página</option>
                                 <option value="10" <?= $perPage == 10 ? 'selected' : '' ?>>10 por página</option>
                                 <option value="25" <?= $perPage == 25 ? 'selected' : '' ?>>25 por página</option>

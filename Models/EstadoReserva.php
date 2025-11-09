@@ -98,7 +98,7 @@ class EstadoReserva extends Model
         
         // Aplicar filtros usando LIKE directo (sin prepared statements para compatibilidad)
         if (!empty($filters['estadoreserva_descripcion'])) {
-            $descripcion = $this->db->real_escape_string($filters['estadoreserva_descripcion']);
+            $descripcion = $this->db->escape($filters['estadoreserva_descripcion']);
             $where .= " AND estadoreserva_descripcion LIKE '%" . $descripcion . "%'";
         }
 
@@ -128,7 +128,7 @@ class EstadoReserva extends Model
 
         // Aplicar filtros usando escape directo
         if (!empty($filters['estadoreserva_descripcion'])) {
-            $descripcion = $this->db->real_escape_string($filters['estadoreserva_descripcion']);
+            $descripcion = $this->db->escape($filters['estadoreserva_descripcion']);
             $where .= " AND estadoreserva_descripcion LIKE '%" . $descripcion . "%'";
         }
 

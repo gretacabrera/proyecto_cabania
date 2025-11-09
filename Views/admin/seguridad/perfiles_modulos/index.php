@@ -30,7 +30,7 @@
                     <form method="GET" class="row mb-4">
                         <div class="col-md-3">
                             <label for="rela_perfil" class="form-label">Filtrar por Perfil:</label>
-                            <select name="rela_perfil" id="rela_perfil" class="form-control form-control-sm">
+                            <select name="rela_perfil" id="rela_perfil" class="form-select form-select-sm">
                                 <option value="">Todos los perfiles</option>
                                 <?php foreach ($perfiles as $perfil): ?>
                                     <option value="<?= $perfil['id_perfil'] ?>" 
@@ -43,7 +43,7 @@
 
                         <div class="col-md-3">
                             <label for="rela_modulo" class="form-label">Filtrar por Módulo:</label>
-                            <select name="rela_modulo" id="rela_modulo" class="form-control form-control-sm">
+                            <select name="rela_modulo" id="rela_modulo" class="form-select form-select-sm">
                                 <option value="">Todos los módulos</option>
                                 <?php foreach ($modulos as $modulo): ?>
                                     <option value="<?= $modulo['id_modulo'] ?>" 
@@ -56,7 +56,7 @@
 
                         <div class="col-md-2">
                             <label for="perfilmodulo_estado" class="form-label">Estado:</label>
-                            <select name="perfilmodulo_estado" id="perfilmodulo_estado" class="form-control form-control-sm">
+                            <select name="perfilmodulo_estado" id="perfilmodulo_estado" class="form-select form-select-sm">
                                 <option value="">Todos</option>
                                 <option value="1" <?= ($filters['perfilmodulo_estado'] === '1') ? 'selected' : '' ?>>Activos</option>
                                 <option value="0" <?= ($filters['perfilmodulo_estado'] === '0') ? 'selected' : '' ?>>Inactivos</option>
@@ -65,7 +65,7 @@
 
                         <div class="col-md-2">
                             <label for="registros_por_pagina" class="form-label">Mostrar:</label>
-                            <select name="registros_por_pagina" id="registros_por_pagina" class="form-control form-control-sm">
+                            <select name="registros_por_pagina" id="registros_por_pagina" class="form-select form-select-sm">
                                 <option value="10" <?= ($registros_por_pagina == 10) ? 'selected' : '' ?>>10</option>
                                 <option value="25" <?= ($registros_por_pagina == 25) ? 'selected' : '' ?>>25</option>
                                 <option value="50" <?= ($registros_por_pagina == 50) ? 'selected' : '' ?>>50</option>

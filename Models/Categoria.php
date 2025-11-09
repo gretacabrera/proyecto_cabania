@@ -29,7 +29,7 @@ class Categoria extends Model
         
         // Aplicar filtros
         if (!empty($filters['categoria_descripcion'])) {
-            $escaped = $this->db->escape_string($filters['categoria_descripcion']);
+            $escaped = $this->db->escape($filters['categoria_descripcion']);
             $where .= " AND categoria_descripcion LIKE '%{$escaped}%'";
         }
         
@@ -50,7 +50,7 @@ class Categoria extends Model
         
         // Aplicar los mismos filtros que getWithDetails
         if (!empty($filters['categoria_descripcion'])) {
-            $escaped = $this->db->escape_string($filters['categoria_descripcion']);
+            $escaped = $this->db->escape($filters['categoria_descripcion']);
             $where .= " AND categoria_descripcion LIKE '%{$escaped}%'";
         }
         

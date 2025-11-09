@@ -5,52 +5,33 @@
         <div class="card-header text-dark py-3 mb-0">
             <div class="row align-items-center">
                 <div class="col">
-                    <h4 class="mb-0">Gestión de Cabañas</h4>
+                    <h4 class="mb-0">Gestión de Estados de Productos</h4>
                 </div>
                 <div class="col-auto">
-                    <a href="<?= url('/cabanias/create') ?>" class="btn btn-primary btn-sm">
-                        <i class="fas fa-plus me-1"></i>Nueva Cabaña
+                    <a href="<?= url('/estados-productos/create') ?>" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-1"></i>Nuevo Estado
                     </a>
                 </div>
             </div>
         </div>
         <!-- Filtros compactos -->
         <div class="card-body pb-0">
-            <form method="GET" action="<?= url('/cabanias') ?>" class="mb-3">
+            <form method="GET" action="<?= url('/estados-productos') ?>" class="mb-3">
                 <div class="row g-2 align-items-end">
                     <div class="col-auto">
                         <label class="form-label small mb-1 text-muted">Filtros de búsqueda</label>
                     </div>
                     <div class="col-auto">
-                        <label class="form-label small mb-1">Nombre</label>
-                        <input type="text" name="cabania_nombre" class="form-control form-control-sm" 
-                               placeholder="" value="<?= htmlspecialchars($_GET['cabania_nombre'] ?? '') ?>" style="width: 150px;">
-                    </div>
-                    <div class="col-auto">
-                        <label class="form-label small mb-1">Capacidad</label>
-                        <input type="number" name="cabania_capacidad" class="form-control form-control-sm" 
-                               placeholder="Personas" value="<?= htmlspecialchars($_GET['cabania_capacidad'] ?? '') ?>" 
-                               min="1" max="20" style="width: 120px;">
-                    </div>
-                    <div class="col-auto">
-                        <label class="form-label small mb-1">Habitaciones</label>
-                        <input type="number" name="cabania_habitaciones" class="form-control form-control-sm" 
-                               placeholder="Hab." value="<?= htmlspecialchars($_GET['cabania_habitaciones'] ?? '') ?>" 
-                               min="1" max="10" style="width: 100px;">
-                    </div>
-                    <div class="col-auto">
-                        <label class="form-label small mb-1">Baños</label>
-                        <input type="number" name="cabania_banios" class="form-control form-control-sm" 
-                               placeholder="Baños" value="<?= htmlspecialchars($_GET['cabania_banios'] ?? '') ?>" 
-                               min="1" max="10" style="width: 90px;">
+                        <label class="form-label small mb-1">Descripción</label>
+                        <input type="text" name="estadoproducto_descripcion" class="form-control form-control-sm" 
+                               placeholder="" value="<?= htmlspecialchars($_GET['estadoproducto_descripcion'] ?? '') ?>" style="width: 200px;">
                     </div>
                     <div class="col-auto ms-auto">
                         <label class="form-label small mb-1">Estado</label>
-                        <select name="cabania_estado" class="form-select form-select-sm" style="width: 120px;">
+                        <select name="estadoproducto_estado" class="form-select form-select-sm" style="width: 120px;">
                             <option value="">Todos</option>
-                            <option value="1" <?= ($_GET['cabania_estado'] ?? '') == '1' ? 'selected' : '' ?>>Activa</option>
-                            <option value="2" <?= ($_GET['cabania_estado'] ?? '') == '2' ? 'selected' : '' ?>>Ocupada</option>
-                            <option value="0" <?= ($_GET['cabania_estado'] ?? '') == '0' ? 'selected' : '' ?>>Inactiva</option>
+                            <option value="1" <?= ($_GET['estadoproducto_estado'] ?? '') == '1' ? 'selected' : '' ?>>Activo</option>
+                            <option value="0" <?= ($_GET['estadoproducto_estado'] ?? '') == '0' ? 'selected' : '' ?>>Inactivo</option>
                         </select>
                     </div>
                     <div class="col-auto">
@@ -58,7 +39,7 @@
                             <button type="submit" class="btn btn-primary btn-sm" title="Buscar">
                                 <i class="fas fa-search"></i>
                             </button>
-                            <a href="<?= url('/cabanias') ?>" class="btn btn-info btn-sm" title="Limpiar filtros">
+                            <a href="<?= url('/estados-productos') ?>" class="btn btn-info btn-sm" title="Limpiar filtros">
                                 <i class="fas fa-times"></i>
                             </a>
                         </div>
@@ -77,13 +58,13 @@
                             <option value="50" <?= ($_GET['per_page'] ?? '10') == '50' ? 'selected' : '' ?>>50</option>
                         </select>
                     </div>
-                    <div class="col"></div> <!-- Espaciador para empujar el botón a la derecha -->
+                    <div class="col"></div>
                     <div class="col-auto">
                         <div class="btn-group" role="group">
-                            <button type="button" onclick="exportarCabanias(event)" class="btn btn-success btn-sm" title="Exportar a Excel">
+                            <button type="button" onclick="exportarEstadosProductos(event)" class="btn btn-success btn-sm" title="Exportar a Excel">
                                 <i class="fas fa-file-excel me-1"></i> Excel
                             </button>
-                            <button type="button" onclick="exportarCabaniasPDF(event)" class="btn btn-danger btn-sm" title="Exportar a PDF">
+                            <button type="button" onclick="exportarEstadosProductosPDF(event)" class="btn btn-danger btn-sm" title="Exportar a PDF">
                                 <i class="fas fa-file-pdf me-1"></i> PDF
                             </button>
                         </div>
@@ -94,15 +75,15 @@
 
         <!-- Tabla estilo moderno -->
         <div class="card-body p-0">
-            <?php if (empty($cabanias)): ?>
+            <?php if (empty($estados)): ?>
                 <div class="empty-state py-5 text-center">
                     <div class="mb-4">
-                        <i class="fas fa-home fa-3x text-muted opacity-50"></i>
+                        <i class="fas fa-tasks fa-3x text-muted opacity-50"></i>
                     </div>
-                    <h6 class="text-muted">No se encontraron cabañas</h6>
-                    <p class="text-muted small mb-3">Intenta modificar los filtros o crea una nueva cabaña.</p>
-                    <a href="<?= url('/admin/cabanias/formulario') ?>" class="btn btn-outline-dark btn-sm">
-                        <i class="fas fa-plus fa-sm"></i> Crear cabaña
+                    <h6 class="text-muted">No se encontraron estados de productos</h6>
+                    <p class="text-muted small mb-3">Intenta modificar los filtros o crea un nuevo estado.</p>
+                    <a href="<?= url('/estados-productos/create') ?>" class="btn btn-outline-dark btn-sm">
+                        <i class="fas fa-plus fa-sm"></i> Crear estado
                     </a>
                 </div>
             <?php else: ?>
@@ -185,109 +166,48 @@
                 <?php endif; ?>
 
                 <div class="table-responsive">
-                    <table id="tablaCabanias" class="table table-hover mb-0">
+                    <table id="tablaEstadosProductos" class="table table-hover mb-0">
                         <thead class="thead-light">
                             <tr>
-                                <th class="border-0 py-3">Código</th>
-                                <th class="border-0 py-3">Cabaña</th>
-                                <th class="border-0 py-3">Capacidad</th>
-                                <th class="border-0 py-3">Habitaciones</th>
-                                <th class="border-0 py-3">Baños</th>
+                                <th class="border-0 py-3">Descripción</th>
                                 <th class="border-0 py-3">Estado</th>
-                                <th class="border-0 py-3">Precio</th>
                                 <th class="border-0 py-3 text-center">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($cabanias as $index => $cabania): ?>
+                            <?php foreach ($estados as $index => $estado): ?>
                                 <tr>
                                     <td class="border-0 py-3">
-                                        <div class="small text-muted">
-                                            <?= htmlspecialchars($cabania['cabania_codigo']) ?>
-                                        </div>
+                                        <div class="fw-medium text-dark"><?= htmlspecialchars($estado['estadoproducto_descripcion']) ?></div>
                                     </td>
                                     <td class="border-0 py-3">
-                                        <div class="d-flex align-items-center">
-                                            <div>
-                                                <div class="fw-medium text-dark"><?= htmlspecialchars($cabania['cabania_nombre']) ?></div>
-                                                <div class="small text-muted">
-                                                    <?= htmlspecialchars(substr($cabania['cabania_descripcion'], 0, 40)) ?>
-                                                    <?= strlen($cabania['cabania_descripcion']) > 40 ? '...' : '' ?>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="border-0 py-3">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-users text-primary me-2"></i>
-                                            <span class="text-dark ml-2"><?= $cabania['cabania_capacidad'] ?></span>
-                                        </div>
-                                    </td>
-                                    <td class="border-0 py-3">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-bed text-info me-2"></i>
-                                            <span class="text-dark ml-2"><?= $cabania['cabania_cantidadhabitaciones'] ?></span>
-                                        </div>
-                                    </td>
-                                    <td class="border-0 py-3">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-bath text-warning me-2"></i>
-                                            <span class="text-dark ml-2"><?= $cabania['cabania_cantidadbanios'] ?></span>
-                                        </div>
-                                    </td>
-                                    <td class="border-0 py-3">
-                                        <span class="fw-medium text-success">$<?= number_format($cabania['cabania_precio'], 0, '.', ',') ?></span>
-                                        <small class="text-muted d-block">p/Noche</small>
-                                    </td>                                    
-                                    <td class="border-0 py-3">
-                                        <?php if ($cabania['cabania_estado'] == 1): ?>
-                                            <span class="badge bg-success text-white px-2 py-1 rounded-pill">Activa</span>
-                                        <?php elseif ($cabania['cabania_estado'] == 2): ?>
-                                            <span class="badge bg-warning text-dark px-2 py-1 rounded-pill">Ocupada</span>
+                                        <?php if ($estado['estadoproducto_estado'] == 1): ?>
+                                            <span class="badge bg-success text-white px-2 py-1 rounded-pill">Activo</span>
                                         <?php else: ?>
-                                            <span class="badge bg-danger text-white px-2 py-1 rounded-pill">Inactiva</span>
+                                            <span class="badge bg-danger text-white px-2 py-1 rounded-pill">Inactivo</span>
                                         <?php endif; ?>
                                     </td>
                                     <td class="border-0 py-3 text-center">
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <a href="<?= url('/cabanias/' . $cabania['id_cabania']) ?>"
+                                            <a href="<?= url('/estados-productos/' . $estado['id_estadoproducto']) ?>"
                                                class="btn btn-outline-primary btn-sm"
                                                title="Ver detalle">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="<?= url('/cabanias/' . $cabania['id_cabania']) . '/edit'?>"
+                                            <a href="<?= url('/estados-productos/' . $estado['id_estadoproducto'] . '/edit') ?>"
                                                class="btn btn-outline-warning btn-sm"
                                                title="Editar">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <?php if ($cabania['cabania_estado'] == 1): ?>
-                                                <!-- Cabaña activa: puede marcar como ocupada o desactivar -->
-                                                <button class="btn btn-outline-warning btn-sm"
-                                                        onclick="cambiarEstadoCabania(<?= $cabania['id_cabania'] ?>, 2, '<?= addslashes($cabania['cabania_nombre']) ?>')"
-                                                        title="Marcar como ocupada">
-                                                    <i class="fas fa-home"></i>
-                                                </button>
+                                            <?php if ($estado['estadoproducto_estado'] == 1): ?>
                                                 <button class="btn btn-outline-danger btn-sm"
-                                                        onclick="cambiarEstadoCabania(<?= $cabania['id_cabania'] ?>, 0, '<?= addslashes($cabania['cabania_nombre']) ?>')"
-                                                        title="Desactivar">
-                                                    <i class="fas fa-ban"></i>
-                                                </button>
-                                            <?php elseif ($cabania['cabania_estado'] == 2): ?>
-                                                <!-- Cabaña ocupada: puede liberar (activar) o desactivar -->
-                                                <button class="btn btn-outline-success btn-sm"
-                                                        onclick="cambiarEstadoCabania(<?= $cabania['id_cabania'] ?>, 1, '<?= addslashes($cabania['cabania_nombre']) ?>')"
-                                                        title="Liberar cabaña">
-                                                    <i class="fas fa-unlock"></i>
-                                                </button>
-                                                <button class="btn btn-outline-danger btn-sm"
-                                                        onclick="cambiarEstadoCabania(<?= $cabania['id_cabania'] ?>, 0, '<?= addslashes($cabania['cabania_nombre']) ?>')"
+                                                        onclick="cambiarEstadoEstadoProducto(<?= $estado['id_estadoproducto'] ?>, 0, '<?= addslashes($estado['estadoproducto_descripcion']) ?>')"
                                                         title="Desactivar">
                                                     <i class="fas fa-ban"></i>
                                                 </button>
                                             <?php else: ?>
-                                                <!-- Cabaña inactiva: solo puede activar -->
                                                 <button class="btn btn-outline-success btn-sm"
-                                                        onclick="cambiarEstadoCabania(<?= $cabania['id_cabania'] ?>, 1, '<?= addslashes($cabania['cabania_nombre']) ?>')"
+                                                        onclick="cambiarEstadoEstadoProducto(<?= $estado['id_estadoproducto'] ?>, 1, '<?= addslashes($estado['estadoproducto_descripcion']) ?>')"
                                                         title="Activar">
                                                     <i class="fas fa-check"></i>
                                                 </button>
@@ -312,49 +232,37 @@
 
 <!-- JavaScript para funcionalidades -->
 <script>
-function cambiarEstadoCabania(id, nuevoEstado, nombre) {
+function cambiarEstadoEstadoProducto(id, nuevoEstado, descripcion) {
     let accion, mensaje, color;
     
-    switch(nuevoEstado) {
-        case 1:
-            accion = 'activar';
-            mensaje = 'La cabaña estará disponible para reservas';
-            color = '#28a745';
-            break;
-        case 2:
-            accion = 'marcar como ocupada';
-            mensaje = 'La cabaña se marcará como ocupada por huéspedes';
-            color = '#ffc107';
-            break;
-        case 0:
-            accion = 'desactivar';
-            mensaje = 'La cabaña no estará disponible para reservas';
-            color = '#dc3545';
-            break;
-        default:
-            accion = 'cambiar estado';
-            mensaje = '';
-            color = '#6c757d';
+    if (nuevoEstado == 1) {
+        accion = 'activar';
+        mensaje = 'El estado estará disponible para usar en productos';
+        color = '#28a745';
+    } else {
+        accion = 'desactivar';
+        mensaje = 'El estado no estará disponible para usar en productos';
+        color = '#dc3545';
     }
     
-    console.log('Cambiando estado:', { id, nuevoEstado, nombre, accion });
+    console.log('Cambiando estado:', { id, nuevoEstado, descripcion, accion });
     
     // Usar SweetAlert si está disponible, sino usar confirm simple
     const confirmar = typeof Swal !== 'undefined' ? 
         Swal.fire({
-            title: `¿${accion.charAt(0).toUpperCase() + accion.slice(1)} cabaña?`,
-            text: `¿Está seguro que desea ${accion} la cabaña "${nombre}"? ${mensaje}`,
+            title: `¿${accion.charAt(0).toUpperCase() + accion.slice(1)} estado?`,
+            text: `¿Está seguro que desea ${accion} el estado "${descripcion}"? ${mensaje}`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: `Sí, ${accion}`,
             cancelButtonText: 'Cancelar',
             confirmButtonColor: color
         }).then(result => result.isConfirmed) :
-        Promise.resolve(confirm(`¿Está seguro que desea ${accion} la cabaña "${nombre}"?`));
+        Promise.resolve(confirm(`¿Está seguro que desea ${accion} el estado "${descripcion}"?`));
     
     confirmar.then(confirmed => {
         if (confirmed) {
-            const url = `<?= url('/cabanias') ?>/${id}/estado`;
+            const url = `<?= url('/estados-productos') ?>/${id}/estado`;
             console.log('URL de petición:', url);
             
             fetch(url, {
@@ -368,33 +276,38 @@ function cambiarEstadoCabania(id, nuevoEstado, nombre) {
             .then(response => {
                 console.log('Respuesta recibida:', response.status, response.statusText);
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                return response.json();
+                return response.json().then(data => {
+                    if (!response.ok) {
+                        throw { status: response.status, data: data };
+                    }
+                    return data;
+                });
             })
             .then(data => {
                 console.log('Datos recibidos:', data);
                 
                 if (data.success) {
-                    // Usar SweetAlert para éxito si está disponible
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
                             title: '¡Éxito!',
-                            text: `Cabaña ${accion}da correctamente`,
+                            text: data.message || `Estado ${accion}do correctamente`,
                             icon: 'success',
                             timer: 1500,
                             showConfirmButton: false
                         }).then(() => location.reload());
                     } else {
-                        alert(`Cabaña ${accion}da correctamente`);
+                        alert(data.message || `Estado ${accion}do correctamente`);
                         location.reload();
                     }
                 } else {
-                    const errorMsg = 'Error al cambiar el estado: ' + (data.message || 'Error desconocido');
+                    const errorMsg = data.message || 'Error desconocido';
                     if (typeof Swal !== 'undefined') {
-                        Swal.fire('Error', errorMsg, 'error');
+                        Swal.fire({
+                            title: 'No se puede cambiar el estado',
+                            text: errorMsg,
+                            icon: 'warning',
+                            confirmButtonText: 'Entendido'
+                        });
                     } else {
                         alert(errorMsg);
                     }
@@ -402,25 +315,38 @@ function cambiarEstadoCabania(id, nuevoEstado, nombre) {
             })
             .catch(error => {
                 console.error('Error completo:', error);
-                const errorMsg = 'Error al cambiar el estado de la cabaña: ' + error.message;
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire('Error', errorMsg, 'error');
+                
+                if (error.data && error.data.message) {
+                    const errorMsg = error.data.message;
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'No se puede cambiar el estado',
+                            text: errorMsg,
+                            icon: 'warning',
+                            confirmButtonText: 'Entendido'
+                        });
+                    } else {
+                        alert(errorMsg);
+                    }
                 } else {
-                    alert(errorMsg);
+                    const errorMsg = 'Error al cambiar el estado: ' + (error.message || 'Error de conexión');
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire('Error', errorMsg, 'error');
+                    } else {
+                        alert(errorMsg);
+                    }
                 }
             });
         }
     });
 }
 
-// Función para exportar cabañas a Excel (.xlsx)
-function exportarCabanias(event) {
-    // Prevenir comportamiento por defecto del botón
+// Función para exportar a Excel
+function exportarEstadosProductos(event) {
     if (event) {
         event.preventDefault();
     }
     
-    // Mostrar mensaje de procesamiento
     if (typeof Swal !== 'undefined') {
         Swal.fire({
             title: 'Generando archivo...',
@@ -434,26 +360,17 @@ function exportarCabanias(event) {
         });
     }
     
-    // Obtener los parámetros actuales de la URL (filtros y paginación)
     const urlParams = new URLSearchParams(window.location.search);
-    
-    // Crear la URL de exportación manteniendo todos los filtros
-    const baseExportUrl = '<?= url('/cabanias/exportar') ?>';
+    const baseExportUrl = '<?= url('/estados-productos/exportar') ?>';
     const exportUrl = baseExportUrl + '?' + urlParams.toString();
     
-    // Crear un enlace temporal para la descarga
     const link = document.createElement('a');
     link.href = exportUrl;
     link.style.display = 'none';
     document.body.appendChild(link);
-    
-    // Simular clic para iniciar descarga
     link.click();
-    
-    // Limpiar el enlace temporal
     document.body.removeChild(link);
     
-    // Cerrar mensaje de carga después de un momento
     setTimeout(() => {
         if (typeof Swal !== 'undefined') {
             Swal.fire({
@@ -469,14 +386,12 @@ function exportarCabanias(event) {
     }, 1000);
 }
 
-// Función para exportar cabañas a PDF
-function exportarCabaniasPDF(event) {
-    // Prevenir comportamiento por defecto del botón
+// Función para exportar a PDF
+function exportarEstadosProductosPDF(event) {
     if (event) {
         event.preventDefault();
     }
     
-    // Mostrar mensaje de procesamiento
     if (typeof Swal !== 'undefined') {
         Swal.fire({
             title: 'Generando PDF...',
@@ -490,26 +405,17 @@ function exportarCabaniasPDF(event) {
         });
     }
     
-    // Obtener los parámetros actuales de la URL (filtros y paginación)
     const urlParams = new URLSearchParams(window.location.search);
-    
-    // Crear la URL de exportación PDF manteniendo todos los filtros
-    const basePdfUrl = '<?= url('/cabanias/exportar-pdf') ?>';
+    const basePdfUrl = '<?= url('/estados-productos/exportar-pdf') ?>';
     const pdfUrl = basePdfUrl + '?' + urlParams.toString();
     
-    // Crear un enlace temporal para la descarga
     const link = document.createElement('a');
     link.href = pdfUrl;
     link.style.display = 'none';
     document.body.appendChild(link);
-    
-    // Simular clic para iniciar descarga
     link.click();
-    
-    // Limpiar el enlace temporal
     document.body.removeChild(link);
     
-    // Cerrar mensaje de carga después de un momento
     setTimeout(() => {
         if (typeof Swal !== 'undefined') {
             Swal.fire({

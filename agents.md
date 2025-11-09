@@ -55,7 +55,7 @@ Para cada entidad XXXX, se deben generar los siguientes archivos siguiendo la es
 
 ### Filtros de Listado
 **Elementos SELECT obligatorios:**
-- **Clase requerida:** `class="form-control form-control-sm"`
+- **Clase requerida:** `class="form-select form-select-sm"`
 - **Aplicación:** Todos los filtros desplegables (estado, registros por página, categorías, etc.)
 - **Compatibilidad:** Bootstrap 4 (versión actual del proyecto)
 

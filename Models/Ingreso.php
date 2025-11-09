@@ -197,7 +197,7 @@ class Ingreso extends Model
             }
 
             return [
-                'estados_reservas' => $estadosPorReservas,
+                'estados-reservas' => $estadosPorReservas,
                 'ingresos_por_mes' => $ingresosPorMes,
                 'cabanias_populares' => $cabaniasPopulares
             ];

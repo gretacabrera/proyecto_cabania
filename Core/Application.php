@@ -269,6 +269,17 @@ class Application
         $this->router->post('/estados-reservas/{id}/restore', 'EstadosReservasController@restore');
         $this->router->post('/estados-reservas/{id}/estado', 'EstadosReservasController@cambiarEstado');
 
+        // Rutas de estados de productos
+        $this->router->get('/estados-productos', 'EstadosProductosController@index');
+        $this->router->any('/estados-productos/create', 'EstadosProductosController@create');
+        $this->router->get('/estados-productos/exportar', 'EstadosProductosController@exportar');
+        $this->router->get('/estados-productos/exportar-pdf', 'EstadosProductosController@exportarPdf');
+        $this->router->get('/estados-productos/{id}', 'EstadosProductosController@show');
+        $this->router->any('/estados-productos/{id}/edit', 'EstadosProductosController@edit');
+        $this->router->post('/estados-productos/{id}/delete', 'EstadosProductosController@delete');
+        $this->router->post('/estados-productos/{id}/restore', 'EstadosProductosController@restore');
+        $this->router->post('/estados-productos/{id}/estado', 'EstadosProductosController@cambiarEstado');
+
         // Rutas de tipos de servicios
         $this->router->get('/tipos-servicios', 'TiposServiciosController@index');
         $this->router->any('/tipos-servicios/create', 'TiposServiciosController@create');
