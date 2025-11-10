@@ -16,12 +16,12 @@ if (!isset($estado) || empty($estado)) {
     <div class="page-actions">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <a href="<?= url('/estados-reservas') ?>" class="btn btn-primary">
+                <a href="<?= url('/estadosreservas') ?>" class="btn btn-primary">
                     <i class="fas fa-arrow-left"></i> Volver al listado
                 </a>
             </div>
             <div class="action-buttons">
-                <a href="<?= url('/estados-reservas/' . $estado['id_estadoreserva'] . '/edit') ?>"
+                <a href="<?= url('/estadosreservas/' . $estado['id_estadoreserva'] . '/edit') ?>"
                     class="btn btn-warning">
                     <i class="fas fa-edit"></i> Editar Estado
                 </a>
@@ -133,7 +133,7 @@ if (!isset($estado) || empty($estado)) {
                             class="btn btn-outline-info">
                             <i class="fas fa-list"></i> Ver Reservas con este Estado
                         </a>
-                        <a href="<?= url('/estados-reservas/exportar') ?>?estadoreserva_estado=1"
+                        <a href="<?= url('/estadosreservas/exportar') ?>?estadoreserva_estado=1"
                             class="btn btn-outline-success">
                             <i class="fas fa-file-excel"></i> Exportar Todos los Estados
                         </a>
@@ -175,7 +175,7 @@ function cambiarEstadoEstadoReserva(id, nuevoEstado, descripcion) {
     
     confirmar.then(confirmed => {
         if (confirmed) {
-            const url = `<?= url('/estados-reservas') ?>/${id}/estado`;
+            const url = `<?= url('/estadosreservas') ?>/${id}/estado`;
             console.log('URL de petición:', url);
             
             fetch(url, {

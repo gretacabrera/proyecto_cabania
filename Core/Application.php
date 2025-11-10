@@ -207,14 +207,14 @@ class Application
         $this->router->post('/menus/update-order', 'MenusController@updateOrder');
 
         // Rutas de métodos de pago
-        $this->router->get('/metodos-pagos', 'MetodosPagosController@index');
-        $this->router->any('/metodos-pagos/create', 'MetodosPagosController@create');
-        $this->router->any('/metodos-pagos/{id}/edit', 'MetodosPagosController@edit');
-        $this->router->get('/metodos-pagos/{id}/delete', 'MetodosPagosController@delete');
-        $this->router->get('/metodos-pagos/{id}/restore', 'MetodosPagosController@restore');
-        $this->router->get('/metodos-pagos/search', 'MetodosPagosController@search');
-        $this->router->get('/metodos-pagos/{id}/toggle-status', 'MetodosPagosController@toggleStatus');
-        $this->router->get('/metodos-pagos/stats', 'MetodosPagosController@stats');
+        $this->router->get('/metodospagos', 'MetodosPagosController@index');
+        $this->router->any('/metodospagos/create', 'MetodosPagosController@create');
+        $this->router->any('/metodospagos/{id}/edit', 'MetodosPagosController@edit');
+        $this->router->get('/metodospagos/{id}/delete', 'MetodosPagosController@delete');
+        $this->router->get('/metodospagos/{id}/restore', 'MetodosPagosController@restore');
+        $this->router->get('/metodospagos/search', 'MetodosPagosController@search');
+        $this->router->get('/metodospagos/{id}/toggle-status', 'MetodosPagosController@toggleStatus');
+        $this->router->get('/metodospagos/stats', 'MetodosPagosController@stats');
 
         // Rutas de módulos del sistema
         $this->router->get('/modulos', 'ModulosController@index');
@@ -241,53 +241,59 @@ class Application
         $this->router->any('/perfiles/{id}/clone', 'PerfilesController@clone');
 
         // Rutas de estados de personas
-        $this->router->get('/estados-personas', 'EstadosPersonasController@index');
-        $this->router->any('/estados-personas/create', 'EstadosPersonasController@create');
-        $this->router->any('/estados-personas/{id}/edit', 'EstadosPersonasController@edit');
-        $this->router->get('/estados-personas/{id}/delete', 'EstadosPersonasController@delete');
-        $this->router->get('/estados-personas/{id}/restore', 'EstadosPersonasController@restore');
-        $this->router->get('/estados-personas/{id}/toggle-status', 'EstadosPersonasController@toggleStatus');
+        $this->router->get('/estadospersonas', 'EstadosPersonasController@index');
+        $this->router->any('/estadospersonas/create', 'EstadosPersonasController@create');
+        $this->router->get('/estadospersonas/exportar', 'EstadosPersonasController@exportar');
+        $this->router->get('/estadospersonas/exportar-pdf', 'EstadosPersonasController@exportarPdf');
+        $this->router->get('/estadospersonas/{id}', 'EstadosPersonasController@show');
+        $this->router->any('/estadospersonas/{id}/edit', 'EstadosPersonasController@edit');
+        $this->router->post('/estadospersonas/{id}/delete', 'EstadosPersonasController@delete');
+        $this->router->post('/estadospersonas/{id}/restore', 'EstadosPersonasController@restore');
+        $this->router->post('/estadospersonas/{id}/estado', 'EstadosPersonasController@cambiarEstado');
 
         // Rutas de estados de productos
-        $this->router->get('/estados-productos', 'EstadosProductosController@index');
-        $this->router->any('/estados-productos/create', 'EstadosProductosController@create');
-        $this->router->any('/estados-productos/{id}/edit', 'EstadosProductosController@edit');
-        $this->router->get('/estados-productos/{id}/delete', 'EstadosProductosController@delete');
-        $this->router->get('/estados-productos/{id}/restore', 'EstadosProductosController@restore');
-        $this->router->get('/estados-productos/{id}/toggle-status', 'EstadosProductosController@toggleStatus');
-        $this->router->get('/estados-productos/search', 'EstadosProductosController@search');
-        $this->router->get('/estados-productos/stats', 'EstadosProductosController@stats');
+        $this->router->get('/estadosproductos', 'EstadosProductosController@index');
+        $this->router->any('/estadosproductos/create', 'EstadosProductosController@create');
+        $this->router->get('/estadosproductos/exportar', 'EstadosProductosController@exportar');
+        $this->router->get('/estadosproductos/exportar-pdf', 'EstadosProductosController@exportarPdf');
+        $this->router->get('/estadosproductos/{id}', 'EstadosProductosController@show');
+        $this->router->any('/estadosproductos/{id}/edit', 'EstadosProductosController@edit');
+        $this->router->get('/estadosproductos/{id}/delete', 'EstadosProductosController@delete');
+        $this->router->get('/estadosproductos/{id}/restore', 'EstadosProductosController@restore');
+        $this->router->get('/estadosproductos/{id}/toggle-status', 'EstadosProductosController@toggleStatus');
+        $this->router->get('/estadosproductos/search', 'EstadosProductosController@search');
+        $this->router->get('/estadosproductos/stats', 'EstadosProductosController@stats');
 
         // Rutas de estados de reservas
-        $this->router->get('/estados-reservas', 'EstadosReservasController@index');
-        $this->router->any('/estados-reservas/create', 'EstadosReservasController@create');
-        $this->router->get('/estados-reservas/exportar', 'EstadosReservasController@exportar');
-        $this->router->get('/estados-reservas/exportar-pdf', 'EstadosReservasController@exportarPdf');
-        $this->router->get('/estados-reservas/{id}', 'EstadosReservasController@show');
-        $this->router->any('/estados-reservas/{id}/edit', 'EstadosReservasController@edit');
-        $this->router->post('/estados-reservas/{id}/delete', 'EstadosReservasController@delete');
-        $this->router->post('/estados-reservas/{id}/restore', 'EstadosReservasController@restore');
-        $this->router->post('/estados-reservas/{id}/estado', 'EstadosReservasController@cambiarEstado');
+        $this->router->get('/estadosreservas', 'EstadosReservasController@index');
+        $this->router->any('/estadosreservas/create', 'EstadosReservasController@create');
+        $this->router->get('/estadosreservas/exportar', 'EstadosReservasController@exportar');
+        $this->router->get('/estadosreservas/exportar-pdf', 'EstadosReservasController@exportarPdf');
+        $this->router->get('/estadosreservas/{id}', 'EstadosReservasController@show');
+        $this->router->any('/estadosreservas/{id}/edit', 'EstadosReservasController@edit');
+        $this->router->post('/estadosreservas/{id}/delete', 'EstadosReservasController@delete');
+        $this->router->post('/estadosreservas/{id}/restore', 'EstadosReservasController@restore');
+        $this->router->post('/estadosreservas/{id}/estado', 'EstadosReservasController@cambiarEstado');
 
         // Rutas de tipos de servicios
-        $this->router->get('/tipos-servicios', 'TiposServiciosController@index');
-        $this->router->any('/tipos-servicios/create', 'TiposServiciosController@create');
-        $this->router->any('/tipos-servicios/{id}/edit', 'TiposServiciosController@edit');
-        $this->router->get('/tipos-servicios/{id}/delete', 'TiposServiciosController@delete');
-        $this->router->get('/tipos-servicios/{id}/restore', 'TiposServiciosController@restore');
-        $this->router->get('/tipos-servicios/{id}/toggle-status', 'TiposServiciosController@toggleStatus');
-        $this->router->get('/tipos-servicios/search', 'TiposServiciosController@search');
-        $this->router->get('/tipos-servicios/stats', 'TiposServiciosController@stats');
+        $this->router->get('/tiposservicios', 'TiposServiciosController@index');
+        $this->router->any('/tiposservicios/create', 'TiposServiciosController@create');
+        $this->router->any('/tiposservicios/{id}/edit', 'TiposServiciosController@edit');
+        $this->router->get('/tiposservicios/{id}/delete', 'TiposServiciosController@delete');
+        $this->router->get('/tiposservicios/{id}/restore', 'TiposServiciosController@restore');
+        $this->router->get('/tiposservicios/{id}/toggle-status', 'TiposServiciosController@toggleStatus');
+        $this->router->get('/tiposservicios/search', 'TiposServiciosController@search');
+        $this->router->get('/tiposservicios/stats', 'TiposServiciosController@stats');
 
         // Rutas de tipos de contactos
-        $this->router->get('/tipos-contactos', 'TiposContactosController@index');
-        $this->router->any('/tipos-contactos/create', 'TiposContactosController@create');
-        $this->router->any('/tipos-contactos/{id}/edit', 'TiposContactosController@edit');
-        $this->router->get('/tipos-contactos/{id}/delete', 'TiposContactosController@delete');
-        $this->router->get('/tipos-contactos/{id}/restore', 'TiposContactosController@restore');
-        $this->router->get('/tipos-contactos/{id}/toggle-status', 'TiposContactosController@toggleStatus');
-        $this->router->get('/tipos-contactos/search', 'TiposContactosController@search');
-        $this->router->get('/tipos-contactos/stats', 'TiposContactosController@stats');
+        $this->router->get('/tiposcontactos', 'TiposContactosController@index');
+        $this->router->any('/tiposcontactos/create', 'TiposContactosController@create');
+        $this->router->any('/tiposcontactos/{id}/edit', 'TiposContactosController@edit');
+        $this->router->get('/tiposcontactos/{id}/delete', 'TiposContactosController@delete');
+        $this->router->get('/tiposcontactos/{id}/restore', 'TiposContactosController@restore');
+        $this->router->get('/tiposcontactos/{id}/toggle-status', 'TiposContactosController@toggleStatus');
+        $this->router->get('/tiposcontactos/search', 'TiposContactosController@search');
+        $this->router->get('/tiposcontactos/stats', 'TiposContactosController@stats');
 
         // Rutas de periodos
         $this->router->get('/periodos', 'PeriodosController@index');
@@ -300,15 +306,15 @@ class Application
         $this->router->get('/periodos/stats', 'PeriodosController@stats');
 
         // Rutas de condiciones de salud
-        $this->router->get('/condiciones_salud', 'CondicionesSaludController@index');
-        $this->router->any('/condiciones_salud/create', 'CondicionesSaludController@create');
-        $this->router->get('/condiciones_salud/exportar', 'CondicionesSaludController@exportar');
-        $this->router->get('/condiciones_salud/exportar-pdf', 'CondicionesSaludController@exportarPdf');
-        $this->router->get('/condiciones_salud/{id}', 'CondicionesSaludController@show');
-        $this->router->any('/condiciones_salud/{id}/edit', 'CondicionesSaludController@edit');
-        $this->router->post('/condiciones_salud/{id}/delete', 'CondicionesSaludController@delete');
-        $this->router->post('/condiciones_salud/{id}/restore', 'CondicionesSaludController@restore');
-        $this->router->post('/condiciones_salud/{id}/estado', 'CondicionesSaludController@cambiarEstado');
+        $this->router->get('/condicionessalud', 'CondicionesSaludController@index');
+        $this->router->any('/condicionessalud/create', 'CondicionesSaludController@create');
+        $this->router->get('/condicionessalud/exportar', 'CondicionesSaludController@exportar');
+        $this->router->get('/condicionessalud/exportar-pdf', 'CondicionesSaludController@exportarPdf');
+        $this->router->get('/condicionessalud/{id}', 'CondicionesSaludController@show');
+        $this->router->any('/condicionessalud/{id}/edit', 'CondicionesSaludController@edit');
+        $this->router->post('/condicionessalud/{id}/delete', 'CondicionesSaludController@delete');
+        $this->router->post('/condicionessalud/{id}/restore', 'CondicionesSaludController@restore');
+        $this->router->post('/condicionessalud/{id}/estado', 'CondicionesSaludController@cambiarEstado');
 
         // Rutas de comentarios
         $this->router->get('/comentarios', 'ComentariosController@index');

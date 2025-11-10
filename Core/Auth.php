@@ -185,7 +185,7 @@ class Auth
                              AND m.modulo_estado = 1
                              AND u.usuario_estado = 1
                              AND u.usuario_nombre = ?
-                             ORDER BY men.menu_nombre, m.modulo_descripcion");
+                             ORDER BY men.menu_orden, men.menu_nombre, m.modulo_descripcion");
         
         $stmt->bind_param("s", $_SESSION["usuario_nombre"]);
         $stmt->execute();

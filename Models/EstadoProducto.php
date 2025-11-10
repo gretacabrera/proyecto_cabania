@@ -125,4 +125,83 @@ class EstadoProducto extends Model
         
         return $estados;
     }
+
+    /**
+     * Obtener todos los estados para exportación (sin paginación)
+     */
+    public function getAllForExport($filters = [])
+    {
+        $where = ["1=1"];
+        $params = [];
+
+        if (!empty($filters['search'])) {
+            $where[] = "estadoproducto_descripcion LIKE ?";
+            $params[] = '%' . $filters['search'] . '%';
+        }
+
+        if (isset($filters['estado']) && $filters['estado'] !== '') {
+            $where[] = "estadoproducto_estado = ?";
+            $params[] = $filters['estado'];
+        }
+
+        $whereClause = implode(' AND ', $where);
+        $sql = "SELECT * FROM {$this->table} WHERE {$whereClause} ORDER BY estadoproducto_descripcion";
+        
+        $result = $this->query($sql, $params);
+        
+        $estados = [];
+        while ($row = $result->fetch_assoc()) {
+            $estados[] = $row;
+        }
+        
+        return [
+            'data' => $estados,
+            'total' => count($estados)
+        ];
+    }
+
+    /**
+     * Obtener estadísticas de un estado específico
+     */
+    public function getStatistics($estadoId)
+    {
+        $stats = [
+            'productos_asociados' => $this->getProductosAsociados($estadoId),
+            'total_productos_sistema' => $this->getTotalProductosSistema()
+        ];
+        
+        return $stats;
+    }
+
+    /**
+     * Obtener número de productos asociados a este estado
+     */
+    private function getProductosAsociados($estadoId)
+    {
+        $sql = "SELECT COUNT(*) as total 
+                FROM producto 
+                WHERE rela_estadoproducto = ?";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $estadoId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        
+        return (int) ($row['total'] ?? 0);
+    }
+
+    /**
+     * Obtener total de productos en el sistema
+     */
+    private function getTotalProductosSistema()
+    {
+        $sql = "SELECT COUNT(*) as total FROM producto";
+        
+        $result = $this->db->query($sql);
+        $row = $result->fetch_assoc();
+        
+        return (int) ($row['total'] ?? 0);
+    }
+
 }

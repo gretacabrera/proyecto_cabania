@@ -8,7 +8,7 @@
                     <h4 class="mb-0">Gestión de Estados de Reservas</h4>
                 </div>
                 <div class="col-auto">
-                    <a href="<?= url('/estados-reservas/create') ?>" class="btn btn-primary btn-sm">
+                    <a href="<?= url('/estadosreservas/create') ?>" class="btn btn-primary btn-sm">
                         <i class="fas fa-plus me-1"></i>Nuevo Estado
                     </a>
                 </div>
@@ -16,7 +16,7 @@
         </div>
         <!-- Filtros compactos -->
         <div class="card-body pb-0">
-            <form method="GET" action="<?= url('/estados-reservas') ?>" class="mb-3">
+            <form method="GET" action="<?= url('/estadosreservas') ?>" class="mb-3">
                 <div class="row g-2 align-items-end">
                     <div class="col-auto">
                         <label class="form-label small mb-1 text-muted">Filtros de búsqueda</label>
@@ -28,7 +28,7 @@
                     </div>
                     <div class="col-auto ms-auto">
                         <label class="form-label small mb-1">Estado</label>
-                        <select name="estadoreserva_estado" class="form-control form-control-sm" style="width: 120px;">
+                        <select name="estadoreserva_estado" class="form-select form-select-sm" style="width: 120px;">
                             <option value="">Todos</option>
                             <option value="1" <?= ($_GET['estadoreserva_estado'] ?? '') == '1' ? 'selected' : '' ?>>Activo</option>
                             <option value="0" <?= ($_GET['estadoreserva_estado'] ?? '') == '0' ? 'selected' : '' ?>>Inactivo</option>
@@ -39,7 +39,7 @@
                             <button type="submit" class="btn btn-primary btn-sm" title="Buscar">
                                 <i class="fas fa-search"></i>
                             </button>
-                            <a href="<?= url('/estados-reservas') ?>" class="btn btn-info btn-sm" title="Limpiar filtros">
+                            <a href="<?= url('/estadosreservas') ?>" class="btn btn-info btn-sm" title="Limpiar filtros">
                                 <i class="fas fa-times"></i>
                             </a>
                         </div>
@@ -50,7 +50,7 @@
                         <label class="form-label small mb-1 text-muted">Registros por página</label>
                     </div>
                     <div class="col-auto">
-                        <select name="per_page" class="form-control form-control-sm" style="width: 80px;" 
+                        <select name="per_page" class="form-select form-select-sm" style="width: 80px;" 
                                 onchange="this.form.submit()">
                             <option value="5" <?= ($_GET['per_page'] ?? '10') == '5' ? 'selected' : '' ?>>5</option>
                             <option value="10" <?= ($_GET['per_page'] ?? '10') == '10' ? 'selected' : '' ?>>10</option>
@@ -82,7 +82,7 @@
                     </div>
                     <h6 class="text-muted">No se encontraron estados de reservas</h6>
                     <p class="text-muted small mb-3">Intenta modificar los filtros o crea un nuevo estado.</p>
-                    <a href="<?= url('/estados-reservas/create') ?>" class="btn btn-outline-dark btn-sm">
+                    <a href="<?= url('/estadosreservas/create') ?>" class="btn btn-outline-dark btn-sm">
                         <i class="fas fa-plus fa-sm"></i> Crear estado
                     </a>
                 </div>
@@ -189,12 +189,12 @@
                                     </td>
                                     <td class="border-0 py-3 text-center">
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <a href="<?= url('/estados-reservas/' . $estado['id_estadoreserva']) ?>"
+                                            <a href="<?= url('/estadosreservas/' . $estado['id_estadoreserva']) ?>"
                                                class="btn btn-outline-primary btn-sm"
                                                title="Ver detalle">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="<?= url('/estados-reservas/' . $estado['id_estadoreserva'] . '/edit') ?>"
+                                            <a href="<?= url('/estadosreservas/' . $estado['id_estadoreserva'] . '/edit') ?>"
                                                class="btn btn-outline-warning btn-sm"
                                                title="Editar">
                                                 <i class="fas fa-edit"></i>
@@ -262,7 +262,7 @@ function cambiarEstadoEstadoReserva(id, nuevoEstado, descripcion) {
     
     confirmar.then(confirmed => {
         if (confirmed) {
-            const url = `<?= url('/estados-reservas') ?>/${id}/estado`;
+            const url = `<?= url('/estadosreservas') ?>/${id}/estado`;
             console.log('URL de petición:', url);
             
             fetch(url, {
@@ -365,7 +365,7 @@ function exportarEstadosReservas(event) {
     }
     
     const urlParams = new URLSearchParams(window.location.search);
-    const baseExportUrl = '<?= url('/estados-reservas/exportar') ?>';
+    const baseExportUrl = '<?= url('/estadosreservas/exportar') ?>';
     const exportUrl = baseExportUrl + '?' + urlParams.toString();
     
     const link = document.createElement('a');
@@ -410,7 +410,7 @@ function exportarEstadosReservasPDF(event) {
     }
     
     const urlParams = new URLSearchParams(window.location.search);
-    const basePdfUrl = '<?= url('/estados-reservas/exportar-pdf') ?>';
+    const basePdfUrl = '<?= url('/estadosreservas/exportar-pdf') ?>';
     const pdfUrl = basePdfUrl + '?' + urlParams.toString();
     
     const link = document.createElement('a');

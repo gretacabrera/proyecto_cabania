@@ -33,7 +33,7 @@ class MetodosPagosController extends Controller
 
         $result = $this->model->getWithFilters($filters, $page, $limit);
 
-        return $this->render('admin/configuracion/metodos_pagos/listado', [
+        return $this->render('admin/configuracion/metodospagos/listado', [
             'metodos' => $result['data'],
             'total' => $result['total'],
             'pages' => $result['pages'],
@@ -48,9 +48,9 @@ class MetodosPagosController extends Controller
      */
     public function create()
     {
-        return $this->render('admin/configuracion/metodos_pagos/formulario', [
+        return $this->render('admin/configuracion/metodospagos/formulario', [
             'method' => null,
-            'action' => '/admin/configuracion/metodos_pagos/store',
+            'action' => '/admin/configuracion/metodospagos/store',
             'title' => 'Nuevo Método de Pago'
         ]);
     }
@@ -61,7 +61,7 @@ class MetodosPagosController extends Controller
     public function store()
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: /admin/configuracion/metodos_pagos/create');
+            header('Location: /admin/configuracion/metodospagos/create');
             exit;
         }
 
@@ -69,10 +69,10 @@ class MetodosPagosController extends Controller
         $errors = $this->model->validate($data);
 
         if (!empty($errors)) {
-            return $this->render('admin/configuracion/metodos_pagos/formulario', [
+            return $this->render('admin/configuracion/metodospagos/formulario', [
                 'method' => (object) $data,
                 'errors' => $errors,
-                'action' => '/admin/configuracion/metodos_pagos/store',
+                'action' => '/admin/configuracion/metodospagos/store',
                 'title' => 'Nuevo Método de Pago'
             ]);
         }
@@ -86,10 +86,10 @@ class MetodosPagosController extends Controller
 
         if ($id) {
             $_SESSION['success'] = 'Método de pago creado exitosamente.';
-            header('Location: /metodos_pagos');
+            header('Location: /metodospagos');
         } else {
             $_SESSION['error'] = 'Error al crear el método de pago.';
-            header('Location: /admin/configuracion/metodos_pagos/create');
+            header('Location: /admin/configuracion/metodospagos/create');
         }
         exit;
     }
@@ -103,13 +103,13 @@ class MetodosPagosController extends Controller
 
         if (!$method) {
             $_SESSION['error'] = 'Método de pago no encontrado.';
-            header('Location: /metodos_pagos');
+            header('Location: /metodospagos');
             exit;
         }
 
-        return $this->render('admin/configuracion/metodos_pagos/formulario', [
+        return $this->render('admin/configuracion/metodospagos/formulario', [
             'method' => (object) $method,
-            'action' => "/admin/configuracion/metodos_pagos/update/{$id}",
+            'action' => "/admin/configuracion/metodospagos/update/{$id}",
             'title' => 'Editar Método de Pago'
         ]);
     }
@@ -120,14 +120,14 @@ class MetodosPagosController extends Controller
     public function update($id)
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header("Location: /admin/configuracion/metodos_pagos/edit/{$id}");
+            header("Location: /admin/configuracion/metodospagos/edit/{$id}");
             exit;
         }
 
         $method = $this->model->find($id);
         if (!$method) {
             $_SESSION['error'] = 'Método de pago no encontrado.';
-            header('Location: /metodos_pagos');
+            header('Location: /metodospagos');
             exit;
         }
 
@@ -135,10 +135,10 @@ class MetodosPagosController extends Controller
         $errors = $this->model->validate($data, true, $id);
 
         if (!empty($errors)) {
-            return $this->render('admin/configuracion/metodos_pagos/formulario', [
+            return $this->render('admin/configuracion/metodospagos/formulario', [
                 'method' => (object) array_merge($method, $data),
                 'errors' => $errors,
-                'action' => "/admin/configuracion/metodos_pagos/update/{$id}",
+                'action' => "/admin/configuracion/metodospagos/update/{$id}",
                 'title' => 'Editar Método de Pago'
             ]);
         }
@@ -147,10 +147,10 @@ class MetodosPagosController extends Controller
 
         if ($success) {
             $_SESSION['success'] = 'Método de pago actualizado exitosamente.';
-            header('Location: /metodos_pagos');
+            header('Location: /metodospagos');
         } else {
             $_SESSION['error'] = 'Error al actualizar el método de pago.';
-            header("Location: /admin/configuracion/metodos_pagos/edit/{$id}");
+            header("Location: /admin/configuracion/metodospagos/edit/{$id}");
         }
         exit;
     }
@@ -163,14 +163,14 @@ class MetodosPagosController extends Controller
         $method = $this->model->find($id);
         if (!$method) {
             $_SESSION['error'] = 'Método de pago no encontrado.';
-            header('Location: /metodos_pagos');
+            header('Location: /metodospagos');
             exit;
         }
 
         // Verificar si está en uso antes de desactivar
         if ($method['metododepago_estado'] == 1 && $this->model->isInUse($id)) {
             $_SESSION['error'] = 'No se puede desactivar el método de pago porque está siendo utilizado.';
-            header('Location: /metodos_pagos');
+            header('Location: /metodospagos');
             exit;
         }
 
@@ -183,7 +183,7 @@ class MetodosPagosController extends Controller
             $_SESSION['error'] = 'Error al cambiar el estado del método de pago.';
         }
 
-        header('Location: /metodos_pagos');
+        header('Location: /metodospagos');
         exit;
     }
 
@@ -195,7 +195,7 @@ class MetodosPagosController extends Controller
         $stats = $this->model->getStats();
         $metodosActivos = $this->model->getActive();
 
-        return $this->render('admin/configuracion/metodos_pagos/stats', [
+        return $this->render('admin/configuracion/metodospagos/stats', [
             'stats' => $stats,
             'metodos_activos' => $metodosActivos,
             'title' => 'Estadísticas de Métodos de Pago'

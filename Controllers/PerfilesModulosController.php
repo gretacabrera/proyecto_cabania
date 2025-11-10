@@ -72,7 +72,7 @@ class PerfilesModulosController extends Controller
             'registros_por_pagina' => $perPage
         ];
 
-        return $this->render('admin/seguridad/perfiles_modulos/index', $data);
+        return $this->render('admin/seguridad/perfiles-modulos/index', $data);
     }
 
     /**
@@ -94,7 +94,7 @@ class PerfilesModulosController extends Controller
             'modulos' => $modulos
         ];
 
-        return $this->render('admin/seguridad/perfiles_modulos/create', $data);
+        return $this->render('admin/seguridad/perfiles-modulos/create', $data);
     }
 
     /**
@@ -152,7 +152,7 @@ class PerfilesModulosController extends Controller
             'modulos' => $modulos
         ];
 
-        return $this->render('admin/seguridad/perfiles_modulos/edit', $data);
+        return $this->render('admin/seguridad/perfiles-modulos/edit', $data);
     }
 
     /**
@@ -253,7 +253,7 @@ class PerfilesModulosController extends Controller
             'modulos' => $modulos
         ];
 
-        return $this->render('admin/seguridad/perfiles_modulos/modules_by_profile', $data);
+        return $this->render('admin/seguridad/perfiles-modulos/modules_by_profile', $data);
     }
 
     /**
@@ -276,7 +276,7 @@ class PerfilesModulosController extends Controller
             'perfiles' => $perfiles
         ];
 
-        return $this->render('admin/seguridad/perfiles_modulos/profiles_by_module', $data);
+        return $this->render('admin/seguridad/perfiles-modulos/profiles_by_module', $data);
     }
 
     /**
@@ -318,7 +318,7 @@ class PerfilesModulosController extends Controller
             'modulosAsignadosIds' => $modulosAsignadosIds
         ];
 
-        return $this->render('admin/seguridad/perfiles_modulos/manage_permissions', $data);
+        return $this->render('admin/seguridad/perfiles-modulos/manage_permissions', $data);
     }
 
     /**
@@ -371,7 +371,7 @@ class PerfilesModulosController extends Controller
             'modulosMasAsignados' => $modulosMasAsignados
         ];
 
-        return $this->render('admin/seguridad/perfiles_modulos/stats', $data);
+        return $this->render('admin/seguridad/perfiles-modulos/stats', $data);
     }
 
     /**

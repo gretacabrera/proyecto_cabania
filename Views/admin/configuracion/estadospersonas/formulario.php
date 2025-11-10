@@ -1,9 +1,4 @@
 <?php
-/**
- * Vista: Formulario de Estado de Reserva
- * Descripción: Formulario para crear/editar estados de reservas
- */
-
 $isEdit = isset($estado) && !empty($estado);
 ?>
 
@@ -12,7 +7,7 @@ $isEdit = isset($estado) && !empty($estado);
     <div class="page-actions">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <a href="<?= url('/estados-reservas') ?>" class="btn btn-primary">
+                <a href="<?= url('/estadospersonas') ?>" class="btn btn-primary">
                     <i class="fas fa-arrow-left"></i> Volver al listado
                 </a>
             </div>
@@ -26,30 +21,28 @@ $isEdit = isset($estado) && !empty($estado);
                 <div class="card-header">
                     <h5 class="card-title mb-0">
                         <i class="fas fa-edit"></i> 
-                        <?= $isEdit ? 'Modificar datos del estado de reserva' : 'Datos del nuevo estado de reserva' ?>
+                        <?= $isEdit ? 'Modificar datos del estado de persona' : 'Datos del nuevo estado de persona' ?>
                     </h5>
                 </div>
                 <div class="card-body">
-                    <form id="formEstadoReserva" method="POST" 
-                          action="<?= $isEdit ? url('/estados-reservas/' . $estado['id_estadoreserva'] . '/edit') : url('/estados-reservas/create') ?>" 
+                    <form id="formEstado" method="POST" 
+                          action="<?= $isEdit ? url('/estadospersonas/' . $estado['id_estadopersona'] . '/edit') : url('/estadospersonas/create') ?>" 
                           novalidate>
                         
                         <?php if ($isEdit): ?>
-                            <input type="hidden" name="id_estadoreserva" value="<?= $estado['id_estadoreserva'] ?>">
+                            <input type="hidden" name="id_estadopersona" value="<?= $estado['id_estadopersona'] ?>">
                         <?php endif; ?>
 
                         <!-- Descripción -->
                         <div class="form-group">
-                            <label for="estadoreserva_descripcion" class="required">
+                            <label for="estadopersona_descripcion" class="required">
                                 <i class="fas fa-tag"></i> Descripción
                             </label>
-                            <input type="text" class="form-control" id="estadoreserva_descripcion" name="estadoreserva_descripcion" 
-                                   value="<?= htmlspecialchars($estado['estadoreserva_descripcion'] ?? '') ?>"
-                                   required maxlength="45" placeholder="Ej: Confirmada, Pendiente, En Curso">
-                            <div class="invalid-feedback"></div>
-                            <small class="form-text text-muted">
-                                Nombre descriptivo del estado de reserva (máximo 45 caracteres)
-                            </small>
+                            <input type="text" class="form-control" id="estadopersona_descripcion" name="estadopersona_descripcion" 
+                                   value="<?= htmlspecialchars($estado['estadopersona_descripcion'] ?? '') ?>"
+                                   required maxlength="45" placeholder="Ej: activo, fallecido, baja">
+                            <div class="invalid-feedback">Por favor ingrese una descripción válida</div>
+                            <small class="form-text text-muted">Máximo 45 caracteres</small>
                         </div>
 
                         <!-- Botones de acción -->
@@ -84,10 +77,10 @@ $isEdit = isset($estado) && !empty($estado);
                     <div class="info-section">
                         <h6><i class="fas fa-lightbulb text-warning"></i> Consejos</h6>
                         <ul class="list-unstyled small text-muted">
-                            <li>• Use nombres claros y descriptivos</li>
-                            <li>• Los estados ayudan a gestionar el ciclo de vida de las reservas</li>
-                            <li>• Ejemplos: "Confirmada", "Pendiente", "Cancelada"</li>
-                            <li>• Evite duplicar estados existentes</li>
+                            <li>• Use descripciones claras y concisas</li>
+                            <li>• Los estados deben ser fáciles de identificar</li>
+                            <li>• Evite duplicar estados similares</li>
+                            <li>• Mantenga solo estados activos en uso</li>
                         </ul>
                     </div>
 
@@ -100,12 +93,20 @@ $isEdit = isset($estado) && !empty($estado);
                             <div class="row text-center">
                                 <div class="col-12">
                                     <div class="stat-item">
-                                        <div class="stat-value">
-                                            <?= isset($reservas_count) ? $reservas_count : 0 ?>
+                                        <div class="stat-value text-primary">
+                                            <i class="fas fa-user"></i> 
+                                            <?= $estadisticas['personas_asociadas'] ?? 0 ?>
                                         </div>
-                                        <div class="stat-label small text-muted">Reservas con este estado</div>
+                                        <div class="stat-label small text-muted">Personas asociadas</div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="mt-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle"></i> 
+                                    Este estado está asignado a <?= $estadisticas['personas_asociadas'] ?? 0 ?> 
+                                    de <?= $estadisticas['total_personas_sistema'] ?? 0 ?> personas en el sistema.
+                                </small>
                             </div>
                         <?php else: ?>
                             <p class="small text-muted">
@@ -119,8 +120,28 @@ $isEdit = isset($estado) && !empty($estado);
     </div>
 </div>
 
+<!-- JavaScript para validación y funcionalidades -->
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('formEstado');
+    
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            form.classList.add('was-validated');
+        });
+    }
+});
+
 function limpiarFormulario() {
-    document.getElementById('formEstadoReserva').reset();
+    const form = document.getElementById('formEstado');
+    if (form) {
+        form.reset();
+        form.classList.remove('was-validated');
+    }
 }
 </script>

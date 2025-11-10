@@ -37,7 +37,7 @@ class TiposServiciosController
         $result = $this->model->search($filters, $page);
         $totalPages = $this->model->getTotalPages($filters);
 
-        require_once 'app/Views/admin/configuracion/tipos_servicios/listado.php';
+        require_once 'app/Views/admin/configuracion/tiposservicios/listado.php';
     }
 
     /**
@@ -73,7 +73,7 @@ class TiposServiciosController
             }
         }
 
-        require_once 'app/Views/admin/configuracion/tipos_servicios/formulario.php';
+        require_once 'app/Views/admin/configuracion/tiposservicios/formulario.php';
     }
 
     /**
@@ -114,7 +114,7 @@ class TiposServiciosController
             }
         }
 
-        require_once 'app/Views/admin/configuracion/tipos_servicios/formulario.php';
+        require_once 'app/Views/admin/configuracion/tiposservicios/formulario.php';
     }
 
     /**
@@ -253,7 +253,7 @@ class TiposServiciosController
         $monthlyStats = $this->model->getMonthlyStats($year);
         $mostUsed = $this->model->getMostUsed(10);
 
-        require_once 'app/Views/admin/configuracion/tipos_servicios/stats.php';
+        require_once 'app/Views/admin/configuracion/tiposservicios/stats.php';
     }
 
     /**
@@ -263,7 +263,7 @@ class TiposServiciosController
     {
         return isset($_SESSION['usuario_logueado']) && 
                (in_array($_SESSION['usuario_perfil'], [1, 2]) || 
-                in_array('tipos_servicios', $_SESSION['permisos'] ?? []));
+                in_array('tiposservicios', $_SESSION['permisos'] ?? []));
     }
 
     /**

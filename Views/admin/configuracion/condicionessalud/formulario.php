@@ -14,7 +14,7 @@ $isEdit = isset($condicion) && !empty($condicion);
     <div class="page-actions">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <a href="<?= url('/condiciones_salud') ?>" class="btn btn-primary">
+                <a href="<?= url('/condicionessalud') ?>" class="btn btn-primary">
                     <i class="fas fa-arrow-left"></i> Volver al listado
                 </a>
             </div>
@@ -33,7 +33,7 @@ $isEdit = isset($condicion) && !empty($condicion);
                 </div>
                 <div class="card-body">
                     <form id="formCondicionSalud" method="POST" 
-                          action="<?= $isEdit ? url('/condiciones_salud/' . $condicion['id_condicionsalud'] . '/edit') : url('/condiciones_salud/create') ?>" 
+                          action="<?= $isEdit ? url('/condicionessalud/' . $condicion['id_condicionsalud'] . '/edit') : url('/condicionessalud/create') ?>" 
                           novalidate>
                         
                         <?php if ($isEdit): ?>
@@ -113,15 +113,15 @@ $isEdit = isset($condicion) && !empty($condicion);
                         <h6>Estadísticas</h6>
                         <div class="row text-center">
                             <div class="col-6">
-                                <div class="stat-item">
-                                    <div class="stat-value"><?= number_format($estadisticas['total_huespedes'] ?? 0) ?></div>
-                                    <div class="stat-label small">Huéspedes</div>
+                                <div class="metric-box">
+                                    <div class="metric-value text-primary"><?= number_format($estadisticas['total_huespedes'] ?? 0) ?></div>
+                                    <div class="metric-label">Huéspedes</div>
                                 </div>
                             </div>
                             <div class="col-6">
-                                <div class="stat-item">
-                                    <div class="stat-value"><?= number_format($estadisticas['total_reservas'] ?? 0) ?></div>
-                                    <div class="stat-label small">Reservas</div>
+                                <div class="metric-box">
+                                    <div class="metric-value text-warning"><?= number_format($estadisticas['total_reservas'] ?? 0) ?></div>
+                                    <div class="metric-label">Reservas</div>
                                 </div>
                             </div>
                         </div>

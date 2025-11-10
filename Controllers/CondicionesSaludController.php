@@ -23,7 +23,7 @@ class CondicionesSaludController extends Controller
      */
     public function index()
     {
-        $this->requirePermission('condiciones_salud');
+        $this->requirePermission('condicionessalud');
 
         $page = (int) $this->get('page', 1);
         $perPage = (int) $this->get('per_page', 10);
@@ -49,7 +49,7 @@ class CondicionesSaludController extends Controller
             'isAdminArea' => true
         ];
 
-        return $this->render('admin/configuracion/condiciones_salud/listado', $data, 'main');
+        return $this->render('admin/configuracion/condicionessalud/listado', $data, 'main');
     }
 
     /**
@@ -57,7 +57,7 @@ class CondicionesSaludController extends Controller
      */
     public function create()
     {
-        $this->requirePermission('condiciones_salud');
+        $this->requirePermission('condicionessalud');
 
         if ($this->isPost()) {
             return $this->store();
@@ -68,7 +68,7 @@ class CondicionesSaludController extends Controller
             'isAdminArea' => true
         ];
 
-        return $this->render('admin/configuracion/condiciones_salud/formulario', $data, 'main');
+        return $this->render('admin/configuracion/condicionessalud/formulario', $data, 'main');
     }
 
     /**
@@ -76,7 +76,7 @@ class CondicionesSaludController extends Controller
      */
     public function store()
     {
-        $this->requirePermission('condiciones_salud');
+        $this->requirePermission('condicionessalud');
 
         $data = [
             'condicionsalud_descripcion' => $this->post('condicionsalud_descripcion'),
@@ -84,17 +84,17 @@ class CondicionesSaludController extends Controller
         ];
 
         if (empty($data['condicionsalud_descripcion'])) {
-            $this->redirect('/condiciones_salud/create', 'Complete los campos obligatorios', 'error');
+            $this->redirect('/condicionessalud/create', 'Complete los campos obligatorios', 'error');
         }
 
         try {
             if ($this->condicionSaludModel->create($data)) {
-                $this->redirect('/condiciones_salud', 'Condición de salud creada correctamente', 'exito');
+                $this->redirect('/condicionessalud', 'Condición de salud creada correctamente', 'exito');
             } else {
-                $this->redirect('/condiciones_salud/create', 'Error al crear la condición de salud', 'error');
+                $this->redirect('/condicionessalud/create', 'Error al crear la condición de salud', 'error');
             }
         } catch (\Exception $e) {
-            $this->redirect('/condiciones_salud/create', 'Error: ' . $e->getMessage(), 'error');
+            $this->redirect('/condicionessalud/create', 'Error: ' . $e->getMessage(), 'error');
         }
     }
 
@@ -103,7 +103,7 @@ class CondicionesSaludController extends Controller
      */
     public function show($id)
     {
-        $this->requirePermission('condiciones_salud');
+        $this->requirePermission('condicionessalud');
 
         $condicion = $this->condicionSaludModel->find($id);
         if (!$condicion) {
@@ -130,7 +130,7 @@ class CondicionesSaludController extends Controller
             'isAdminArea' => true
         ];
 
-        return $this->render('admin/configuracion/condiciones_salud/detalle', $data, 'main');
+        return $this->render('admin/configuracion/condicionessalud/detalle', $data, 'main');
     }
 
     /**
@@ -138,7 +138,7 @@ class CondicionesSaludController extends Controller
      */
     public function edit($id)
     {
-        $this->requirePermission('condiciones_salud');
+        $this->requirePermission('condicionessalud');
 
         $condicion = $this->condicionSaludModel->find($id);
         if (!$condicion) {
@@ -169,7 +169,7 @@ class CondicionesSaludController extends Controller
             'isAdminArea' => true
         ];
 
-        return $this->render('admin/configuracion/condiciones_salud/formulario', $data, 'main');
+        return $this->render('admin/configuracion/condicionessalud/formulario', $data, 'main');
     }
 
     /**
@@ -177,7 +177,7 @@ class CondicionesSaludController extends Controller
      */
     public function update($id)
     {
-        $this->requirePermission('condiciones_salud');
+        $this->requirePermission('condicionessalud');
 
         $condicion = $this->condicionSaludModel->find($id);
         if (!$condicion) {
@@ -190,17 +190,17 @@ class CondicionesSaludController extends Controller
         ];
 
         if (empty($data['condicionsalud_descripcion'])) {
-            $this->redirect('/condiciones_salud/' . $id . '/edit', 'Complete los campos obligatorios', 'error');
+            $this->redirect('/condicionessalud/' . $id . '/edit', 'Complete los campos obligatorios', 'error');
         }
 
         try {
             if ($this->condicionSaludModel->update($id, $data)) {
-                $this->redirect('/condiciones_salud/' . $id, 'Condición de salud actualizada correctamente', 'exito');
+                $this->redirect('/condicionessalud/' . $id, 'Condición de salud actualizada correctamente', 'exito');
             } else {
-                $this->redirect('/condiciones_salud/' . $id . '/edit', 'Error al actualizar la condición de salud', 'error');
+                $this->redirect('/condicionessalud/' . $id . '/edit', 'Error al actualizar la condición de salud', 'error');
             }
         } catch (\Exception $e) {
-            $this->redirect('/condiciones_salud/' . $id . '/edit', 'Error: ' . $e->getMessage(), 'error');
+            $this->redirect('/condicionessalud/' . $id . '/edit', 'Error: ' . $e->getMessage(), 'error');
         }
     }
 
@@ -209,7 +209,7 @@ class CondicionesSaludController extends Controller
      */
     public function delete($id)
     {
-        $this->requirePermission('condiciones_salud');
+        $this->requirePermission('condicionessalud');
 
         $condicion = $this->condicionSaludModel->find($id);
         if (!$condicion) {
@@ -217,9 +217,9 @@ class CondicionesSaludController extends Controller
         }
 
         if ($this->condicionSaludModel->softDelete($id, 'condicionsalud_estado')) {
-            $this->redirect('/condiciones_salud', 'Condición de salud eliminada correctamente', 'exito');
+            $this->redirect('/condicionessalud', 'Condición de salud eliminada correctamente', 'exito');
         } else {
-            $this->redirect('/condiciones_salud', 'Error al eliminar la condición de salud', 'error');
+            $this->redirect('/condicionessalud', 'Error al eliminar la condición de salud', 'error');
         }
     }
 
@@ -228,12 +228,12 @@ class CondicionesSaludController extends Controller
      */
     public function restore($id)
     {
-        $this->requirePermission('condiciones_salud');
+        $this->requirePermission('condicionessalud');
 
         if ($this->condicionSaludModel->restore($id, 'condicionsalud_estado')) {
-            $this->redirect('/condiciones_salud', 'Condición de salud restaurada correctamente', 'exito');
+            $this->redirect('/condicionessalud', 'Condición de salud restaurada correctamente', 'exito');
         } else {
-            $this->redirect('/condiciones_salud', 'Error al restaurar la condición de salud', 'error');
+            $this->redirect('/condicionessalud', 'Error al restaurar la condición de salud', 'error');
         }
     }
 
@@ -246,7 +246,7 @@ class CondicionesSaludController extends Controller
             return $this->view->error(404);
         }
 
-        $this->requirePermission('condiciones_salud');
+        $this->requirePermission('condicionessalud');
         
         $input = json_decode(file_get_contents('php://input'), true);
         $nuevoEstado = isset($input['estado']) ? (int)$input['estado'] : null;
@@ -278,7 +278,7 @@ class CondicionesSaludController extends Controller
      */
     public function exportar()
     {
-        $this->requirePermission('condiciones_salud');
+        $this->requirePermission('condicionessalud');
 
         $filters = [
             'condicionsalud_descripcion' => $this->get('condicionsalud_descripcion'),
@@ -290,7 +290,7 @@ class CondicionesSaludController extends Controller
             $datos = $result['data'];
 
             if (empty($datos)) {
-                $this->redirect('/condiciones_salud', 'No hay datos para exportar', 'error');
+                $this->redirect('/condicionessalud', 'No hay datos para exportar', 'error');
                 return;
             }
 
@@ -335,7 +335,7 @@ class CondicionesSaludController extends Controller
             }
             
             // Configurar respuesta
-            $filename = 'condiciones_salud_' . date('Y-m-d_H-i-s') . '.xlsx';
+            $filename = 'condicionessalud_' . date('Y-m-d_H-i-s') . '.xlsx';
             
             header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             header('Content-Disposition: attachment;filename="' . $filename . '"');
@@ -345,7 +345,7 @@ class CondicionesSaludController extends Controller
             $writer->save('php://output');
             
         } catch (\Exception $e) {
-            $this->redirect('/condiciones_salud', 'Error al generar el archivo: ' . $e->getMessage(), 'error');
+            $this->redirect('/condicionessalud', 'Error al generar el archivo: ' . $e->getMessage(), 'error');
         }
     }
 
@@ -354,7 +354,7 @@ class CondicionesSaludController extends Controller
      */
     public function exportarPdf()
     {
-        $this->requirePermission('condiciones_salud');
+        $this->requirePermission('condicionessalud');
 
         $filters = [
             'condicionsalud_descripcion' => $this->get('condicionsalud_descripcion'),
@@ -366,7 +366,7 @@ class CondicionesSaludController extends Controller
             $datos = $result['data'];
 
             if (empty($datos)) {
-                $this->redirect('/condiciones_salud', 'No hay datos para exportar', 'error');
+                $this->redirect('/condicionessalud', 'No hay datos para exportar', 'error');
                 return;
             }
 
@@ -428,11 +428,11 @@ class CondicionesSaludController extends Controller
             }
             
             // Salida del PDF
-            $filename = 'condiciones_salud_' . date('Y-m-d_H-i-s') . '.pdf';
+            $filename = 'condicionessalud_' . date('Y-m-d_H-i-s') . '.pdf';
             $pdf->Output($filename, 'D');
             
         } catch (\Exception $e) {
-            $this->redirect('/condiciones_salud', 'Error al generar el PDF: ' . $e->getMessage(), 'error');
+            $this->redirect('/condicionessalud', 'Error al generar el PDF: ' . $e->getMessage(), 'error');
         }
     }
 }

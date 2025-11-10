@@ -28,7 +28,7 @@ class EstadosReservasController extends Controller
      */
     public function index()
     {
-        $this->requirePermission('estados-reservas');
+        $this->requirePermission('estadosreservas');
 
         $page = (int) $this->get('page', 1);
         $perPage = (int) $this->get('per_page', 10);
@@ -53,7 +53,7 @@ class EstadosReservasController extends Controller
             'isAdminArea' => true
         ];
 
-        return $this->render('admin/configuracion/estados-reservas/listado', $data, 'main');
+        return $this->render('admin/configuracion/estadosreservas/listado', $data, 'main');
     }
 
     /**
@@ -61,7 +61,7 @@ class EstadosReservasController extends Controller
      */
     public function create()
     {
-        $this->requirePermission('estados-reservas');
+        $this->requirePermission('estadosreservas');
 
         if ($this->isPost()) {
             return $this->store();
@@ -72,7 +72,7 @@ class EstadosReservasController extends Controller
             'isAdminArea' => true
         ];
 
-        return $this->render('admin/configuracion/estados-reservas/formulario', $data, 'main');
+        return $this->render('admin/configuracion/estadosreservas/formulario', $data, 'main');
     }
 
     /**
@@ -87,31 +87,31 @@ class EstadosReservasController extends Controller
             ];
 
             if (empty($data['estadoreserva_descripcion'])) {
-                $this->redirect('/estados_reservas/create', 'La descripción es obligatoria', 'error');
+                $this->redirect('/estadosreservas/create', 'La descripción es obligatoria', 'error');
                 return;
             }
 
             if (strlen($data['estadoreserva_descripcion']) > 45) {
-                $this->redirect('/estados_reservas/create', 'La descripción no puede exceder 45 caracteres', 'error');
+                $this->redirect('/estadosreservas/create', 'La descripción no puede exceder 45 caracteres', 'error');
                 return;
             }
 
             $existeEstado = $this->estadoReservaModel->findAll("estadoreserva_descripcion = '" . addslashes($data['estadoreserva_descripcion']) . "'");
             if (!empty($existeEstado)) {
-                $this->redirect('/estados_reservas/create', 'Ya existe un estado de reserva con esa descripción', 'error');
+                $this->redirect('/estadosreservas/create', 'Ya existe un estado de reserva con esa descripción', 'error');
                 return;
             }
 
             $id = $this->estadoReservaModel->create($data);
 
             if ($id) {
-                $this->redirect('/estados_reservas', 'Estado de reserva creado exitosamente', 'success');
+                $this->redirect('/estadosreservas', 'Estado de reserva creado exitosamente', 'success');
             } else {
-                $this->redirect('/estados_reservas/create', 'Error al crear el estado de reserva', 'error');
+                $this->redirect('/estadosreservas/create', 'Error al crear el estado de reserva', 'error');
             }
         } catch (\Exception $e) {
             error_log("Error en EstadosReservasController::store: " . $e->getMessage());
-            $this->redirect('/estados_reservas/create', 'Error interno del servidor', 'error');
+            $this->redirect('/estadosreservas/create', 'Error interno del servidor', 'error');
         }
     }
 
@@ -120,7 +120,7 @@ class EstadosReservasController extends Controller
      */
     public function show($id)
     {
-        $this->requirePermission('estados-reservas');
+        $this->requirePermission('estadosreservas');
 
         $estadoReserva = $this->estadoReservaModel->find($id);
         if (!$estadoReserva) {
@@ -134,7 +134,7 @@ class EstadosReservasController extends Controller
             'isAdminArea' => true
         ];
 
-        return $this->render('admin/configuracion/estados-reservas/detalle', $data, 'main');
+        return $this->render('admin/configuracion/estadosreservas/detalle', $data, 'main');
     }
 
     /**
@@ -142,7 +142,7 @@ class EstadosReservasController extends Controller
      */
     public function edit($id)
     {
-        $this->requirePermission('estados-reservas');
+        $this->requirePermission('estadosreservas');
 
         $estadoReserva = $this->estadoReservaModel->find($id);
         if (!$estadoReserva) {
@@ -162,7 +162,7 @@ class EstadosReservasController extends Controller
             'isAdminArea' => true
         ];
 
-        return $this->render('admin/configuracion/estados-reservas/formulario', $data, 'main');
+        return $this->render('admin/configuracion/estadosreservas/formulario', $data, 'main');
     }
 
     /**
@@ -173,7 +173,7 @@ class EstadosReservasController extends Controller
         try {
             $estadoReserva = $this->estadoReservaModel->find($id);
             if (!$estadoReserva) {
-                $this->redirect('/estados_reservas', 'Estado de reserva no encontrado', 'error');
+                $this->redirect('/estadosreservas', 'Estado de reserva no encontrado', 'error');
                 return;
             }
 
@@ -182,31 +182,31 @@ class EstadosReservasController extends Controller
             ];
 
             if (empty($data['estadoreserva_descripcion'])) {
-                $this->redirect('/estados_reservas/' . $id . '/edit', 'La descripción es obligatoria', 'error');
+                $this->redirect('/estadosreservas/' . $id . '/edit', 'La descripción es obligatoria', 'error');
                 return;
             }
 
             if (strlen($data['estadoreserva_descripcion']) > 45) {
-                $this->redirect('/estados_reservas/' . $id . '/edit', 'La descripción no puede exceder 45 caracteres', 'error');
+                $this->redirect('/estadosreservas/' . $id . '/edit', 'La descripción no puede exceder 45 caracteres', 'error');
                 return;
             }
 
             $existeEstado = $this->estadoReservaModel->findAll("estadoreserva_descripcion = '" . addslashes($data['estadoreserva_descripcion']) . "' AND id_estadoreserva != " . (int)$id);
             if (!empty($existeEstado)) {
-                $this->redirect('/estados_reservas/' . $id . '/edit', 'Ya existe otro estado de reserva con esa descripción', 'error');
+                $this->redirect('/estadosreservas/' . $id . '/edit', 'Ya existe otro estado de reserva con esa descripción', 'error');
                 return;
             }
 
             $success = $this->estadoReservaModel->update($id, $data);
 
             if ($success) {
-                $this->redirect('/estados_reservas', 'Estado de reserva actualizado exitosamente', 'success');
+                $this->redirect('/estadosreservas', 'Estado de reserva actualizado exitosamente', 'success');
             } else {
-                $this->redirect('/estados_reservas/' . $id . '/edit', 'Error al actualizar el estado de reserva', 'error');
+                $this->redirect('/estadosreservas/' . $id . '/edit', 'Error al actualizar el estado de reserva', 'error');
             }
         } catch (\Exception $e) {
             error_log("Error en EstadosReservasController::update: " . $e->getMessage());
-            $this->redirect('/estados_reservas/' . $id . '/edit', 'Error interno del servidor', 'error');
+            $this->redirect('/estadosreservas/' . $id . '/edit', 'Error interno del servidor', 'error');
         }
     }
 
@@ -220,7 +220,7 @@ class EstadosReservasController extends Controller
         error_log("EstadosReservas - Método HTTP: " . $_SERVER['REQUEST_METHOD']);
         error_log("EstadosReservas - URL completa: " . $_SERVER['REQUEST_URI']);
         
-        $this->requirePermission('estados-reservas');
+        $this->requirePermission('estadosreservas');
         
         // Verificar que sea una petición AJAX
         if (!$this->isAjax()) {
@@ -291,7 +291,7 @@ class EstadosReservasController extends Controller
      */
     public function exportar()
     {
-        $this->requirePermission('estados-reservas');
+        $this->requirePermission('estadosreservas');
 
         try {
             $filters = [
@@ -303,7 +303,7 @@ class EstadosReservasController extends Controller
             $datos = $result['data'];
 
             if (empty($datos)) {
-                $this->redirect('/estados_reservas', 'No hay datos para exportar', 'error');
+                $this->redirect('/estadosreservas', 'No hay datos para exportar', 'error');
                 return;
             }
 
@@ -334,7 +334,7 @@ class EstadosReservasController extends Controller
             }
 
             $writer = new Xlsx($spreadsheet);
-            $filename = 'estados_reservas_' . date('Y-m-d_H-i-s') . '.xlsx';
+            $filename = 'estadosreservas_' . date('Y-m-d_H-i-s') . '.xlsx';
 
             header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             header('Content-Disposition: attachment;filename="' . $filename . '"');
@@ -345,7 +345,7 @@ class EstadosReservasController extends Controller
 
         } catch (\Exception $e) {
             error_log("Error en EstadosReservasController::exportar: " . $e->getMessage());
-            $this->redirect('/estados_reservas', 'Error al generar el archivo Excel', 'error');
+            $this->redirect('/estadosreservas', 'Error al generar el archivo Excel', 'error');
         }
     }
 
@@ -354,7 +354,7 @@ class EstadosReservasController extends Controller
      */
     public function exportarPdf()
     {
-        $this->requirePermission('estados-reservas');
+        $this->requirePermission('estadosreservas');
 
         try {
             $filters = [
@@ -366,7 +366,7 @@ class EstadosReservasController extends Controller
             $datos = $result['data'];
 
             if (empty($datos)) {
-                $this->redirect('/estados_reservas', 'No hay datos para exportar', 'error');
+                $this->redirect('/estadosreservas', 'No hay datos para exportar', 'error');
                 return;
             }
 
@@ -409,12 +409,12 @@ class EstadosReservasController extends Controller
                 $pdf->Cell(40, 6, $estadoTexto, 1, 1, 'C');
             }
 
-            $filename = 'estados_reservas_' . date('Y-m-d_H-i-s') . '.pdf';
+            $filename = 'estadosreservas_' . date('Y-m-d_H-i-s') . '.pdf';
             $pdf->Output($filename, 'D');
 
         } catch (\Exception $e) {
             error_log("Error en EstadosReservasController::exportarPdf: " . $e->getMessage());
-            $this->redirect('/estados_reservas', 'Error al generar el archivo PDF', 'error');
+            $this->redirect('/estadosreservas', 'Error al generar el archivo PDF', 'error');
         }
     }
 
@@ -423,7 +423,7 @@ class EstadosReservasController extends Controller
      */
     public function delete($id)
     {
-        $this->requirePermission('estados-reservas');
+        $this->requirePermission('estadosreservas');
 
         $estadoReserva = $this->estadoReservaModel->find($id);
         if (!$estadoReserva) {
@@ -432,7 +432,7 @@ class EstadosReservasController extends Controller
 
         // Verificar si se puede cambiar el estado
         if (!$this->estadoReservaModel->canChangeStatus($id, 0)) {
-            $this->redirect('/estados_reservas', 'No se puede eliminar este estado porque está siendo usado por reservas activas', 'error');
+            $this->redirect('/estadosreservas', 'No se puede eliminar este estado porque está siendo usado por reservas activas', 'error');
             return;
         }
 
@@ -444,13 +444,13 @@ class EstadosReservasController extends Controller
             $success = $this->estadoReservaModel->update($id, $data);
             
             if ($success) {
-                $this->redirect('/estados_reservas', 'Estado de reserva eliminado correctamente', 'success');
+                $this->redirect('/estadosreservas', 'Estado de reserva eliminado correctamente', 'success');
             } else {
-                $this->redirect('/estados_reservas', 'Error al eliminar el estado de reserva', 'error');
+                $this->redirect('/estadosreservas', 'Error al eliminar el estado de reserva', 'error');
             }
         } catch (\Exception $e) {
             error_log("Error en delete: " . $e->getMessage());
-            $this->redirect('/estados_reservas', 'Error al eliminar el estado de reserva', 'error');
+            $this->redirect('/estadosreservas', 'Error al eliminar el estado de reserva', 'error');
         }
     }
 
@@ -459,7 +459,7 @@ class EstadosReservasController extends Controller
      */
     public function restore($id)
     {
-        $this->requirePermission('estados-reservas');
+        $this->requirePermission('estadosreservas');
 
         $estadoReserva = $this->estadoReservaModel->find($id);
         if (!$estadoReserva) {
@@ -474,13 +474,13 @@ class EstadosReservasController extends Controller
             $success = $this->estadoReservaModel->update($id, $data);
             
             if ($success) {
-                $this->redirect('/estados_reservas', 'Estado de reserva restaurado correctamente', 'success');
+                $this->redirect('/estadosreservas', 'Estado de reserva restaurado correctamente', 'success');
             } else {
-                $this->redirect('/estados_reservas', 'Error al restaurar el estado de reserva', 'error');
+                $this->redirect('/estadosreservas', 'Error al restaurar el estado de reserva', 'error');
             }
         } catch (\Exception $e) {
             error_log("Error en restore: " . $e->getMessage());
-            $this->redirect('/estados_reservas', 'Error al restaurar el estado de reserva', 'error');
+            $this->redirect('/estadosreservas', 'Error al restaurar el estado de reserva', 'error');
         }
     }
 }

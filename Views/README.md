@@ -26,7 +26,7 @@ Vistas que requieren autenticación administrativa:
 - `categorias/` - Gestión de categorías de productos
 - `condiciones_salud/` - Condiciones médicas de huéspedes
 - `estados_personas/` - Estados de huéspedes
-- `estados_productos/` - Estados de productos
+- `estados-productos/` - Estados de productos
 - `estados_reservas/` - Estados de reservas
 - `marcas/` - Gestión de marcas
 - `metodos_pagos/` - Métodos de pago

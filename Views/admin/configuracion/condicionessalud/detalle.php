@@ -3,12 +3,12 @@
     <div class="page-actions">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <a href="<?= url('/condiciones_salud') ?>" class="btn btn-primary">
+                <a href="<?= url('/condicionessalud') ?>" class="btn btn-primary">
                     <i class="fas fa-arrow-left"></i> Volver al listado
                 </a>
             </div>
             <div class="action-buttons">
-                <a href="<?= url('/condiciones_salud/' . $condicion['id_condicionsalud'] . '/edit') ?>"
+                <a href="<?= url('/condicionessalud/' . $condicion['id_condicionsalud'] . '/edit') ?>"
                    class="btn btn-warning">
                     <i class="fas fa-edit"></i> Editar Condición
                 </a>
@@ -61,39 +61,30 @@
                     </div>
                 </div>
             </div>
+        </div>
 
+        <!-- Panel lateral -->
+        <div class="col-lg-4">
             <!-- Estadísticas -->
-            <div class="card mt-3">
+            <div class="card">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
                         <i class="fas fa-chart-bar"></i> Estadísticas
                     </h5>
                 </div>
                 <div class="card-body">
-                    <?php if (isset($estadisticas) && $estadisticas['total_huespedes'] > 0): ?>
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="stat-box text-center">
-                                    <div class="stat-number text-primary"><?= number_format($estadisticas['total_huespedes']) ?></div>
-                                    <div class="stat-label">Total Huéspedes</div>
+                    <?php if (isset($estadisticas)): ?>
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="metric-box">
+                                    <div class="metric-value text-primary"><?= number_format($estadisticas['total_huespedes']) ?></div>
+                                    <div class="metric-label">Huéspedes</div>
                                 </div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="stat-box text-center">
-                                    <div class="stat-number text-success"><?= number_format($estadisticas['huespedes_activos']) ?></div>
-                                    <div class="stat-label">Activos</div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="stat-box text-center">
-                                    <div class="stat-number text-warning"><?= number_format($estadisticas['total_reservas']) ?></div>
-                                    <div class="stat-label">Reservas</div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="stat-box text-center">
-                                    <div class="stat-number text-info"><?= number_format($estadisticas['porcentaje_uso'], 1) ?>%</div>
-                                    <div class="stat-label">Porcentaje</div>
+                            <div class="col-6">
+                                <div class="metric-box">
+                                    <div class="metric-value text-warning"><?= number_format($estadisticas['total_reservas']) ?></div>
+                                    <div class="metric-label">Reservas</div>
                                 </div>
                             </div>
                         </div>
@@ -105,10 +96,6 @@
                     <?php endif; ?>
                 </div>
             </div>
-        </div>
-
-        <!-- Panel lateral -->
-        <div class="col-lg-4">
             <!-- Acciones Rápidas -->
             <div class="card">
                 <div class="card-header">
@@ -118,7 +105,7 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <a href="<?= url('/condiciones_salud/' . $condicion['id_condicionsalud'] . '/edit') ?>" 
+                        <a href="<?= url('/condicionessalud/' . $condicion['id_condicionsalud'] . '/edit') ?>" 
                            class="btn btn-outline-warning">
                             <i class="fas fa-edit"></i> Editar Condición
                         </a>
@@ -130,7 +117,7 @@
                             <?= $condicion['condicionsalud_estado'] == 1 ? 'Desactivar' : 'Activar' ?>
                         </button>
                         
-                        <a href="<?= url('/condiciones_salud') ?>" class="btn btn-outline-secondary">
+                        <a href="<?= url('/condicionessalud') ?>" class="btn btn-outline-secondary">
                             <i class="fas fa-list"></i> Ver Todas
                         </a>
                     </div>
@@ -159,7 +146,7 @@ function cambiarEstado(id, nuevoEstado) {
         cancelButtonText: 'Cancelar'
     }).then((result) => {
         if (result.isConfirmed) {
-            fetch(`<?= url('/condiciones_salud') ?>/${id}/estado`, {
+            fetch(`<?= url('/condicionessalud') ?>/${id}/estado`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

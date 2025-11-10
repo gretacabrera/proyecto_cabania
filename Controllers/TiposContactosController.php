@@ -37,7 +37,7 @@ class TiposContactosController
         $result = $this->model->search($filters, $page);
         $totalPages = $this->model->getTotalPages($filters);
 
-        require_once 'app/Views/admin/configuracion/tipos_contactos/listado.php';
+        require_once 'app/Views/admin/configuracion/tiposcontactos/listado.php';
     }
 
     /**
@@ -73,7 +73,7 @@ class TiposContactosController
             }
         }
 
-        require_once 'app/Views/admin/configuracion/tipos_contactos/formulario.php';
+        require_once 'app/Views/admin/configuracion/tiposcontactos/formulario.php';
     }
 
     /**
@@ -114,7 +114,7 @@ class TiposContactosController
             }
         }
 
-        require_once 'app/Views/admin/configuracion/tipos_contactos/formulario.php';
+        require_once 'app/Views/admin/configuracion/tiposcontactos/formulario.php';
     }
 
     /**
@@ -254,7 +254,7 @@ class TiposContactosController
         $mostUsed = $this->model->getMostUsed(10);
         $usageSummary = $this->model->getUsageSummary();
 
-        require_once 'app/Views/admin/configuracion/tipos_contactos/stats.php';
+        require_once 'app/Views/admin/configuracion/tiposcontactos/stats.php';
     }
 
     /**
@@ -264,7 +264,7 @@ class TiposContactosController
     {
         return isset($_SESSION['usuario_logueado']) && 
                (in_array($_SESSION['usuario_perfil'], [1, 2]) || 
-                in_array('tipos_contactos', $_SESSION['permisos'] ?? []));
+                in_array('tiposcontactos', $_SESSION['permisos'] ?? []));
     }
 
     /**

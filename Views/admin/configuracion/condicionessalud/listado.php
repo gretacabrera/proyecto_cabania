@@ -87,7 +87,7 @@ $renderPagination = function($showInfo = true) use ($pagination, $start, $end) {
                     <h4 class="mb-0">Gestión de Condiciones de Salud</h4>
                 </div>
                 <div class="col-auto">
-                    <a href="<?= url('/condiciones_salud/create') ?>" class="btn btn-primary btn-sm">
+                    <a href="<?= url('/condicionessalud/create') ?>" class="btn btn-primary btn-sm">
                         <i class="fas fa-plus mr-1"></i>Nueva Condición
                     </a>
                 </div>
@@ -96,7 +96,7 @@ $renderPagination = function($showInfo = true) use ($pagination, $start, $end) {
         
         <!-- Filtros compactos -->
         <div class="card-body pb-0">
-            <form method="GET" action="<?= url('/condiciones_salud') ?>" class="mb-3">
+            <form method="GET" action="<?= url('/condicionessalud') ?>" class="mb-3">
                 <div class="row align-items-end">
                     <div class="col-auto">
                         <label class="form-label small mb-1 text-muted">Filtros de búsqueda</label>
@@ -119,7 +119,7 @@ $renderPagination = function($showInfo = true) use ($pagination, $start, $end) {
                             <button type="submit" class="btn btn-primary btn-sm" title="Buscar">
                                 <i class="fas fa-search"></i>
                             </button>
-                            <a href="<?= url('/condiciones_salud') ?>" class="btn btn-info btn-sm" title="Limpiar filtros">
+                            <a href="<?= url('/condicionessalud') ?>" class="btn btn-info btn-sm" title="Limpiar filtros">
                                 <i class="fas fa-times"></i>
                             </a>
                         </div>
@@ -187,11 +187,11 @@ $renderPagination = function($showInfo = true) use ($pagination, $start, $end) {
                                     </td>
                                     <td class="border-0 py-3 text-center">
                                         <div class="btn-group btn-group-sm">
-                                            <a href="<?= url('/condiciones_salud/' . $condicion['id_condicionsalud']) ?>" 
+                                            <a href="<?= url('/condicionessalud/' . $condicion['id_condicionsalud']) ?>" 
                                                class="btn btn-outline-primary" title="Ver detalle">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="<?= url('/condiciones_salud/' . $condicion['id_condicionsalud'] . '/edit') ?>" 
+                                            <a href="<?= url('/condicionessalud/' . $condicion['id_condicionsalud'] . '/edit') ?>" 
                                                class="btn btn-outline-warning" title="Editar">
                                                 <i class="fas fa-edit"></i>
                                             </a>
@@ -216,7 +216,7 @@ $renderPagination = function($showInfo = true) use ($pagination, $start, $end) {
                     </div>
                     <h5 class="text-muted">No se encontraron condiciones de salud</h5>
                     <p class="text-muted">No hay registros que coincidan con los filtros aplicados.</p>
-                    <a href="<?= url('/condiciones_salud/create') ?>" class="btn btn-primary">
+                    <a href="<?= url('/condicionessalud/create') ?>" class="btn btn-primary">
                         <i class="fas fa-plus mr-1"></i>Agregar Primera Condición
                     </a>
                 </div>
@@ -242,11 +242,11 @@ $renderPagination = function($showInfo = true) use ($pagination, $start, $end) {
                             <small class="text-muted">Descarga la información en diferentes formatos</small>
                         </div>
                         <div class="col-auto">
-                            <a href="<?= url('/condiciones_salud/exportar?' . http_build_query($_GET)) ?>" 
+                            <a href="<?= url('/condicionessalud/exportar?' . http_build_query($_GET)) ?>" 
                                class="btn btn-success btn-sm mr-2">
                                 <i class="fas fa-file-excel mr-1"></i>Excel
                             </a>
-                            <a href="<?= url('/condiciones_salud/exportar-pdf?' . http_build_query($_GET)) ?>" 
+                            <a href="<?= url('/condicionessalud/exportar-pdf?' . http_build_query($_GET)) ?>" 
                                class="btn btn-danger btn-sm">
                                 <i class="fas fa-file-pdf mr-1"></i>PDF
                             </a>
@@ -268,7 +268,7 @@ $renderPagination = function($showInfo = true) use ($pagination, $start, $end) {
                         </h3>
                     </div>
                     <div class="col-auto">
-                        <a href="<?= url('/condiciones-salud/create') ?>" class="btn btn-success btn-sm">
+                        <a href="<?= url('/condicionessalud/create') ?>" class="btn btn-success btn-sm">
                             <i class="fas fa-plus mr-1"></i> Nueva Condición
                         </a>
                     </div>
@@ -277,7 +277,7 @@ $renderPagination = function($showInfo = true) use ($pagination, $start, $end) {
 
             <!-- Filtros -->
             <div class="card-header bg-light">
-                <form method="GET" action="<?= url('/condiciones-salud') ?>" class="form-inline">
+                <form method="GET" action="<?= url('/condicionessalud') ?>" class="form-inline">
                     <div class="row w-100 align-items-center">
                         <div class="col-lg-3 col-md-6 mb-2">
                             <label class="sr-only">Descripción</label>
@@ -312,7 +312,7 @@ $renderPagination = function($showInfo = true) use ($pagination, $start, $end) {
                                 <button type="submit" class="btn btn-primary btn-sm">
                                     <i class="fas fa-search mr-1"></i> Buscar
                                 </button>
-                                <a href="<?= url('/condiciones-salud') ?>" class="btn btn-secondary btn-sm">
+                                <a href="<?= url('/condicionessalud') ?>" class="btn btn-secondary btn-sm">
                                     <i class="fas fa-times mr-1"></i> Limpiar
                                 </a>
                             </div>
@@ -362,12 +362,12 @@ $renderPagination = function($showInfo = true) use ($pagination, $start, $end) {
                                         <td class="border-0 py-3 text-center">
                                             <div class="btn-group btn-group-sm">
                                                 <!-- ID técnico solo para enlaces internos (oculto al usuario) -->
-                                                <a href="<?= url('/condiciones-salud/' . $condicion['id_condicionsalud']) ?>" 
+                                                <a href="<?= url('/condicionessalud/' . $condicion['id_condicionsalud']) ?>" 
                                                    class="btn btn-outline-primary" 
                                                    title="Ver detalle">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
-                                                <a href="<?= url('/condiciones-salud/' . $condicion['id_condicionsalud'] . '/edit') ?>" 
+                                                <a href="<?= url('/condicionessalud/' . $condicion['id_condicionsalud'] . '/edit') ?>" 
                                                    class="btn btn-outline-warning" 
                                                    title="Editar">
                                                     <i class="fas fa-edit"></i>
@@ -395,12 +395,12 @@ $renderPagination = function($showInfo = true) use ($pagination, $start, $end) {
                         <p class="text-muted mb-4">
                             <?php if (!empty(array_filter($filters))): ?>
                                 No se encontraron condiciones que coincidan con los filtros aplicados.
-                                <br><a href="<?= url('/condiciones_salud') ?>">Mostrar todas las condiciones</a>
+                                <br><a href="<?= url('/condicionessalud') ?>">Mostrar todas las condiciones</a>
                             <?php else: ?>
                                 Comienza agregando la primera condición de salud al sistema.
                             <?php endif; ?>
                         </p>
-                        <a href="<?= url('/condiciones_salud/create') ?>" class="btn btn-primary">
+                        <a href="<?= url('/condicionessalud/create') ?>" class="btn btn-primary">
                             <i class="fas fa-plus mr-2"></i>
                             Agregar Primera Condición
                         </a>
@@ -412,7 +412,7 @@ $renderPagination = function($showInfo = true) use ($pagination, $start, $end) {
 <script>
 function cambiarEstado(id, nuevoEstado) {
     // Usar la utilidad CRUD estándar para cambio de estado
-    CrudUtils.changeStatus(id, nuevoEstado, 'condición de salud', '<?= url('/condiciones_salud') ?>');
+    CrudUtils.changeStatus(id, nuevoEstado, 'condición de salud', '<?= url('/condicionessalud') ?>');
 }
 
 // Función para exportar a Excel con alertas sutiles
@@ -426,7 +426,7 @@ function exportarCondiciones(event) {
     const params = new URLSearchParams(window.location.search);
     params.delete('page'); // Remover paginación para exportar todo
     
-    const url = `<?= url('/condiciones_salud/exportar') ?>?${params.toString()}`;
+    const url = `<?= url('/condicionessalud/exportar') ?>?${params.toString()}`;
     
     // Delay para mostrar el toast
     setTimeout(() => {
@@ -450,7 +450,7 @@ function exportarCondicionesPDF(event) {
     const params = new URLSearchParams(window.location.search);
     params.delete('page'); // Remover paginación para exportar todo
     
-    const url = `<?= url('/condiciones_salud/exportar-pdf') ?>?${params.toString()}`;
+    const url = `<?= url('/condicionessalud/exportar-pdf') ?>?${params.toString()}`;
     
     // Delay para mostrar el toast
     setTimeout(() => {

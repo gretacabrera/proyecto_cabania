@@ -267,7 +267,7 @@ CREATE TABLE `estadoproducto` (
   `estadoproducto_descripcion` varchar(45) NOT NULL,
   `estadoproducto_estado` int NOT NULL,
   PRIMARY KEY (`id_estadoproducto`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -292,7 +292,7 @@ CREATE TABLE `estadoreserva` (
   `estadoreserva_descripcion` varchar(45) NOT NULL,
   `estadoreserva_estado` int NOT NULL,
   PRIMARY KEY (`id_estadoreserva`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -574,7 +574,7 @@ CREATE TABLE `menu` (
   `menu_orden` int NOT NULL DEFAULT '1',
   `menu_estado` int NOT NULL DEFAULT '1',
   PRIMARY KEY (`id_menu`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -583,7 +583,7 @@ CREATE TABLE `menu` (
 
 LOCK TABLES `menu` WRITE;
 /*!40000 ALTER TABLE `menu` DISABLE KEYS */;
-INSERT INTO `menu` VALUES (1,'Configuración',2,1),(2,'Reportes',1,1),(3,'Seguridad',3,1);
+INSERT INTO `menu` VALUES (1,'Configuración',2,1),(2,'Reportes',3,1),(3,'Seguridad',4,1),(4,'Operaciones',1,1);
 /*!40000 ALTER TABLE `menu` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -628,7 +628,7 @@ CREATE TABLE `modulo` (
   PRIMARY KEY (`id_modulo`),
   KEY `fk_modulo_menu1_idx` (`rela_menu`),
   CONSTRAINT `fk_modulo_menu1` FOREIGN KEY (`rela_menu`) REFERENCES `menu` (`id_menu`)
-) ENGINE=InnoDB AUTO_INCREMENT=61 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=71 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -637,7 +637,7 @@ CREATE TABLE `modulo` (
 
 LOCK TABLES `modulo` WRITE;
 /*!40000 ALTER TABLE `modulo` DISABLE KEYS */;
-INSERT INTO `modulo` VALUES (1,'Ingresos','ingresos/formulario',1,NULL),(2,'Consumos','consumos',1,NULL),(3,'Salidas','salidas/formulario',1,NULL),(4,'Productos','productos',1,NULL),(5,'Reservas','reservas',1,NULL),(6,'Usuarios','usuarios',1,3),(33,'Modulos','modulos',1,3),(34,'Perfiles','perfiles',1,3),(35,'Marcas','marcas',1,1),(36,'Categorias','categorias',1,1),(37,'Estados de Reservas','estados-reservas',1,1),(38,'Estados de Personas','estados_personas',1,1),(39,'Tipos de Contactos','tipos_contactos',1,1),(40,'Tipos de Servicios','tipos_servicios',1,1),(41,'Asignación Perfiles/Modulos','perfiles_modulos',1,3),(42,'Métodos de Pago','metodos_pagos',1,1),(43,'Estados de Productos','estados_productos',1,1),(44,'Condiciones de Salud','condiciones_salud',1,1),(45,'Servicios','servicios',1,NULL),(46,'Períodos','periodos',1,1),(50,'Cabañas','cabanias',1,NULL),(51,'Menús','menus',1,3),(52,'Reporte de Consumos por Cabaña','reportes/consumos_importexcabania',1,2),(53,'Reporte de Productos Mas Vendidos por Mes','reportes/producto_mas_vendido_x_mes',1,2),(54,'Reporte de Productos por Categoría','reportes/productos_cantidadxcategoria',1,2),(55,'Reporte de Temporadas Altas por Año','reportes/temporada_alta_x_anio',1,2),(56,'Reporte de Reservas Por Grupo Etario','reportes/top_grupos_etarios_x_periodo',1,2),(57,'Mis Reservas','reservas',1,NULL),(59,'Mis Comentarios','comentarios',1,NULL),(60,'Reporte de Comentarios','reportes/comentarios',1,2);
+INSERT INTO `modulo` VALUES (1,'Ingresos','ingresos/formulario',1,NULL),(2,'Consumos','consumos',1,NULL),(3,'Salidas','salidas/formulario',1,NULL),(4,'Productos','productos',1,4),(5,'Reservas','reservas',1,4),(6,'Usuarios','usuarios',1,3),(33,'Modulos','modulos',1,3),(34,'Perfiles','perfiles',1,3),(35,'Marcas','marcas',1,1),(36,'Categorias','categorias',1,1),(37,'Estados de Reservas','estadosreservas',1,1),(38,'Estados de Personas','estadospersonas',1,1),(39,'Tipos de Contactos','tiposcontactos',1,1),(40,'Tipos de Servicios','tiposservicios',1,1),(41,'Asignación Perfiles/Modulos','perfiles-modulos',1,3),(42,'Métodos de Pago','metodospagos',1,1),(43,'Estados de Productos','estadosproductos',1,1),(44,'Condiciones de Salud','condicionessalud',1,1),(45,'Servicios','servicios',1,4),(46,'Períodos','periodos',1,1),(50,'Cabañas','cabanias',1,4),(51,'Menús','menus',1,3),(52,'Reporte de Consumos por Cabaña','reportes/consumos',1,2),(53,'Reporte de Productos Mas Vendidos por Mes','reportes/ventas-mensuales',1,2),(54,'Reporte de Productos por Categoría','reportes/productos',1,2),(55,'Reporte de Temporadas Altas por Año','reportes/temporadas',1,2),(56,'Reporte de Reservas Por Grupo Etario','reportes/demografico',1,2),(57,'Mis Reservas','reservas',1,NULL),(59,'Mis Comentarios','comentarios',1,NULL),(60,'Reporte de Comentarios','reportes/comentarios',1,2),(61,'Niveles de Daño','niveldanio',1,1),(62,'Inventario','inventario',1,4),(63,'Costos por Daño','costodanio',1,4),(64,'Asignación Inventario/Cabaña','inventario-cabania',1,4),(65,'Revisiones','revision',1,4),(66,'Cajas','cajas',1,4),(67,'Facturas','facturas',1,4),(69,'Asignación Huesped/Condición','huespedes-condiciones',1,4),(70,'Huespedes','huespedes',1,4);
 /*!40000 ALTER TABLE `modulo` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -769,7 +769,7 @@ CREATE TABLE `perfil_modulo` (
   KEY `fk_perfilModulo_modulo1_idx` (`rela_modulo`),
   CONSTRAINT `fk_perfilModulo_modulo1` FOREIGN KEY (`rela_modulo`) REFERENCES `modulo` (`id_modulo`),
   CONSTRAINT `fk_perfilModulo_perfil1` FOREIGN KEY (`rela_perfil`) REFERENCES `perfil` (`id_perfil`)
-) ENGINE=InnoDB AUTO_INCREMENT=84 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=94 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -778,7 +778,7 @@ CREATE TABLE `perfil_modulo` (
 
 LOCK TABLES `perfil_modulo` WRITE;
 /*!40000 ALTER TABLE `perfil_modulo` DISABLE KEYS */;
-INSERT INTO `perfil_modulo` VALUES (38,1,4,1),(39,1,5,1),(40,1,6,1),(47,3,1,1),(48,3,3,1),(50,2,5,1),(51,2,6,1),(52,1,33,1),(53,1,34,1),(54,1,35,1),(55,1,36,1),(56,1,37,1),(57,1,38,1),(58,1,39,1),(59,1,40,1),(60,1,41,1),(61,1,42,1),(62,1,43,1),(63,1,44,1),(64,1,45,1),(65,1,46,1),(72,1,50,1),(73,1,51,1),(74,1,52,1),(75,1,53,1),(77,1,54,1),(78,1,55,1),(79,1,56,1),(80,3,57,1),(82,3,59,1),(83,1,60,1);
+INSERT INTO `perfil_modulo` VALUES (38,1,4,1),(39,1,5,1),(40,1,6,1),(47,3,1,1),(48,3,3,1),(50,2,5,1),(51,2,6,1),(52,1,33,1),(53,1,34,1),(54,1,35,1),(55,1,36,1),(56,1,37,1),(57,1,38,1),(58,1,39,1),(59,1,40,1),(60,1,41,1),(61,1,42,1),(62,1,43,1),(63,1,44,1),(64,1,45,1),(65,1,46,1),(72,1,50,1),(73,1,51,1),(74,1,52,1),(75,1,53,1),(77,1,54,1),(78,1,55,1),(79,1,56,1),(80,3,57,1),(82,3,59,1),(83,1,60,1),(84,1,61,1),(85,1,62,1),(86,1,63,1),(87,1,64,1),(88,1,65,1),(89,1,66,1),(90,1,67,1),(92,1,69,1),(93,1,70,1);
 /*!40000 ALTER TABLE `perfil_modulo` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1229,4 +1229,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-08 15:42:38
+-- Dump completed on 2025-11-09 21:30:52
