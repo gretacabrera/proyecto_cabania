@@ -209,14 +209,15 @@ class Application
         $this->router->post('/menus/update-order', 'MenusController@updateOrder');
 
         // Rutas de métodos de pago
-        $this->router->get('/metodospagos', 'MetodosPagosController@index');
-        $this->router->any('/metodospagos/create', 'MetodosPagosController@create');
-        $this->router->any('/metodospagos/{id}/edit', 'MetodosPagosController@edit');
-        $this->router->get('/metodospagos/{id}/delete', 'MetodosPagosController@delete');
-        $this->router->get('/metodospagos/{id}/restore', 'MetodosPagosController@restore');
-        $this->router->get('/metodospagos/search', 'MetodosPagosController@search');
-        $this->router->get('/metodospagos/{id}/toggle-status', 'MetodosPagosController@toggleStatus');
-        $this->router->get('/metodospagos/stats', 'MetodosPagosController@stats');
+        $this->router->get('/metodosdepago', 'MetodosPagosController@index');
+        $this->router->any('/metodosdepago/create', 'MetodosPagosController@create');
+        $this->router->get('/metodosdepago/exportar', 'MetodosPagosController@exportar');
+        $this->router->get('/metodosdepago/exportar-pdf', 'MetodosPagosController@exportarPdf');
+        $this->router->get('/metodosdepago/{id}', 'MetodosPagosController@show');
+        $this->router->any('/metodosdepago/{id}/edit', 'MetodosPagosController@edit');
+        $this->router->post('/metodosdepago/{id}/delete', 'MetodosPagosController@delete');
+        $this->router->post('/metodosdepago/{id}/restore', 'MetodosPagosController@restore');
+        $this->router->post('/metodosdepago/{id}/estado', 'MetodosPagosController@cambiarEstado');
 
         // Rutas de módulos del sistema
         $this->router->get('/modulos', 'ModulosController@index');

@@ -4,6 +4,8 @@
 
 Este documento define los patrones y criterios estándar para generar CRUDs completos en el proyecto de sistema de gestión de cabañas. Basado en el análisis del módulo de Cabañas, se establecen las convenciones de arquitectura, estructura de archivos, funcionalidades y patrones de código que deben seguirse.
 
+**Principio fundamental:** Todo CRUD debe mantener 100% de consistencia funcional y de código con el módulo Cabañas, y 90% de similitud visual.
+
 ## Estructura de Archivos por Entidad
 
 Para cada entidad XXXX, se deben generar los siguientes archivos siguiendo la estructura del proyecto:
@@ -51,27 +53,26 @@ Para cada entidad XXXX, se deben generar los siguientes archivos siguiendo la es
 - `formulario.php` - Formulario para crear/editar (reutilizable)
 - `detalle.php` - Vista de información completa
 
-## Especificaciones de UI y Estructura de Contenedores
+## Estándares de UI y Bootstrap 5
 
-### Filtros de Listado
-**Elementos SELECT obligatorios:**
-- **Clase requerida:** `class="form-select form-select-sm"`
-- **Aplicación:** Todos los filtros desplegables (estado, registros por página, categorías, etc.)
-- **Compatibilidad:** Bootstrap 5 (versión actual del proyecto)
-- **IMPORTANTE:** Usar `form-select` en lugar de `form-control` para elementos `<select>`
+### Clases CSS Obligatorias
+**Bootstrap 5 (versión del proyecto):**
+- **SELECT:** `form-select form-select-sm`
+- **INPUT:** `form-control form-control-sm`
+- **Badges:** `badge bg-success`, `badge bg-danger`, `badge bg-warning`
 
-### Contenedores de Vista de Detalle
-**Estructura estándar obligatoria:**
-1. **"Información General"** - Datos básicos de la entidad (código, nombre, estado, etc.)
-2. **"Estadísticas"** - Métricas de uso, contadores, gráficos relacionados
-3. **"Acciones Rápidas"** - Panel lateral con botones de acción contextual
+### Estructura de Contenedores
 
-### Contenedores de Vista de Formulario
-**Estructura estándar obligatoria:**
-1. **"Modificar datos del [entidad]"** - Formulario principal con campos de datos
-2. **"Información"** - Panel lateral dividido en:
-   - **"Consejos"** - Ayuda contextual y buenas prácticas
-   - **"Estadísticas"** - Información técnica y métricas (solo en edición)
+#### Vista de Detalle (3 secciones):
+1. **"Información General"** - Datos básicos de la entidad
+2. **"Estadísticas"** - Métricas de uso, contadores, gráficos
+3. **"Acciones Rápidas"** - Panel lateral con botones
+
+#### Vista de Formulario (layout 8/4):
+1. **Columna principal (col-lg-8):** "Modificar datos del [entidad]"
+2. **Columna lateral (col-lg-4):** "Información" dividida en:
+   - **"Consejos"** - Ayuda contextual
+   - **"Estadísticas"** - Solo en edición
 
 **Ejemplo de aplicación:**
 ```html
@@ -125,107 +126,59 @@ Para cada entidad XXXX, se deben generar los siguientes archivos siguiendo la es
 
 ### 1. Listado (listado.php)
 
-#### Características principales:
-- **Header con título y botón "Nuevo"**
-- **Filtros de búsqueda compactos** en tarjeta colapsable
-- **Selector de registros por página** (5, 10, 25, 50)
-- **Tabla responsiva** con datos formateados
-- **Badges de estado** con colores semánticos
-- **Botones de acción** (Ver, Editar, Cambiar Estado)
+**Características:**
+- Header con título y botón "Nuevo"
+- Filtros compactos colapsables
+- Selector de registros por página (5, 10, 25, 50)
+- Tabla responsiva con badges semánticos
+- Botones de acción (Ver, Editar, Cambiar Estado)
 - **Paginación dual** (superior e inferior idénticas)
-- **Exportación** (Excel y PDF)
-- **Estado vacío** cuando no hay registros
+- Exportación (Excel y PDF)
+- Estado vacío cuando no hay registros
 
-#### ⚠️ CRÍTICO - Compatibilidad Bootstrap:
-**SIEMPRE verificar versión de Bootstrap antes de implementar:**
-- El proyecto usa **Bootstrap 5** (versión actualizada)
-- **Clases Bootstrap 5 para SELECT:** `form-select`, `form-select-sm`
-- **Clases Bootstrap 5 para INPUT:** `form-control`, `form-control-sm`
-- **Clases de badges:** `badge bg-success`, `badge bg-danger`, `badge bg-warning`
-- **Correcciones comunes:**
-  - Para `<select>`: SIEMPRE usar `form-select form-select-sm`
-  - Para `<input>`: SIEMPRE usar `form-control`
-  - Para badges: `badge bg-success` (NO `badge-success`)
-- **Validar siempre** en navegador antes de finalizar
+**⚠️ CRÍTICO - Presentación de Datos:**
+- **NUNCA** mostrar IDs técnicos (`id_producto`, `id_cabania`)
+- **NUNCA** crear códigos artificiales ("MC-001", "PRD-123")
+- **SOLO** mostrar campos que existen en la tabla de BD
+- **IDs** solo para enlaces internos (ocultos al usuario)
+- **Regla de oro:** Si el campo no existe en la tabla, NO lo muestres
 
-#### ⚠️ CRÍTICO - Presentación de Datos:
-**NUNCA mostrar IDs técnicos ni códigos generados al usuario:**
-- **NO mostrar** campos como `id_producto`, `id_cabania`, `id_marca` en interfaces de usuario
-- **NO crear** ni mostrar códigos generados artificialmente (ej: "MC-001", "PRD-123")
-- **SÍ mostrar** solo los campos que existen realmente en la tabla de la base de datos
-- **Usar nombres descriptivos** directamente de la tabla (ej: `marca_descripcion`, `producto_nombre`)
-- **IDs solo para** enlaces internos y operaciones backend (ocultos al usuario)
-- **Regla de oro:** Si el campo no existe en la tabla, NO lo muestres en la interfaz
-
-**Ejemplo CORRECTO para tabla `marca` (id_marca, marca_descripcion, marca_estado):**
-```php
-// ✅ CORRECTO - Solo mostrar campos reales de la tabla
-<th>Descripción</th>  // marca_descripcion existe en BD
-<th>Estado</th>       // marca_estado existe en BD
-
-// ❌ INCORRECTO - Mostrar campos que no existen
-<th>Código</th>       // NO existe marca_codigo en BD
-<th>ID</th>           // id_marca es técnico, no mostrar
-```
-
-#### ⚠️ CRÍTICO - Uso de Emojis:
-**Usar emojis de forma moderada y profesional:**
-- **Máximo 2-3 emojis** por sección de documentación
-- **Solo emojis relevantes** al contexto (⚠️ para advertencias, ✅ para confirmaciones)
-- **NO usar** emojis decorativos excesivos (🎯🔥💯🚀)
-- **Mantener tono profesional** en toda la documentación
-
-#### Filtros estándar:
+**Filtros y paginación:**
 ```php
 $filters = [
     'campo_nombre' => $this->get('campo_nombre'),
-    'campo_codigo' => $this->get('campo_codigo'),
-    'campo_estado' => $this->get('campo_estado'),
-    // Campos específicos de la entidad
+    'campo_estado' => $this->get('campo_estado')
 ];
 ```
 
-#### Paginación:
-- Registros por página: 5, 10, 25, 50 (por defecto 10)
-- Información: "Mostrando X a Y de Z registros"
-- Navegación: Anterior/Siguiente + números de página
-
-#### Exportación:
-- **Excel**: Formato .xlsx con estilos, todas las columnas, filtros aplicados
-- **PDF**: Formato A4 vertical, tabla optimizada, información de filtros
+**Exportación:**
+- **Excel:** .xlsx con estilos, columnas completas, filtros aplicados
+- **PDF:** A4 vertical, tabla optimizada
 
 ### 2. Formulario (formulario.php)
 
-#### Características principales:
-- **Formulario reutilizable** para crear/editar
-- **Validación HTML5** y JavaScript
-- **Campos requeridos** marcados visualmente
-- **Subida de archivos** (cuando aplique)
-- **Vista previa** de imágenes
-- **Panel lateral** con información adicional
-- **Botones de acción** (Guardar, Limpiar, Cancelar)
+**Características:**
+- Reutilizable para crear/editar
+- Validación HTML5 y JavaScript
+- Campos requeridos marcados visualmente
+- Subida de archivos con vista previa
+- Panel lateral con información adicional
+- Botones: Guardar, Limpiar, Cancelar
 
-#### Estructura estándar:
+**Estructura:**
 ```html
 <form id="formXXXX" method="POST" action="..." enctype="multipart/form-data" novalidate>
-    <!-- Hidden fields para edición -->
-    <!-- Campos de datos -->
-    <!-- Botones de acción -->
+    <!-- Hidden fields, Campos de datos, Botones -->
 </form>
 ```
 
-#### Validaciones:
-- Frontend: HTML5 + JavaScript personalizado
-- Backend: En métodos store() y update()
-
 ### 3. Detalle (detalle.php)
 
-#### Características principales:
-- **Información completa** de la entidad
-- **Estadísticas** relacionadas
-- **Botones de acción** contextuales
-- **Panel lateral** con acciones rápidas
-- **Relaciones** con otras entidades (cuando aplique)
+**Características:**
+- Información completa de la entidad
+- Estadísticas relacionadas
+- Botones de acción contextuales
+- Panel lateral con acciones rápidas
 
 ## Patrones de Código
 
@@ -631,15 +584,8 @@ Para generar un CRUD completo, usar la siguiente instrucción:
 - Menor probabilidad de errores
 - Desarrollo más rápido y eficiente
 
-### Campos que se Deben Inferir Automáticamente
-- **Campos de texto**: Por tipo VARCHAR/TEXT
-- **Campos numéricos**: Por tipo INT/FLOAT
-- **Campos de estado**: Por convención `_estado`
-- **Claves foráneas**: Por convención `rela_`
-- **Campos de fecha**: Por tipo DATE/DATETIME
-- **Campos opcionales**: Por constraint NULL
+## ⚠️ CRÍTICO - Campos de Código
 
-#### ⚠️ CRÍTICO - Campos de Código:
 **NUNCA generar ni mostrar campos de código artificiales:**
 - **NO crear** campos de código si no existen en la tabla de la base de datos
 - **NO mostrar** códigos generados como "MC-001", "PRD-123", "CS-001"
@@ -661,132 +607,15 @@ Para generar un CRUD completo, usar la siguiente instrucción:
 
 **Excepción única:** Solo mostrar código si existe como campo real en la tabla (ej: `producto_codigo`, `cabania_codigo`)
 
-### Validaciones Automáticas
-- **Requeridos**: NOT NULL en la tabla
-- **Longitud máxima**: Tamaño del campo VARCHAR
-- **Valores mínimos/máximos**: Según tipo de campo
-- **Formatos específicos**: Email, URL, etc.
-
 ---
 
 ## Mecanismo de Razonamiento y Control de Calidad
 
 ### Principio de Contraste con Referencia de Calidad
 
-**INSTRUCCIÓN CRÍTICA**: Antes de implementar cualquier CRUD, siempre contrastar con el módulo de **Cabañas** como **patrón de calidad objetivo**. Este módulo representa el estándar de excelencia que debe alcanzarse en todos los aspectos.
+**INSTRUCCIÓN CRÍTICA**: Antes de implementar cualquier CRUD, siempre contrastar con el módulo de **Cabañas** como **patrón de calidad objetivo**.
 
-### Proceso de Validación por Contraste
-
-#### 1. **Análisis Comparativo de Interfaces**
-
-Antes de generar cualquier vista, realizar el siguiente razonamiento:
-
-```
-PREGUNTA DE CONTRASTE: "¿Cómo resuelve esto el módulo de Cabañas?"
-
-ANÁLISIS OBLIGATORIO:
-1. Revisar Views/admin/operaciones/cabanias/listado.php
-2. Examinar Views/admin/operaciones/cabanias/formulario.php  
-3. Estudiar Views/admin/operaciones/cabanias/detalle.php
-4. Identificar patrones visuales, estructuras y funcionalidades
-5. Adaptar esos patrones a la nueva entidad
-```
-
-#### 2. **Criterios de Calidad Específicos**
-
-**Listado (listado.php):**
-- ✅ **Header oscuro** con título y botón "Nueva [Entidad]"
-- ✅ **Filtros horizontales** compactos con labels pequeños
-- ✅ **Iconos contextuales** en columnas (bed, bath, users, etc.)
-- ✅ **Badges con colores semánticos** (success, warning, danger)
-- ✅ **Botones de acción** agrupados con tooltips descriptivos
-- ✅ **Formato de precios** con separadores y moneda
-- ✅ **Información secundaria** en texto pequeño y gris
-- ✅ **Paginación** con información de registros
-
-**Formulario (formulario.php):**
-- ✅ **Header con breadcrumb** de navegación
-- ✅ **Layout de 2 columnas** (8/4) principal/lateral
-- ✅ **Card principal** para datos básicos
-- ✅ **Panel lateral** para imágenes y acciones
-- ✅ **Validaciones visuales** en tiempo real
-- ✅ **Comentarios de ayuda** para campos complejos
-- ✅ **Vista previa** de imágenes antes de guardar
-
-**Detalle (detalle.php):**
-- ✅ **Botones de acción** contextuales en header
-- ✅ **Layout responsive** con información organizada
-- ✅ **Estadísticas visuales** con iconos y métricas
-- ✅ **Panel de acciones rápidas** en lateral
-- ✅ **Información técnica** separada visualmente
-- ✅ **Estados dinámicos** con cambios en vivo
-
-#### 3. **Proceso de Contraste Sistemático**
-
-Para cada componente generado, aplicar este checklist:
-
-**PASO 1: VISUAL COMPARISON**
-```
-- ¿El header tiene el mismo estilo y estructura que Cabañas?
-- ¿Los filtros siguen la misma disposición horizontal compacta?
-- ¿Los iconos están alineados y son contextualmente apropiados?
-- ¿Los badges de estado siguen la misma paleta de colores?
-- ¿Los botones de acción tienen el mismo agrupamiento?
-```
-
-**PASO 2: FUNCTIONAL COMPARISON**
-```
-- ¿La paginación funciona exactamente igual?
-- ¿Los filtros se comportan de la misma manera?
-- ¿Las validaciones tienen la misma retroalimentación visual?
-- ¿Las exportaciones mantienen el mismo formato?
-- ¿Los cambios de estado siguen el mismo patrón AJAX?
-```
-
-**PASO 3: UX COMPARISON**
-```
-- ¿La navegación es intuitiva y consistente?
-- ¿Los mensajes de error/éxito son coherentes?
-- ¿La responsividad se mantiene en todos los breakpoints?
-- ¿Los tooltips y ayudas contextuales están presentes?
-- ¿El tiempo de carga y rendimiento es comparable?
-```
-
-#### 4. **Adaptación Inteligente**
-
-**REGLA DE ORO**: No copiar literalmente, sino **adaptar inteligentemente**
-
-```
-EJEMPLO DE RAZONAMIENTO:
-- Cabañas usa iconos "bed" y "bath" → Productos podría usar "box" y "tag"
-- Cabañas muestra "Capacidad: X personas" → Productos muestra "Stock: X unidades"  
-- Cabañas tiene estado "Ocupada" → Productos tiene estado "Sin Stock"
-- Cabañas muestra precio "$/noche" → Productos muestra precio "c/unidad"
-```
-
-#### 5. **Checklist de Finalización**
-
-Antes de considerar terminado un CRUD, verificar:
-
-**CONSISTENCIA VISUAL (90% similitud con Cabañas)**
-- [ ] Esquema de colores idéntico
-- [ ] Tipografía y espaciado coherente  
-- [ ] Iconografía contextual apropiada
-- [ ] Animaciones y transiciones similares
-
-**CONSISTENCIA FUNCIONAL (100% similitud con Cabañas)**  
-- [ ] Patrones de navegación idénticos
-- [ ] Flujos de trabajo equivalentes
-- [ ] Mensajería de sistema coherente
-- [ ] Comportamiento de filtros y paginación igual
-
-**CONSISTENCIA DE CÓDIGO (100% similitud con Cabañas)**
-- [ ] Estructura HTML equivalente
-- [ ] Clases CSS reutilizadas
-- [ ] Funciones JavaScript coherentes
-- [ ] Patrones PHP de controlador/modelo iguales
-
-### Implementación del Mecanismo
+### Proceso de Validación (5 pasos)
 
 **ANTES de generar cualquier archivo:**
 
@@ -796,24 +625,48 @@ Antes de considerar terminado un CRUD, verificar:
 4. **Generar el código** manteniendo consistencia
 5. **Revisar diferencias** y corregir desviaciones
 
+### Criterios de Calidad por Componente
+
+**Listado (listado.php):**
+- Header oscuro con título y botón "Nueva [Entidad]"
+- Filtros horizontales compactos
+- Iconos contextuales
+- Badges con colores semánticos
+- Botones de acción agrupados
+- Paginación con información de registros
+
+**Formulario (formulario.php):**
+- Header con breadcrumb
+- Layout de 2 columnas (8/4)
+- Card principal para datos
+- Panel lateral para información
+- Validaciones visuales
+- Vista previa de imágenes
+
+**Detalle (detalle.php):**
+- Botones de acción contextuales
+- Layout responsive
+- Estadísticas visuales
+- Panel de acciones rápidas
+- Estados dinámicos
+
+### Adaptación Inteligente
+
+**REGLA DE ORO**: No copiar literalmente, sino **adaptar inteligentemente**
+
+**Ejemplo:**
+- Cabañas usa "bed" y "bath" → Productos usa "box" y "tag"
+- Cabañas: "Capacidad: X personas" → Productos: "Stock: X unidades"
+- Cabañas: "Ocupada" → Productos: "Sin Stock"
+- Cabañas: "$/noche" → Productos: "c/unidad"
+
+### Criterios de Similitud
+
+- **Consistencia Visual**: 90% similitud con Cabañas
+- **Consistencia Funcional**: 100% similitud con Cabañas
+- **Consistencia de Código**: 100% similitud con Cabañas
+
 **NUNCA generar código sin haber consultado primero la referencia de Cabañas.**
-
-### Ejemplo de Aplicación
-
-```
-SOLICITUD: "Genera vista de listado para Productos"
-
-PROCESO OBLIGATORIO:
-1. Leer Views/admin/operaciones/cabanias/listado.php líneas 1-100
-2. Identificar: estructura de header, disposición de filtros, formato de tabla
-3. Leer Views/admin/operaciones/cabanias/listado.php líneas 100-200  
-4. Identificar: badges de estado, botones de acción, iconografía
-5. Adaptar patrones encontrados a campos de Productos
-6. Generar código manteniendo estructura y estilos idénticos
-7. Revisar resultado vs. referencia de Cabañas
-```
-
-**Esta metodología garantiza que todos los CRUDs mantengan la coherencia visual, funcional y de experiencia de usuario establecida en el módulo de Cabañas.**
 
 ---
 
@@ -1026,21 +879,6 @@ if (empty($datos)) {
 // Usar $result['total'] para estadísticas en archivos
 ```
 
-### Checklist de Implementación
-
-**Antes de finalizar cualquier vista de listado, verificar:**
-
-- [ ] **Información siempre visible** - Muestra conteo incluso con 1 página
-- [ ] **Paginación superior e inferior idénticas** - Misma estructura y contenido
-- [ ] **Sin navegación en página única** - Solo información, sin botones
-- [ ] **Página actual destacada** - Color azul distintivo y no clickeable
-- [ ] **Navegación inteligente** - Elipsis cuando hay muchas páginas
-- [ ] **Estructura de datos estándar** - Mismo formato en modelo
-- [ ] **Filtros respetados** - Totales incluyen filtros aplicados
-- [ ] **Exportaciones consistentes** - Usan estructura {'data': [], 'total': X}
-- [ ] **Validación de parámetros** - perPage y page validados
-- [ ] **Responsive** - Funciona en móvil y desktop
-
 ### Patrones Prohibidos
 
 ❌ **NO usar estas implementaciones:**
@@ -1051,16 +889,14 @@ if (empty($datos)) {
 - Estructura de datos inconsistente entre modelos
 - Exportaciones que devuelven arrays simples sin total
 - Navegación sin elipsis en listados largos
+- Métodos como `handleImageUpload()` con arrays de retorno
+- Validaciones complejas de MIME types en el controlador
 
 ---
 
 ## Configuración de Enrutamiento
 
-### Principios de Enrutamiento
-
-**CRÍTICO**: Las rutas definidas en `Core/Application.php` DEBEN coincidir exactamente con los métodos implementados en el controlador y las URLs utilizadas en las vistas.
-
-#### 1. **Patrón Estándar de Rutas por Entidad**
+### Patrón Estándar de Rutas por Entidad
 
 Para cada entidad XXXX, seguir el patrón establecido por el módulo de Cabañas:
 
@@ -1077,7 +913,7 @@ $this->router->post('/xxxx/{id}/restore', 'XXXXController@restore');
 $this->router->post('/xxxx/{id}/estado', 'XXXXController@cambiarEstado');
 ```
 
-#### 2. **Métodos HTTP y Funcionalidad**
+### Métodos HTTP y Funcionalidad
 
 | Ruta | Método HTTP | Controlador | Funcionalidad |
 |------|-------------|-------------|---------------|
@@ -1091,96 +927,7 @@ $this->router->post('/xxxx/{id}/estado', 'XXXXController@cambiarEstado');
 | `/xxxx/{id}/restore` | `POST` | `restore($id)` | Alta lógica (estado = 1) |
 | `/xxxx/{id}/estado` | `POST` | `cambiarEstado($id)` | Cambio estado AJAX |
 
-#### 3. **Implementación en Controlador**
-
-**Patrón obligatorio para métodos que manejan GET y POST:**
-
-```php
-public function create()
-{
-    $this->requirePermission('entidad');
-
-    if ($this->isPost()) {
-        return $this->store(); // Procesar datos POST
-    }
-
-    // Mostrar formulario GET
-    $data = [
-        'title' => 'Nueva Entidad',
-        'isAdminArea' => true
-    ];
-
-    return $this->render('admin/operaciones/entidad/formulario', $data, 'main');
-}
-
-public function edit($id)
-{
-    $this->requirePermission('entidad');
-
-    $entidad = $this->modelo->find($id);
-    if (!$entidad) {
-        return $this->view->error(404);
-    }
-
-    if ($this->isPost()) {
-        return $this->update($id); // Procesar datos POST
-    }
-
-    // Mostrar formulario GET
-    $data = [
-        'title' => 'Editar Entidad',
-        'entidad' => $entidad,
-        'isAdminArea' => true
-    ];
-
-    return $this->render('admin/operaciones/entidad/formulario', $data, 'main');
-}
-```
-
-#### 4. **URLs en las Vistas**
-
-**CRÍTICO**: Las URLs en JavaScript AJAX deben coincidir con las rutas definidas:
-
-```javascript
-// ✅ CORRECTO - Cambio de estado
-fetch(`<?= url('/entidad') ?>/${id}/estado`, {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
-    },
-    body: JSON.stringify({ estado: nuevoEstado })
-})
-
-// ❌ INCORRECTO - URL no coincide con ruta
-fetch(`<?= url('/entidad') ?>/${id}/cambiar-estado`, { // Esta ruta NO existe
-```
-
-**URLs en formularios HTML:**
-
-```html
-<!-- Formulario de creación -->
-<form method="POST" action="<?= url('/entidad/create') ?>">
-
-<!-- Formulario de edición -->
-<form method="POST" action="<?= url('/entidad/' . $entidad['id'] . '/edit') ?>">
-```
-
-#### 5. **Configuración en Base de Datos**
-
-**Tabla `modulo`:** Asegurar que el campo `modulo_ruta` coincida con la ruta base:
-
-```sql
--- ✅ CORRECTO
-INSERT INTO modulo (modulo_descripcion, modulo_ruta, modulo_estado, rela_menu) 
-VALUES ('Servicios', 'servicios', 1, NULL);
-
--- ❌ INCORRECTO 
-INSERT INTO modulo (modulo_descripcion, modulo_ruta, modulo_estado, rela_menu) 
-VALUES ('Servicios', '/servicios', 1, NULL); -- No incluir slash inicial
-```
-
-#### 6. **Orden de Definición de Rutas**
+### Orden de Definición de Rutas
 
 **IMPORTANTE**: Las rutas específicas DEBEN definirse ANTES que las rutas con parámetros:
 
@@ -1195,120 +942,29 @@ $this->router->get('/xxxx/{id}', 'XXXXController@show');                // Con p
 $this->router->get('/xxxx/exportar', 'XXXXController@exportar');        // Nunca se ejecutará
 ```
 
-#### 7. **Validación de Rutas**
-
-**Checklist obligatorio antes de finalizar:**
-
-- [ ] **Todas las rutas** definidas en `Application.php` tienen métodos correspondientes en el controlador
-- [ ] **Todos los métodos** del controlador tienen rutas definidas (excepto métodos privados/helper)
-- [ ] **URLs en vistas** (HTML y JavaScript) coinciden con rutas definidas
-- [ ] **Parámetros de ruta** (`{id}`) se pasan correctamente a los métodos del controlador
-- [ ] **Métodos HTTP** apropiados (GET para formularios/listados, POST para acciones)
-- [ ] **Orden de rutas** correcto (específicas antes que paramétricas)
-
-#### 8. **Problemas Comunes y Soluciones**
-
-| Problema | Síntoma | Solución |
-|----------|---------|----------|
-| **Ruta no encontrada (404)** | "Page not found" al acceder | Verificar ruta en `Application.php` |
-| **Método no existe** | Error de PHP "Method does not exist" | Implementar método en controlador |
-| **AJAX no funciona** | Error 404 en peticiones AJAX | Corregir URL en JavaScript |
-| **Formulario no procesa** | Formulario no guarda datos | Verificar `action` del form y método POST |
-| **Parámetros no llegan** | `$id` es null en método | Verificar coincidencia `{id}` en ruta |
-
-#### 9. **Herramientas de Diagnóstico**
-
-**Script de prueba recomendado:**
-Crear `test_rutas_[entidad].php` para verificar configuración:
-
-```php
-// Verificar rutas registradas
-// Probar resolución de URLs
-// Validar existencia de métodos en controlador
-// Enlaces de prueba directa
-```
-
-### Patrones de URL Estándar
-
-**Estructura consistente para todas las entidades:**
-- **Listado:** `/entidad`
-- **Crear:** `/entidad/create` (GET y POST)  
-- **Ver:** `/entidad/{id}`
-- **Editar:** `/entidad/{id}/edit` (GET y POST)
-- **Exportar:** `/entidad/exportar` y `/entidad/exportar-pdf`
-- **Estado:** `/entidad/{id}/estado` (POST AJAX)
-- **Eliminar:** `/entidad/{id}/delete` (POST)
-- **Restaurar:** `/entidad/{id}/restore` (POST)
-
 ---
 
-## 🔧 Problemas Comunes y Soluciones (Lecciones Aprendidas)
+## 🔧 Problemas Comunes y Soluciones
 
-### 1. **Error "Producto no encontrado" en Exportaciones**
-
-**Síntoma:** Exportaciones fallan con mensaje "No hay datos para exportar"
+### 1. Error "Producto no encontrado" en Exportaciones
 **Causa:** Rutas `/exportar` y `/exportar-pdf` no definidas en `Application.php`
-**Solución:**
-```php
-// Añadir ANTES de las rutas con parámetros
-$this->router->get('/entidad/exportar', 'EntidadController@exportar');
-$this->router->get('/entidad/exportar-pdf', 'EntidadController@exportarPdf');
-```
+**Solución:** Añadir ANTES de las rutas con parámetros
 
-### 2. **Problemas de Compatibilidad Bootstrap 4 vs 5**
+### 2. Problemas de Compatibilidad Bootstrap
+**Causa:** Confusión entre versiones
+**Solución:** Usar `form-select form-select-sm` para SELECT, `badge bg-success` para badges
 
-**Síntoma:** Elementos no se muestran correctamente, estilos rotos
-**Causa:** Confusión entre versiones de Bootstrap
-**Solución Crítica:**
-- **El proyecto usa Bootstrap 5**
-- **Para SELECT:** `form-select form-select-sm` (NO `form-control`)
-- **Para INPUT:** `form-control form-control-sm`
-- **Para badges:** `badge bg-success`, `badge bg-danger` (NO `badge-success`)
-- **VALIDAR SIEMPRE** en navegador antes de finalizar
+### 3. Funcionalidad de Imágenes No Funciona
+**Causa:** Métodos auxiliares complejos
+**Solución:** Usar manejo directo como en CabañasController (código en `store()` y `update()`)
 
-### 3. **Funcionalidad de Imágenes No Funciona**
+### 4. Paginación Inconsistente
+**Causa:** No seguir patrón dual
+**Solución:** Paginación superior e inferior IDÉNTICAS, información siempre visible
 
-**Síntoma:** Imágenes no se guardan, errores en `handleImageUpload()`
-**Causa:** Métodos auxiliares complejos en lugar del patrón directo de Cabañas
-**Solución Obligatoria:**
-- **NO usar** `handleImageUpload()` con arrays de retorno
-- **SÍ usar** manejo directo como en CabañasController
-- Código directo en `store()` y `update()`
-
-### 4. **Paginación Inconsistente**
-
-**Síntoma:** Paginación solo arriba o abajo, información faltante
-**Causa:** No seguir patrón dual idéntico
-**Solución:**
-- Paginación **superior e inferior IDÉNTICAS**
-- Información **siempre visible** (incluso con 1 página)
-- Sin navegación cuando hay una sola página
-
-### 5. **Títulos Duplicados en Vistas**
-
-**Síntoma:** Títulos aparecen dos veces en la interfaz
-**Causa:** Header duplicado en vista de detalle
-**Solución:**
-- Un solo `<h1>` por vista
-- Verificar estructura de headers vs breadcrumbs
-
-### 6. **JavaScript/AJAX No Funciona**
-
-**Síntoma:** Botones de estado, exportaciones no responden
-**Causa:** URLs incorrectas, rutas no definidas
-**Solución:**
-- URLs en JavaScript deben coincidir con rutas de `Application.php`
-- Verificar métodos POST para AJAX
-- Usar `<?= url('/ruta') ?>` para consistencia
-
-### 7. **Campos de Formulario No Validados**
-
-**Síntoma:** Formulario acepta datos vacíos o incorrectos
-**Causa:** Falta validación HTML5 y backend
-**Solución:**
-- Atributos `required`, `maxlength`, `min`, `max` en HTML
-- Validación en métodos `store()` y `update()`
-- Mensajes de error específicos con `redirect()`
+### 5. JavaScript/AJAX No Funciona
+**Causa:** URLs incorrectas
+**Solución:** URLs en JavaScript deben coincidir con rutas de `Application.php`
 
 ## Checklist de Finalización de CRUD
 

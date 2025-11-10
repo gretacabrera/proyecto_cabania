@@ -4,229 +4,232 @@ namespace App\Models;
 
 use App\Core\Model;
 
+/**
+ * Modelo para la entidad MetodoPago
+ */
 class MetodoPago extends Model
 {
     protected $table = 'metododepago';
     protected $primaryKey = 'id_metododepago';
-    
-    protected $fields = [
-        'metododepago_descripcion',
-        'metododepago_estado'
-    ];
-
-    protected $requiredFields = [
-        'metododepago_descripcion'
-    ];
-
-    /**
-     * Validar datos de método de pago
-     */
-    public function validate($data, $isUpdate = false, $id = null)
-    {
-        $errors = [];
-
-        // Validar descripción
-        if (empty($data['metododepago_descripcion'])) {
-            $errors[] = 'La descripción del método de pago es obligatoria.';
-        } else {
-            $descripcion = trim($data['metododepago_descripcion']);
-            
-            if (strlen($descripcion) < 2) {
-                $errors[] = 'La descripción debe tener al menos 2 caracteres.';
-            }
-            
-            if (strlen($descripcion) > 45) {
-                $errors[] = 'La descripción no puede superar los 45 caracteres.';
-            }
-
-            // Verificar que no exista otro método con la misma descripción
-            if ($this->existsOtherWithDescription($descripcion, $id)) {
-                $errors[] = 'Ya existe un método de pago con esta descripción.';
-            }
-        }
-
-        // Validar estado (si se proporciona)
-        if (isset($data['metododepago_estado'])) {
-            if (!in_array($data['metododepago_estado'], [0, 1, '0', '1'])) {
-                $errors[] = 'El estado debe ser 0 (inactivo) o 1 (activo).';
-            }
-        }
-
-        return $errors;
-    }
-
-    /**
-     * Verificar si existe otro método con la misma descripción
-     */
-    private function existsOtherWithDescription($descripcion, $excludeId = null)
-    {
-        $sql = "SELECT COUNT(*) as count FROM {$this->table} WHERE metododepago_descripcion = ?";
-        $params = [$descripcion];
-
-        if ($excludeId) {
-            $sql .= " AND {$this->primaryKey} != ?";
-            $params[] = $excludeId;
-        }
-
-        $result = $this->query($sql, $params);
-        return $result[0]['count'] > 0;
-    }
-
-    /**
-     * Buscar método de pago por descripción exacta
-     */
-    public function findByDescripcion($descripcion)
-    {
-        $sql = "SELECT * FROM {$this->table} WHERE metododepago_descripcion = ? AND metododepago_estado = 1 LIMIT 1";
-        $result = $this->query($sql, [$descripcion]);
-        return $result->fetch_assoc();
-    }
 
     /**
      * Obtener métodos de pago activos
      */
     public function getActive()
     {
-        $sql = "SELECT * FROM {$this->table} WHERE metododepago_estado = 1 ORDER BY metododepago_descripcion ASC";
-        $result = $this->query($sql);
-        
-        $metodos = [];
-        while ($row = $result->fetch_assoc()) {
-            $metodos[] = $row;
-        }
-        
-        return $metodos;
+        return $this->findAll("metododepago_estado = 1", "metododepago_descripcion");
     }
 
     /**
-     * Obtener métodos con filtros y paginación
+     * Obtener métodos de pago con filtros y paginación
      */
-    public function getWithFilters($filters = [], $page = 1, $limit = 10, $orderBy = 'metododepago_descripcion', $orderDir = 'ASC')
+    public function getWithDetails($page = 1, $perPage = 10, $filters = [])
     {
-        $conditions = ['1 = 1'];
+        $where = "1=1";
         $params = [];
-
-        // Filtro por descripción
+        
+        // Aplicar filtros
         if (!empty($filters['metododepago_descripcion'])) {
-            $conditions[] = "metododepago_descripcion LIKE ?";
-            $params[] = "%" . $filters['metododepago_descripcion'] . "%";
+            $where .= " AND metododepago_descripcion LIKE ?";
+            $params[] = '%' . $filters['metododepago_descripcion'] . '%';
         }
-
-        // Filtro por estado
+        
         if (isset($filters['metododepago_estado']) && $filters['metododepago_estado'] !== '') {
-            $conditions[] = "metododepago_estado = ?";
-            $params[] = $filters['metododepago_estado'];
+            $where .= " AND metododepago_estado = ?";
+            $params[] = (int) $filters['metododepago_estado'];
         }
+        
+        return $this->paginateWithParams($page, $perPage, $where, "metododepago_descripcion ASC", $params);
+    }
 
-        $whereClause = implode(' AND ', $conditions);
-        $offset = ($page - 1) * $limit;
-
-        // Validar orden
-        $validOrderBy = ['metododepago_descripcion', 'metododepago_estado', 'id_metododepago'];
-        if (!in_array($orderBy, $validOrderBy)) {
-            $orderBy = 'metododepago_descripcion';
+    /**
+     * Obtener todos los métodos de pago con filtros para exportación (sin paginación)
+     */
+    public function getAllWithDetailsForExport($filters = [])
+    {
+        $where = "1=1";
+        $params = [];
+        
+        // Aplicar los mismos filtros que getWithDetails
+        if (!empty($filters['metododepago_descripcion'])) {
+            $where .= " AND metododepago_descripcion LIKE ?";
+            $params[] = '%' . $filters['metododepago_descripcion'] . '%';
         }
-
-        $orderDir = strtoupper($orderDir) === 'DESC' ? 'DESC' : 'ASC';
-
-        // Consulta principal
-        $sql = "SELECT * FROM {$this->table} WHERE {$whereClause} ORDER BY {$orderBy} {$orderDir} LIMIT {$limit} OFFSET {$offset}";
-        $data = $this->query($sql, $params);
-
-        // Contar total
-        $countSql = "SELECT COUNT(*) as total FROM {$this->table} WHERE {$whereClause}";
-        $totalResult = $this->query($countSql, $params);
-        $total = $totalResult[0]['total'];
-
+        
+        if (isset($filters['metododepago_estado']) && $filters['metododepago_estado'] !== '') {
+            $where .= " AND metododepago_estado = ?";
+            $params[] = (int) $filters['metododepago_estado'];
+        }
+        
+        // Query para contar total (para estadísticas)
+        $countSql = "SELECT COUNT(*) as total FROM {$this->table} WHERE $where";
+        $totalResult = $this->queryWithParams($countSql, $params);
+        $totalRow = $totalResult->fetch_assoc();
+        $total = (int) $totalRow['total'];
+        
+        // Query para obtener TODOS los registros (sin LIMIT)
+        $dataSql = "SELECT * FROM {$this->table} WHERE $where ORDER BY metododepago_descripcion ASC";
+        $dataResult = $this->queryWithParams($dataSql, $params);
+        
+        $data = [];
+        while ($row = $dataResult->fetch_assoc()) {
+            $data[] = $row;
+        }
+        
         return [
             'data' => $data,
-            'total' => $total,
-            'pages' => ceil($total / $limit),
-            'current_page' => $page,
-            'per_page' => $limit
+            'total' => $total
         ];
     }
 
     /**
-     * Buscar métodos de pago por término
+     * Obtener métodos de pago con paginación usando parámetros preparados
      */
-    public function searchByTerm($term, $limit = 10)
+    private function paginateWithParams($page = 1, $perPage = 10, $where = "1=1", $orderBy = null, $params = [])
     {
-        $sql = "SELECT * FROM {$this->table} 
-                WHERE metododepago_descripcion LIKE ? 
-                AND metododepago_estado = 1 
-                ORDER BY metododepago_descripcion ASC 
-                LIMIT ?";
+        $offset = ($page - 1) * $perPage;
+        $limit = (int) $perPage;
         
-        return $this->query($sql, ["%{$term}%", $limit]);
-    }
-
-    /**
-     * Cambiar estado del método (activar/desactivar)
-     */
-    public function toggleStatus($id)
-    {
-        $current = $this->find($id);
-        if (!$current) {
-            return false;
+        // Query para contar total
+        $countSql = "SELECT COUNT(*) as total FROM {$this->table} WHERE $where";
+        $totalResult = $this->queryWithParams($countSql, $params);
+        $totalRow = $totalResult->fetch_assoc();
+        $total = (int) $totalRow['total'];
+        
+        // Query para obtener registros
+        $orderClause = $orderBy ? "ORDER BY $orderBy" : '';
+        $dataSql = "SELECT * FROM {$this->table} WHERE $where $orderClause LIMIT $limit OFFSET $offset";
+        $dataResult = $this->queryWithParams($dataSql, $params);
+        
+        $data = [];
+        while ($row = $dataResult->fetch_assoc()) {
+            $data[] = $row;
         }
-
-        $newStatus = $current['metododepago_estado'] == 1 ? 0 : 1;
-        return $this->update($id, ['metododepago_estado' => $newStatus]);
+        
+        $totalPages = ceil($total / $perPage);
+        
+        return [
+            'data' => $data,
+            'total' => $total,
+            'current_page' => $page,
+            'total_pages' => $totalPages,
+            'per_page' => $perPage,
+            'offset' => $offset,
+            'limit' => $limit
+        ];
     }
 
     /**
-     * Obtener estadísticas de métodos de pago
+     * Ejecutar query con parámetros preparados
      */
-    public function getStats()
+    private function queryWithParams($sql, $params = [])
     {
-        $stats = [];
+        $stmt = $this->db->prepare($sql);
+        if (!$stmt) {
+            throw new \Exception("Error preparando consulta: " . $this->db->error);
+        }
+        
+        if (!empty($params)) {
+            $types = str_repeat('s', count($params));
+            $stmt->bind_param($types, ...$params);
+        }
+        
+        if (!$stmt->execute()) {
+            throw new \Exception("Error ejecutando consulta: " . $stmt->error);
+        }
+        
+        return $stmt->get_result();
+    }
 
-        // Total de métodos
-        $sql = "SELECT COUNT(*) as total FROM {$this->table}";
-        $result = $this->query($sql);
-        $stats['total_metodos'] = $result[0]['total'];
-
-        // Métodos activos
-        $sql = "SELECT COUNT(*) as activos FROM {$this->table} WHERE metododepago_estado = 1";
-        $result = $this->query($sql);
-        $stats['metodos_activos'] = $result[0]['activos'];
-
-        // Métodos inactivos
-        $stats['metodos_inactivos'] = $stats['total_metodos'] - $stats['metodos_activos'];
-
+    /**
+     * Obtener estadísticas de un método de pago específico
+     */
+    public function getStatistics($metodoId)
+    {
+        $stats = [
+            'total_pagos' => $this->getTotalPagos($metodoId),
+            'monto_total' => $this->getMontoTotal($metodoId),
+            'ultimo_uso' => $this->getUltimoUso($metodoId),
+            'pagos_mes_actual' => $this->getPagosMesActual($metodoId)
+        ];
+        
         return $stats;
     }
 
     /**
-     * Verificar si está en uso en reservas o pagos
+     * Obtener número total de pagos realizados con este método
      */
-    public function isInUse($id)
+    private function getTotalPagos($metodoId)
     {
-        // Verificar en tabla pago si existe
-        $sql = "SELECT COUNT(*) as total FROM pago WHERE rela_metododepago = ?";
-        $result = $this->query($sql, [$id]);
+        $sql = "SELECT COUNT(*) as total 
+                FROM pago 
+                WHERE rela_metododepago = ?";
         
-        return $result[0]['total'] > 0;
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $metodoId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        
+        return (int)$row['total'];
     }
 
     /**
-     * Sanitizar y preparar datos para inserción/actualización
+     * Obtener monto total de pagos realizados con este método
      */
-    public function sanitizeData($data)
+    private function getMontoTotal($metodoId)
     {
-        $sanitized = [];
+        $sql = "SELECT SUM(pago_total) as total 
+                FROM pago 
+                WHERE rela_metododepago = ?";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $metodoId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        
+        return (float)($row['total'] ?? 0);
+    }
 
-        if (isset($data['metododepago_descripcion'])) {
-            $sanitized['metododepago_descripcion'] = trim($data['metododepago_descripcion']);
-            // Capitalizar primera letra de cada palabra
-            $sanitized['metododepago_descripcion'] = ucwords(strtolower($sanitized['metododepago_descripcion']));
-        }
+    /**
+     * Obtener fecha del último uso del método de pago
+     */
+    private function getUltimoUso($metodoId)
+    {
+        $sql = "SELECT MAX(pago_fechahora) as ultimo_uso 
+                FROM pago 
+                WHERE rela_metododepago = ?";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $metodoId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        
+        return $row['ultimo_uso'];
+    }
 
-        if (isset($data['metododepago_estado'])) {
-            $sanitized['metododepago_estado'] = (int) $data['metododepago_estado'];
-        }
-
-        return $sanitized;
+    /**
+     * Obtener número de pagos del mes actual
+     */
+    private function getPagosMesActual($metodoId)
+    {
+        $mesActual = date('Y-m');
+        $inicioMes = $mesActual . '-01';
+        $finMes = date('Y-m-t');
+        
+        $sql = "SELECT COUNT(*) as total 
+                FROM pago 
+                WHERE rela_metododepago = ? 
+                AND DATE(pago_fechahora) BETWEEN ? AND ?";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('iss', $metodoId, $inicioMes, $finMes);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        
+        return (int)$row['total'];
     }
 }
