@@ -1,142 +1,220 @@
-<?php
-$title = 'Tipos de Contactos';
-$currentModule = 'tipos_contactos';
-
-require_once 'app/Views/layouts/header.php';
-?>
-
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Tipos de Contactos</h2>
-        <div>
-            <a href="/tipos-contactos/crear" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Nuevo Tipo
-            </a>
-            <a href="/tipos-contactos/estadisticas" class="btn btn-info">
-                <i class="fas fa-chart-bar"></i> Estadísticas
-            </a>
+<div class="container-fluid">
+    <!-- Encabezado moderno similar al diseño de referencia -->
+    <div class="card border-0 shadow-sm">
+        <!-- Header oscuro -->
+        <div class="card-header text-dark py-3 mb-0">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h4 class="mb-0">Gestión de Tipos de Contactos</h4>
+                </div>
+                <div class="col-auto">
+                    <a href="<?= url('/tiposcontactos/create') ?>" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-1"></i>Nuevo Tipo de Contacto
+                    </a>
+                </div>
+            </div>
         </div>
-    </div>
-
-    <!-- Filtros de búsqueda -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">Filtros de búsqueda</h5>
-        </div>
-        <div class="card-body">
-            <form method="GET" id="searchForm">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="search">Buscar por descripción:</label>
-                            <input type="text" class="form-control" id="search" name="search" 
-                                   value="<?= htmlspecialchars($search) ?>" placeholder="Buscar tipo de contacto...">
+        <!-- Filtros compactos -->
+        <div class="card-body pb-0">
+            <form method="GET" action="<?= url('/tiposcontactos') ?>" class="mb-3">
+                <div class="row g-2 align-items-end">
+                    <div class="col-auto">
+                        <label class="form-label small mb-1 text-muted">Filtros de búsqueda</label>
+                    </div>
+                    <div class="col-auto">
+                        <label class="form-label small mb-1">Descripción</label>
+                        <input type="text" name="tipocontacto_descripcion" class="form-control form-control-sm" 
+                               placeholder="" value="<?= htmlspecialchars($_GET['tipocontacto_descripcion'] ?? '') ?>" style="width: 200px;">
+                    </div>
+                    <div class="col-auto ms-auto">
+                        <label class="form-label small mb-1">Estado</label>
+                        <select name="tipocontacto_estado" class="form-select form-select-sm" style="width: 120px;">
+                            <option value="">Todos</option>
+                            <option value="1" <?= ($_GET['tipocontacto_estado'] ?? '') == '1' ? 'selected' : '' ?>>Activo</option>
+                            <option value="0" <?= ($_GET['tipocontacto_estado'] ?? '') == '0' ? 'selected' : '' ?>>Inactivo</option>
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <div class="btn-group">
+                            <button type="submit" class="btn btn-primary btn-sm" title="Buscar">
+                                <i class="fas fa-search"></i>
+                            </button>
+                            <a href="<?= url('/tiposcontactos') ?>" class="btn btn-info btn-sm" title="Limpiar filtros">
+                                <i class="fas fa-times"></i>
+                            </a>
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label for="estado">Estado:</label>
-                            <select class="form-control" id="estado" name="estado">
-                                <option value="">Todos</option>
-                                <option value="1" <?= $estado === '1' ? 'selected' : '' ?>>Activos</option>
-                                <option value="0" <?= $estado === '0' ? 'selected' : '' ?>>Inactivos</option>
-                            </select>
-                        </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-auto">
+                        <label class="form-label small mb-1 text-muted">Registros por página</label>
                     </div>
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label>&nbsp;</label>
-                            <div class="d-block">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-search"></i> Buscar
-                                </button>
-                                <a href="/tipos-contactos" class="btn btn-secondary">
-                                    <i class="fas fa-times"></i> Limpiar
-                                </a>
-                            </div>
+                    <div class="col-auto">
+                        <select name="per_page" class="form-select form-select-sm" style="width: 80px;" 
+                                onchange="this.form.submit()">
+                            <option value="5" <?= ($_GET['per_page'] ?? '10') == '5' ? 'selected' : '' ?>>5</option>
+                            <option value="10" <?= ($_GET['per_page'] ?? '10') == '10' ? 'selected' : '' ?>>10</option>
+                            <option value="25" <?= ($_GET['per_page'] ?? '10') == '25' ? 'selected' : '' ?>>25</option>
+                            <option value="50" <?= ($_GET['per_page'] ?? '10') == '50' ? 'selected' : '' ?>>50</option>
+                        </select>
+                    </div>
+                    <div class="col"></div> <!-- Espaciador para empujar el botón a la derecha -->
+                    <div class="col-auto">
+                        <div class="btn-group" role="group">
+                            <button type="button" onclick="exportarTiposContactos(event)" class="btn btn-success btn-sm" title="Exportar a Excel">
+                                <i class="fas fa-file-excel me-1"></i> Excel
+                            </button>
+                            <button type="button" onclick="exportarTiposContactosPDF(event)" class="btn btn-danger btn-sm" title="Exportar a PDF">
+                                <i class="fas fa-file-pdf me-1"></i> PDF
+                            </button>
                         </div>
                     </div>
                 </div>
             </form>
         </div>
-    </div>
 
-    <!-- Mensajes -->
-    <?php if (isset($_SESSION['success_message'])): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <?= $_SESSION['success_message'] ?>
-            <button type="button" class="close" data-dismiss="alert">
-                <span>&times;</span>
-            </button>
-        </div>
-        <?php unset($_SESSION['success_message']); ?>
-    <?php endif; ?>
+        <!-- Tabla estilo moderno -->
+        <div class="card-body p-0">
+            <?php if (empty($tipos_contactos)): ?>
+                <div class="empty-state py-5 text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-address-book fa-3x text-muted opacity-50"></i>
+                    </div>
+                    <h6 class="text-muted">No se encontraron tipos de contactos</h6>
+                    <p class="text-muted small mb-3">Intenta modificar los filtros o crea un nuevo tipo de contacto.</p>
+                    <a href="<?= url('/tiposcontactos/create') ?>" class="btn btn-outline-dark btn-sm">
+                        <i class="fas fa-plus fa-sm"></i> Crear tipo de contacto
+                    </a>
+                </div>
+            <?php else: ?>
+                <!-- Información de paginación y navegación superior -->
+                <?php if (isset($pagination) && $pagination['total'] > 0): ?>
+                    <?php 
+                    $perPage = (int) ($_GET['per_page'] ?? 10);
+                    $start = (($pagination['current_page'] - 1) * $perPage) + 1;
+                    $end = min($pagination['current_page'] * $perPage, $pagination['total']);
+                    
+                    // Función para renderizar la paginación
+                    $renderPagination = function($showInfo = true) use ($pagination, $start, $end) {
+                    ?>
+                        <div class="row align-items-center">
+                            <?php if ($showInfo): ?>
+                                <div class="col-sm-6">
+                                    <span class="text-muted small">
+                                        Mostrando <?= $start ?> a <?= $end ?> de <?= $pagination['total'] ?> registros
+                                    </span>
+                                </div>
+                            <?php endif; ?>
+                            <div class="col-sm-<?= $showInfo ? '6' : '12' ?>">
+                                <?php if ($pagination['total_pages'] > 1): ?>
+                                    <nav aria-label="Paginación" class="d-flex justify-content-<?= $showInfo ? 'end' : 'center' ?>">
+                                        <ul class="pagination pagination-sm mb-0">
+                                            <?php if ($pagination['current_page'] > 1): ?>
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $pagination['current_page'] - 1])) ?>">Anterior</a>
+                                                </li>
+                                            <?php endif; ?>
+                                            
+                                            <?php 
+                                            $startPage = max(1, $pagination['current_page'] - 2);
+                                            $endPage = min($pagination['total_pages'], $pagination['current_page'] + 2);
+                                            
+                                            if ($startPage > 1): ?>
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => 1])) ?>">1</a>
+                                                </li>
+                                                <?php if ($startPage > 2): ?>
+                                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                                <?php endif; ?>
+                                            <?php endif; ?>
+                                            
+                                            <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
+                                                <li class="page-item <?= $i == $pagination['current_page'] ? 'active' : '' ?>">
+                                                    <?php if ($i == $pagination['current_page']): ?>
+                                                        <span class="page-link bg-primary text-white border-primary"><?= $i ?></span>
+                                                    <?php else: ?>
+                                                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $i])) ?>"><?= $i ?></a>
+                                                    <?php endif; ?>
+                                                </li>
+                                            <?php endfor; ?>
+                                            
+                                            <?php if ($endPage < $pagination['total_pages']): ?>
+                                                <?php if ($endPage < $pagination['total_pages'] - 1): ?>
+                                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                                <?php endif; ?>
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $pagination['total_pages']])) ?>"><?= $pagination['total_pages'] ?></a>
+                                                </li>
+                                            <?php endif; ?>
+                                            
+                                            <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $pagination['current_page'] + 1])) ?>">Siguiente</a>
+                                                </li>
+                                            <?php endif; ?>
+                                        </ul>
+                                    </nav>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php }; ?>
+                    
+                    <!-- Paginación superior -->
+                    <div class="card-header bg-light border-bottom py-2">
+                        <?php $renderPagination(true); ?>
+                    </div>
+                <?php endif; ?>
 
-    <?php if (isset($_SESSION['error_message'])): ?>
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <?= $_SESSION['error_message'] ?>
-            <button type="button" class="close" data-dismiss="alert">
-                <span>&times;</span>
-            </button>
-        </div>
-        <?php unset($_SESSION['error_message']); ?>
-    <?php endif; ?>
-
-    <!-- Tabla de tipos de contactos -->
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">Listado de Tipos de Contactos</h5>
-        </div>
-        <div class="card-body">
-            <?php if (!empty($result['data'])): ?>
                 <div class="table-responsive">
-                    <table class="table table-striped table-hover">
-                        <thead class="thead-dark">
+                    <table id="tablaTiposContactos" class="table table-hover mb-0">
+                        <thead class="thead-light">
                             <tr>
-                                <th>ID</th>
-                                <th>Descripción</th>
-                                <th>Estado</th>
-                                <th>Acciones</th>
+                                <th class="border-0 py-3">Descripción</th>
+                                <th class="border-0 py-3">Estado</th>
+                                <th class="border-0 py-3 text-center">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($result['data'] as $tipo): ?>
+                            <?php foreach ($tipos_contactos as $tipo): ?>
                                 <tr>
-                                    <td><?= $tipo['id_tipocontacto'] ?></td>
-                                    <td><?= htmlspecialchars($tipo['tipocontacto_descripcion']) ?></td>
-                                    <td>
+                                    <td class="border-0 py-3">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-tag text-primary me-2"></i>
+                                            <span class="fw-medium text-dark"><?= htmlspecialchars($tipo['tipocontacto_descripcion']) ?></span>
+                                        </div>
+                                    </td>
+                                    <td class="border-0 py-3">
                                         <?php if ($tipo['tipocontacto_estado'] == 1): ?>
-                                            <span class="badge badge-success">Activo</span>
+                                            <span class="badge bg-success text-white px-2 py-1 rounded-pill">Activo</span>
                                         <?php else: ?>
-                                            <span class="badge badge-danger">Inactivo</span>
+                                            <span class="badge bg-danger text-white px-2 py-1 rounded-pill">Inactivo</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td>
-                                        <div class="btn-group" role="group">
-                                            <a href="/tipos-contactos/editar/<?= $tipo['id_tipocontacto'] ?>" 
-                                               class="btn btn-sm btn-primary" title="Editar">
+                                    <td class="border-0 py-3 text-center">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="<?= url('/tiposcontactos/' . $tipo['id_tipocontacto']) ?>"
+                                               class="btn btn-outline-primary btn-sm"
+                                               title="Ver detalle">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="<?= url('/tiposcontactos/' . $tipo['id_tipocontacto']) . '/edit'?>"
+                                               class="btn btn-outline-warning btn-sm"
+                                               title="Editar">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            
                                             <?php if ($tipo['tipocontacto_estado'] == 1): ?>
-                                                <a href="/tipos-contactos/eliminar/<?= $tipo['id_tipocontacto'] ?>" 
-                                                   class="btn btn-sm btn-danger" title="Desactivar"
-                                                   data-confirm-action="desactivar">>
+                                                <button class="btn btn-outline-danger btn-sm"
+                                                        onclick="cambiarEstadoTipoContacto(<?= $tipo['id_tipocontacto'] ?>, 0, '<?= addslashes($tipo['tipocontacto_descripcion']) ?>')"
+                                                        title="Desactivar">
                                                     <i class="fas fa-ban"></i>
-                                                </a>
+                                                </button>
                                             <?php else: ?>
-                                                <a href="/tipos-contactos/restaurar/<?= $tipo['id_tipocontacto'] ?>" 
-                                                   class="btn btn-sm btn-success" title="Activar"
-                                                   data-confirm-action="activar">>
+                                                <button class="btn btn-outline-success btn-sm"
+                                                        onclick="cambiarEstadoTipoContacto(<?= $tipo['id_tipocontacto'] ?>, 1, '<?= addslashes($tipo['tipocontacto_descripcion']) ?>')"
+                                                        title="Activar">
                                                     <i class="fas fa-check"></i>
-                                                </a>
+                                                </button>
                                             <?php endif; ?>
-                                            
-                                            <a href="/tipos-contactos/toggle/<?= $tipo['id_tipocontacto'] ?>" 
-                                               class="btn btn-sm btn-warning" title="Cambiar Estado"
-                                               data-confirm-action="cambiar-estado">>
-                                                <i class="fas fa-exchange-alt"></i>
-                                            </a>
                                         </div>
                                     </td>
                                 </tr>
@@ -144,53 +222,181 @@ require_once 'app/Views/layouts/header.php';
                         </tbody>
                     </table>
                 </div>
-
-                <!-- Paginación -->
-                <?php if ($totalPages > 1): ?>
-                    <nav aria-label="Navegación de páginas">
-                        <ul class="pagination justify-content-center">
-                            <li class="page-item <?= $result['pagination']['current_page'] <= 1 ? 'disabled' : '' ?>">
-                                <a class="page-link" href="?page=<?= $result['pagination']['current_page'] - 1 ?>&search=<?= urlencode($search) ?>&estado=<?= urlencode($estado) ?>">
-                                    Anterior
-                                </a>
-                            </li>
-                            
-                            <?php for ($i = max(1, $result['pagination']['current_page'] - 2); $i <= min($totalPages, $result['pagination']['current_page'] + 2); $i++): ?>
-                                <li class="page-item <?= $i == $result['pagination']['current_page'] ? 'active' : '' ?>">
-                                    <a class="page-link" href="?page=<?= $i ?>&search=<?= urlencode($search) ?>&estado=<?= urlencode($estado) ?>">
-                                        <?= $i ?>
-                                    </a>
-                                </li>
-                            <?php endfor; ?>
-                            
-                            <li class="page-item <?= $result['pagination']['current_page'] >= $totalPages ? 'disabled' : '' ?>">
-                                <a class="page-link" href="?page=<?= $result['pagination']['current_page'] + 1 ?>&search=<?= urlencode($search) ?>&estado=<?= urlencode($estado) ?>">
-                                    Siguiente
-                                </a>
-                            </li>
-                        </ul>
-                    </nav>
-                    
-                    <div class="text-center text-muted">
-                        Página <?= $result['pagination']['current_page'] ?> de <?= $totalPages ?> 
-                        (<?= $result['pagination']['total_records'] ?> registros en total)
+                
+                <!-- Paginación inferior -->
+                <?php if (isset($pagination) && $pagination['total'] > 0): ?>
+                    <div class="card-footer bg-white border-top py-3">
+                        <?php $renderPagination(true); ?>
                     </div>
                 <?php endif; ?>
-
-            <?php else: ?>
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> No se encontraron tipos de contactos con los filtros especificados.
-                </div>
             <?php endif; ?>
-        </div>
     </div>
 </div>
 
-<script src="<?= asset('assets/js/main.js') ?>"></script>
+<!-- JavaScript para funcionalidades -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    initTiposContactos();
-});
-</script>
+function cambiarEstadoTipoContacto(id, nuevoEstado, descripcion) {
+    let accion, mensaje, color;
+    
+    switch(nuevoEstado) {
+        case 1:
+            accion = 'activar';
+            mensaje = 'El tipo de contacto estará disponible para su uso';
+            color = '#28a745';
+            break;
+        case 0:
+            accion = 'desactivar';
+            mensaje = 'El tipo de contacto no estará disponible para su uso';
+            color = '#dc3545';
+            break;
+        default:
+            accion = 'cambiar estado';
+            mensaje = '';
+            color = '#6c757d';
+    }
+    
+    const confirmar = typeof Swal !== 'undefined' ? 
+        Swal.fire({
+            title: `¿${accion.charAt(0).toUpperCase() + accion.slice(1)} tipo de contacto?`,
+            text: `¿Está seguro que desea ${accion} el tipo de contacto "${descripcion}"? ${mensaje}`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: `Sí, ${accion}`,
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: color
+        }).then(result => result.isConfirmed) :
+        Promise.resolve(confirm(`¿Está seguro que desea ${accion} el tipo de contacto "${descripcion}"?`));
+    
+    confirmar.then(confirmed => {
+        if (confirmed) {
+            const url = `<?= url('/tiposcontactos') ?>/${id}/estado`;
+            
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({estado: nuevoEstado})
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: '¡Éxito!',
+                            text: `Tipo de contacto ${accion}do correctamente`,
+                            icon: 'success',
+                            timer: 1500,
+                            showConfirmButton: false
+                        }).then(() => location.reload());
+                    } else {
+                        alert(`Tipo de contacto ${accion}do correctamente`);
+                        location.reload();
+                    }
+                } else {
+                    const errorMsg = 'Error al cambiar el estado: ' + (data.message || 'Error desconocido');
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire('Error', errorMsg, 'error');
+                    } else {
+                        alert(errorMsg);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error completo:', error);
+                const errorMsg = 'Error al cambiar el estado del tipo de contacto: ' + error.message;
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('Error', errorMsg, 'error');
+                } else {
+                    alert(errorMsg);
+                }
+            });
+        }
+    });
+}
 
-<?php require_once 'app/Views/layouts/footer.php'; ?>
+function exportarTiposContactos(event) {
+    if (event) event.preventDefault();
+    
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Generando archivo...',
+            text: 'Por favor espere mientras se procesa la exportación',
+            icon: 'info',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+    }
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const exportUrl = '<?= url('/tiposcontactos/exportar') ?>?' + urlParams.toString();
+    
+    const link = document.createElement('a');
+    link.href = exportUrl;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    setTimeout(() => {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: '¡Exportación iniciada!',
+                text: 'El archivo se descargará automáticamente',
+                icon: 'success',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        } else {
+            alert('Exportación iniciada - El archivo se descargará automáticamente');
+        }
+    }, 1000);
+}
+
+function exportarTiposContactosPDF(event) {
+    if (event) event.preventDefault();
+    
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Generando PDF...',
+            text: 'Por favor espere mientras se procesa la exportación',
+            icon: 'info',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+    }
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const pdfUrl = '<?= url('/tiposcontactos/exportar-pdf') ?>?' + urlParams.toString();
+    
+    const link = document.createElement('a');
+    link.href = pdfUrl;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    setTimeout(() => {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: '¡PDF generado!',
+                text: 'El archivo PDF se descargará automáticamente',
+                icon: 'success',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        } else {
+            alert('PDF generado - El archivo se descargará automáticamente');
+        }
+    }, 1000);
+}
+
+</script>

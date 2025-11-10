@@ -288,15 +288,16 @@ class Application
         $this->router->get('/tiposservicios/search', 'TiposServiciosController@search');
         $this->router->get('/tiposservicios/stats', 'TiposServiciosController@stats');
 
-        // Rutas de tipos de contactos
+        // Rutas de tipos de contactos (sin guión para mantener consistencia con la URL del módulo)
         $this->router->get('/tiposcontactos', 'TiposContactosController@index');
         $this->router->any('/tiposcontactos/create', 'TiposContactosController@create');
+        $this->router->get('/tiposcontactos/exportar', 'TiposContactosController@exportar');
+        $this->router->get('/tiposcontactos/exportar-pdf', 'TiposContactosController@exportarPdf');
+        $this->router->get('/tiposcontactos/{id}', 'TiposContactosController@show');
         $this->router->any('/tiposcontactos/{id}/edit', 'TiposContactosController@edit');
-        $this->router->get('/tiposcontactos/{id}/delete', 'TiposContactosController@delete');
-        $this->router->get('/tiposcontactos/{id}/restore', 'TiposContactosController@restore');
-        $this->router->get('/tiposcontactos/{id}/toggle-status', 'TiposContactosController@toggleStatus');
-        $this->router->get('/tiposcontactos/search', 'TiposContactosController@search');
-        $this->router->get('/tiposcontactos/stats', 'TiposContactosController@stats');
+        $this->router->post('/tiposcontactos/{id}/delete', 'TiposContactosController@delete');
+        $this->router->post('/tiposcontactos/{id}/restore', 'TiposContactosController@restore');
+        $this->router->post('/tiposcontactos/{id}/estado', 'TiposContactosController@cambiarEstado');
 
         // Rutas de periodos
         $this->router->get('/periodos', 'PeriodosController@index');

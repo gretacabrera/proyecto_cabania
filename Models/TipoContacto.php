@@ -21,61 +21,124 @@ class TipoContacto extends Model
     }
 
     /**
-     * Buscar tipos de contactos
+     * Obtener tipos de contactos con filtros y paginación
      */
-    public function search($filters = [], $page = 1, $perPage = 10)
+    public function getWithDetails($page = 1, $perPage = 10, $filters = [])
     {
-        $where = ["tipocontacto_estado = 1"];
+        $where = "1=1";
         $params = [];
-
-        if (!empty($filters['search'])) {
-            $where[] = "tipocontacto_descripcion LIKE ?";
-            $params[] = '%' . $filters['search'] . '%';
-        }
-
-        if (isset($filters['estado']) && $filters['estado'] !== '') {
-            $where[] = "tipocontacto_estado = ?";
-            $params[] = $filters['estado'];
-        }
-
-        $whereClause = implode(' AND ', $where);
         
-        return $this->paginate($page, $perPage, $whereClause, "tipocontacto_descripcion", $params);
+        // Aplicar filtros
+        if (!empty($filters['tipocontacto_descripcion'])) {
+            $where .= " AND tipocontacto_descripcion LIKE ?";
+            $params[] = '%' . $filters['tipocontacto_descripcion'] . '%';
+        }
+        
+        if (isset($filters['tipocontacto_estado']) && $filters['tipocontacto_estado'] !== '') {
+            $where .= " AND tipocontacto_estado = ?";
+            $params[] = (int) $filters['tipocontacto_estado'];
+        }
+        
+        return $this->paginateWithParams($page, $perPage, $where, "tipocontacto_descripcion ASC", $params);
     }
 
     /**
-     * Obtener total de páginas para búsqueda
+     * Obtener todos los tipos de contactos con filtros para exportación (sin paginación)
      */
-    public function getTotalPages($filters = [], $perPage = 10)
+    public function getAllWithDetailsForExport($filters = [])
     {
-        $where = ["1=1"];
+        $where = "1=1";
         $params = [];
-
-        if (!empty($filters['search'])) {
-            $where[] = "tipocontacto_descripcion LIKE ?";
-            $params[] = '%' . $filters['search'] . '%';
-        }
-
-        if (isset($filters['estado']) && $filters['estado'] !== '') {
-            $where[] = "tipocontacto_estado = ?";
-            $params[] = $filters['estado'];
-        }
-
-        $whereClause = implode(' AND ', $where);
-        $sql = "SELECT COUNT(*) as total FROM {$this->table} WHERE {$whereClause}";
         
-        $result = $this->query($sql, $params);
-        $total = $result->fetch_assoc()['total'];
+        // Aplicar los mismos filtros que getWithDetails
+        if (!empty($filters['tipocontacto_descripcion'])) {
+            $where .= " AND tipocontacto_descripcion LIKE ?";
+            $params[] = '%' . $filters['tipocontacto_descripcion'] . '%';
+        }
         
-        return ceil($total / $perPage);
+        if (isset($filters['tipocontacto_estado']) && $filters['tipocontacto_estado'] !== '') {
+            $where .= " AND tipocontacto_estado = ?";
+            $params[] = (int) $filters['tipocontacto_estado'];
+        }
+        
+        // Query para contar total (para estadísticas)
+        $countSql = "SELECT COUNT(*) as total FROM {$this->table} WHERE $where";
+        $totalResult = $this->queryWithParams($countSql, $params);
+        $totalRow = $totalResult->fetch_assoc();
+        $total = (int) $totalRow['total'];
+        
+        // Query para obtener TODOS los registros (sin LIMIT)
+        $dataSql = "SELECT * FROM {$this->table} WHERE $where ORDER BY tipocontacto_descripcion ASC";
+        $dataResult = $this->queryWithParams($dataSql, $params);
+        
+        $data = [];
+        while ($row = $dataResult->fetch_assoc()) {
+            $data[] = $row;
+        }
+        
+        return [
+            'data' => $data,
+            'total' => $total
+        ];
     }
 
     /**
-     * Buscar por ID
+     * Obtener tipos de contactos con paginación usando parámetros preparados
      */
-    public function findById($id)
+    private function paginateWithParams($page = 1, $perPage = 10, $where = "1=1", $orderBy = null, $params = [])
     {
-        return $this->find($id);
+        $offset = ($page - 1) * $perPage;
+        $limit = (int) $perPage;
+        
+        // Query para contar total
+        $countSql = "SELECT COUNT(*) as total FROM {$this->table} WHERE $where";
+        $totalResult = $this->queryWithParams($countSql, $params);
+        $totalRow = $totalResult->fetch_assoc();
+        $total = (int) $totalRow['total'];
+        
+        // Query para obtener registros
+        $orderClause = $orderBy ? "ORDER BY $orderBy" : '';
+        $dataSql = "SELECT * FROM {$this->table} WHERE $where $orderClause LIMIT $limit OFFSET $offset";
+        $dataResult = $this->queryWithParams($dataSql, $params);
+        
+        $data = [];
+        while ($row = $dataResult->fetch_assoc()) {
+            $data[] = $row;
+        }
+        
+        $totalPages = ceil($total / $perPage);
+        
+        return [
+            'data' => $data,
+            'total' => $total,
+            'current_page' => $page,
+            'total_pages' => $totalPages,
+            'per_page' => $perPage,
+            'offset' => $offset,
+            'limit' => $limit
+        ];
+    }
+
+    /**
+     * Ejecutar query con parámetros preparados
+     */
+    private function queryWithParams($sql, $params = [])
+    {
+        $stmt = $this->db->prepare($sql);
+        if (!$stmt) {
+            throw new \Exception("Error preparando consulta: " . $this->db->error);
+        }
+        
+        if (!empty($params)) {
+            $types = str_repeat('s', count($params));
+            $stmt->bind_param($types, ...$params);
+        }
+        
+        if (!$stmt->execute()) {
+            throw new \Exception("Error ejecutando consulta: " . $stmt->error);
+        }
+        
+        return $stmt->get_result();
     }
 
     /**
@@ -96,6 +159,53 @@ class TipoContacto extends Model
         $count = $result->fetch_assoc()['count'];
         
         return $count > 0;
+    }
+
+    /**
+     * Obtener estadísticas de un tipo de contacto específico
+     */
+    public function getStatistics($tipoContactoId)
+    {
+        $stats = [
+            'total_contactos' => $this->getTotalContactos($tipoContactoId),
+            'total_personas' => $this->getTotalPersonas($tipoContactoId)
+        ];
+        
+        return $stats;
+    }
+
+    /**
+     * Obtener número total de contactos registrados para este tipo
+     */
+    private function getTotalContactos($tipoContactoId)
+    {
+        $sql = "SELECT COUNT(*) as total FROM contacto WHERE rela_tipocontacto = ?";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $tipoContactoId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        
+        return (int)$row['total'];
+    }
+
+    /**
+     * Obtener número de personas que tienen contactos de este tipo
+     */
+    private function getTotalPersonas($tipoContactoId)
+    {
+        $sql = "SELECT COUNT(DISTINCT rela_persona) as total 
+                FROM contacto 
+                WHERE rela_tipocontacto = ?";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $tipoContactoId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        
+        return (int)$row['total'];
     }
 
     /**

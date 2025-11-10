@@ -1,158 +1,175 @@
 <?php
-$title = isset($data['id_tipocontacto']) ? 'Editar Tipo de Contacto' : 'Nuevo Tipo de Contacto';
-$currentModule = 'tipos_contactos';
-
-require_once 'app/Views/layouts/header.php';
+$isEdit = isset($tipo_contacto);
+$pageTitle = $isEdit ? 'Editar Tipo de Contacto' : 'Nuevo Tipo de Contacto';
 ?>
 
-<div class="container mt-4">
+<div class="content-wrapper">
+    <!-- Acciones principales -->
+    <div class="page-actions">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <a href="<?= url('/tiposcontactos') ?>" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i> Volver al listado
+                </a>
+            </div>
+        </div>
+    </div>
+
     <div class="row">
-        <div class="col-md-8 offset-md-2">
+        <!-- Columna principal: formulario (8 columnas) -->
+        <div class="col-lg-8">
             <div class="card">
                 <div class="card-header">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0"><?= $title ?></h4>
-                        <a href="/tipos-contactos" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Volver al listado
-                        </a>
-                    </div>
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-edit"></i>
+                        <?= $isEdit ? 'Modificar datos del tipo de contacto' : 'Datos del nuevo tipo de contacto' ?>
+                    </h5>
                 </div>
+
                 <div class="card-body">
-                    <?php if (!empty($errors)): ?>
-                        <div class="alert alert-danger">
-                            <h6><i class="fas fa-exclamation-triangle"></i> Por favor corrija los siguientes errores:</h6>
-                            <ul class="mb-0">
-                                <?php foreach ($errors as $error): ?>
-                                    <li><?= htmlspecialchars($error) ?></li>
-                                <?php endforeach; ?>
-                            </ul>
-                        </div>
-                    <?php endif; ?>
-
-                    <form method="POST" novalidate>
-                        <div class="form-group">
-                            <label for="tipocontacto_descripcion" class="required">Descripción del Tipo de Contacto:</label>
-                            <input type="text" 
-                                   class="form-control <?= isset($errors) && !empty($errors) ? 'is-invalid' : '' ?>" 
-                                   id="tipocontacto_descripcion" 
-                                   name="tipocontacto_descripcion" 
-                                   value="<?= htmlspecialchars($data['tipocontacto_descripcion'] ?? '') ?>"
-                                   maxlength="100"
-                                   required>
-                            <small class="form-text text-muted">
-                                Ingrese la descripción del tipo de contacto (máximo 100 caracteres).
-                                Ejemplos: Teléfono, Email, WhatsApp, etc.
-                            </small>
-                            <div class="invalid-feedback">
-                                Por favor ingrese una descripción válida.
-                            </div>
-                        </div>
-
-                        <?php if (isset($data['id_tipocontacto'])): ?>
-                            <div class="form-group">
-                                <label>Estado Actual:</label>
-                                <div>
-                                    <?php if ($data['tipocontacto_estado'] == 1): ?>
-                                        <span class="badge badge-success">Activo</span>
-                                    <?php else: ?>
-                                        <span class="badge badge-danger">Inactivo</span>
-                                    <?php endif; ?>
-                                </div>
-                                <small class="form-text text-muted">
-                                    Para cambiar el estado, use las opciones en el listado principal.
-                                </small>
-                            </div>
+                    <form id="formTipoContacto" method="POST" 
+                          action="<?= url($isEdit ? '/tiposcontactos/' . $tipo_contacto['id_tipocontacto'] . '/edit' : '/tiposcontactos/create') ?>" 
+                          novalidate>
+                        
+                        <?php if ($isEdit): ?>
+                            <input type="hidden" name="id_tipocontacto" value="<?= $tipo_contacto['id_tipocontacto'] ?>">
                         <?php endif; ?>
 
-                        <hr>
-                        
-                        <div class="form-group mb-0">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save"></i> 
-                                <?= isset($data['id_tipocontacto']) ? 'Actualizar Tipo' : 'Crear Tipo' ?>
-                            </button>
-                            <a href="/tipos-contactos" class="btn btn-secondary ml-2">
-                                <i class="fas fa-times"></i> Cancelar
-                            </a>
+                        <!-- Descripción -->
+                        <div class="form-group">
+                            <label for="tipocontacto_descripcion" class="required">
+                                <i class="fas fa-tag"></i> Descripción
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="tipocontacto_descripcion" 
+                                   name="tipocontacto_descripcion" 
+                                   value="<?= htmlspecialchars($tipo_contacto['tipocontacto_descripcion'] ?? '') ?>"
+                                   required 
+                                   maxlength="45"
+                                   placeholder="Ej: Celular, Email, WhatsApp">
+                            <div class="invalid-feedback"></div>
+                            <small class="form-text text-muted">Máximo 45 caracteres</small>
+                        </div>
+
+                        <!-- Estado -->
+                        <div class="form-group">
+                            <label for="tipocontacto_estado" class="required">
+                                <i class="fas fa-toggle-on"></i> Estado
+                            </label>
+                            <select class="form-select" 
+                                    id="tipocontacto_estado" 
+                                    name="tipocontacto_estado" 
+                                    required>
+                                <option value="1" <?= ($tipo_contacto['tipocontacto_estado'] ?? 1) == 1 ? 'selected' : '' ?>>Activo</option>
+                                <option value="0" <?= ($tipo_contacto['tipocontacto_estado'] ?? 1) == 0 ? 'selected' : '' ?>>Inactivo</option>
+                            </select>
+                            <div class="invalid-feedback"></div>
+                            <small class="form-text text-muted">Solo los tipos activos estarán disponibles para su uso</small>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="form-group mt-4">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <button type="submit" class="btn btn-success btn-lg">
+                                        <i class="fas fa-save"></i>
+                                        <?= $isEdit ? 'Actualizar Tipo de Contacto' : 'Crear Tipo de Contacto' ?>
+                                    </button>
+                                    <?php if (!$isEdit): ?>
+                                        <button type="button" class="btn btn-outline-secondary btn-lg ml-2" 
+                                                onclick="limpiarFormulario()">
+                                            <i class="fas fa-eraser"></i> Limpiar
+                                        </button>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
                         </div>
                     </form>
                 </div>
             </div>
+        </div>
 
-            <?php if (isset($data['id_tipocontacto'])): ?>
-                <div class="card mt-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-info-circle"></i> Información Adicional
-                        </h5>
+        <!-- Columna lateral: información (4 columnas) -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-info-circle"></i> Información
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <!-- Consejos -->
+                    <div class="info-section">
+                        <h6><i class="fas fa-lightbulb text-warning"></i> Consejos</h6>
+                        <ul class="list-unstyled small text-muted">
+                            <li>• Use nombres descriptivos y claros</li>
+                            <li>• Evite abreviaturas difíciles de entender</li>
+                            <li>• Considere los canales de contacto más comunes</li>
+                            <li>• Mantenga consistencia en la nomenclatura</li>
+                        </ul>
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-sm-3">
-                                <strong>ID:</strong>
+
+                    <hr>
+
+                    <!-- Estadísticas (solo en edición) -->
+                    <div class="info-section">
+                        <h6><i class="fas fa-chart-line text-info"></i> Estadísticas</h6>
+                        <br>
+                        <?php if ($isEdit): ?>
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <div class="metric-box">
+                                        <div class="metric-value text-primary">
+                                            <?= number_format($estadisticas['total_contactos'] ?? 0) ?>
+                                        </div>
+                                        <div class="metric-label">Contactos Registrados</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="metric-box">
+                                        <div class="metric-value text-success">
+                                            <?= number_format($estadisticas['total_personas'] ?? 0) ?>
+                                        </div>
+                                        <div class="metric-label">Usuarios con Contactos</div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-sm-9">
-                                <?= $data['id_tipocontacto'] ?>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="row">
-                            <div class="col-sm-3">
-                                <strong>Estado:</strong>
-                            </div>
-                            <div class="col-sm-9">
-                                <?php if ($data['tipocontacto_estado'] == 1): ?>
-                                    <span class="badge badge-success">Activo</span>
-                                <?php else: ?>
-                                    <span class="badge badge-danger">Inactivo</span>
-                                <?php endif; ?>
-                            </div>
-                        </div>
+                        <?php else: ?>
+                            <p class="small text-muted">
+                                Las estadísticas estarán disponibles después de crear el tipo de contacto.
+                            </p>
+                        <?php endif; ?>
                     </div>
                 </div>
-
-                <!-- Ejemplos de uso -->
-                <div class="card mt-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-lightbulb"></i> Ejemplos de Tipos de Contacto
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h6>Tipos Comunes:</h6>
-                                <ul class="list-unstyled">
-                                    <li><i class="fas fa-phone text-primary"></i> Teléfono</li>
-                                    <li><i class="fas fa-mobile-alt text-success"></i> Celular</li>
-                                    <li><i class="fas fa-envelope text-info"></i> Email</li>
-                                    <li><i class="fab fa-whatsapp text-success"></i> WhatsApp</li>
-                                </ul>
-                            </div>
-                            <div class="col-md-6">
-                                <h6>Tipos Adicionales:</h6>
-                                <ul class="list-unstyled">
-                                    <li><i class="fab fa-facebook text-primary"></i> Facebook</li>
-                                    <li><i class="fab fa-instagram text-danger"></i> Instagram</li>
-                                    <li><i class="fas fa-fax text-secondary"></i> Fax</li>
-                                    <li><i class="fas fa-home text-warning"></i> Dirección</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            <?php endif; ?>
+            </div>
         </div>
     </div>
 </div>
 
-
-
-<script src="<?= asset('assets/js/main.js') ?>"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    initTiposContactos();
-});
-</script>
+// Validación del formulario
+(function() {
+    'use strict';
+    const form = document.getElementById('formTipoContacto');
+    
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    }
+})();
 
-<?php require_once 'app/Views/layouts/footer.php'; ?>
+// Función para limpiar el formulario
+function limpiarFormulario() {
+    const form = document.getElementById('formTipoContacto');
+    if (form) {
+        form.reset();
+        form.classList.remove('was-validated');
+    }
+}
+</script>
