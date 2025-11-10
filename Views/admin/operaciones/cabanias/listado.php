@@ -46,7 +46,7 @@
                     </div>
                     <div class="col-auto ms-auto">
                         <label class="form-label small mb-1">Estado</label>
-                        <select name="cabania_estado" class="form-control form-control-sm" style="width: 120px;">
+                        <select name="cabania_estado" class="form-select form-select-sm" style="width: 120px;">
                             <option value="">Todos</option>
                             <option value="1" <?= ($_GET['cabania_estado'] ?? '') == '1' ? 'selected' : '' ?>>Activa</option>
                             <option value="2" <?= ($_GET['cabania_estado'] ?? '') == '2' ? 'selected' : '' ?>>Ocupada</option>
@@ -69,7 +69,7 @@
                         <label class="form-label small mb-1 text-muted">Registros por página</label>
                     </div>
                     <div class="col-auto">
-                        <select name="per_page" class="form-control form-control-sm" style="width: 80px;" 
+                        <select name="per_page" class="form-select form-select-sm" style="width: 80px;" 
                                 onchange="this.form.submit()">
                             <option value="5" <?= ($_GET['per_page'] ?? '10') == '5' ? 'selected' : '' ?>>5</option>
                             <option value="10" <?= ($_GET['per_page'] ?? '10') == '10' ? 'selected' : '' ?>>10</option>

@@ -189,11 +189,13 @@ class Application
         // Rutas de marcas
         $this->router->get('/marcas', 'MarcasController@index');
         $this->router->any('/marcas/create', 'MarcasController@create');
+        $this->router->get('/marcas/exportar', 'MarcasController@exportar');
+        $this->router->get('/marcas/exportar-pdf', 'MarcasController@exportarPdf');
+        $this->router->get('/marcas/{id}', 'MarcasController@show');
         $this->router->any('/marcas/{id}/edit', 'MarcasController@edit');
-        $this->router->get('/marcas/{id}/delete', 'MarcasController@delete');
-        $this->router->get('/marcas/{id}/restore', 'MarcasController@restore');
-        $this->router->get('/marcas/search', 'MarcasController@search');
-        $this->router->get('/marcas/{id}/toggle-status', 'MarcasController@toggleStatus');
+        $this->router->post('/marcas/{id}/delete', 'MarcasController@delete');
+        $this->router->post('/marcas/{id}/restore', 'MarcasController@restore');
+        $this->router->post('/marcas/{id}/estado', 'MarcasController@cambiarEstado');
 
         // Rutas de menús
         $this->router->get('/menus', 'MenusController@index');

@@ -4,203 +4,169 @@ namespace App\Models;
 
 use App\Core\Model;
 
+/**
+ * Modelo para la entidad Marca
+ */
 class Marca extends Model
 {
     protected $table = 'marca';
     protected $primaryKey = 'id_marca';
-    
-    protected $fields = [
-        'marca_descripcion',
-        'marca_estado'
-    ];
-
-    protected $requiredFields = [
-        'marca_descripcion'
-    ];
-
-    /**
-     * Validar datos de marca
-     */
-    public function validate($data, $isUpdate = false, $id = null)
-    {
-        $errors = [];
-
-        // Validar descripción
-        if (empty($data['marca_descripcion'])) {
-            $errors[] = 'La descripción de la marca es obligatoria.';
-        } else {
-            $descripcion = trim($data['marca_descripcion']);
-            
-            if (strlen($descripcion) < 2) {
-                $errors[] = 'La descripción debe tener al menos 2 caracteres.';
-            }
-            
-            if (strlen($descripcion) > 45) {
-                $errors[] = 'La descripción no puede superar los 45 caracteres.';
-            }
-
-            // Verificar que no exista otra marca con la misma descripción
-            if ($this->existsOtherWithDescription($descripcion, $id)) {
-                $errors[] = 'Ya existe una marca con esta descripción.';
-            }
-        }
-
-        // Validar estado (si se proporciona)
-        if (isset($data['marca_estado'])) {
-            if (!in_array($data['marca_estado'], [0, 1, '0', '1'])) {
-                $errors[] = 'El estado debe ser 0 (inactivo) o 1 (activo).';
-            }
-        }
-
-        return $errors;
-    }
-
-    /**
-     * Verificar si existe otra marca con la misma descripción
-     */
-    private function existsOtherWithDescription($descripcion, $excludeId = null)
-    {
-        $sql = "SELECT COUNT(*) as count FROM {$this->table} WHERE marca_descripcion = ?";
-        $params = [$descripcion];
-
-        if ($excludeId) {
-            $sql .= " AND {$this->primaryKey} != ?";
-            $params[] = $excludeId;
-        }
-
-        $result = $this->query($sql, $params);
-        return $result[0]['count'] > 0;
-    }
 
     /**
      * Obtener marcas activas
      */
     public function getActive()
     {
-        $sql = "SELECT * FROM {$this->table} WHERE marca_estado = 1 ORDER BY marca_descripcion ASC";
-        return $this->query($sql);
+        return $this->findAll("marca_estado = 1", "marca_descripcion");
     }
 
     /**
      * Obtener marcas con filtros y paginación
      */
-    public function getWithFilters($filters = [], $page = 1, $limit = 10, $orderBy = 'marca_descripcion', $orderDir = 'ASC')
+    public function getWithDetails($page = 1, $perPage = 10, $filters = [])
     {
-        $conditions = ['1 = 1'];
+        $where = "1=1";
         $params = [];
-
-        // Filtro por descripción
+        
+        // Aplicar filtros (usar alias 'm' para la tabla marca)
         if (!empty($filters['marca_descripcion'])) {
-            $conditions[] = "marca_descripcion LIKE ?";
-            $params[] = "%" . $filters['marca_descripcion'] . "%";
+            $where .= " AND m.marca_descripcion LIKE ?";
+            $params[] = '%' . $filters['marca_descripcion'] . '%';
         }
-
-        // Filtro por estado
+        
         if (isset($filters['marca_estado']) && $filters['marca_estado'] !== '') {
-            $conditions[] = "marca_estado = ?";
-            $params[] = $filters['marca_estado'];
+            $where .= " AND m.marca_estado = ?";
+            $params[] = (int) $filters['marca_estado'];
         }
+        
+        return $this->paginateWithParams($page, $perPage, $where, "m.marca_descripcion ASC", $params);
+    }
 
-        $whereClause = implode(' AND ', $conditions);
-        $offset = ($page - 1) * $limit;
-
-        // Validar orden
-        $validOrderBy = ['marca_descripcion', 'marca_estado', 'id_marca'];
-        if (!in_array($orderBy, $validOrderBy)) {
-            $orderBy = 'marca_descripcion';
+    /**
+     * Obtener todas las marcas con filtros para exportación (sin paginación)
+     */
+    public function getAllWithDetailsForExport($filters = [])
+    {
+        $where = "1=1";
+        $params = [];
+        
+        // Aplicar los mismos filtros que getWithDetails
+        if (!empty($filters['marca_descripcion'])) {
+            $where .= " AND m.marca_descripcion LIKE ?";
+            $params[] = '%' . $filters['marca_descripcion'] . '%';
         }
-
-        $orderDir = strtoupper($orderDir) === 'DESC' ? 'DESC' : 'ASC';
-
-        // Consulta principal
-        $sql = "SELECT * FROM {$this->table} WHERE {$whereClause} ORDER BY {$orderBy} {$orderDir} LIMIT {$limit} OFFSET {$offset}";
-        $data = $this->query($sql, $params);
-
-        // Contar total
-        $countSql = "SELECT COUNT(*) as total FROM {$this->table} WHERE {$whereClause}";
-        $totalResult = $this->query($countSql, $params);
-        $total = $totalResult[0]['total'];
-
+        
+        if (isset($filters['marca_estado']) && $filters['marca_estado'] !== '') {
+            $where .= " AND m.marca_estado = ?";
+            $params[] = (int) $filters['marca_estado'];
+        }
+        
+        // Query para contar total (para estadísticas)
+        $countSql = "SELECT COUNT(*) as total FROM {$this->table} m WHERE $where";
+        $totalResult = $this->queryWithParams($countSql, $params);
+        $totalRow = $totalResult->fetch_assoc();
+        $total = (int) $totalRow['total'];
+        
+        // Query para obtener TODOS los registros CON conteo de productos
+        $dataSql = "SELECT m.*, 
+                    COALESCE(COUNT(p.id_producto), 0) as productos_count
+                    FROM {$this->table} m
+                    LEFT JOIN producto p ON p.rela_marca = m.id_marca
+                    WHERE $where
+                    GROUP BY m.id_marca
+                    ORDER BY m.marca_descripcion ASC";
+        $dataResult = $this->queryWithParams($dataSql, $params);
+        
+        $data = [];
+        while ($row = $dataResult->fetch_assoc()) {
+            $data[] = $row;
+        }
+        
         return [
             'data' => $data,
-            'total' => $total,
-            'pages' => ceil($total / $limit),
-            'current_page' => $page,
-            'per_page' => $limit
+            'total' => $total
         ];
     }
 
     /**
-     * Buscar marcas por término
+     * Obtener marcas con paginación usando parámetros preparados
      */
-    public function searchByTerm($term, $limit = 10)
+    private function paginateWithParams($page = 1, $perPage = 10, $where = "1=1", $orderBy = null, $params = [])
     {
-        $sql = "SELECT * FROM {$this->table} 
-                WHERE marca_descripcion LIKE ? 
-                AND marca_estado = 1 
-                ORDER BY marca_descripcion ASC 
-                LIMIT ?";
+        $offset = ($page - 1) * $perPage;
+        $limit = (int) $perPage;
         
-        return $this->query($sql, ["%{$term}%", $limit]);
-    }
-
-    /**
-     * Cambiar estado de la marca (activar/desactivar)
-     */
-    public function toggleStatus($id)
-    {
-        $current = $this->find($id);
-        if (!$current) {
-            return false;
+        // Query para contar total
+        $countSql = "SELECT COUNT(*) as total FROM {$this->table} WHERE $where";
+        $totalResult = $this->queryWithParams($countSql, $params);
+        $totalRow = $totalResult->fetch_assoc();
+        $total = (int) $totalRow['total'];
+        
+        // Query para obtener registros CON conteo de productos
+        $orderClause = $orderBy ? "ORDER BY $orderBy" : '';
+        $dataSql = "SELECT m.*, 
+                    COALESCE(COUNT(p.id_producto), 0) as productos_count
+                    FROM {$this->table} m
+                    LEFT JOIN producto p ON p.rela_marca = m.id_marca
+                    WHERE $where
+                    GROUP BY m.id_marca
+                    $orderClause 
+                    LIMIT $limit OFFSET $offset";
+        $dataResult = $this->queryWithParams($dataSql, $params);
+        
+        $data = [];
+        while ($row = $dataResult->fetch_assoc()) {
+            $data[] = $row;
         }
-
-        $newStatus = $current['marca_estado'] == 1 ? 0 : 1;
-        return $this->update($id, ['marca_estado' => $newStatus]);
+        
+        $totalPages = ceil($total / $perPage);
+        
+        return [
+            'data' => $data,
+            'total' => $total,
+            'current_page' => $page,
+            'total_pages' => $totalPages,
+            'per_page' => $perPage,
+            'offset' => $offset,
+            'limit' => $limit
+        ];
     }
 
     /**
-     * Obtener estadísticas de marcas
+     * Ejecutar query con parámetros preparados
      */
-    public function getStats()
+    private function queryWithParams($sql, $params = [])
     {
-        $stats = [];
-
-        // Total de marcas
-        $sql = "SELECT COUNT(*) as total FROM {$this->table}";
-        $result = $this->query($sql);
-        $stats['total_marcas'] = $result[0]['total'];
-
-        // Marcas activas
-        $sql = "SELECT COUNT(*) as activos FROM {$this->table} WHERE marca_estado = 1";
-        $result = $this->query($sql);
-        $stats['marcas_activas'] = $result[0]['activos'];
-
-        // Marcas inactivas
-        $stats['marcas_inactivas'] = $stats['total_marcas'] - $stats['marcas_activas'];
-
-        // Marcas más utilizadas (según relación con productos)
-        $sql = "SELECT m.id_marca, m.marca_descripcion, 
-                       COUNT(p.id_producto) as productos_count
-                FROM {$this->table} m
-                LEFT JOIN producto p ON m.id_marca = p.rela_marca 
-                WHERE m.marca_estado = 1
-                GROUP BY m.id_marca, m.marca_descripcion
-                ORDER BY productos_count DESC
-                LIMIT 10";
-        $stats['marcas_mas_utilizadas'] = $this->query($sql);
-
-        return $stats;
+        $stmt = $this->db->prepare($sql);
+        if (!$stmt) {
+            throw new \Exception("Error preparando consulta: " . $this->db->error);
+        }
+        
+        if (!empty($params)) {
+            $types = str_repeat('s', count($params));
+            $stmt->bind_param($types, ...$params);
+        }
+        
+        if (!$stmt->execute()) {
+            throw new \Exception("Error ejecutando consulta: " . $stmt->error);
+        }
+        
+        return $stmt->get_result();
     }
 
     /**
-     * Verificar si está en uso en productos
+     * Verificar si la marca está siendo utilizada por productos
      */
     public function isInUse($id)
     {
         $sql = "SELECT COUNT(*) as total FROM producto WHERE rela_marca = ?";
         $result = $this->query($sql, [$id]);
         
-        return $result[0]['total'] > 0;
+        if ($result && $row = $result->fetch_assoc()) {
+            return (int)$row['total'] > 0;
+        }
+        
+        return false;
     }
 
     /**
@@ -208,33 +174,124 @@ class Marca extends Model
      */
     public function getProductos($id, $limit = 10)
     {
-        $sql = "SELECT p.*, c.categoria_descripcion
+        $sql = "SELECT p.*, c.categoria_descripcion, ep.estadoproducto_descripcion
                 FROM producto p
                 LEFT JOIN categoria c ON p.rela_categoria = c.id_categoria
+                LEFT JOIN estadoproducto ep ON p.rela_estadoproducto = ep.id_estadoproducto
                 WHERE p.rela_marca = ?
                 ORDER BY p.producto_descripcion ASC
                 LIMIT ?";
         
-        return $this->query($sql, [$id, $limit]);
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('ii', $id, $limit);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $productos = [];
+        while ($row = $result->fetch_assoc()) {
+            $productos[] = $row;
+        }
+        
+        return $productos;
     }
 
     /**
-     * Sanitizar y preparar datos para inserción/actualización
+     * Obtener cantidad de productos de una marca
      */
-    public function sanitizeData($data)
+    public function getProductosCount($id)
     {
-        $sanitized = [];
-
-        if (isset($data['marca_descripcion'])) {
-            $sanitized['marca_descripcion'] = trim($data['marca_descripcion']);
-            // Capitalizar primera letra de cada palabra
-            $sanitized['marca_descripcion'] = ucwords(strtolower($sanitized['marca_descripcion']));
+        $sql = "SELECT COUNT(*) as total FROM producto WHERE rela_marca = ?";
+        $result = $this->query($sql, [$id]);
+        
+        if ($result && $row = $result->fetch_assoc()) {
+            return (int)$row['total'];
         }
+        
+        return 0;
+    }
 
-        if (isset($data['marca_estado'])) {
-            $sanitized['marca_estado'] = (int) $data['marca_estado'];
-        }
+    /**
+     * Obtener estadísticas de una marca específica
+     */
+    public function getStatistics($id)
+    {
+        $stats = [
+            'productos_totales' => $this->getProductosTotales($id),
+            'productos_activos' => $this->getProductosActivos($id),
+            'productos_sin_stock' => $this->getProductosSinStock($id),
+            'valor_inventario' => $this->getValorInventario($id)
+        ];
+        
+        return $stats;
+    }
 
-        return $sanitized;
+    /**
+     * Obtener número total de productos de la marca
+     */
+    private function getProductosTotales($id)
+    {
+        $sql = "SELECT COUNT(*) as total FROM producto WHERE rela_marca = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        
+        return (int)$row['total'];
+    }
+
+    /**
+     * Obtener número de productos activos de la marca
+     */
+    private function getProductosActivos($id)
+    {
+        $sql = "SELECT COUNT(*) as total 
+                FROM producto p
+                JOIN estadoproducto ep ON p.rela_estadoproducto = ep.id_estadoproducto
+                WHERE p.rela_marca = ? AND ep.estadoproducto_estado = 1";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        
+        return (int)$row['total'];
+    }
+
+    /**
+     * Obtener número de productos sin stock de la marca
+     */
+    private function getProductosSinStock($id)
+    {
+        $sql = "SELECT COUNT(*) as total 
+                FROM producto 
+                WHERE rela_marca = ? AND producto_stock = 0";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        
+        return (int)$row['total'];
+    }
+
+    /**
+     * Calcular valor total del inventario de la marca
+     */
+    private function getValorInventario($id)
+    {
+        $sql = "SELECT SUM(producto_precio * producto_stock) as valor_total
+                FROM producto 
+                WHERE rela_marca = ?";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        
+        return (float)($row['valor_total'] ?? 0);
     }
 }

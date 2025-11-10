@@ -55,9 +55,10 @@ Para cada entidad XXXX, se deben generar los siguientes archivos siguiendo la es
 
 ### Filtros de Listado
 **Elementos SELECT obligatorios:**
-- **Clase requerida:** `class="form-control form-control-sm"`
+- **Clase requerida:** `class="form-select form-select-sm"`
 - **Aplicación:** Todos los filtros desplegables (estado, registros por página, categorías, etc.)
-- **Compatibilidad:** Bootstrap 4 (versión actual del proyecto)
+- **Compatibilidad:** Bootstrap 5 (versión actual del proyecto)
+- **IMPORTANTE:** Usar `form-select` en lugar de `form-control` para elementos `<select>`
 
 ### Contenedores de Vista de Detalle
 **Estructura estándar obligatoria:**
@@ -137,21 +138,35 @@ Para cada entidad XXXX, se deben generar los siguientes archivos siguiendo la es
 
 #### ⚠️ CRÍTICO - Compatibilidad Bootstrap:
 **SIEMPRE verificar versión de Bootstrap antes de implementar:**
-- El proyecto usa **Bootstrap 4** (NO Bootstrap 5)
-- **Clases Bootstrap 4:** `form-control`, `custom-file-input`, `card-header`, `thead-light`, `badge-success`
-- **NUNCA usar Bootstrap 5:** `form-select`, `btn-close`, `form-floating`, `bg-success` (en badges)
+- El proyecto usa **Bootstrap 5** (versión actualizada)
+- **Clases Bootstrap 5 para SELECT:** `form-select`, `form-select-sm`
+- **Clases Bootstrap 5 para INPUT:** `form-control`, `form-control-sm`
+- **Clases de badges:** `badge bg-success`, `badge bg-danger`, `badge bg-warning`
 - **Correcciones comunes:**
-  - `form-select` → `form-control`
-  - `bg-success` → `badge-success` (para badges)
-  - `bg-danger` → `badge-danger` (para badges)
+  - Para `<select>`: SIEMPRE usar `form-select form-select-sm`
+  - Para `<input>`: SIEMPRE usar `form-control`
+  - Para badges: `badge bg-success` (NO `badge-success`)
 - **Validar siempre** en navegador antes de finalizar
 
 #### ⚠️ CRÍTICO - Presentación de Datos:
-**NUNCA mostrar IDs técnicos al usuario:**
-- **NO mostrar** campos como `id_producto`, `id_cabania` en interfaces
-- **SÍ mostrar** códigos de negocio como `producto_codigo`, `cabania_codigo`
-- **Usar nombres descriptivos** en lugar de IDs técnicos
-- **IDs solo para** enlaces internos y operaciones backend
+**NUNCA mostrar IDs técnicos ni códigos generados al usuario:**
+- **NO mostrar** campos como `id_producto`, `id_cabania`, `id_marca` en interfaces de usuario
+- **NO crear** ni mostrar códigos generados artificialmente (ej: "MC-001", "PRD-123")
+- **SÍ mostrar** solo los campos que existen realmente en la tabla de la base de datos
+- **Usar nombres descriptivos** directamente de la tabla (ej: `marca_descripcion`, `producto_nombre`)
+- **IDs solo para** enlaces internos y operaciones backend (ocultos al usuario)
+- **Regla de oro:** Si el campo no existe en la tabla, NO lo muestres en la interfaz
+
+**Ejemplo CORRECTO para tabla `marca` (id_marca, marca_descripcion, marca_estado):**
+```php
+// ✅ CORRECTO - Solo mostrar campos reales de la tabla
+<th>Descripción</th>  // marca_descripcion existe en BD
+<th>Estado</th>       // marca_estado existe en BD
+
+// ❌ INCORRECTO - Mostrar campos que no existen
+<th>Código</th>       // NO existe marca_codigo en BD
+<th>ID</th>           // id_marca es técnico, no mostrar
+```
 
 #### ⚠️ CRÍTICO - Uso de Emojis:
 **Usar emojis de forma moderada y profesional:**
@@ -279,19 +294,20 @@ public function getWithDetails($page = 1, $perPage = 10, $filters = [])
 <table class="table table-hover mb-0">
     <thead class="thead-light">
         <tr>
-            <!-- NUNCA mostrar columnas de ID técnico (id_producto, id_cabania, etc.) -->
-            <th class="border-0 py-3">Código</th> <!-- Usar código de negocio -->
-            <th class="border-0 py-3">Campo Descriptivo</th>
-            <th class="border-0 py-3">Estado</th>
+            <!-- SOLO mostrar columnas de campos que existen en la tabla de BD -->
+            <!-- NUNCA mostrar IDs técnicos ni códigos generados -->
+            <th class="border-0 py-3">Descripción</th> <!-- Si existe entidad_descripcion -->
+            <th class="border-0 py-3">Nombre</th>       <!-- Si existe entidad_nombre -->
+            <th class="border-0 py-3">Estado</th>       <!-- Si existe entidad_estado -->
             <th class="border-0 py-3 text-center">Acciones</th>
         </tr>
     </thead>
     <tbody>
         <?php foreach ($registros as $registro): ?>
             <tr>
-                <!-- Mostrar código de negocio, NO el ID técnico -->
-                <td class="border-0 py-3"><?= htmlspecialchars($registro['entidad_codigo']) ?></td>
-                <td class="border-0 py-3"><?= htmlspecialchars($registro['campo_descriptivo']) ?></td>
+                <!-- Mostrar solo campos reales de la tabla -->
+                <td class="border-0 py-3"><?= htmlspecialchars($registro['entidad_descripcion']) ?></td>
+                <td class="border-0 py-3"><?= htmlspecialchars($registro['entidad_nombre']) ?></td>
                 <td class="border-0 py-3">
                     <?php if ($registro['entidad_estado'] == 1): ?>
                         <span class="badge bg-success">Activo</span>
@@ -624,13 +640,26 @@ Para generar un CRUD completo, usar la siguiente instrucción:
 - **Campos opcionales**: Por constraint NULL
 
 #### ⚠️ CRÍTICO - Campos de Código:
-**Solo generar campos de código si existen en la estructura de la tabla:**
-- **SI la tabla tiene** campo `entidad_codigo` → Incluir en filtros, listados y formularios
-- **SI la tabla NO tiene** campo código → NO generar este campo en ninguna vista del CRUD
+**NUNCA generar ni mostrar campos de código artificiales:**
+- **NO crear** campos de código si no existen en la tabla de la base de datos
+- **NO mostrar** códigos generados como "MC-001", "PRD-123", "CS-001"
+- **NO incluir** columnas de código en listados si la tabla no tiene ese campo
 - **Verificar siempre** la estructura real de la tabla antes de implementar
-- **Usar ID técnico** formateado como código alternativo solo cuando no existe campo código real
-- **Ejemplo**: `condicionsalud` no tiene campo código → usar `CS-001` basado en ID
-- **Ejemplo**: `producto` tiene campo código → usar `producto_codigo` directamente
+- **Mostrar solo** los campos que realmente existen en la base de datos
+
+**Ejemplo CORRECTO:**
+```php
+// Tabla: marca (id_marca, marca_descripcion, marca_estado)
+// ✅ CORRECTO - No mostrar código porque no existe en la tabla
+<th>Descripción</th>
+<th>Estado</th>
+
+// ❌ INCORRECTO - Crear código artificial
+<th>Código</th> // NO existe marca_codigo en la tabla
+<td>MC-<?= str_pad($id, 3, '0', STR_PAD_LEFT) ?></td> // NO hacer esto
+```
+
+**Excepción única:** Solo mostrar código si existe como campo real en la tabla (ej: `producto_codigo`, `cabania_codigo`)
 
 ### Validaciones Automáticas
 - **Requeridos**: NOT NULL en la tabla
@@ -1229,10 +1258,12 @@ $this->router->get('/entidad/exportar-pdf', 'EntidadController@exportarPdf');
 ### 2. **Problemas de Compatibilidad Bootstrap 4 vs 5**
 
 **Síntoma:** Elementos no se muestran correctamente, estilos rotos
-**Causa:** Uso de clases de Bootstrap 5 en proyecto Bootstrap 4
+**Causa:** Confusión entre versiones de Bootstrap
 **Solución Crítica:**
-- **Bootstrap 4**: `custom-file-input`, `custom-file-label`, `card-header`
-- **Bootstrap 5**: `form-select`, `btn-close`, `form-floating` (NO usar)
+- **El proyecto usa Bootstrap 5**
+- **Para SELECT:** `form-select form-select-sm` (NO `form-control`)
+- **Para INPUT:** `form-control form-control-sm`
+- **Para badges:** `badge bg-success`, `badge bg-danger` (NO `badge-success`)
 - **VALIDAR SIEMPRE** en navegador antes de finalizar
 
 ### 3. **Funcionalidad de Imágenes No Funciona**
@@ -1291,7 +1322,8 @@ $this->router->get('/entidad/exportar-pdf', 'EntidadController@exportarPdf');
 
 ### **Presentación de Datos**
 - [ ] **Sin IDs técnicos** visibles al usuario (id_producto, id_cabania, etc.)
-- [ ] **Códigos de negocio** mostrados en lugar de IDs
+- [ ] **Sin códigos generados** artificialmente (MC-001, PRD-123, etc.)
+- [ ] **Solo campos reales** de la tabla en listados y formularios
 - [ ] **Nombres descriptivos** en columnas y campos
 - [ ] **IDs técnicos** solo para operaciones internas
 
@@ -1303,7 +1335,7 @@ $this->router->get('/entidad/exportar-pdf', 'EntidadController@exportarPdf');
 - [ ] **Estados** cambian via AJAX con confirmación
 
 ### **Consistencia Visual**
-- [ ] **Bootstrap 4** clases correctas (NO Bootstrap 5)
+- [ ] **Bootstrap 5** clases correctas (`form-select` para SELECT, `badge bg-success` para badges)
 - [ ] **Diseño** idéntico al módulo Cabañas
 - [ ] **Iconografía** contextual y apropiada
 - [ ] **Badges** con colores semánticos correctos

@@ -89,17 +89,17 @@ if (!isset($cabania) || empty($cabania)) {
                                 <label class="info-label">
                                     <?php if ($cabania['cabania_estado'] == 1): ?>
                                         <i class="fas fa-toggle-on text-success"></i> Estado: 
-                                        <span class="badge badge-success badge-lg">
+                                        <span class="badge bg-success badge-lg">
                                             <i class="fas fa-check"></i> Activa
                                         </span>
                                     <?php elseif ($cabania['cabania_estado'] == 2): ?>
                                         <i class="fas fa-home text-warning"></i> Estado: 
-                                        <span class="badge badge-warning badge-lg">
+                                        <span class="badge bg-warning badge-lg">
                                             <i class="fas fa-home"></i> Ocupada
                                         </span>
                                     <?php else: ?>
                                         <i class="fas fa-toggle-off text-danger"></i> Estado: 
-                                        <span class="badge badge-danger badge-lg">
+                                        <span class="badge bg-danger badge-lg">
                                             <i class="fas fa-times"></i> Inactiva
                                         </span>
                                     <?php endif; ?>
