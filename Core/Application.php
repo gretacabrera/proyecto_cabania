@@ -301,12 +301,13 @@ class Application
         // Rutas de periodos
         $this->router->get('/periodos', 'PeriodosController@index');
         $this->router->any('/periodos/create', 'PeriodosController@create');
+        $this->router->get('/periodos/exportar', 'PeriodosController@exportar');
+        $this->router->get('/periodos/exportar-pdf', 'PeriodosController@exportarPdf');
+        $this->router->get('/periodos/{id}', 'PeriodosController@show');
         $this->router->any('/periodos/{id}/edit', 'PeriodosController@edit');
-        $this->router->get('/periodos/{id}/delete', 'PeriodosController@delete');
-        $this->router->get('/periodos/{id}/restore', 'PeriodosController@restore');
-        $this->router->get('/periodos/{id}/toggle-status', 'PeriodosController@toggleStatus');
-        $this->router->get('/periodos/search', 'PeriodosController@search');
-        $this->router->get('/periodos/stats', 'PeriodosController@stats');
+        $this->router->post('/periodos/{id}/delete', 'PeriodosController@delete');
+        $this->router->post('/periodos/{id}/restore', 'PeriodosController@restore');
+        $this->router->post('/periodos/{id}/estado', 'PeriodosController@cambiarEstado');
 
         // Rutas de condiciones de salud
         $this->router->get('/condicionessalud', 'CondicionesSaludController@index');

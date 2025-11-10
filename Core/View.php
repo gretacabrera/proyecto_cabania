@@ -29,6 +29,8 @@ class View
         
         $templateFile = $this->viewPath . $template . '.php';
         if (file_exists($templateFile)) {
+            // Pasar el contexto de View al template para que tenga acceso a $this
+            $view = $this;
             include $templateFile;
         } else {
             throw new \Exception("Vista no encontrada: " . $template);

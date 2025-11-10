@@ -1,217 +1,242 @@
 <?php
-$title = isset($data['id_periodo']) ? 'Editar Periodo' : 'Nuevo Periodo';
-$currentModule = 'periodos';
+/**
+ * Vista: Formulario de Periodo
+ * Descripción: Formulario para crear/editar periodos
+ * Autor: Sistema MVC
+ * Fecha: <?php echo date('Y-m-d'); ?>
+ */
 
-require_once 'app/Views/layouts/header.php';
+$isEdit = isset($periodo) && !empty($periodo);
 ?>
 
-<div class="container mt-4">
+<div class="content-wrapper">
+    <!-- Acciones principales -->
+    <div class="page-actions">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <a href="<?= url('/periodos') ?>" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i> Volver al listado
+                </a>
+            </div>
+        </div>
+    </div>
+
     <div class="row">
-        <div class="col-md-10 offset-md-1">
+        <div class="col-lg-8">
+            <!-- Formulario principal -->
             <div class="card">
                 <div class="card-header">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0"><?= $title ?></h4>
-                        <a href="/periodos" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Volver al listado
-                        </a>
-                    </div>
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-edit"></i> 
+                        <?= $isEdit ? 'Modificar datos del periodo' : 'Datos del nuevo periodo' ?>
+                    </h5>
                 </div>
                 <div class="card-body">
-                    <?php if (!empty($errors)): ?>
-                        <div class="alert alert-danger">
-                            <h6><i class="fas fa-exclamation-triangle"></i> Por favor corrija los siguientes errores:</h6>
-                            <ul class="mb-0">
-                                <?php foreach ($errors as $error): ?>
-                                    <li><?= htmlspecialchars($error) ?></li>
-                                <?php endforeach; ?>
-                            </ul>
-                        </div>
-                    <?php endif; ?>
-
-                    <form method="POST" novalidate>
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="form-group">
-                                    <label for="periodo_descripcion" class="required">Descripción del Periodo:</label>
-                                    <input type="text" 
-                                           class="form-control <?= isset($errors) && !empty($errors) ? 'is-invalid' : '' ?>" 
-                                           id="periodo_descripcion" 
-                                           name="periodo_descripcion" 
-                                           value="<?= htmlspecialchars($data['periodo_descripcion'] ?? '') ?>"
-                                           maxlength="100"
-                                           placeholder="Ej: Temporada Alta Verano 2024"
-                                           required>
-                                    <small class="form-text text-muted">
-                                        Ingrese una descripción descriptiva del periodo (máximo 100 caracteres).
-                                    </small>
-                                    <div class="invalid-feedback">
-                                        Por favor ingrese una descripción válida.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="periodo_fechainicio" class="required">Fecha de Inicio:</label>
-                                    <input type="date" 
-                                           class="form-control <?= isset($errors) && !empty($errors) ? 'is-invalid' : '' ?>" 
-                                           id="periodo_fechainicio" 
-                                           name="periodo_fechainicio" 
-                                           value="<?= htmlspecialchars($data['periodo_fechainicio'] ?? '') ?>"
-                                           required>
-                                    <small class="form-text text-muted">
-                                        Fecha de inicio del periodo.
-                                    </small>
-                                    <div class="invalid-feedback">
-                                        Por favor seleccione una fecha de inicio válida.
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="periodo_fechafin" class="required">Fecha de Fin:</label>
-                                    <input type="date" 
-                                           class="form-control <?= isset($errors) && !empty($errors) ? 'is-invalid' : '' ?>" 
-                                           id="periodo_fechafin" 
-                                           name="periodo_fechafin" 
-                                           value="<?= htmlspecialchars($data['periodo_fechafin'] ?? '') ?>"
-                                           required>
-                                    <small class="form-text text-muted">
-                                        Fecha de fin del periodo (debe ser posterior a la fecha de inicio).
-                                    </small>
-                                    <div class="invalid-feedback">
-                                        Por favor seleccione una fecha de fin válida.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Información de duración calculada -->
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="alert alert-info duration-info" id="duration-info">
-                                    <i class="fas fa-info-circle"></i> <span id="duration-text"></span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <?php if (isset($data['id_periodo'])): ?>
-                            <div class="form-group">
-                                <label>Estado Actual:</label>
-                                <div>
-                                    <?php if ($data['periodo_estado'] == 1): ?>
-                                        <span class="badge badge-success">Activo</span>
-                                    <?php else: ?>
-                                        <span class="badge badge-danger">Inactivo</span>
-                                    <?php endif; ?>
-                                </div>
-                                <small class="form-text text-muted">
-                                    Para cambiar el estado, use las opciones en el listado principal.
-                                </small>
-                            </div>
+                    <form id="formPeriodo" method="POST" 
+                          action="<?= $isEdit ? url('/periodos/' . $periodo['id_periodo'] . '/edit') : url('/periodos/create') ?>" 
+                          novalidate>
+                        
+                        <?php if ($isEdit): ?>
+                            <input type="hidden" name="id_periodo" value="<?= $periodo['id_periodo'] ?>">
                         <?php endif; ?>
 
-                        <hr>
-                        
-                        <div class="form-group mb-0">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save"></i> 
-                                <?= isset($data['id_periodo']) ? 'Actualizar Periodo' : 'Crear Periodo' ?>
-                            </button>
-                            <a href="/periodos" class="btn btn-secondary ml-2">
-                                <i class="fas fa-times"></i> Cancelar
-                            </a>
+                        <!-- Descripción -->
+                        <div class="form-group">
+                            <label for="periodo_descripcion" class="required">
+                                <i class="fas fa-tag"></i> Descripción
+                            </label>
+                            <input type="text" class="form-control form-control-sm" id="periodo_descripcion" name="periodo_descripcion" 
+                                   value="<?= htmlspecialchars($periodo['periodo_descripcion'] ?? '') ?>"
+                                   required maxlength="45" placeholder="Ej: Temporada Alta Verano 2024">
+                            <div class="invalid-feedback"></div>
+                            <small class="form-text text-muted">Nombre descriptivo del periodo</small>
+                        </div>
+
+                        <div class="row">
+                            <!-- Fecha de Inicio -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="periodo_fechainicio" class="required">
+                                        <i class="fas fa-calendar-day"></i> Fecha de Inicio
+                                    </label>
+                                    <input type="date" class="form-control form-control-sm" id="periodo_fechainicio" name="periodo_fechainicio" 
+                                           value="<?= $periodo['periodo_fechainicio'] ?? '' ?>"
+                                           required>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+
+                            <!-- Fecha de Fin -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="periodo_fechafin" class="required">
+                                        <i class="fas fa-calendar-check"></i> Fecha de Fin
+                                    </label>
+                                    <input type="date" class="form-control form-control-sm" id="periodo_fechafin" name="periodo_fechafin" 
+                                           value="<?= $periodo['periodo_fechafin'] ?? '' ?>"
+                                           required>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Año -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="periodo_anio" class="required">
+                                        <i class="fas fa-calendar-alt"></i> Año
+                                    </label>
+                                    <input type="number" class="form-control form-control-sm" id="periodo_anio" name="periodo_anio" 
+                                           value="<?= $periodo['periodo_anio'] ?? date('Y') ?>"
+                                           required min="2020" max="2100">
+                                    <div class="invalid-feedback"></div>
+                                    <small class="form-text text-muted">Año al que corresponde el periodo</small>
+                                </div>
+                            </div>
+
+                            <!-- Orden -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="periodo_orden" class="required">
+                                        <i class="fas fa-sort-numeric-down"></i> Orden
+                                    </label>
+                                    <input type="number" class="form-control form-control-sm" id="periodo_orden" name="periodo_orden" 
+                                           value="<?= $periodo['periodo_orden'] ?? '1' ?>"
+                                           required min="1" max="100">
+                                    <div class="invalid-feedback"></div>
+                                    <small class="form-text text-muted">Orden de visualización</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Estado -->
+                        <div class="form-group">
+                            <label for="periodo_estado" class="required">
+                                <i class="fas fa-toggle-on"></i> Estado
+                            </label>
+                            <select class="form-select form-select-sm" id="periodo_estado" name="periodo_estado" required>
+                                <option value="1" <?= isset($periodo) && $periodo['periodo_estado'] == 1 ? 'selected' : '' ?>>Activo</option>
+                                <option value="0" <?= isset($periodo) && $periodo['periodo_estado'] == 0 ? 'selected' : '' ?>>Inactivo</option>
+                            </select>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="form-group mt-4">
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Guardar
+                                </button>
+                                <?php if (!$isEdit): ?>
+                                    <button type="reset" class="btn btn-secondary">
+                                        <i class="fas fa-eraser"></i> Limpiar
+                                    </button>
+                                <?php endif; ?>
+                                <a href="<?= url('/periodos') ?>" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times"></i> Cancelar
+                                </a>
+                            </div>
                         </div>
                     </form>
                 </div>
             </div>
+        </div>
 
-            <?php if (isset($data['id_periodo'])): ?>
-                <div class="card mt-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-info-circle"></i> Información del Periodo
-                        </h5>
+        <!-- Columna lateral -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-info-circle"></i> Información
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="info-section">
+                        <h6><i class="fas fa-lightbulb text-warning"></i> Consejos</h6>
+                        <ul class="list-unstyled small text-muted">
+                            <li>• La descripción debe ser clara y descriptiva</li>
+                            <li>• La fecha de inicio debe ser anterior a la fecha de fin</li>
+                            <li>• Los periodos no deben solaparse entre sí</li>
+                            <li>• El orden determina la secuencia de visualización</li>
+                            <li>• Un periodo inactivo no estará disponible para uso</li>
+                        </ul>
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-sm-3">
-                                <strong>ID:</strong>
+
+                    <hr>
+
+                    <div class="info-section">
+                        <h6><i class="fas fa-chart-line text-info"></i> Estadísticas</h6>
+                        <br>
+                        <?php if ($isEdit && isset($estadisticas)): ?>
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <div class="stat-item">
+                                        <div class="stat-value"><?= $estadisticas['total_reservas'] ?? 0 ?></div>
+                                        <div class="stat-label small text-muted">Reservas</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="stat-item">
+                                        <div class="stat-value">$<?= number_format($estadisticas['ingresos_generados'] ?? 0, 0, ',', '.') ?></div>
+                                        <div class="stat-label small text-muted">Ingresos</div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-sm-9">
-                                <?= $data['id_periodo'] ?>
+                            <div class="row text-center mt-2">
+                                <div class="col-12">
+                                    <div class="stat-item">
+                                        <div class="stat-value"><?= $estadisticas['duracion_dias'] ?? 0 ?> días</div>
+                                        <div class="stat-label small text-muted">Duración</div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <hr>
-                        <div class="row">
-                            <div class="col-sm-3">
-                                <strong>Duración:</strong>
-                            </div>
-                            <div class="col-sm-9">
-                                <?php
-                                if (!empty($data['periodo_fechainicio']) && !empty($data['periodo_fechafin'])) {
-                                    $inicio = new DateTime($data['periodo_fechainicio']);
-                                    $fin = new DateTime($data['periodo_fechafin']);
-                                    $duracion = $inicio->diff($fin)->days + 1;
-                                    echo $duracion . ' días';
-                                } else {
-                                    echo 'N/A';
-                                }
-                                ?>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="row">
-                            <div class="col-sm-3">
-                                <strong>Estado:</strong>
-                            </div>
-                            <div class="col-sm-9">
-                                <?php if ($data['periodo_estado'] == 1): ?>
-                                    <span class="badge badge-success">Activo</span>
-                                <?php else: ?>
-                                    <span class="badge badge-danger">Inactivo</span>
-                                <?php endif; ?>
-                            </div>
-                        </div>
+                        <?php else: ?>
+                            <p class="small text-muted">
+                                Las estadísticas estarán disponibles después de crear el periodo.
+                            </p>
+                        <?php endif; ?>
                     </div>
                 </div>
-
-                <!-- Tips para periodos -->
-                <div class="card mt-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-lightbulb"></i> Consejos para Gestión de Periodos
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h6>Buenas Prácticas:</h6>
-                                <ul class="list-unstyled">
-                                    <li><i class="fas fa-check text-success"></i> Use descripciones claras y descriptivas</li>
-                                    <li><i class="fas fa-check text-success"></i> No solape fechas entre periodos</li>
-                                    <li><i class="fas fa-check text-success"></i> Defina periodos por temporadas</li>
-                                    <li><i class="fas fa-check text-success"></i> Mantenga periodos activos actualizados</li>
-                                </ul>
-                            </div>
-                            <div class="col-md-6">
-                                <h6>Ejemplos de Periodos:</h6>
-                                <ul class="list-unstyled">
-                                    <li><i class="fas fa-sun text-warning"></i> Temporada Alta Verano</li>
-                                    <li><i class="fas fa-snowflake text-info"></i> Temporada Media Invierno</li>
-                                    <li><i class="fas fa-leaf text-success"></i> Temporada Baja Primavera</li>
-                                    <li><i class="fas fa-calendar text-primary"></i> Fiestas y Eventos Especiales</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            <?php endif; ?>
+            </div>
         </div>
     </div>
 </div>
 
-<?php require_once 'app/Views/layouts/footer.php'; ?>
+<!-- JavaScript para validación -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('formPeriodo');
+    const fechaInicio = document.getElementById('periodo_fechainicio');
+    const fechaFin = document.getElementById('periodo_fechafin');
+    
+    // Validar que fecha de inicio sea anterior a fecha de fin
+    function validateDates() {
+        if (fechaInicio.value && fechaFin.value) {
+            if (fechaInicio.value >= fechaFin.value) {
+                fechaFin.setCustomValidity('La fecha de fin debe ser posterior a la fecha de inicio');
+                fechaFin.classList.add('is-invalid');
+                return false;
+            } else {
+                fechaFin.setCustomValidity('');
+                fechaFin.classList.remove('is-invalid');
+                return true;
+            }
+        }
+        return true;
+    }
+    
+    fechaInicio.addEventListener('change', validateDates);
+    fechaFin.addEventListener('change', validateDates);
+    
+    // Validación del formulario
+    form.addEventListener('submit', function(e) {
+        if (!form.checkValidity() || !validateDates()) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        form.classList.add('was-validated');
+    });
+});
+</script>

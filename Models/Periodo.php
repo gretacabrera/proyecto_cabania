@@ -21,6 +21,250 @@ class Periodo extends Model
     }
 
     /**
+     * Obtener periodos con filtros y paginación
+     */
+    public function getWithDetails($page = 1, $perPage = 10, $filters = [])
+    {
+        $where = "1=1";
+        $params = [];
+        
+        // Aplicar filtros
+        if (!empty($filters['periodo_descripcion'])) {
+            $where .= " AND periodo_descripcion LIKE ?";
+            $params[] = '%' . $filters['periodo_descripcion'] . '%';
+        }
+        
+        if (!empty($filters['periodo_anio'])) {
+            $where .= " AND periodo_anio = ?";
+            $params[] = (int) $filters['periodo_anio'];
+        }
+        
+        if (isset($filters['periodo_estado']) && $filters['periodo_estado'] !== '') {
+            $where .= " AND periodo_estado = ?";
+            $params[] = (int) $filters['periodo_estado'];
+        }
+        
+        return $this->paginateWithParams($page, $perPage, $where, "periodo_orden ASC", $params);
+    }
+
+    /**
+     * Obtener todos los periodos con filtros para exportación (sin paginación)
+     */
+    public function getAllWithDetailsForExport($filters = [])
+    {
+        $where = "1=1";
+        $params = [];
+        
+        // Aplicar los mismos filtros que getWithDetails
+        if (!empty($filters['periodo_descripcion'])) {
+            $where .= " AND periodo_descripcion LIKE ?";
+            $params[] = '%' . $filters['periodo_descripcion'] . '%';
+        }
+        
+        if (!empty($filters['periodo_anio'])) {
+            $where .= " AND periodo_anio = ?";
+            $params[] = (int) $filters['periodo_anio'];
+        }
+        
+        if (isset($filters['periodo_estado']) && $filters['periodo_estado'] !== '') {
+            $where .= " AND periodo_estado = ?";
+            $params[] = (int) $filters['periodo_estado'];
+        }
+        
+        // Query para contar total (para estadísticas)
+        $countSql = "SELECT COUNT(*) as total FROM {$this->table} WHERE $where";
+        $totalResult = $this->queryWithParams($countSql, $params);
+        $totalRow = $totalResult->fetch_assoc();
+        $total = (int) $totalRow['total'];
+        
+        // Query para obtener TODOS los registros (sin LIMIT)
+        $dataSql = "SELECT * FROM {$this->table} WHERE $where ORDER BY periodo_orden ASC";
+        $dataResult = $this->queryWithParams($dataSql, $params);
+        
+        $data = [];
+        while ($row = $dataResult->fetch_assoc()) {
+            $data[] = $row;
+        }
+        
+        return [
+            'data' => $data,
+            'total' => $total
+        ];
+    }
+
+    /**
+     * Obtener periodos con paginación usando parámetros preparados
+     */
+    private function paginateWithParams($page = 1, $perPage = 10, $where = "1=1", $orderBy = null, $params = [])
+    {
+        $offset = ($page - 1) * $perPage;
+        $limit = (int) $perPage;
+        
+        // Query para contar total
+        $countSql = "SELECT COUNT(*) as total FROM {$this->table} WHERE $where";
+        $totalResult = $this->queryWithParams($countSql, $params);
+        $totalRow = $totalResult->fetch_assoc();
+        $total = (int) $totalRow['total'];
+        
+        // Query para obtener registros
+        $orderClause = $orderBy ? "ORDER BY $orderBy" : '';
+        $dataSql = "SELECT * FROM {$this->table} WHERE $where $orderClause LIMIT $limit OFFSET $offset";
+        $dataResult = $this->queryWithParams($dataSql, $params);
+        
+        $data = [];
+        while ($row = $dataResult->fetch_assoc()) {
+            $data[] = $row;
+        }
+        
+        $totalPages = ceil($total / $perPage);
+        
+        return [
+            'data' => $data,
+            'total' => $total,
+            'current_page' => $page,
+            'total_pages' => $totalPages,
+            'per_page' => $perPage,
+            'offset' => $offset,
+            'limit' => $limit
+        ];
+    }
+
+    /**
+     * Ejecutar query con parámetros preparados
+     */
+    private function queryWithParams($sql, $params = [])
+    {
+        $stmt = $this->db->prepare($sql);
+        if (!$stmt) {
+            throw new \Exception("Error preparando consulta: " . $this->db->error);
+        }
+        
+        if (!empty($params)) {
+            $types = str_repeat('s', count($params));
+            $stmt->bind_param($types, ...$params);
+        }
+        
+        if (!$stmt->execute()) {
+            throw new \Exception("Error ejecutando consulta: " . $stmt->error);
+        }
+        
+        return $stmt->get_result();
+    }
+
+    /**
+     * Obtener estadísticas de un periodo específico
+     */
+    public function getStatistics($periodoId)
+    {
+        $stats = [
+            'total_reservas' => $this->getReservasTotales($periodoId),
+            'ingresos_generados' => $this->getIngresosTotales($periodoId),
+            'duracion_dias' => $this->getDiasDuracion($periodoId),
+            'ocupacion_promedio' => $this->getOcupacionPromedio($periodoId)
+        ];
+        
+        return $stats;
+    }
+
+    /**
+     * Obtener número total de reservas en este periodo
+     */
+    private function getReservasTotales($periodoId)
+    {
+        $sql = "SELECT COUNT(*) as total 
+                FROM reserva 
+                WHERE rela_periodo = ?";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $periodoId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        
+        return (int)$row['total'];
+    }
+
+    /**
+     * Calcular ingresos totales del periodo
+     */
+    private function getIngresosTotales($periodoId)
+    {
+        $sql = "SELECT SUM(p.pago_total) as total_ingresos
+                FROM pago p
+                INNER JOIN reserva r ON p.rela_reserva = r.id_reserva
+                WHERE r.rela_periodo = ? 
+                AND r.rela_estadoreserva IN (2, 3)
+                AND p.pago_estado = 1"; // Solo confirmadas, completadas y pagos activos
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $periodoId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        
+        return (float)($row['total_ingresos'] ?? 0);
+    }
+
+    /**
+     * Calcular días de duración del periodo
+     */
+    private function getDiasDuracion($periodoId)
+    {
+        $periodo = $this->find($periodoId);
+        if (!$periodo) {
+            return 0;
+        }
+        
+        $fechaInicio = new \DateTime($periodo['periodo_fechainicio']);
+        $fechaFin = new \DateTime($periodo['periodo_fechafin']);
+        $diferencia = $fechaInicio->diff($fechaFin);
+        
+        return $diferencia->days;
+    }
+
+    /**
+     * Calcular ocupación promedio durante el periodo
+     */
+    private function getOcupacionPromedio($periodoId)
+    {
+        $periodo = $this->find($periodoId);
+        if (!$periodo) {
+            return 0;
+        }
+        
+        // Total de cabañas disponibles
+        $sqlCabanias = "SELECT COUNT(*) as total FROM cabania WHERE cabania_estado IN (1, 2)";
+        $resultCabanias = $this->db->query($sqlCabanias);
+        $totalCabanias = (int)$resultCabanias->fetch_assoc()['total'];
+        
+        if ($totalCabanias == 0) {
+            return 0;
+        }
+        
+        // Días del periodo
+        $dias = $this->getDiasDuracion($periodoId);
+        if ($dias == 0) {
+            return 0;
+        }
+        
+        // Total de días ocupados (reservas confirmadas/completadas en este periodo)
+        $sql = "SELECT COUNT(DISTINCT DATE(reserva_fhinicio)) as dias_ocupados
+                FROM reserva 
+                WHERE rela_periodo = ? 
+                AND rela_estadoreserva IN (2, 3)";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $periodoId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $diasOcupados = (int)$result->fetch_assoc()['dias_ocupados'];
+        
+        $porcentaje = ($dias > 0) ? round(($diasOcupados / ($dias * $totalCabanias)) * 100, 1) : 0;
+        
+        return $porcentaje;
+    }
+
+    /**
      * Buscar periodos
      */
     public function search($filters = [], $page = 1, $perPage = 10)
