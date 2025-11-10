@@ -97,7 +97,7 @@ class Marca extends Model
         $limit = (int) $perPage;
         
         // Query para contar total
-        $countSql = "SELECT COUNT(*) as total FROM {$this->table} WHERE $where";
+        $countSql = "SELECT COUNT(*) as total FROM {$this->table} m WHERE $where";
         $totalResult = $this->queryWithParams($countSql, $params);
         $totalRow = $totalResult->fetch_assoc();
         $total = (int) $totalRow['total'];
