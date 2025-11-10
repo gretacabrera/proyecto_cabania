@@ -5,54 +5,70 @@ namespace App\Controllers;
 use App\Core\Controller;
 use App\Models\Marca;
 
+/**
+ * Controlador para el manejo de marcas
+ */
 class MarcasController extends Controller
 {
-    protected $model;
+    protected $marcaModel;
 
     public function __construct()
     {
-        $this->model = new Marca();
+        parent::__construct();
+        $this->marcaModel = new Marca();
     }
 
     /**
-     * Mostrar listado de marcas
+     * Listar marcas
      */
     public function index()
     {
-        $page = $_GET['page'] ?? 1;
-        $limit = 10;
+        $this->requirePermission('marcas');
 
-        // Obtener filtros de búsqueda
-        $filters = [];
-        if (!empty($_GET['marca_descripcion'])) {
-            $filters['marca_descripcion'] = $_GET['marca_descripcion'];
+        $page = (int) $this->get('page', 1);
+        $perPage = (int) $this->get('per_page', 10);
+        
+        // Validar que perPage esté dentro de los valores permitidos
+        $allowedPerPage = [5, 10, 25, 50];
+        if (!in_array($perPage, $allowedPerPage)) {
+            $perPage = 10;
         }
-        if (isset($_GET['marca_estado']) && $_GET['marca_estado'] !== '') {
-            $filters['marca_estado'] = $_GET['marca_estado'];
-        }
+        
+        $filters = [
+            'marca_descripcion' => $this->get('marca_descripcion'),
+            'marca_estado' => $this->get('marca_estado')
+        ];
 
-        $result = $this->model->getWithFilters($filters, $page, $limit);
+        $result = $this->marcaModel->getWithDetails($page, $perPage, $filters);
 
-        return $this->render('admin/configuracion/marcas/listado', [
+        $data = [
+            'title' => 'Gestión de Marcas',
             'marcas' => $result['data'],
-            'total' => $result['total'],
-            'pages' => $result['pages'],
-            'current_page' => $result['current_page'],
+            'pagination' => $result,
             'filters' => $filters,
-            'title' => 'Marcas'
-        ]);
+            'isAdminArea' => true
+        ];
+
+        return $this->render('admin/configuracion/marcas/listado', $data, 'main');
     }
 
     /**
-     * Mostrar formulario de creación
+     * Mostrar formulario de nueva marca
      */
     public function create()
     {
-        return $this->render('admin/configuracion/marcas/formulario', [
-            'marca' => null,
-            'action' => '/admin/configuracion/marcas/store',
-            'title' => 'Nueva Marca'
-        ]);
+        $this->requirePermission('marcas');
+
+        if ($this->isPost()) {
+            return $this->store();
+        }
+
+        $data = [
+            'title' => 'Nueva Marca',
+            'isAdminArea' => true
+        ];
+
+        return $this->render('admin/configuracion/marcas/formulario', $data, 'main');
     }
 
     /**
@@ -60,38 +76,53 @@ class MarcasController extends Controller
      */
     public function store()
     {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: /admin/configuracion/marcas/create');
-            exit;
+        $this->requirePermission('marcas');
+
+        $data = [
+            'marca_descripcion' => $this->post('marca_descripcion'),
+            'marca_estado' => 1
+        ];
+
+        // Validaciones básicas
+        if (empty($data['marca_descripcion'])) {
+            $this->redirect('/marcas/create', 'Complete los campos obligatorios', 'error');
         }
 
-        $data = $this->model->sanitizeData($_POST);
-        $errors = $this->model->validate($data);
+        try {
+            $id = $this->marcaModel->create($data);
+            if ($id) {
+                $this->redirect('/marcas', 'Marca creada correctamente', 'exito');
+            } else {
+                $this->redirect('/marcas/create', 'Error al crear la marca', 'error');
+            }
+        } catch (\Exception $e) {
+            $this->redirect('/marcas/create', 'Error: ' . $e->getMessage(), 'error');
+        }
+    }
 
-        if (!empty($errors)) {
-            return $this->render('admin/configuracion/marcas/formulario', [
-                'marca' => (object) $data,
-                'errors' => $errors,
-                'action' => '/admin/configuracion/marcas/store',
-                'title' => 'Nueva Marca'
-            ]);
+    /**
+     * Mostrar marca específica
+     */
+    public function show($id)
+    {
+        $this->requirePermission('marcas');
+
+        $marca = $this->marcaModel->find($id);
+        if (!$marca) {
+            return $this->view->error(404);
         }
 
-        // Establecer estado por defecto si no se proporciona
-        if (!isset($data['marca_estado'])) {
-            $data['marca_estado'] = 1;
-        }
+        // Obtener estadísticas de la marca
+        $estadisticas = $this->marcaModel->getStatistics($id);
 
-        $id = $this->model->create($data);
+        $data = [
+            'title' => 'Detalle de Marca',
+            'marca' => $marca,
+            'statistics' => $estadisticas,
+            'isAdminArea' => true
+        ];
 
-        if ($id) {
-            $_SESSION['success'] = 'Marca creada exitosamente.';
-            header('Location: /marcas');
-        } else {
-            $_SESSION['error'] = 'Error al crear la marca.';
-            header('Location: /admin/configuracion/marcas/create');
-        }
-        exit;
+        return $this->render('admin/configuracion/marcas/detalle', $data, 'main');
     }
 
     /**
@@ -99,19 +130,28 @@ class MarcasController extends Controller
      */
     public function edit($id)
     {
-        $marca = $this->model->find($id);
+        $this->requirePermission('marcas');
 
+        $marca = $this->marcaModel->find($id);
         if (!$marca) {
-            $_SESSION['error'] = 'Marca no encontrada.';
-            header('Location: /marcas');
-            exit;
+            return $this->view->error(404);
         }
 
-        return $this->render('admin/configuracion/marcas/formulario', [
-            'marca' => (object) $marca,
-            'action' => "/admin/configuracion/marcas/update/{$id}",
-            'title' => 'Editar Marca'
-        ]);
+        if ($this->isPost()) {
+            return $this->update($id);
+        }
+
+        // Obtener estadísticas para el panel lateral
+        $estadisticas = $this->marcaModel->getStatistics($id);
+
+        $data = [
+            'title' => 'Editar Marca',
+            'marca' => $marca,
+            'statistics' => $estadisticas,
+            'isAdminArea' => true
+        ];
+
+        return $this->render('admin/configuracion/marcas/formulario', $data, 'main');
     }
 
     /**
@@ -119,136 +159,285 @@ class MarcasController extends Controller
      */
     public function update($id)
     {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header("Location: /admin/configuracion/marcas/edit/{$id}");
-            exit;
-        }
+        $this->requirePermission('marcas');
 
-        $marca = $this->model->find($id);
+        $marca = $this->marcaModel->find($id);
         if (!$marca) {
-            $_SESSION['error'] = 'Marca no encontrada.';
-            header('Location: /marcas');
-            exit;
+            $this->redirect('/marcas', 'Marca no encontrada', 'error');
         }
 
-        $data = $this->model->sanitizeData($_POST);
-        $errors = $this->model->validate($data, true, $id);
+        $data = [
+            'marca_descripcion' => $this->post('marca_descripcion')
+        ];
 
-        if (!empty($errors)) {
-            return $this->render('admin/configuracion/marcas/formulario', [
-                'marca' => (object) array_merge($marca, $data),
-                'errors' => $errors,
-                'action' => "/admin/configuracion/marcas/update/{$id}",
-                'title' => 'Editar Marca'
-            ]);
+        // Validaciones básicas
+        if (empty($data['marca_descripcion'])) {
+            $this->redirect('/marcas/' . $id . '/edit', 'Complete los campos obligatorios', 'error');
         }
 
-        $success = $this->model->update($id, $data);
-
-        if ($success) {
-            $_SESSION['success'] = 'Marca actualizada exitosamente.';
-            header('Location: /marcas');
-        } else {
-            $_SESSION['error'] = 'Error al actualizar la marca.';
-            header("Location: /admin/configuracion/marcas/edit/{$id}");
+        try {
+            $success = $this->marcaModel->update($id, $data);
+            if ($success) {
+                $this->redirect('/marcas', 'Marca actualizada correctamente', 'exito');
+            } else {
+                $this->redirect('/marcas/' . $id . '/edit', 'Error al actualizar la marca', 'error');
+            }
+        } catch (\Exception $e) {
+            $this->redirect('/marcas/' . $id . '/edit', 'Error: ' . $e->getMessage(), 'error');
         }
-        exit;
     }
 
     /**
-     * Cambiar estado de la marca
+     * Baja lógica de marca
      */
-    public function toggle($id)
+    public function delete($id)
     {
-        $marca = $this->model->find($id);
-        if (!$marca) {
-            $_SESSION['error'] = 'Marca no encontrada.';
-            header('Location: /marcas');
-            exit;
+        $this->requirePermission('marcas');
+
+        try {
+            $marca = $this->marcaModel->find($id);
+            if (!$marca) {
+                $this->redirect('/marcas', 'Marca no encontrada', 'error');
+            }
+
+            // Verificar si está en uso antes de desactivar
+            if ($this->marcaModel->isInUse($id)) {
+                $this->redirect('/marcas', 'No se puede desactivar la marca porque está siendo utilizada por productos', 'error');
+            }
+
+            $success = $this->marcaModel->update($id, ['marca_estado' => 0]);
+            
+            if ($success) {
+                $this->redirect('/marcas', 'Marca desactivada correctamente', 'exito');
+            } else {
+                $this->redirect('/marcas', 'Error al desactivar la marca', 'error');
+            }
+        } catch (\Exception $e) {
+            $this->redirect('/marcas', 'Error: ' . $e->getMessage(), 'error');
         }
-
-        // Verificar si está en uso antes de desactivar
-        if ($marca['marca_estado'] == 1 && $this->model->isInUse($id)) {
-            $_SESSION['error'] = 'No se puede desactivar la marca porque está siendo utilizada por productos.';
-            header('Location: /marcas');
-            exit;
-        }
-
-        $success = $this->model->toggleStatus($id);
-
-        if ($success) {
-            $action = $marca['marca_estado'] == 1 ? 'desactivada' : 'activada';
-            $_SESSION['success'] = "Marca {$action} exitosamente.";
-        } else {
-            $_SESSION['error'] = 'Error al cambiar el estado de la marca.';
-        }
-
-        header('Location: /marcas');
-        exit;
     }
 
     /**
-     * Ver detalles de una marca con sus productos
+     * Alta lógica de marca
      */
-    public function show($id)
+    public function restore($id)
     {
-        $marca = $this->model->find($id);
-        if (!$marca) {
-            $_SESSION['error'] = 'Marca no encontrada.';
-            header('Location: /marcas');
-            exit;
+        $this->requirePermission('marcas');
+
+        try {
+            $marca = $this->marcaModel->find($id);
+            if (!$marca) {
+                $this->redirect('/marcas', 'Marca no encontrada', 'error');
+            }
+
+            $success = $this->marcaModel->update($id, ['marca_estado' => 1]);
+            
+            if ($success) {
+                $this->redirect('/marcas', 'Marca activada correctamente', 'exito');
+            } else {
+                $this->redirect('/marcas', 'Error al activar la marca', 'error');
+            }
+        } catch (\Exception $e) {
+            $this->redirect('/marcas', 'Error: ' . $e->getMessage(), 'error');
         }
-
-        $productos = $this->model->getProductos($id, 20);
-
-        return $this->render('admin/configuracion/marcas/detalle', [
-            'marca' => $marca,
-            'productos' => $productos,
-            'title' => 'Detalle de Marca: ' . $marca['marca_descripcion']
-        ]);
     }
 
     /**
-     * Mostrar estadísticas de marcas
+     * Cambiar estado vía AJAX
      */
-    public function stats()
+    public function cambiarEstado($id)
     {
-        $stats = $this->model->getStats();
-        $marcasActivas = $this->model->getActive();
-
-        return $this->render('admin/configuracion/marcas/stats', [
-            'stats' => $stats,
-            'marcas_activas' => $marcasActivas,
-            'title' => 'Estadísticas de Marcas'
-        ]);
-    }
-
-    /**
-     * API para obtener marcas activas (JSON)
-     */
-    public function api_active()
-    {
-        header('Content-Type: application/json');
-        $marcas = $this->model->getActive();
-        echo json_encode($marcas);
-        exit;
-    }
-
-    /**
-     * Buscar marcas por término
-     */
-    public function search()
-    {
-        if (empty($_GET['term'])) {
-            header('Content-Type: application/json');
-            echo json_encode([]);
-            exit;
-        }
-
-        $marcas = $this->model->searchByTerm($_GET['term']);
+        $this->requirePermission('marcas');
         
         header('Content-Type: application/json');
-        echo json_encode($marcas);
+
+        try {
+            $marca = $this->marcaModel->find($id);
+            if (!$marca) {
+                echo json_encode(['success' => false, 'message' => 'Marca no encontrada']);
+                exit;
+            }
+
+            // Obtener el nuevo estado del body JSON
+            $input = json_decode(file_get_contents('php://input'), true);
+            $nuevoEstado = isset($input['estado']) ? (int)$input['estado'] : null;
+
+            if ($nuevoEstado === null || !in_array($nuevoEstado, [0, 1])) {
+                echo json_encode(['success' => false, 'message' => 'Estado no válido']);
+                exit;
+            }
+
+            // Verificar si está en uso antes de desactivar
+            if ($nuevoEstado == 0 && $this->marcaModel->isInUse($id)) {
+                echo json_encode(['success' => false, 'message' => 'No se puede desactivar la marca porque está siendo utilizada por productos']);
+                exit;
+            }
+
+            $success = $this->marcaModel->update($id, ['marca_estado' => $nuevoEstado]);
+            
+            if ($success) {
+                echo json_encode(['success' => true, 'message' => 'Estado actualizado correctamente']);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Error al actualizar el estado']);
+            }
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
         exit;
+    }
+
+    /**
+     * Exportar marcas a Excel
+     */
+    public function exportar()
+    {
+        $this->requirePermission('marcas');
+
+        $filters = [
+            'marca_descripcion' => $this->get('marca_descripcion'),
+            'marca_estado' => $this->get('marca_estado')
+        ];
+
+        $result = $this->marcaModel->getAllWithDetailsForExport($filters);
+        $datos = $result['data'];
+
+        if (empty($datos)) {
+            $this->redirect('/marcas', 'No hay datos para exportar', 'error');
+            return;
+        }
+
+        try {
+            require 'vendor/autoload.php';
+            
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            
+            // Estilos del encabezado
+            $headerStyle = [
+                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 12],
+                'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '4472C4']],
+                'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER]
+            ];
+            
+            // Encabezados
+            $sheet->setCellValue('A1', 'Descripción');
+            $sheet->setCellValue('B1', 'Estado');
+            
+            $sheet->getStyle('A1:B1')->applyFromArray($headerStyle);
+            $sheet->getRowDimension(1)->setRowHeight(25);
+            
+            // Datos
+            $row = 2;
+            foreach ($datos as $marca) {
+                $sheet->setCellValue('A' . $row, $marca['marca_descripcion']);
+                $sheet->setCellValue('B' . $row, $marca['marca_estado'] == 1 ? 'Activa' : 'Inactiva');
+                
+                $row++;
+            }
+            
+            // Ajustar anchos de columna
+            foreach (range('A', 'B') as $col) {
+                $sheet->getColumnDimension($col)->setAutoSize(true);
+            }
+            
+            // Generar archivo
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $filename = 'marcas_' . date('Y-m-d_H-i-s') . '.xlsx';
+            
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $filename . '"');
+            header('Cache-Control: max-age=0');
+            
+            $writer->save('php://output');
+            exit;
+            
+        } catch (\Exception $e) {
+            $this->redirect('/marcas', 'Error al exportar: ' . $e->getMessage(), 'error');
+        }
+    }
+
+    /**
+     * Exportar marcas a PDF
+     */
+    public function exportarPdf()
+    {
+        $this->requirePermission('marcas');
+
+        $filters = [
+            'marca_descripcion' => $this->get('marca_descripcion'),
+            'marca_estado' => $this->get('marca_estado')
+        ];
+
+        $result = $this->marcaModel->getAllWithDetailsForExport($filters);
+        $datos = $result['data'];
+
+        if (empty($datos)) {
+            $this->redirect('/marcas', 'No hay datos para exportar', 'error');
+            return;
+        }
+
+        try {
+            require 'vendor/autoload.php';
+            
+            $pdf = new \TCPDF('P', 'mm', 'A4', true, 'UTF-8');
+            
+            $pdf->SetCreator('Sistema de Cabañas');
+            $pdf->SetAuthor('Sistema de Cabañas');
+            $pdf->SetTitle('Listado de Marcas');
+            
+            $pdf->setPrintHeader(false);
+            $pdf->setPrintFooter(false);
+            $pdf->SetMargins(15, 15, 15);
+            $pdf->SetAutoPageBreak(true, 15);
+            
+            $pdf->AddPage();
+            
+            // Título
+            $pdf->SetFont('helvetica', 'B', 16);
+            $pdf->Cell(0, 10, 'Listado de Marcas', 0, 1, 'C');
+            $pdf->Ln(5);
+            
+            // Información de filtros
+            $pdf->SetFont('helvetica', '', 10);
+            if (!empty($filters['marca_descripcion'])) {
+                $pdf->Cell(0, 6, 'Descripción: ' . $filters['marca_descripcion'], 0, 1);
+            }
+            if (isset($filters['marca_estado']) && $filters['marca_estado'] !== '') {
+                $estadoTexto = $filters['marca_estado'] == 1 ? 'Activa' : 'Inactiva';
+                $pdf->Cell(0, 6, 'Estado: ' . $estadoTexto, 0, 1);
+            }
+            $pdf->Cell(0, 6, 'Total de registros: ' . count($datos), 0, 1);
+            $pdf->Ln(5);
+            
+            // Tabla
+            $pdf->SetFont('helvetica', 'B', 10);
+            $pdf->SetFillColor(68, 114, 196);
+            $pdf->SetTextColor(255, 255, 255);
+            
+            $pdf->Cell(130, 8, 'Descripción', 1, 0, 'C', true);
+            $pdf->Cell(50, 8, 'Estado', 1, 1, 'C', true);
+            
+            $pdf->SetFont('helvetica', '', 9);
+            $pdf->SetTextColor(0, 0, 0);
+            
+            $fill = false;
+            foreach ($datos as $marca) {
+                $pdf->SetFillColor(240, 240, 240);
+                
+                $estadoTexto = $marca['marca_estado'] == 1 ? 'Activa' : 'Inactiva';
+                
+                $pdf->Cell(130, 7, $marca['marca_descripcion'], 1, 0, 'L', $fill);
+                $pdf->Cell(50, 7, $estadoTexto, 1, 1, 'C', $fill);
+                
+                $fill = !$fill;
+            }
+            
+            $filename = 'marcas_' . date('Y-m-d_H-i-s') . '.pdf';
+            $pdf->Output($filename, 'D');
+            exit;
+            
+        } catch (\Exception $e) {
+            $this->redirect('/marcas', 'Error al exportar PDF: ' . $e->getMessage(), 'error');
+        }
     }
 }
