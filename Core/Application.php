@@ -233,14 +233,13 @@ class Application
         // Rutas de módulos del sistema
         $this->router->get('/modulos', 'ModulosController@index');
         $this->router->any('/modulos/create', 'ModulosController@create');
+        $this->router->get('/modulos/exportar', 'ModulosController@exportar');
+        $this->router->get('/modulos/exportar-pdf', 'ModulosController@exportarPdf');
+        $this->router->get('/modulos/{id}', 'ModulosController@show');
         $this->router->any('/modulos/{id}/edit', 'ModulosController@edit');
-        $this->router->get('/modulos/{id}/delete', 'ModulosController@delete');
-        $this->router->get('/modulos/{id}/restore', 'ModulosController@restore');
-        $this->router->get('/modulos/search', 'ModulosController@search');
-        $this->router->get('/modulos/hierarchy', 'ModulosController@hierarchy');
-        $this->router->get('/modulos/{id}/toggle-status', 'ModulosController@toggleStatus');
-        $this->router->post('/modulos/update-order', 'ModulosController@updateOrder');
-        $this->router->get('/modulos/{id}/permissions', 'ModulosController@permissions');
+        $this->router->post('/modulos/{id}/delete', 'ModulosController@delete');
+        $this->router->post('/modulos/{id}/restore', 'ModulosController@restore');
+        $this->router->post('/modulos/{id}/estado', 'ModulosController@cambiarEstado');
 
         // Rutas de perfiles
         $this->router->get('/perfiles', 'PerfilesController@index');

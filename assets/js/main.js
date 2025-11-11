@@ -3917,14 +3917,11 @@ function initModulosFormValidation() {
         }
     }
 
-    // Validar formato de ruta
+    // Validar formato de ruta (solo espacios)
     function validarRuta() {
         const ruta = rutaInput.value.trim();
         
-        if (ruta && !ruta.startsWith('/')) {
-            rutaInput.setCustomValidity('La ruta debe comenzar con "/"');
-            rutaInput.classList.add('is-invalid');
-        } else if (ruta.includes(' ')) {
+        if (ruta.includes(' ')) {
             rutaInput.setCustomValidity('La ruta no puede contener espacios');
             rutaInput.classList.add('is-invalid');
         } else {
