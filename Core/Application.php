@@ -208,6 +208,17 @@ class Application
         $this->router->post('/marcas/{id}/restore', 'MarcasController@restore');
         $this->router->post('/marcas/{id}/estado', 'MarcasController@cambiarEstado');
 
+        // Rutas de niveles de daño
+        $this->router->get('/niveldanio', 'NivelDanioController@index');
+        $this->router->any('/niveldanio/create', 'NivelDanioController@create');
+        $this->router->get('/niveldanio/exportar', 'NivelDanioController@exportar');
+        $this->router->get('/niveldanio/exportar-pdf', 'NivelDanioController@exportarPdf');
+        $this->router->get('/niveldanio/{id}', 'NivelDanioController@show');
+        $this->router->any('/niveldanio/{id}/edit', 'NivelDanioController@edit');
+        $this->router->post('/niveldanio/{id}/delete', 'NivelDanioController@delete');
+        $this->router->post('/niveldanio/{id}/restore', 'NivelDanioController@restore');
+        $this->router->post('/niveldanio/{id}/estado', 'NivelDanioController@cambiarEstado');
+
         // Rutas de menús
         $this->router->get('/menus', 'MenusController@index');
         $this->router->any('/menus/create', 'MenusController@create');
