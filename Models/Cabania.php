@@ -203,24 +203,11 @@ class Cabania extends Model
 
     /**
      * Ejecutar query con parámetros preparados
+     * Este método es un alias del método query() heredado del modelo base
      */
     private function queryWithParams($sql, $params = [])
     {
-        $stmt = $this->db->prepare($sql);
-        if (!$stmt) {
-            throw new \Exception("Error preparando consulta: " . $this->db->error);
-        }
-        
-        if (!empty($params)) {
-            $types = str_repeat('s', count($params));
-            $stmt->bind_param($types, ...$params);
-        }
-        
-        if (!$stmt->execute()) {
-            throw new \Exception("Error ejecutando consulta: " . $stmt->error);
-        }
-        
-        return $stmt->get_result();
+        return $this->query($sql, $params);
     }
 
     /**

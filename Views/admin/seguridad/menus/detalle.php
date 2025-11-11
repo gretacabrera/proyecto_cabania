@@ -1,299 +1,247 @@
 <?php
+
 /**
- * Vista de detalle de menú
+ * Vista: Detalle de Menú
+ * Descripción: Muestra información completa de un menú
+ * Autor: Sistema MVC
+ * Fecha: 2025-11-11
  */
 
-$title = $data['title'] ?? 'Detalle del Menú';
-$menu = $data['menu'] ?? null;
-$modulos = $data['modulos'] ?? [];
-
-if (!$menu) {
-    header('Location: /menus');
-    exit;
+// Validar que existe el menú
+if (!isset($menu) || empty($menu)) {
+    echo '<div class="alert alert-danger">Menú no encontrado.</div>';
+    return;
 }
-
 ?>
 
-<div class="container-fluid">
-    <!-- Header -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h1 class="h3 mb-0"><?php echo htmlspecialchars($title); ?></h1>
-                    <p class="text-muted">Información completa del menú</p>
-                </div>
-                <div>
-                    <a href="/menus" class="btn btn-outline-secondary">
-                        <i class="fas fa-arrow-left"></i> Volver al Listado
-                    </a>
-                    <a href="/menus/<?php echo $menu['id_menu']; ?>/edit" class="btn btn-primary">
-                        <i class="fas fa-edit"></i> Editar
-                    </a>
-                </div>
+<div class="content-wrapper">
+    <!-- Acciones principales -->
+    <div class="page-actions">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <a href="<?= $this->url('/menus') ?>" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i> Volver al listado
+                </a>
+            </div>
+            <div class="action-buttons">
+                <a href="<?= $this->url('/menus/' . $menu['id_menu']) . '/edit' ?>"
+                    class="btn btn-warning">
+                    <i class="fas fa-edit"></i> Editar Menú
+                </a>
+                
+                <?php if ($menu['menu_estado'] == 1): ?>
+                    <!-- Menú activo: puede desactivar -->
+                    <button class="btn btn-danger ms-2"
+                        onclick="cambiarEstadoMenu(<?= $menu['id_menu'] ?>, 0, '<?= addslashes($menu['menu_nombre']) ?>')">
+                        <i class="fas fa-ban"></i> Desactivar
+                    </button>
+                <?php else: ?>
+                    <!-- Menú inactivo: solo puede activar -->
+                    <button class="btn btn-success ms-2"
+                        onclick="cambiarEstadoMenu(<?= $menu['id_menu'] ?>, 1, '<?= addslashes($menu['menu_nombre']) ?>')">
+                        <i class="fas fa-check"></i> Activar
+                    </button>
+                <?php endif; ?>
             </div>
         </div>
     </div>
 
     <div class="row">
+        <!-- Información principal -->
         <div class="col-lg-8">
-            <!-- Información principal -->
-            <div class="card mb-4">
+            <!-- Datos básicos -->
+            <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-bars"></i>
-                        Información del Menú
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle"></i> Información General
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label text-muted">ID del Menú</label>
-                                <div>
-                                    <code class="fs-5">#<?php echo $menu['id_menu']; ?></code>
-                                </div>
+                            <div class="info-group">
+                                <i class="fas fa-tag text-muted"></i> Nombre:
+                                <strong><?= htmlspecialchars($menu['menu_nombre']) ?></strong>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label text-muted">Estado</label>
-                                <div>
+                        <div class="col-md-3">
+                            <div class="info-group">
+                                <i class="fas fa-sort-numeric-down text-muted"></i> Orden:
+                                <code><?= $menu['menu_orden'] ?></code>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-group">
+                                <label class="info-label">
                                     <?php if ($menu['menu_estado'] == 1): ?>
-                                        <span class="badge bg-success fs-6">
-                                            <i class="fas fa-check-circle"></i> Activo
+                                        <i class="fas fa-toggle-on text-success"></i> Estado: 
+                                        <span class="badge bg-success badge-lg">
+                                            <i class="fas fa-check"></i> Activo
                                         </span>
                                     <?php else: ?>
-                                        <span class="badge bg-danger fs-6">
-                                            <i class="fas fa-times-circle"></i> Inactivo
+                                        <i class="fas fa-toggle-off text-danger"></i> Estado: 
+                                        <span class="badge bg-danger badge-lg">
+                                            <i class="fas fa-times"></i> Inactivo
                                         </span>
                                     <?php endif; ?>
-                                </div>
+                                </label>
                             </div>
                         </div>
                     </div>
-
-                    <div class="row">
-                        <div class="col-md-8">
-                            <div class="mb-3">
-                                <label class="form-label text-muted">Nombre del Menú</label>
-                                <div>
-                                    <h4 class="mb-0"><?php echo htmlspecialchars($menu['menu_nombre']); ?></h4>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label class="form-label text-muted">Orden de Aparición</label>
-                                <div>
-                                    <span class="badge bg-secondary fs-5">
-                                        <i class="fas fa-sort-numeric-down"></i> <?php echo $menu['menu_orden']; ?>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <hr>
-
-                    <!-- Descripción del menú -->
-                    <div class="mb-3">
-                        <label class="form-label text-muted">Descripción del Sistema</label>
-                        <div class="alert alert-light">
-                            <i class="fas fa-info-circle text-info me-2"></i>
-                            Este menú forma parte del sistema de navegación principal. 
-                            <?php if ($menu['menu_estado'] == 1): ?>
-                                Actualmente está <strong>activo</strong> y visible para los usuarios con permisos correspondientes.
-                            <?php else: ?>
-                                Actualmente está <strong>inactivo</strong> y no es visible en la navegación.
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Módulos asociados -->
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-cubes"></i>
-                        Módulos Asociados
-                        <span class="badge bg-primary ms-2"><?php echo count($modulos); ?></span>
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <?php if (!empty($modulos)): ?>
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Nombre del Módulo</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($modulos as $modulo): ?>
-                                <tr>
-                                    <td>
-                                        <code>#<?php echo $modulo['id_modulo']; ?></code>
-                                    </td>
-                                    <td>
-                                        <strong><?php echo htmlspecialchars($modulo['modulo_nombre']); ?></strong>
-                                    </td>
-                                    <td>
-                                        <?php if ($modulo['modulo_estado'] == 1): ?>
-                                            <span class="badge bg-success">Activo</span>
-                                        <?php else: ?>
-                                            <span class="badge bg-danger">Inactivo</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <a href="/modulos/<?php echo $modulo['id_modulo']; ?>" 
-                                           class="btn btn-outline-primary btn-sm">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                    <?php else: ?>
-                    <div class="text-center py-4">
-                        <i class="fas fa-cubes fa-3x text-muted mb-3"></i>
-                        <h6>No hay módulos asociados</h6>
-                        <p class="text-muted">
-                            Este menú no tiene módulos asociados actualmente.
-                        </p>
-                    </div>
-                    <?php endif; ?>
                 </div>
             </div>
         </div>
 
+        <!-- Panel lateral -->
         <div class="col-lg-4">
-            <!-- Panel de información -->
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h6 class="mb-0">
-                        <i class="fas fa-info-circle"></i>
-                        Información Técnica
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <small class="text-muted">Identificador</small>
-                        <div><code><?php echo $menu['id_menu']; ?></code></div>
-                    </div>
-                    <div class="mb-3">
-                        <small class="text-muted">Nombre</small>
-                        <div><strong><?php echo htmlspecialchars($menu['menu_nombre']); ?></strong></div>
-                    </div>
-                    <div class="mb-3">
-                        <small class="text-muted">Orden</small>
-                        <div><span class="badge bg-secondary"><?php echo $menu['menu_orden']; ?></span></div>
-                    </div>
-                    <div class="mb-3">
-                        <small class="text-muted">Estado</small>
-                        <div>
-                            <?php if ($menu['menu_estado'] == 1): ?>
-                                <span class="badge bg-success">Activo</span>
-                            <?php else: ?>
-                                <span class="badge bg-danger">Inactivo</span>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                    <div class="mb-0">
-                        <small class="text-muted">Módulos</small>
-                        <div><span class="badge bg-primary"><?php echo count($modulos); ?></span></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Acciones -->
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h6 class="mb-0">
-                        <i class="fas fa-cogs"></i>
-                        Acciones Disponibles
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a href="/menus/<?php echo $menu['id_menu']; ?>/edit" class="btn btn-primary">
-                            <i class="fas fa-edit"></i> Editar Menú
-                        </a>
-                        <?php if ($menu['menu_estado'] == 1): ?>
-                            <a href="/menus/<?php echo $menu['id_menu']; ?>/delete" 
-                               class="btn btn-outline-danger"
-                               data-action="desactivar-menu"
-                               data-menu-id="<?php echo $menu['id_menu']; ?>">
-                                <i class="fas fa-times"></i> Desactivar
-                            </a>
-                        <?php else: ?>
-                            <a href="/menus/<?php echo $menu['id_menu']; ?>/restore" 
-                               class="btn btn-outline-success"
-                               data-action="activar-menu"
-                               data-menu-id="<?php echo $menu['id_menu']; ?>">
-                                <i class="fas fa-undo"></i> Reactivar
-                            </a>
-                        <?php endif; ?>
-                        <hr>
-                        <a href="/menus/reorder" class="btn btn-outline-info">
-                            <i class="fas fa-sort"></i> Reordenar Menús
-                        </a>
-                        <a href="/menus/stats" class="btn btn-outline-secondary">
-                            <i class="fas fa-chart-bar"></i> Ver Estadísticas
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Navegación -->
+            <!-- Estadísticas rápidas -->
             <div class="card">
                 <div class="card-header">
-                    <h6 class="mb-0">
-                        <i class="fas fa-compass"></i>
-                        Navegación Rápida
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-chart-bar"></i> Estadísticas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="metric-box">
+                                <div class="metric-value text-info"><?= number_format($estadisticas['perfiles_usando'] ?? 0) ?></div>
+                                <div class="metric-label">Perfiles usando</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="metric-box">
+                                <div class="metric-value text-primary"><?= number_format($estadisticas['total_modulos'] ?? 0) ?></div>
+                                <div class="metric-label">Total módulos</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones adicionales -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-cogs"></i> Acciones Rápidas
                     </h6>
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <a href="/menus" class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-list"></i> Todos los Menús
+                        <a href="<?= $this->url('/modulos/create') ?>?menu=<?= $menu['id_menu'] ?>"
+                            class="btn btn-outline-primary">
+                            <i class="fas fa-plus"></i> Crear Módulo
                         </a>
-                        <a href="/menus/create" class="btn btn-outline-success btn-sm">
-                            <i class="fas fa-plus"></i> Crear Nuevo
+                        <a href="<?= $this->url('/modulos') ?>?menu=<?= $menu['id_menu'] ?>"
+                            class="btn btn-outline-info">
+                            <i class="fas fa-list"></i> Ver Módulos
                         </a>
-                        <a href="/menus/search" class="btn btn-outline-info btn-sm">
-                            <i class="fas fa-search"></i> Buscar Menús
+                        <a href="<?= $this->url('/menus') ?>"
+                            class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Volver al Listado
                         </a>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Historial de navegación -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item">
-                        <a href="/menus">
-                            <i class="fas fa-bars"></i> Menús
-                        </a>
-                    </li>
-                    <li class="breadcrumb-item active" aria-current="page">
-                        <?php echo htmlspecialchars($menu['menu_nombre']); ?>
-                    </li>
-                </ol>
-            </nav>
         </div>
     </div>
 </div>
 
+<!-- JavaScript para funcionalidades -->
+<script>
+function cambiarEstadoMenu(id, nuevoEstado, nombre) {
+    let accion, mensaje, color;
+    
+    switch(nuevoEstado) {
+        case 1:
+            accion = 'activar';
+            mensaje = 'El menú estará visible en el sistema';
+            color = '#28a745';
+            break;
+        case 0:
+            accion = 'desactivar';
+            mensaje = 'El menú no estará visible en el sistema';
+            color = '#dc3545';
+            break;
+        default:
+            accion = 'cambiar estado';
+            mensaje = '';
+            color = '#6c757d';
+    }
+    
+    console.log('Cambiando estado:', { id, nuevoEstado, nombre, accion });
 
-<?php require_once 'Views/layouts/footer.php'; ?>
+    // Usar SweetAlert si está disponible, sino usar confirm simple
+    const confirmar = typeof Swal !== 'undefined' ? 
+        Swal.fire({
+            title: `¿${accion.charAt(0).toUpperCase() + accion.slice(1)} menú?`,
+            text: `¿Está seguro que desea ${accion} el menú "${nombre}"? ${mensaje}`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: `Sí, ${accion}`,
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: color
+        }).then(result => result.isConfirmed) :
+        Promise.resolve(confirm(`¿Está seguro que desea ${accion} el menú "${nombre}"?`));
+    
+    confirmar.then(confirmed => {
+        if (confirmed) {
+            const url = `<?= $this->url('/menus') ?>/${id}/estado`;
+            console.log('URL de petición:', url);
+            
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({estado: nuevoEstado})
+            })
+            .then(response => {
+                console.log('Respuesta recibida:', response.status, response.statusText);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                return response.json();
+            })
+            .then(data => {
+                console.log('Datos recibidos:', data);
+                
+                if (data.success) {
+                    // Usar SweetAlert para éxito si está disponible
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: '¡Éxito!',
+                            text: `Menú ${accion}do correctamente`,
+                            icon: 'success',
+                            timer: 1500,
+                            showConfirmButton: false
+                        }).then(() => location.reload());
+                    } else {
+                        alert(`Menú ${accion}do correctamente`);
+                        location.reload();
+                    }
+                } else {
+                    const errorMsg = 'Error al cambiar el estado: ' + (data.message || 'Error desconocido');
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire('Error', errorMsg, 'error');
+                    } else {
+                        alert(errorMsg);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error completo:', error);
+                const errorMsg = 'Error al cambiar el estado del menú: ' + error.message;
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('Error', errorMsg, 'error');
+                } else {
+                    alert(errorMsg);
+                }
+            });
+        }
+    });
+}
+</script>

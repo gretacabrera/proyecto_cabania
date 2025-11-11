@@ -119,6 +119,17 @@ class Application
         $this->router->post('/cabanias/{id}/estado', 'CabaniasController@cambiarEstado');
         $this->router->post('/cabanias/check-availability', 'CabaniasController@checkAvailability');
 
+        // Rutas administrativas de menús (requieren autenticación)
+        $this->router->get('/menus', 'MenusController@index');
+        $this->router->any('/menus/create', 'MenusController@create');
+        $this->router->get('/menus/exportar', 'MenusController@exportar');
+        $this->router->get('/menus/exportar-pdf', 'MenusController@exportarPdf');
+        $this->router->get('/menus/{id}', 'MenusController@show');
+        $this->router->any('/menus/{id}/edit', 'MenusController@edit');
+        $this->router->post('/menus/{id}/delete', 'MenusController@delete');
+        $this->router->post('/menus/{id}/restore', 'MenusController@restore');
+        $this->router->post('/menus/{id}/estado', 'MenusController@cambiarEstado');
+
         // Rutas de reservas
         $this->router->get('/reservas', 'ReservasController@index');
         $this->router->any('/reservas/create', 'ReservasController@create');

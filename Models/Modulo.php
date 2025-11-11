@@ -9,7 +9,7 @@ use App\Core\Model;
  */
 class Modulo extends Model
 {
-    protected $table = 'modulos';
+    protected $table = 'modulo';
     protected $primaryKey = 'id_modulo';
 
     /**
@@ -124,5 +124,24 @@ class Modulo extends Model
         }
         
         return $branch;
+    }
+
+    /**
+     * Obtener módulos por ID de menú
+     */
+    public function getByMenuId($menuId)
+    {
+        $sql = "SELECT * FROM {$this->table} 
+                WHERE rela_menu = ? 
+                ORDER BY modulo_descripcion ASC";
+        
+        $result = $this->query($sql, [$menuId]);
+        
+        $modulos = [];
+        while ($row = $result->fetch_assoc()) {
+            $modulos[] = $row;
+        }
+        
+        return $modulos;
     }
 }
