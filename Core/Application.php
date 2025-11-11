@@ -281,12 +281,13 @@ class Application
         // Rutas de tipos de servicios
         $this->router->get('/tiposservicios', 'TiposServiciosController@index');
         $this->router->any('/tiposservicios/create', 'TiposServiciosController@create');
+        $this->router->get('/tiposservicios/exportar', 'TiposServiciosController@exportar');
+        $this->router->get('/tiposservicios/exportar-pdf', 'TiposServiciosController@exportarPdf');
+        $this->router->get('/tiposservicios/{id}', 'TiposServiciosController@show');
         $this->router->any('/tiposservicios/{id}/edit', 'TiposServiciosController@edit');
-        $this->router->get('/tiposservicios/{id}/delete', 'TiposServiciosController@delete');
-        $this->router->get('/tiposservicios/{id}/restore', 'TiposServiciosController@restore');
-        $this->router->get('/tiposservicios/{id}/toggle-status', 'TiposServiciosController@toggleStatus');
-        $this->router->get('/tiposservicios/search', 'TiposServiciosController@search');
-        $this->router->get('/tiposservicios/stats', 'TiposServiciosController@stats');
+        $this->router->post('/tiposservicios/{id}/delete', 'TiposServiciosController@delete');
+        $this->router->post('/tiposservicios/{id}/restore', 'TiposServiciosController@restore');
+        $this->router->post('/tiposservicios/{id}/estado', 'TiposServiciosController@cambiarEstado');
 
         // Rutas de tipos de contactos (sin guión para mantener consistencia con la URL del módulo)
         $this->router->get('/tiposcontactos', 'TiposContactosController@index');

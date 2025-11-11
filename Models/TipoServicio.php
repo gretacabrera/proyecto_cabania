@@ -21,160 +21,181 @@ class TipoServicio extends Model
     }
 
     /**
-     * Buscar tipos de servicios
+     * Obtener tipos de servicios con filtros y paginación
      */
-    public function search($filters = [], $page = 1, $perPage = 10)
+    public function getWithDetails($page = 1, $perPage = 10, $filters = [])
     {
-        $where = ["tiposervicio_estado = 1"];
+        $where = "1=1";
         $params = [];
-
-        if (!empty($filters['search'])) {
-            $where[] = "tiposervicio_descripcion LIKE ?";
-            $params[] = '%' . $filters['search'] . '%';
-        }
-
-        if (isset($filters['estado']) && $filters['estado'] !== '') {
-            $where[] = "tiposervicio_estado = ?";
-            $params[] = $filters['estado'];
-        }
-
-        $whereClause = implode(' AND ', $where);
         
-        return $this->paginate($page, $perPage, $whereClause, "tiposervicio_descripcion", $params);
+        // Aplicar filtros
+        if (!empty($filters['tiposervicio_descripcion'])) {
+            $where .= " AND tiposervicio_descripcion LIKE ?";
+            $params[] = '%' . $filters['tiposervicio_descripcion'] . '%';
+        }
+        
+        if (isset($filters['tiposervicio_estado']) && $filters['tiposervicio_estado'] !== '') {
+            $where .= " AND tiposervicio_estado = ?";
+            $params[] = (int) $filters['tiposervicio_estado'];
+        }
+        
+        return $this->paginateWithParams($page, $perPage, $where, "tiposervicio_descripcion ASC", $params);
     }
 
     /**
-     * Obtener total de páginas para búsqueda
+     * Obtener todos los tipos de servicios con filtros para exportación (sin paginación)
      */
-    public function getTotalPages($filters = [], $perPage = 10)
+    public function getAllWithDetailsForExport($filters = [])
     {
-        $where = ["1=1"];
+        $where = "1=1";
         $params = [];
-
-        if (!empty($filters['search'])) {
-            $where[] = "tiposervicio_descripcion LIKE ?";
-            $params[] = '%' . $filters['search'] . '%';
-        }
-
-        if (isset($filters['estado']) && $filters['estado'] !== '') {
-            $where[] = "tiposervicio_estado = ?";
-            $params[] = $filters['estado'];
-        }
-
-        $whereClause = implode(' AND ', $where);
-        $sql = "SELECT COUNT(*) as total FROM {$this->table} WHERE {$whereClause}";
         
-        $result = $this->query($sql, $params);
-        $total = $result->fetch_assoc()['total'];
+        // Aplicar los mismos filtros que getWithDetails
+        if (!empty($filters['tiposervicio_descripcion'])) {
+            $where .= " AND tiposervicio_descripcion LIKE ?";
+            $params[] = '%' . $filters['tiposervicio_descripcion'] . '%';
+        }
         
-        return ceil($total / $perPage);
+        if (isset($filters['tiposervicio_estado']) && $filters['tiposervicio_estado'] !== '') {
+            $where .= " AND tiposervicio_estado = ?";
+            $params[] = (int) $filters['tiposervicio_estado'];
+        }
+        
+        // Query para contar total (para estadísticas)
+        $countSql = "SELECT COUNT(*) as total FROM {$this->table} WHERE $where";
+        $totalResult = $this->queryWithParams($countSql, $params);
+        $totalRow = $totalResult->fetch_assoc();
+        $total = (int) $totalRow['total'];
+        
+        // Query para obtener TODOS los registros (sin LIMIT)
+        $dataSql = "SELECT * FROM {$this->table} WHERE $where ORDER BY tiposervicio_descripcion ASC";
+        $dataResult = $this->queryWithParams($dataSql, $params);
+        
+        $data = [];
+        while ($row = $dataResult->fetch_assoc()) {
+            $data[] = $row;
+        }
+        
+        return [
+            'data' => $data,
+            'total' => $total
+        ];
     }
 
     /**
-     * Buscar por ID
+     * Obtener tipos de servicios con paginación usando parámetros preparados
      */
-    public function findById($id)
+    private function paginateWithParams($page = 1, $perPage = 10, $where = "1=1", $orderBy = null, $params = [])
     {
-        return $this->find($id);
+        $offset = ($page - 1) * $perPage;
+        $limit = (int) $perPage;
+        
+        // Query para contar total
+        $countSql = "SELECT COUNT(*) as total FROM {$this->table} WHERE $where";
+        $totalResult = $this->queryWithParams($countSql, $params);
+        $totalRow = $totalResult->fetch_assoc();
+        $total = (int) $totalRow['total'];
+        
+        // Query para obtener registros
+        $orderClause = $orderBy ? "ORDER BY $orderBy" : '';
+        $dataSql = "SELECT * FROM {$this->table} WHERE $where $orderClause LIMIT $limit OFFSET $offset";
+        $dataResult = $this->queryWithParams($dataSql, $params);
+        
+        $data = [];
+        while ($row = $dataResult->fetch_assoc()) {
+            $data[] = $row;
+        }
+        
+        $totalPages = ceil($total / $perPage);
+        
+        return [
+            'data' => $data,
+            'total' => $total,
+            'current_page' => $page,
+            'total_pages' => $totalPages,
+            'per_page' => $perPage,
+            'offset' => $offset,
+            'limit' => $limit
+        ];
     }
 
     /**
-     * Verificar si el tipo de servicio está en uso
+     * Ejecutar query con parámetros preparados
      */
-    public function isInUse($id)
+    private function queryWithParams($sql, $params = [])
     {
-        $sql = "SELECT COUNT(*) as count FROM servicio WHERE rela_tiposervicio = ?";
-        $result = $this->query($sql, [$id]);
-        $count = $result->fetch_assoc()['count'];
+        $stmt = $this->db->prepare($sql);
+        if (!$stmt) {
+            throw new \Exception("Error preparando consulta: " . $this->db->error);
+        }
         
-        return $count > 0;
+        if (!empty($params)) {
+            $types = str_repeat('s', count($params));
+            $stmt->bind_param($types, ...$params);
+        }
+        
+        if (!$stmt->execute()) {
+            throw new \Exception("Error ejecutando consulta: " . $stmt->error);
+        }
+        
+        return $stmt->get_result();
     }
 
     /**
-     * Cambiar estado (baja/alta lógica)
+     * Obtener estadísticas de un tipo de servicio específico
      */
-    public function toggleStatus($id)
+    public function getStatistics($id)
     {
-        $tipoServicio = $this->find($id);
-        if (!$tipoServicio) {
-            return false;
-        }
-
-        $newStatus = $tipoServicio['tiposervicio_estado'] == 1 ? 0 : 1;
-        return $this->update($id, ['tiposervicio_estado' => $newStatus]);
-    }
-
-    /**
-     * Obtener tipos de servicios con conteo de servicios
-     */
-    public function getWithServiciosCount()
-    {
-        $sql = "SELECT ts.*, 
-                       COUNT(s.id_servicio) as servicios_count
-                FROM {$this->table} ts
-                LEFT JOIN servicio s ON ts.{$this->primaryKey} = s.rela_tiposervicio
-                GROUP BY ts.{$this->primaryKey}
-                ORDER BY ts.tiposervicio_descripcion";
-        
-        $result = $this->db->query($sql);
-        
-        $tipos = [];
-        while ($row = $result->fetch_assoc()) {
-            $tipos[] = $row;
-        }
-        
-        return $tipos;
-    }
-
-    /**
-     * Obtener estadísticas por mes
-     */
-    public function getMonthlyStats($year = null)
-    {
-        if (!$year) {
-            $year = date('Y');
-        }
-
-        $sql = "SELECT ts.tiposervicio_descripcion,
-                       MONTH(s.servicio_fecha) as mes,
-                       COUNT(s.id_servicio) as cantidad
-                FROM {$this->table} ts
-                LEFT JOIN servicio s ON ts.{$this->primaryKey} = s.rela_tiposervicio 
-                    AND YEAR(s.servicio_fecha) = ?
-                WHERE ts.tiposervicio_estado = 1
-                GROUP BY ts.{$this->primaryKey}, MONTH(s.servicio_fecha)
-                ORDER BY ts.tiposervicio_descripcion, mes";
-        
-        $result = $this->query($sql, [$year]);
-        
-        $stats = [];
-        while ($row = $result->fetch_assoc()) {
-            $stats[] = $row;
-        }
+        $stats = [
+            'servicios_totales' => $this->getServiciosTotales($id),
+            'uso_mes_actual' => $this->getUsoMesActual($id)
+        ];
         
         return $stats;
     }
 
     /**
-     * Obtener tipos de servicios más utilizados
+     * Obtener número total de servicios de este tipo
      */
-    public function getMostUsed($limit = 10)
+    private function getServiciosTotales($id)
     {
-        $sql = "SELECT ts.*, COUNT(s.id_servicio) as total_servicios
-                FROM {$this->table} ts
-                LEFT JOIN servicio s ON ts.{$this->primaryKey} = s.rela_tiposervicio
-                WHERE ts.tiposervicio_estado = 1
-                GROUP BY ts.{$this->primaryKey}
-                ORDER BY total_servicios DESC, ts.tiposervicio_descripcion
-                LIMIT ?";
+        $sql = "SELECT COUNT(*) as total 
+                FROM servicio 
+                WHERE rela_tiposervicio = ?";
         
-        $result = $this->query($sql, [$limit]);
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
         
-        $tipos = [];
-        while ($row = $result->fetch_assoc()) {
-            $tipos[] = $row;
-        }
+        return (int)$row['total'];
+    }
+
+    /**
+     * Obtener cantidad de consumos en el mes actual de servicios de este tipo
+     */
+    private function getUsoMesActual($id)
+    {
+        $mesActual = date('Y-m');
+        $inicioMes = $mesActual . '-01 00:00:00';
+        $finMes = date('Y-m-t') . ' 23:59:59';
         
-        return $tipos;
+        $sql = "SELECT COUNT(*) as total 
+                FROM consumo c
+                INNER JOIN servicio s ON c.rela_servicio = s.id_servicio
+                INNER JOIN reserva r ON c.rela_reserva = r.id_reserva
+                WHERE s.rela_tiposervicio = ?
+                AND r.reserva_fhinicio >= ?
+                AND r.reserva_fhinicio <= ?
+                AND c.consumo_estado = 1";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('iss', $id, $inicioMes, $finMes);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        
+        return (int)$row['total'];
     }
 }
