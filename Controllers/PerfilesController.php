@@ -23,30 +23,33 @@ class PerfilesController extends Controller
      */
     public function index()
     {
-        if (!$this->hasPermission('perfiles')) {
-            return $this->view->error(403);
-        }
+        $this->requirePermission('perfiles');
 
-        $page = $this->get('page', 1);
-        $search = $this->get('buscar', '');
-
-        if ($search) {
-            $perfiles = $this->perfilModel->search($search, $page);
-            $totalPages = $this->perfilModel->getTotalPages($search);
-        } else {
-            $perfiles = $this->perfilModel->paginate($page);
-            $totalPages = $this->perfilModel->getTotalPages();
+        $page = (int) $this->get('page', 1);
+        $perPage = (int) $this->get('per_page', 10);
+        
+        // Validar que perPage esté dentro de los valores permitidos
+        $allowedPerPage = [5, 10, 25, 50];
+        if (!in_array($perPage, $allowedPerPage)) {
+            $perPage = 10;
         }
+        
+        $filters = [
+            'perfil_descripcion' => $this->get('perfil_descripcion'),
+            'perfil_estado' => $this->get('perfil_estado')
+        ];
+
+        $result = $this->perfilModel->getWithDetails($page, $perPage, $filters);
 
         $data = [
             'title' => 'Gestión de Perfiles',
-            'perfiles' => $perfiles,
-            'currentPage' => $page,
-            'totalPages' => $totalPages,
-            'search' => $search
+            'perfiles' => $result['data'],
+            'pagination' => $result,
+            'filters' => $filters,
+            'isAdminArea' => true
         ];
 
-        return $this->render('admin/seguridad/perfiles/listado', $data);
+        return $this->render('admin/seguridad/perfiles/listado', $data, 'main');
     }
 
     /**
@@ -54,41 +57,39 @@ class PerfilesController extends Controller
      */
     public function create()
     {
-        if (!$this->hasPermission('perfiles')) {
-            return $this->view->error(403);
-        }
+        $this->requirePermission('perfiles');
 
         if ($this->isPost()) {
-            $data = [
-                'perfil_nombre' => $this->post('perfil_nombre'),
-                'perfil_descripcion' => $this->post('perfil_descripcion'),
-                'perfil_estado' => 1
-            ];
-
-            $perfilId = $this->perfilModel->create($data);
-            
-            if ($perfilId) {
-                // Asignar módulos al perfil
-                $modulos = $this->post('modulos', []);
-                if (!empty($modulos)) {
-                    $this->perfilModel->assignModules($perfilId, $modulos);
-                }
-                
-                $this->redirect('/perfiles', 'Perfil creado exitosamente', 'exito');
-            } else {
-                $this->redirect('/admin/seguridad/perfiles/create', 'Error al crear el perfil', 'error');
-            }
+            return $this->store();
         }
-
-        // Obtener módulos disponibles
-        $modulos = $this->perfilModel->getAvailableModules();
 
         $data = [
             'title' => 'Nuevo Perfil',
-            'modulos' => $modulos
+            'isAdminArea' => true
         ];
 
-        return $this->render('admin/seguridad/perfiles/formulario', $data);
+        return $this->render('admin/seguridad/perfiles/formulario', $data, 'main');
+    }
+
+    /**
+     * Guardar nuevo perfil
+     */
+    public function store()
+    {
+        $this->requirePermission('perfiles');
+
+        $data = [
+            'perfil_descripcion' => $this->post('perfil_descripcion'),
+            'perfil_estado' => 1
+        ];
+
+        $perfilId = $this->perfilModel->create($data);
+        
+        if ($perfilId) {
+            $this->redirect('/perfiles', 'Perfil creado exitosamente', 'success');
+        } else {
+            $this->redirect('/perfiles/create', 'Error al crear el perfil', 'error');
+        }
     }
 
     /**
@@ -96,41 +97,80 @@ class PerfilesController extends Controller
      */
     public function edit($id)
     {
-        if (!$this->hasPermission('perfiles')) {
-            return $this->view->error(403);
-        }
-
-        $perfil = $this->perfilModel->findWithModules($id);
-        if (!$perfil) {
-            $this->redirect('/perfiles', 'Perfil no encontrado', 'error');
-        }
+        $this->requirePermission('perfiles');
 
         if ($this->isPost()) {
-            $data = [
-                'perfil_nombre' => $this->post('perfil_nombre'),
-                'perfil_descripcion' => $this->post('perfil_descripcion')
-            ];
-
-            if ($this->perfilModel->update($id, $data)) {
-                // Actualizar módulos asignados
-                $modulos = $this->post('modulos', []);
-                $this->perfilModel->updateModules($id, $modulos);
-                
-                $this->redirect('/perfiles', 'Perfil actualizado exitosamente', 'exito');
-            } else {
-                $this->redirect("/admin/seguridad/perfiles/{$id}/edit", 'Error al actualizar el perfil', 'error');
-            }
+            return $this->update($id);
         }
 
-        $modulos = $this->perfilModel->getAvailableModules();
+        $perfil = $this->perfilModel->find($id);
+        if (!$perfil) {
+            $this->redirect('/perfiles', 'Perfil no encontrado', 'error');
+            return;
+        }
+
+        // Obtener estadísticas del perfil
+        $estadisticas = $this->perfilModel->getStatistics($id);
 
         $data = [
             'title' => 'Editar Perfil',
             'perfil' => $perfil,
-            'modulos' => $modulos
+            'estadisticas' => $estadisticas,
+            'isAdminArea' => true
         ];
 
-        return $this->render('admin/seguridad/perfiles/formulario', $data);
+        return $this->render('admin/seguridad/perfiles/formulario', $data, 'main');
+    }
+
+    /**
+     * Actualizar perfil existente
+     */
+    public function update($id)
+    {
+        $this->requirePermission('perfiles');
+
+        $perfil = $this->perfilModel->find($id);
+        if (!$perfil) {
+            $this->redirect('/perfiles', 'Perfil no encontrado', 'error');
+            return;
+        }
+
+        $data = [
+            'perfil_descripcion' => $this->post('perfil_descripcion'),
+            'perfil_estado' => $this->post('perfil_estado', 1)
+        ];
+
+        if ($this->perfilModel->update($id, $data)) {
+            $this->redirect('/perfiles', 'Perfil actualizado exitosamente', 'success');
+        } else {
+            $this->redirect("/perfiles/{$id}/edit", 'Error al actualizar el perfil', 'error');
+        }
+    }
+
+    /**
+     * Ver detalle del perfil
+     */
+    public function show($id)
+    {
+        $this->requirePermission('perfiles');
+
+        $perfil = $this->perfilModel->find($id);
+        if (!$perfil) {
+            $this->redirect('/perfiles', 'Perfil no encontrado', 'error');
+            return;
+        }
+
+        // Obtener estadísticas del perfil
+        $estadisticas = $this->perfilModel->getStatistics($id);
+
+        $data = [
+            'title' => 'Detalle del Perfil',
+            'perfil' => $perfil,
+            'estadisticas' => $estadisticas,
+            'isAdminArea' => true
+        ];
+
+        return $this->render('admin/seguridad/perfiles/detalle', $data, 'main');
     }
 
     /**
@@ -138,17 +178,18 @@ class PerfilesController extends Controller
      */
     public function delete($id)
     {
-        if (!$this->hasPermission('perfiles')) {
-            return $this->view->error(403);
+        $this->requirePermission('perfiles');
+
+        $perfil = $this->perfilModel->find($id);
+        if (!$perfil) {
+            $this->redirect('/perfiles', 'Perfil no encontrado', 'error');
+            return;
         }
 
-        // Verificar que no tenga usuarios asignados
-        if ($this->perfilModel->hasActiveUsers($id)) {
-            $this->redirect('/perfiles', 'No se puede eliminar un perfil con usuarios activos', 'error');
-        }
-
-        if ($this->perfilModel->softDelete($id)) {
-            $this->redirect('/perfiles', 'Perfil eliminado exitosamente', 'exito');
+        $data = ['perfil_estado' => 0];
+        
+        if ($this->perfilModel->update($id, $data)) {
+            $this->redirect('/perfiles', 'Perfil eliminado exitosamente', 'success');
         } else {
             $this->redirect('/perfiles', 'Error al eliminar el perfil', 'error');
         }
@@ -159,115 +200,171 @@ class PerfilesController extends Controller
      */
     public function restore($id)
     {
-        if (!$this->hasPermission('perfiles')) {
-            return $this->view->error(403);
+        $this->requirePermission('perfiles');
+
+        $perfil = $this->perfilModel->find($id);
+        if (!$perfil) {
+            $this->redirect('/perfiles', 'Perfil no encontrado', 'error');
+            return;
         }
 
-        if ($this->perfilModel->restore($id)) {
-            $this->redirect('/perfiles', 'Perfil restaurado exitosamente', 'exito');
+        $data = ['perfil_estado' => 1];
+        
+        if ($this->perfilModel->update($id, $data)) {
+            $this->redirect('/perfiles', 'Perfil restaurado exitosamente', 'success');
         } else {
             $this->redirect('/perfiles', 'Error al restaurar el perfil', 'error');
         }
     }
 
     /**
-     * Buscar perfiles
+     * Exportar perfiles a Excel
      */
-    public function search()
+    public function exportar()
     {
-        if (!$this->hasPermission('perfiles')) {
-            return $this->view->error(403);
+        $this->requirePermission('perfiles');
+
+        try {
+            $filters = [
+                'perfil_descripcion' => $this->get('perfil_descripcion'),
+                'perfil_estado' => $this->get('perfil_estado')
+            ];
+
+            $result = $this->perfilModel->getAllWithDetailsForExport($filters);
+            $perfiles = $result['data'];
+
+            if (empty($perfiles)) {
+                $this->redirect('/perfiles', 'No hay datos para exportar', 'error');
+                return;
+            }
+
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $worksheet = $spreadsheet->getActiveSheet();
+            $worksheet->setTitle('Perfiles');
+
+            $headers = [
+                'A1' => 'Descripción',
+                'B1' => 'Estado'
+            ];
+
+            foreach ($headers as $cell => $header) {
+                $worksheet->setCellValue($cell, $header);
+            }
+
+            $worksheet->getStyle('A1:B1')->getFont()->setBold(true);
+            $worksheet->getStyle('A1:B1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID);
+            $worksheet->getStyle('A1:B1')->getFill()->getStartColor()->setARGB('FFE3F2FD');
+
+            $row = 2;
+            foreach ($perfiles as $perfil) {
+                $estadoTexto = $perfil['perfil_estado'] == 1 ? 'Activo' : 'Inactivo';
+
+                $worksheet->setCellValue('A' . $row, $perfil['perfil_descripcion']);
+                $worksheet->setCellValue('B' . $row, $estadoTexto);
+
+                $row++;
+            }
+
+            $worksheet->getColumnDimension('A')->setWidth(40);
+            $worksheet->getColumnDimension('B')->setWidth(15);
+
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            
+            $fecha = date('Y-m-d');
+            $nombreArchivo = "perfiles_{$fecha}.xlsx";
+
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $nombreArchivo . '"');
+            header('Cache-Control: max-age=0');
+            header('Cache-Control: max-age=1');
+            header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+            header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
+            header('Cache-Control: cache, must-revalidate');
+            header('Pragma: public');
+
+            $writer->save('php://output');
+            exit;
+
+        } catch (\Exception $e) {
+            error_log("Error al exportar perfiles: " . $e->getMessage());
+            $this->redirect('/perfiles', 'Error al exportar: ' . $e->getMessage(), 'error');
         }
-
-        $query = $this->get('q', '');
-        $page = $this->get('page', 1);
-
-        if (empty($query)) {
-            $this->redirect('/perfiles', 'Ingrese un término de búsqueda', 'warning');
-        }
-
-        $perfiles = $this->perfilModel->search($query, $page);
-        $totalPages = $this->perfilModel->getTotalPages($query);
-
-        $data = [
-            'title' => 'Búsqueda de Perfiles',
-            'perfiles' => $perfiles,
-            'currentPage' => $page,
-            'totalPages' => $totalPages,
-            'search' => $query
-        ];
-
-        return $this->render('admin/seguridad/perfiles/busqueda', $data);
     }
 
     /**
-     * Ver módulos asignados al perfil
+     * Exportar perfiles a PDF
      */
-    public function modules($id)
+    public function exportarPdf()
     {
-        if (!$this->hasPermission('perfiles')) {
-            return $this->view->error(403);
-        }
+        $this->requirePermission('perfiles');
 
-        $perfil = $this->perfilModel->findWithModules($id);
-        if (!$perfil) {
-            return $this->view->error(404);
-        }
+        try {
+            $filters = [
+                'perfil_descripcion' => $this->get('perfil_descripcion'),
+                'perfil_estado' => $this->get('perfil_estado')
+            ];
 
-        $data = [
-            'title' => 'Módulos del Perfil',
-            'perfil' => $perfil
-        ];
+            $result = $this->perfilModel->getAllWithDetailsForExport($filters);
+            $perfiles = $result['data'];
 
-        return $this->render('admin/seguridad/perfiles/modulos', $data);
-    }
+            if (empty($perfiles)) {
+                $this->redirect('/perfiles', 'No hay datos para exportar', 'error');
+                return;
+            }
 
-    /**
-     * Ver usuarios con este perfil
-     */
-    public function users($id)
-    {
-        if (!$this->hasPermission('perfiles')) {
-            return $this->view->error(403);
-        }
+            $pdf = new \TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
+            
+            $pdf->SetCreator('Sistema de Gestión de Cabañas');
+            $pdf->SetAuthor('Sistema');
+            $pdf->SetTitle('Lista de Perfiles');
+            $pdf->SetSubject('Perfiles');
 
-        $perfil = $this->perfilModel->find($id);
-        if (!$perfil) {
-            return $this->view->error(404);
-        }
+            $pdf->setPrintHeader(false);
+            $pdf->setPrintFooter(false);
+            $pdf->SetMargins(15, 15, 15);
+            $pdf->SetAutoPageBreak(true, 15);
 
-        $usuarios = $this->perfilModel->getUsers($id);
+            $pdf->AddPage();
 
-        $data = [
-            'title' => 'Usuarios del Perfil',
-            'perfil' => $perfil,
-            'usuarios' => $usuarios
-        ];
+            $pdf->SetFont('helvetica', 'B', 16);
+            $pdf->Cell(0, 10, 'Lista de Perfiles', 0, 1, 'C');
+            $pdf->Ln(5);
 
-        return $this->render('admin/seguridad/perfiles/usuarios', $data);
-    }
+            $pdf->SetFont('helvetica', '', 10);
+            $pdf->Cell(0, 5, 'Fecha: ' . date('d/m/Y'), 0, 1, 'R');
+            $pdf->Cell(0, 5, 'Total de registros: ' . count($perfiles), 0, 1, 'R');
+            $pdf->Ln(5);
 
-    /**
-     * Cambiar estado del perfil
-     */
-    public function toggleStatus($id)
-    {
-        if (!$this->hasPermission('perfiles')) {
-            return $this->view->error(403);
-        }
+            $html = '<table border="1" cellpadding="4">
+                <thead>
+                    <tr style="background-color:#E3F2FD;">
+                        <th width="80%"><b>Descripción</b></th>
+                        <th width="20%"><b>Estado</b></th>
+                    </tr>
+                </thead>
+                <tbody>';
 
-        $perfil = $this->perfilModel->find($id);
-        if (!$perfil) {
-            $this->redirect('/perfiles', 'Perfil no encontrado', 'error');
-        }
+            foreach ($perfiles as $perfil) {
+                $estadoTexto = $perfil['perfil_estado'] == 1 ? 'Activo' : 'Inactivo';
+                $html .= '<tr>
+                    <td width="80%">' . htmlspecialchars($perfil['perfil_descripcion']) . '</td>
+                    <td width="20%">' . $estadoTexto . '</td>
+                </tr>';
+            }
 
-        $newStatus = $perfil['perfil_estado'] == 1 ? 0 : 1;
-        
-        if ($this->perfilModel->update($id, ['perfil_estado' => $newStatus])) {
-            $message = $newStatus ? 'Perfil activado' : 'Perfil desactivado';
-            $this->redirect('/perfiles', $message, 'exito');
-        } else {
-            $this->redirect('/perfiles', 'Error al cambiar el estado', 'error');
+            $html .= '</tbody></table>';
+
+            $pdf->writeHTML($html, true, false, true, false, '');
+
+            $fecha = date('Y-m-d');
+            $nombreArchivo = "perfiles_{$fecha}.pdf";
+
+            $pdf->Output($nombreArchivo, 'D');
+            exit;
+
+        } catch (\Exception $e) {
+            error_log("Error al exportar PDF de perfiles: " . $e->getMessage());
+            $this->redirect('/perfiles', 'Error al exportar PDF: ' . $e->getMessage(), 'error');
         }
     }
 
@@ -276,36 +373,38 @@ class PerfilesController extends Controller
      */
     public function clone($id)
     {
-        if (!$this->hasPermission('perfiles')) {
-            return $this->view->error(403);
-        }
+        $this->requirePermission('perfiles');
 
-        $perfil = $this->perfilModel->findWithModules($id);
+        $perfil = $this->perfilModel->find($id);
         if (!$perfil) {
             $this->redirect('/perfiles', 'Perfil no encontrado', 'error');
+            return;
         }
 
         if ($this->isPost()) {
-            $newName = $this->post('perfil_nombre');
+            $newName = $this->post('perfil_descripcion');
             
             if (empty($newName)) {
-                $this->redirect("/admin/seguridad/perfiles/{$id}/clone", 'Debe especificar un nombre', 'error');
+                $this->redirect("/perfiles/{$id}/clone", 'Debe especificar un nombre', 'error');
+                return;
             }
 
             $newPerfilId = $this->perfilModel->clonePerfil($id, $newName);
             
             if ($newPerfilId) {
-                $this->redirect('/perfiles', 'Perfil clonado exitosamente', 'exito');
+                $this->redirect('/perfiles', 'Perfil clonado exitosamente', 'success');
             } else {
-                $this->redirect("/admin/seguridad/perfiles/{$id}/clone", 'Error al clonar el perfil', 'error');
+                $this->redirect("/perfiles/{$id}/clone", 'Error al clonar el perfil', 'error');
             }
+            return;
         }
 
         $data = [
             'title' => 'Clonar Perfil',
-            'perfil' => $perfil
+            'perfil' => $perfil,
+            'isAdminArea' => true
         ];
 
-        return $this->render('admin/seguridad/perfiles/clonar', $data);
+        return $this->render('admin/seguridad/perfiles/clonar', $data, 'main');
     }
 }

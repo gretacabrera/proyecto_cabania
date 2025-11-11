@@ -234,13 +234,12 @@ class Application
         // Rutas de perfiles
         $this->router->get('/perfiles', 'PerfilesController@index');
         $this->router->any('/perfiles/create', 'PerfilesController@create');
+        $this->router->get('/perfiles/exportar', 'PerfilesController@exportar');
+        $this->router->get('/perfiles/exportar-pdf', 'PerfilesController@exportarPdf');
+        $this->router->get('/perfiles/{id}', 'PerfilesController@show');
         $this->router->any('/perfiles/{id}/edit', 'PerfilesController@edit');
-        $this->router->get('/perfiles/{id}/delete', 'PerfilesController@delete');
-        $this->router->get('/perfiles/{id}/restore', 'PerfilesController@restore');
-        $this->router->get('/perfiles/search', 'PerfilesController@search');
-        $this->router->get('/perfiles/{id}/modules', 'PerfilesController@modules');
-        $this->router->get('/perfiles/{id}/users', 'PerfilesController@users');
-        $this->router->get('/perfiles/{id}/toggle-status', 'PerfilesController@toggleStatus');
+        $this->router->post('/perfiles/{id}/delete', 'PerfilesController@delete');
+        $this->router->post('/perfiles/{id}/restore', 'PerfilesController@restore');
         $this->router->any('/perfiles/{id}/clone', 'PerfilesController@clone');
 
         // Rutas de estados de personas
