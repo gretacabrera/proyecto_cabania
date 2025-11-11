@@ -119,6 +119,17 @@ class Application
         $this->router->post('/cabanias/{id}/estado', 'CabaniasController@cambiarEstado');
         $this->router->post('/cabanias/check-availability', 'CabaniasController@checkAvailability');
 
+        // Rutas de Costos por Daño
+        $this->router->get('/costodanio', 'CostosDanioController@index');
+        $this->router->any('/costodanio/create', 'CostosDanioController@create');
+        $this->router->get('/costodanio/exportar', 'CostosDanioController@exportar');
+        $this->router->get('/costodanio/exportar-pdf', 'CostosDanioController@exportarPdf');
+        $this->router->get('/costodanio/{id}', 'CostosDanioController@show');
+        $this->router->any('/costodanio/{id}/edit', 'CostosDanioController@edit');
+        $this->router->post('/costodanio/{id}/delete', 'CostosDanioController@delete');
+        $this->router->post('/costodanio/{id}/restore', 'CostosDanioController@restore');
+        $this->router->post('/costodanio/{id}/estado', 'CostosDanioController@cambiarEstado');
+
         // Rutas administrativas de menús (requieren autenticación)
         $this->router->get('/menus', 'MenusController@index');
         $this->router->any('/menus/create', 'MenusController@create');
