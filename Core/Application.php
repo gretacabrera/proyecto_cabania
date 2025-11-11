@@ -219,6 +219,17 @@ class Application
         $this->router->post('/niveldanio/{id}/restore', 'NivelDanioController@restore');
         $this->router->post('/niveldanio/{id}/estado', 'NivelDanioController@cambiarEstado');
 
+        // Rutas de inventario
+        $this->router->get('/inventario', 'InventarioController@index');
+        $this->router->any('/inventario/create', 'InventarioController@create');
+        $this->router->get('/inventario/exportar', 'InventarioController@exportar');
+        $this->router->get('/inventario/exportar-pdf', 'InventarioController@exportarPdf');
+        $this->router->get('/inventario/{id}', 'InventarioController@show');
+        $this->router->any('/inventario/{id}/edit', 'InventarioController@edit');
+        $this->router->post('/inventario/{id}/delete', 'InventarioController@delete');
+        $this->router->post('/inventario/{id}/restore', 'InventarioController@restore');
+        $this->router->post('/inventario/{id}/estado', 'InventarioController@cambiarEstado');
+
         // Rutas de menús
         $this->router->get('/menus', 'MenusController@index');
         $this->router->any('/menus/create', 'MenusController@create');
