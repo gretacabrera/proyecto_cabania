@@ -10,6 +10,11 @@ Vistas accesibles para huéspedes y usuarios públicos:
 - `auth/` - Login, registro, recuperación de contraseña
 - `catalogo/` - Catálogo público de cabañas y servicios
 - `comentarios/` - Sistema de comentarios y feedback para huéspedes
+- `consumos/` - **NUEVO**: Sistema self-service de consumos para huéspedes (4 vistas):
+  - `listado.php` - Listado de consumos propios del huésped
+  - `solicitar.php` - Catálogo visual para solicitar productos/servicios
+  - `editar.php` - Editar cantidad de consumo
+  - `detalle.php` - Vista detallada de consumo
 - `ingresos/` - Check-in, registro de llegadas de huéspedes
 - `reservas/` - **Sistema completo de reservas online** (5 vistas):
   - `confirmar.php` - Paso 1: Confirmación de datos básicos de reserva
@@ -36,10 +41,21 @@ Vistas que requieren autenticación administrativa:
 
 #### `/admin/operaciones/` - Operaciones del Negocio (5 módulos)  
 - `cabanias/` - Gestión de cabañas del complejo
-- `consumos/` - Registro de consumos de huéspedes (gestión administrativa)
+- `consumos/` - **ACTUALIZADO**: Registro administrativo de consumos con formulario múltiple:
+  - `listado.php` - Listado con filtros y exportaciones
+  - `formulario_multiple.php` - **NUEVO**: Formulario dinámico para múltiples items
+  - `detalle.php` - Vista de detalle de consumo
 - `productos/` - Gestión de inventario y productos
 - `reservas/` - Gestión administrativa de reservas
 - `servicios/` - Gestión administrativa de servicios ofrecidos
+
+### `/totem/` - **NUEVO**: Módulo Totem Sin Autenticación
+Sistema de pedidos para cabañas sin requerir autenticación:
+- `consumos/` - Sistema completo de totem (3 vistas):
+  - `config.php` - Configuración del totem con código de cabaña
+  - `menu.php` - Catálogo de productos/servicios con botones táctiles
+  - `historial.php` - Historial de pedidos realizados en sesión
+- **Layout especial**: `/shared/layouts/totem.php` - Diseño fullscreen púrpura optimizado para tablets
 
 #### `/admin/seguridad/` - Administración del Sistema (5 módulos)
 - `menus/` - Configuración de menús del sistema
@@ -382,10 +398,11 @@ $this->view('admin/operaciones/cabanias/index', $data);
 ## 📊 **Estadísticas Finales**
 
 ### **Distribución de Vistas Implementadas**
-- **Públicas**: 7 módulos principales + 5 vistas de reserva = **12 elementos**
-- **Administrativas**: 24 módulos organizados = **24 elementos**  
+- **Públicas**: 8 módulos principales + 5 vistas de reserva + 4 vistas de consumos huésped = **17 elementos**
+- **Totem**: 1 módulo + 3 vistas + 1 layout especial = **5 elementos**
+- **Administrativas**: 24 módulos organizados + 1 formulario múltiple consumos = **25 elementos**  
 - **Compartidas**: 3 categorías de componentes = **3 elementos**
-- **Total General**: **39 elementos** implementados y funcionales
+- **Total General**: **50 elementos** implementados y funcionales
 
 ### **Cobertura por Funcionalidad**
 - **🌐 Experiencia Huésped**: 100% completada

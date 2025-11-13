@@ -154,13 +154,13 @@ class Reporte
         }
 
         if (!empty($filtros['fecha_desde'])) {
-            $whereConditions[] = "DATE(c.consumo_fecha) >= ?";
+            $whereConditions[] = "DATE(r.reserva_fhinicio) >= ?";
             $params[] = $filtros['fecha_desde'];
             $paramTypes .= 's';
         }
 
         if (!empty($filtros['fecha_hasta'])) {
-            $whereConditions[] = "DATE(c.consumo_fecha) <= ?";
+            $whereConditions[] = "DATE(r.reserva_fhinicio) <= ?";
             $params[] = $filtros['fecha_hasta'];
             $paramTypes .= 's';
         }
@@ -178,8 +178,8 @@ class Reporte
                 SUM(c.consumo_cantidad * p.producto_precio) as total_importe_pesos,
                 AVG(c.consumo_cantidad * p.producto_precio) as promedio_por_reserva,
                 GROUP_CONCAT(DISTINCT p.producto_nombre ORDER BY p.producto_nombre SEPARATOR ', ') as productos_consumidos,
-                MIN(c.consumo_fecha) as primera_fecha,
-                MAX(c.consumo_fecha) as ultima_fecha
+                MIN(r.reserva_fhinicio) as primera_fecha,
+                MAX(r.reserva_fhinicio) as ultima_fecha
             FROM cabania cab
             LEFT JOIN reserva r ON cab.id_cabania = r.rela_cabania
             LEFT JOIN consumo c ON r.id_reserva = c.rela_reserva
@@ -535,7 +535,7 @@ class Reporte
         $paramTypes = '';
 
         if (!empty($filtros['anio'])) {
-            $whereConditions[] = "YEAR(c.consumo_fecha) = ?";
+            $whereConditions[] = "YEAR(r.reserva_fhinicio) = ?";
             $params[] = intval($filtros['anio']);
             $paramTypes .= 'i';
         }
@@ -544,9 +544,9 @@ class Reporte
 
         $query = "
             SELECT 
-                YEAR(c.consumo_fecha) as anio,
-                MONTH(c.consumo_fecha) as mes,
-                MONTHNAME(c.consumo_fecha) as nombre_mes,
+                YEAR(r.reserva_fhinicio) as anio,
+                MONTH(r.reserva_fhinicio) as mes,
+                MONTHNAME(r.reserva_fhinicio) as nombre_mes,
                 p.producto_nombre,
                 cat.categoria_descripcion,
                 m.marca_descripcion,
@@ -555,11 +555,12 @@ class Reporte
                 AVG(c.consumo_cantidad) as promedio_por_reserva,
                 SUM(c.consumo_cantidad * p.producto_precio) as ingresos_generados
             FROM consumo c
+            JOIN reserva r ON c.rela_reserva = r.id_reserva
             JOIN producto p ON c.rela_producto = p.id_producto
             JOIN categoria cat ON p.rela_categoria = cat.id_categoria
             JOIN marca m ON p.rela_marca = m.id_marca
             {$whereClause}
-            GROUP BY YEAR(c.consumo_fecha), MONTH(c.consumo_fecha), p.id_producto
+            GROUP BY YEAR(r.reserva_fhinicio), MONTH(r.reserva_fhinicio), p.id_producto
             ORDER BY anio DESC, mes DESC, total_vendido DESC
         ";
 

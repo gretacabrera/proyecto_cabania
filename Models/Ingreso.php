@@ -316,13 +316,13 @@ class Ingreso extends Model
 
             if ($reserva) {
                 // Obtener consumos asociados
-                $query_consumos = "SELECT co.consumo_total, co.consumo_fechahora,
+                $query_consumos = "SELECT co.consumo_total, co.consumo_cantidad, co.consumo_descripcion,
                                         pr.producto_nombre, pr.producto_precio
                                  FROM consumo co
                                  LEFT JOIN producto pr ON co.rela_producto = pr.id_producto
                                  WHERE co.rela_reserva = " . (int)$id_reserva . "
                                  AND co.consumo_estado = 1
-                                 ORDER BY co.consumo_fechahora";
+                                 ORDER BY co.id_consumo DESC";
 
                 $result_consumos = $this->db->query($query_consumos);
                 $reserva['consumos'] = [];

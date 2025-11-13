@@ -194,7 +194,6 @@
                             <thead>
                                 <tr>
                                     <th>Producto</th>
-                                    <th>Fecha/Hora</th>
                                     <th class="text-end">Precio Unit.</th>
                                     <th class="text-end">Total</th>
                                 </tr>
@@ -207,13 +206,12 @@
                                 ?>
                                 <tr>
                                     <td><?= htmlspecialchars($consumo['producto_nombre'] ?? 'Producto N/A') ?></td>
-                                    <td><?= date('d/m/Y H:i', strtotime($consumo['consumo_fechahora'])) ?></td>
                                     <td class="text-end">$<?= number_format($consumo['producto_precio'] ?? 0, 2) ?></td>
                                     <td class="text-end font-weight-bold">$<?= number_format($consumo['consumo_total'], 2) ?></td>
                                 </tr>
                                 <?php endforeach; ?>
                                 <tr class="border-top">
-                                    <td colspan="3" class="text-end font-weight-bold">Total Consumos:</td>
+                                    <td colspan="2" class="text-end font-weight-bold">Total Consumos:</td>
                                     <td class="text-end font-weight-bold text-success">
                                         $<?= number_format($totalConsumos, 2) ?>
                                     </td>

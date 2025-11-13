@@ -264,7 +264,6 @@ require_once __DIR__ . '/../../../shared/layouts/header.php';
                             <table class="table table-striped">
                                 <thead>
                                     <tr>
-                                        <th>Fecha</th>
                                         <th>Producto</th>
                                         <th>Cantidad</th>
                                         <th>Precio Unit.</th>
@@ -276,7 +275,6 @@ require_once __DIR__ . '/../../../shared/layouts/header.php';
                                     <?php $totalConsumos = 0; ?>
                                     <?php foreach ($consumos as $consumo): ?>
                                         <tr>
-                                            <td><?= date('d/m/Y', strtotime($consumo['consumo_fecha'])) ?></td>
                                             <td><?= htmlspecialchars($consumo['producto_nombre']) ?></td>
                                             <td><?= $consumo['consumo_cantidad'] ?></td>
                                             <td>$<?= number_format($consumo['consumo_precio'], 2, ',', '.') ?></td>

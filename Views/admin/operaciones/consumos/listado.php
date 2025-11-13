@@ -1,248 +1,396 @@
-<?php
-$this->extend('layouts/main');
-$this->section('title', $title);
-$this->section('content');
-?>
-
-<div class="admin-header">
-    <h1><?= $title ?></h1>
-    <div class="header-actions">
-        <a href="/consumos/create" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Registrar Consumo
-        </a>
-        <a href="/consumos/reporte" class="btn btn-secondary">
-            <i class="fas fa-chart-bar"></i> Reportes
-        </a>
-    </div>
-</div>
-
-<!-- Filtros de búsqueda -->
-<div class="search-filters">
-    <form method="GET" action="/consumos" class="filters-form">
-        <div class="filter-row">
-            <div class="filter-group">
-                <label for="reserva">Reserva:</label>
-                <select name="reserva" id="reserva">
-                    <option value="">Todas las reservas</option>
-                    <?php foreach ($reservas as $reserva): ?>
-                        <option value="<?= $reserva['id_reserva'] ?>" 
-                                <?= $filters['reserva'] == $reserva['id_reserva'] ? 'selected' : '' ?>>
-                            #<?= $reserva['id_reserva'] ?> - <?= htmlspecialchars($reserva['huesped_nombre']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            
-            <div class="filter-group">
-                <label for="producto">Producto:</label>
-                <select name="producto" id="producto">
-                    <option value="">Todos los productos</option>
-                    <?php foreach ($productos as $producto): ?>
-                        <option value="<?= $producto['id_producto'] ?>" 
-                                <?= $filters['producto'] == $producto['id_producto'] ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($producto['producto_nombre']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
+<div class="container-fluid">
+    <!-- Encabezado moderno similar al diseño de referencia -->
+    <div class="card border-0 shadow-sm">
+        <!-- Header oscuro -->
+        <div class="card-header text-dark py-3 mb-0">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h4 class="mb-0">Gestión de Consumos</h4>
+                </div>
+                <div class="col-auto">
+                    <a href="<?= url('/consumos/create') ?>" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-1"></i>Registrar Consumo
+                    </a>
+                </div>
             </div>
         </div>
-        
-        <div class="filter-row">
-            <div class="filter-group">
-                <label for="fecha_desde">Fecha desde:</label>
-                <input type="date" name="fecha_desde" id="fecha_desde" 
-                       value="<?= $filters['fecha_desde'] ?? '' ?>">
-            </div>
-            
-            <div class="filter-group">
-                <label for="fecha_hasta">Fecha hasta:</label>
-                <input type="date" name="fecha_hasta" id="fecha_hasta" 
-                       value="<?= $filters['fecha_hasta'] ?? '' ?>">
-            </div>
-            
-            <div class="filter-actions">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-search"></i> Buscar
-                </button>
-                <a href="/consumos" class="btn btn-secondary">
-                    <i class="fas fa-times"></i> Limpiar
-                </a>
-            </div>
-        </div>
-    </form>
-</div>
-
-<?php if (empty($consumos)): ?>
-    <div class="no-results">
-        <i class="fas fa-shopping-cart"></i>
-        <h3>No se encontraron consumos</h3>
-        <p>No hay registros de consumos que coincidan con los filtros especificados.</p>
-        <a href="/consumos/create" class="btn btn-primary">Registrar Primer Consumo</a>
-    </div>
-<?php else: ?>
-    <div class="table-container">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Reserva</th>
-                    <th>Huésped</th>
-                    <th>Producto</th>
-                    <th>Cantidad</th>
-                    <th>Precio Unit.</th>
-                    <th>Subtotal</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($consumos as $consumo): ?>
-                    <tr class="<?= $consumo['consumo_estado'] ? '' : 'table-row-disabled' ?>">
-                        <td>
-                            <span class="date-cell">
-                                <?= date('d/m/Y H:i', strtotime($consumo['consumo_fecha'])) ?>
-                            </span>
-                        </td>
-                        <td>
-                            <a href="/consumos/by-reserva/<?= $consumo['rela_reserva'] ?>" class="text-primary">
-                                #<?= $consumo['rela_reserva'] ?>
+        <!-- Filtros compactos -->
+        <div class="card-body pb-0">
+            <form method="GET" action="<?= url('/consumos') ?>" class="mb-3">
+                <div class="row g-2 align-items-end">
+                    <div class="col-auto">
+                        <label class="form-label small mb-1 text-muted">Filtros de búsqueda</label>
+                    </div>
+                    <div class="col-auto">
+                        <label class="form-label small mb-1">Huésped</label>
+                        <input type="text" name="huesped" class="form-control form-control-sm" 
+                               placeholder="" value="<?= htmlspecialchars($_GET['huesped'] ?? '') ?>" style="width: 150px;">
+                    </div>
+                    <div class="col-auto">
+                        <label class="form-label small mb-1">Reserva</label>
+                        <input type="number" name="reserva" class="form-control form-control-sm" 
+                               placeholder="#" value="<?= htmlspecialchars($_GET['reserva'] ?? '') ?>" style="width: 100px;">
+                    </div>
+                    <div class="col-auto">
+                        <label class="form-label small mb-1">Producto</label>
+                        <input type="text" name="producto" class="form-control form-control-sm" 
+                               placeholder="" value="<?= htmlspecialchars($_GET['producto'] ?? '') ?>" style="width: 150px;">
+                    </div>
+                    <div class="col-auto">
+                        <label class="form-label small mb-1">Servicio</label>
+                        <input type="text" name="servicio" class="form-control form-control-sm" 
+                               placeholder="" value="<?= htmlspecialchars($_GET['servicio'] ?? '') ?>" style="width: 150px;">
+                    </div>
+                    <div class="col-auto ms-auto">
+                        <label class="form-label small mb-1">Estado</label>
+                        <select name="estado" class="form-select form-select-sm" style="width: 120px;">
+                            <option value="">Todos</option>
+                            <option value="1" <?= ($_GET['estado'] ?? '') == '1' ? 'selected' : '' ?>>Activo</option>
+                            <option value="0" <?= ($_GET['estado'] ?? '') == '0' ? 'selected' : '' ?>>Inactivo</option>
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <div class="btn-group">
+                            <button type="submit" class="btn btn-primary btn-sm" title="Buscar">
+                                <i class="fas fa-search"></i>
+                            </button>
+                            <a href="<?= url('/consumos') ?>" class="btn btn-info btn-sm" title="Limpiar filtros">
+                                <i class="fas fa-times"></i>
                             </a>
-                        </td>
-                        <td>
-                            <div class="guest-info">
-                                <strong><?= htmlspecialchars($consumo['huesped_nombre'] ?? '') ?></strong>
-                                <?php if (!empty($consumo['huesped_apellido'])): ?>
-                                    <span><?= htmlspecialchars($consumo['huesped_apellido']) ?></span>
-                                <?php endif; ?>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="product-info">
-                                <strong><?= htmlspecialchars($consumo['producto_nombre']) ?></strong>
-                                <?php if (!empty($consumo['categoria_descripcion'])): ?>
-                                    <small class="text-muted"><?= htmlspecialchars($consumo['categoria_descripcion']) ?></small>
-                                <?php endif; ?>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="badge badge-quantity">
-                                <?= number_format($consumo['consumo_cantidad'], 0) ?>
-                            </span>
-                        </td>
-                        <td>
-                            <span class="price-cell">
-                                $<?= number_format($consumo['consumo_precio_unitario'], 2) ?>
-                            </span>
-                        </td>
-                        <td>
-                            <strong class="total-cell">
-                                $<?= number_format($consumo['consumo_subtotal'], 2) ?>
-                            </strong>
-                        </td>
-                        <td>
-                            <?php if ($consumo['consumo_estado']): ?>
-                                <?php if ($consumo['consumo_facturado'] ?? false): ?>
-                                    <span class="badge badge-success">Facturado</span>
-                                <?php else: ?>
-                                    <span class="badge badge-warning">Pendiente</span>
-                                <?php endif; ?>
-                            <?php else: ?>
-                                <span class="badge badge-danger">Eliminado</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-auto">
+                        <label class="form-label small mb-1 text-muted">Registros por página</label>
+                    </div>
+                    <div class="col-auto">
+                        <select name="per_page" class="form-select form-select-sm" style="width: 80px;" 
+                                onchange="this.form.submit()">
+                            <option value="5" <?= ($_GET['per_page'] ?? '10') == '5' ? 'selected' : '' ?>>5</option>
+                            <option value="10" <?= ($_GET['per_page'] ?? '10') == '10' ? 'selected' : '' ?>>10</option>
+                            <option value="25" <?= ($_GET['per_page'] ?? '10') == '25' ? 'selected' : '' ?>>25</option>
+                            <option value="50" <?= ($_GET['per_page'] ?? '10') == '50' ? 'selected' : '' ?>>50</option>
+                        </select>
+                    </div>
+                    <div class="col"></div>
+                    <div class="col-auto">
+                        <div class="btn-group" role="group">
+                            <button type="button" onclick="exportarConsumos(event)" class="btn btn-success btn-sm" title="Exportar a Excel">
+                                <i class="fas fa-file-excel me-1"></i> Excel
+                            </button>
+                            <button type="button" onclick="exportarConsumosPDF(event)" class="btn btn-danger btn-sm" title="Exportar a PDF">
+                                <i class="fas fa-file-pdf me-1"></i> PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Tabla estilo moderno -->
+        <div class="card-body p-0">
+            <?php if (empty($consumos)): ?>
+                <div class="empty-state py-5 text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-shopping-cart fa-3x text-muted opacity-50"></i>
+                    </div>
+                    <h6 class="text-muted">No se encontraron consumos</h6>
+                    <p class="text-muted small mb-3">Intenta modificar los filtros o registra un nuevo consumo.</p>
+                    <a href="<?= url('/consumos/create') ?>" class="btn btn-outline-dark btn-sm">
+                        <i class="fas fa-plus fa-sm"></i> Registrar consumo
+                    </a>
+                </div>
+            <?php else: ?>
+                <!-- Información de paginación y navegación superior -->
+                <?php if (isset($pagination) && $pagination['total'] > 0): ?>
+                    <?php 
+                    $perPage = (int) ($_GET['per_page'] ?? 10);
+                    $start = (($pagination['current_page'] - 1) * $perPage) + 1;
+                    $end = min($pagination['current_page'] * $perPage, $pagination['total']);
+                    
+                    // Función para renderizar la paginación
+                    $renderPagination = function($showInfo = true) use ($pagination, $start, $end) {
+                    ?>
+                        <div class="row align-items-center">
+                            <?php if ($showInfo): ?>
+                                <div class="col-sm-6">
+                                    <span class="text-muted small">
+                                        Mostrando <?= $start ?> a <?= $end ?> de <?= $pagination['total'] ?> registros
+                                    </span>
+                                </div>
                             <?php endif; ?>
-                        </td>
-                        <td>
-                            <div class="action-buttons">
-                                <a href="/consumos/<?= $consumo['id_consumo'] ?>" 
-                                   class="btn btn-sm btn-info" title="Ver detalle">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                
-                                <?php if ($consumo['consumo_estado']): ?>
-                                    <?php if (!($consumo['consumo_facturado'] ?? false)): ?>
-                                        <a href="/consumos/<?= $consumo['id_consumo'] ?>/edit" 
-                                           class="btn btn-sm btn-warning" title="Editar">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                    <?php endif; ?>
-                                    
-                                    <?php if ($this->userCan('consumos_delete')): ?>
-                                        <button type="button" class="btn btn-sm btn-danger" 
-                                                data-action="delete" data-id="<?= $consumo['id_consumo'] ?>"
-                                                title="Eliminar">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    <?php endif; ?>
-                                <?php else: ?>
-                                    <?php if ($this->userCan('consumos_restore')): ?>
-                                        <button type="button" class="btn btn-sm btn-success" 
-                                                data-action="restore" data-id="<?= $consumo['id_consumo'] ?>"
-                                                title="Restaurar">
-                                            <i class="fas fa-undo"></i>
-                                        </button>
-                                    <?php endif; ?>
+                            <div class="col-sm-<?= $showInfo ? '6' : '12' ?>">
+                                <?php if ($pagination['total_pages'] > 1): ?>
+                                    <nav aria-label="Paginación" class="d-flex justify-content-<?= $showInfo ? 'end' : 'center' ?>">
+                                        <ul class="pagination pagination-sm mb-0">
+                                            <?php if ($pagination['current_page'] > 1): ?>
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $pagination['current_page'] - 1])) ?>">Anterior</a>
+                                                </li>
+                                            <?php endif; ?>
+                                            
+                                            <?php 
+                                            $startPage = max(1, $pagination['current_page'] - 2);
+                                            $endPage = min($pagination['total_pages'], $pagination['current_page'] + 2);
+                                            
+                                            if ($startPage > 1): ?>
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => 1])) ?>">1</a>
+                                                </li>
+                                                <?php if ($startPage > 2): ?>
+                                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                                <?php endif; ?>
+                                            <?php endif; ?>
+                                            
+                                            <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
+                                                <li class="page-item <?= $i == $pagination['current_page'] ? 'active' : '' ?>">
+                                                    <?php if ($i == $pagination['current_page']): ?>
+                                                        <span class="page-link bg-primary text-white border-primary"><?= $i ?></span>
+                                                    <?php else: ?>
+                                                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $i])) ?>"><?= $i ?></a>
+                                                    <?php endif; ?>
+                                                </li>
+                                            <?php endfor; ?>
+                                            
+                                            <?php if ($endPage < $pagination['total_pages']): ?>
+                                                <?php if ($endPage < $pagination['total_pages'] - 1): ?>
+                                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                                <?php endif; ?>
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $pagination['total_pages']])) ?>"><?= $pagination['total_pages'] ?></a>
+                                                </li>
+                                            <?php endif; ?>
+                                            
+                                            <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $pagination['current_page'] + 1])) ?>">Siguiente</a>
+                                                </li>
+                                            <?php endif; ?>
+                                        </ul>
+                                    </nav>
                                 <?php endif; ?>
                             </div>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+                        </div>
+                    <?php }; ?>
+
+                    <div class="card-header bg-light border-bottom py-2">
+                        <?php $renderPagination(true); ?>
+                    </div>
+                <?php endif; ?>
+
+                <div class="table-responsive">
+                    <table id="tablaConsumos" class="table table-hover mb-0">
+                        <thead class="thead-light">
+                            <tr>
+                                <th class="border-0 py-3">Reserva</th>
+                                <th class="border-0 py-3">Huésped</th>
+                                <th class="border-0 py-3">Descripción</th>
+                                <th class="border-0 py-3">Cantidad</th>
+                                <th class="border-0 py-3">Precio Unit.</th>
+                                <th class="border-0 py-3">Total</th>
+                                <th class="border-0 py-3">Estado</th>
+                                <th class="border-0 py-3 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($consumos as $index => $consumo): ?>
+                                <tr>
+                                    <td class="border-0 py-3">
+                                        <div class="small text-muted">
+                                            #<?= $consumo['rela_reserva'] ?>
+                                        </div>
+                                    </td>
+                                    <td class="border-0 py-3">
+                                        <div class="d-flex align-items-center">
+                                            <div>
+                                                <div class="fw-medium text-dark">
+                                                    <?= htmlspecialchars($consumo['huesped_nombre'] ?? 'N/A') ?>
+                                                    <?php if (!empty($consumo['huesped_apellido'])): ?>
+                                                        <?= htmlspecialchars($consumo['huesped_apellido']) ?>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="border-0 py-3">
+                                        <div class="small text-muted">
+                                            <?php if (!empty($consumo['consumo_descripcion'])): ?>
+                                                <?= htmlspecialchars(substr($consumo['consumo_descripcion'], 0, 50)) ?>
+                                                <?= strlen($consumo['consumo_descripcion']) > 50 ? '...' : '' ?>
+                                            <?php else: ?>
+                                                <span class="text-muted">Sin descripción</span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </td>
+                                    <td class="border-0 py-3">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-box text-primary me-2"></i>
+                                            <span class="text-dark ml-2"><?= isset($consumo['consumo_cantidad']) ? number_format($consumo['consumo_cantidad'], 0) : '0' ?></span>
+                                        </div>
+                                    </td>
+                                    <td class="border-0 py-3">
+                                        <span class="fw-medium text-success">
+                                            $<?= isset($consumo['consumo_total']) && isset($consumo['consumo_cantidad']) && $consumo['consumo_cantidad'] > 0 
+                                                ? number_format($consumo['consumo_total'] / $consumo['consumo_cantidad'], 2, '.', ',') 
+                                                : '0.00' ?>
+                                        </span>
+                                    </td>
+                                    <td class="border-0 py-3">
+                                        <span class="fw-medium text-success">
+                                            $<?= isset($consumo['consumo_total']) ? number_format($consumo['consumo_total'], 2, '.', ',') : '0.00' ?>
+                                        </span>
+                                    </td>
+                                    <td class="border-0 py-3">
+                                        <?php if ($consumo['consumo_estado'] == 1): ?>
+                                            <span class="badge bg-success text-white px-2 py-1 rounded-pill">Activo</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-danger text-white px-2 py-1 rounded-pill">Inactivo</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="border-0 py-3 text-center">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="<?= url('/consumos/' . $consumo['id_consumo']) ?>"
+                                               class="btn btn-outline-primary btn-sm"
+                                               title="Ver detalle">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="<?= url('/consumos/' . $consumo['id_consumo']) . '/edit'?>"
+                                               class="btn btn-outline-warning btn-sm"
+                                               title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <?php if ($consumo['consumo_estado'] == 1): ?>
+                                                <button class="btn btn-outline-danger btn-sm"
+                                                        onclick="cambiarEstadoConsumo(<?= $consumo['id_consumo'] ?>, 0, '<?= addslashes($consumo['producto_nombre'] ?? '') ?>')"
+                                                        title="Desactivar">
+                                                    <i class="fas fa-ban"></i>
+                                                </button>
+                                            <?php else: ?>
+                                                <button class="btn btn-outline-success btn-sm"
+                                                        onclick="cambiarEstadoConsumo(<?= $consumo['id_consumo'] ?>, 1, '<?= addslashes($consumo['producto_nombre'] ?? '') ?>')"
+                                                        title="Activar">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            <?php endif; ?>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginación inferior -->
+                <?php if (isset($pagination) && $pagination['total'] > 0): ?>
+                    <div class="card-footer bg-white border-top py-3">
+                        <?php $renderPagination(true); ?>
+                    </div>
+                <?php endif; ?>
+            <?php endif; ?>
+        </div>
     </div>
+</div>
 
-    <!-- Resumen de totales -->
-    <div class="table-summary">
-        <?php 
-        $totalConsumos = count($consumos);
-        $totalImporte = array_sum(array_column($consumos, 'consumo_subtotal'));
-        ?>
-        <div class="summary-item">
-            <strong>Total registros:</strong> <?= $totalConsumos ?>
-        </div>
-        <div class="summary-item">
-            <strong>Total importe:</strong> $<?= number_format($totalImporte, 2) ?>
-        </div>
-    </div>
-
-    <!-- Paginación -->
-    <?php if ($totalPages > 1): ?>
-        <div class="pagination-container">
-            <nav aria-label="Paginación de consumos">
-                <ul class="pagination">
-                    <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                        <li class="page-item <?= $i == $currentPage ? 'active' : '' ?>">
-                            <?php 
-                            $url = '/consumos?page=' . $i;
-                            foreach ($filters as $key => $value) {
-                                if (!empty($value)) {
-                                    $url .= '&' . $key . '=' . urlencode($value);
-                                }
-                            }
-                            ?>
-                            <a class="page-link" href="<?= $url ?>"><?= $i ?></a>
-                        </li>
-                    <?php endfor; ?>
-                </ul>
-            </nav>
-        </div>
-    <?php endif; ?>
-<?php endif; ?>
-
-<?php $this->endSection(); ?>
-
-.guest-info, .product-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
+<!-- JavaScript para funcionalidades -->
+<script>
+function cambiarEstadoConsumo(id, nuevoEstado, producto) {
+    let accion, mensaje, color;
+    
+    switch(nuevoEstado) {
+        case 1:
+            accion = 'activar';
+            mensaje = 'El consumo estará activo en el sistema';
+            color = '#28a745';
+            break;
+        case 0:
+            accion = 'desactivar';
+            mensaje = 'El consumo quedará inactivo';
+            color = '#dc3545';
+            break;
+        default:
+            accion = 'cambiar estado';
+            mensaje = '';
+            color = '#6c757d';
+    }
+    
+    console.log('Cambiando estado:', { id, nuevoEstado, producto, accion });
+    
+    // Usar SweetAlert si está disponible, sino usar confirm simple
+    const confirmar = typeof Swal !== 'undefined' ? 
+        Swal.fire({
+            title: `¿${accion.charAt(0).toUpperCase() + accion.slice(1)} consumo?`,
+            text: `¿Está seguro que desea ${accion} el consumo de "${producto}"? ${mensaje}`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: `Sí, ${accion}`,
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: color
+        }).then((result) => {
+            if (result.isConfirmed) {
+                ejecutarCambioEstado(id, nuevoEstado);
+            }
+        }) :
+        window.confirm(`¿Está seguro que desea ${accion} este consumo?`);
+    
+    if (confirmar && typeof Swal === 'undefined') {
+        ejecutarCambioEstado(id, nuevoEstado);
+    }
 }
 
-.guest-info strong, .product-info strong {
-    font-weight: 600;
-    color: #333;
+function ejecutarCambioEstado(id, nuevoEstado) {
+    fetch(`<?= url('/consumos/') ?>${id}/estado`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ estado: nuevoEstado })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Estado actualizado!',
+                    text: data.message || 'El estado del consumo se ha actualizado correctamente',
+                    timer: 2000,
+                    showConfirmButton: false
+                }).then(() => {
+                    window.location.reload();
+                });
+            } else {
+                alert(data.message || 'Estado actualizado correctamente');
+                window.location.reload();
+            }
+        } else {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire('Error', data.message || 'No se pudo actualizar el estado', 'error');
+            } else {
+                alert('Error: ' + (data.message || 'No se pudo actualizar el estado'));
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        if (typeof Swal !== 'undefined') {
+            Swal.fire('Error', 'Hubo un problema al actualizar el estado', 'error');
+        } else {
+            alert('Error al actualizar el estado');
+        }
+    });
 }
 
-.guest-info span, .product-info small {
-    font-size: 0.85em;
-    color: #666;
+function exportarConsumos(event) {
+    event.preventDefault();
+    const params = new URLSearchParams(window.location.search);
+    window.location.href = '<?= url('/consumos/exportar') ?>?' + params.toString();
 }
 
-<?php $this->endSection(); ?>
+function exportarConsumosPDF(event) {
+    event.preventDefault();
+    const params = new URLSearchParams(window.location.search);
+    window.location.href = '<?= url('/consumos/exportar-pdf') ?>?' + params.toString();
+}
+</script>
