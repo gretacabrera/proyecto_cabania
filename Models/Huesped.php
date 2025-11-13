@@ -25,7 +25,7 @@ class Huesped extends Model
      */
     public function findByPersona($personaId)
     {
-        return $this->findWhere("rela_persona = ? AND huesped_estado = 1", [$personaId]);
+        return $this->findWhere("rela_persona = ?", [$personaId]);
     }
 
     /**
@@ -43,72 +43,381 @@ class Huesped extends Model
     }
 
     /**
-     * Obtener huéspedes con información de persona (paginado)
+     * Obtener huéspedes con filtros y paginación
      */
-    public function getWithPersonaPaginated($page = 1, $perPage = 10, $search = '')
+    public function getWithDetails($page = 1, $perPage = 10, $filters = [])
     {
-        $offset = ($page - 1) * $perPage;
-        $baseWhere = "h.huesped_estado = 1";
+        $where = "1=1";
         $params = [];
         
-        if ($search) {
-            $searchPattern = '%' . $search . '%';
-            $baseWhere .= " AND (p.persona_nombre LIKE ? OR p.persona_apellido LIKE ?)";
-            $params = [$searchPattern, $searchPattern];
+        // Aplicar filtros
+        if (!empty($filters['persona_nombre'])) {
+            $where .= " AND p.persona_nombre LIKE ?";
+            $params[] = '%' . $filters['persona_nombre'] . '%';
         }
         
-        // Contar total
+        if (!empty($filters['persona_apellido'])) {
+            $where .= " AND p.persona_apellido LIKE ?";
+            $params[] = '%' . $filters['persona_apellido'] . '%';
+        }
+        
+        if (!empty($filters['huesped_ubicacion'])) {
+            $where .= " AND h.huesped_ubicacion LIKE ?";
+            $params[] = '%' . $filters['huesped_ubicacion'] . '%';
+        }
+        
+        if (isset($filters['huesped_estado']) && $filters['huesped_estado'] !== '') {
+            $where .= " AND h.huesped_estado = ?";
+            $params[] = (int) $filters['huesped_estado'];
+        }
+        
+        return $this->paginateWithParams($page, $perPage, $where, "p.persona_apellido ASC, p.persona_nombre ASC", $params);
+    }
+
+    /**
+     * Obtener todos los huéspedes con filtros para exportación (sin paginación)
+     */
+    public function getAllWithDetailsForExport($filters = [])
+    {
+        $where = "1=1";
+        $params = [];
+        
+        // Aplicar los mismos filtros que getWithDetails
+        if (!empty($filters['persona_nombre'])) {
+            $where .= " AND p.persona_nombre LIKE ?";
+            $params[] = '%' . $filters['persona_nombre'] . '%';
+        }
+        
+        if (!empty($filters['persona_apellido'])) {
+            $where .= " AND p.persona_apellido LIKE ?";
+            $params[] = '%' . $filters['persona_apellido'] . '%';
+        }
+        
+        if (!empty($filters['huesped_ubicacion'])) {
+            $where .= " AND h.huesped_ubicacion LIKE ?";
+            $params[] = '%' . $filters['huesped_ubicacion'] . '%';
+        }
+        
+        if (isset($filters['huesped_estado']) && $filters['huesped_estado'] !== '') {
+            $where .= " AND h.huesped_estado = ?";
+            $params[] = (int) $filters['huesped_estado'];
+        }
+        
+        // Query para contar total
         $countSql = "SELECT COUNT(*) as total 
                      FROM {$this->table} h
                      INNER JOIN persona p ON h.rela_persona = p.id_persona
-                     WHERE $baseWhere";
+                     WHERE $where";
+        $totalResult = $this->queryWithParams($countSql, $params);
+        $totalRow = $totalResult->fetch_assoc();
+        $total = (int) $totalRow['total'];
         
-        if (!empty($params)) {
-            $countResult = $this->query($countSql, $params);
-        } else {
-            $countResult = $this->db->query($countSql);
-        }
-        $totalRecords = $countResult->fetch_assoc()['total'];
+        // Query para obtener TODOS los registros (sin LIMIT)
+        $dataSql = "SELECT h.*, p.persona_nombre, p.persona_apellido, p.persona_fechanac, p.persona_direccion
+                    FROM {$this->table} h
+                    INNER JOIN persona p ON h.rela_persona = p.id_persona
+                    WHERE $where 
+                    ORDER BY p.persona_apellido ASC, p.persona_nombre ASC";
+        $dataResult = $this->queryWithParams($dataSql, $params);
         
-        // Obtener registros
-        $sql = "SELECT h.*, p.persona_nombre, p.persona_apellido, p.persona_fechanac, p.persona_direccion
-                FROM {$this->table} h
-                INNER JOIN persona p ON h.rela_persona = p.id_persona
-                WHERE $baseWhere
-                ORDER BY p.persona_apellido, p.persona_nombre
-                LIMIT ? OFFSET ?";
-        
-        $allParams = array_merge($params, [$perPage, $offset]);
-        $result = $this->query($sql, $allParams);
-        
-        $records = [];
-        while ($row = $result->fetch_assoc()) {
-            $records[] = $row;
+        $data = [];
+        while ($row = $dataResult->fetch_assoc()) {
+            $data[] = $row;
         }
         
         return [
-            'data' => $records,
-            'total' => $totalRecords,
-            'current_page' => $page,
-            'per_page' => $perPage,
-            'total_pages' => ceil($totalRecords / $perPage)
+            'data' => $data,
+            'total' => $total
         ];
     }
 
     /**
-     * Crear huésped
+     * Obtener huéspedes con paginación usando parámetros preparados
      */
-    public function createHuesped($data)
+    private function paginateWithParams($page = 1, $perPage = 10, $where = "1=1", $orderBy = null, $params = [])
     {
-        // Validar datos requeridos
-        if (empty($data['rela_persona'])) {
-            return false;
+        $offset = ($page - 1) * $perPage;
+        $limit = (int) $perPage;
+        
+        // Query para contar total
+        $countSql = "SELECT COUNT(*) as total 
+                     FROM {$this->table} h
+                     INNER JOIN persona p ON h.rela_persona = p.id_persona
+                     WHERE $where";
+        $totalResult = $this->queryWithParams($countSql, $params);
+        $totalRow = $totalResult->fetch_assoc();
+        $total = (int) $totalRow['total'];
+        
+        // Query para obtener registros
+        $orderClause = $orderBy ? "ORDER BY $orderBy" : '';
+        $dataSql = "SELECT h.*, p.persona_nombre, p.persona_apellido, p.persona_fechanac, p.persona_direccion
+                    FROM {$this->table} h
+                    INNER JOIN persona p ON h.rela_persona = p.id_persona
+                    WHERE $where $orderClause LIMIT $limit OFFSET $offset";
+        $dataResult = $this->queryWithParams($dataSql, $params);
+        
+        $data = [];
+        while ($row = $dataResult->fetch_assoc()) {
+            $data[] = $row;
         }
+        
+        $totalPages = ceil($total / $perPage);
+        
+        return [
+            'data' => $data,
+            'total' => $total,
+            'current_page' => $page,
+            'total_pages' => $totalPages,
+            'per_page' => $perPage,
+            'offset' => $offset,
+            'limit' => $limit
+        ];
+    }
 
-        // Establecer valores por defecto
-        $data['huesped_estado'] = $data['huesped_estado'] ?? 1;
+    /**
+     * Ejecutar query con parámetros preparados
+     */
+    private function queryWithParams($sql, $params = [])
+    {
+        return $this->query($sql, $params);
+    }
 
-        return $this->create($data);
+    /**
+     * Obtener estadísticas de un huésped específico
+     */
+    public function getStatistics($huespedId)
+    {
+        $stats = [
+            'reservas_activas' => $this->getReservasActivas($huespedId),
+            'reservas_totales' => $this->getReservasTotales($huespedId),
+            'gasto_total' => $this->getGastoTotal($huespedId),
+            'ultima_reserva' => $this->getUltimaReserva($huespedId)
+        ];
+        
+        return $stats;
+    }
+
+    /**
+     * Obtener número de reservas activas (confirmadas y futuras)
+     */
+    private function getReservasActivas($huespedId)
+    {
+        $fechaActual = date('Y-m-d');
+        $sql = "SELECT COUNT(*) as total 
+                FROM huesped_reserva hr
+                INNER JOIN reserva r ON hr.rela_reserva = r.id_reserva
+                WHERE hr.rela_huesped = ? 
+                AND DATE(r.reserva_fhfin) >= ? 
+                AND r.rela_estadoreserva IN (1, 2)";
+        
+        $result = $this->query($sql, [$huespedId, $fechaActual]);
+        $row = $result->fetch_assoc();
+        
+        return (int)($row['total'] ?? 0);
+    }
+
+    /**
+     * Obtener número total de reservas (históricas)
+     */
+    private function getReservasTotales($huespedId)
+    {
+        $sql = "SELECT COUNT(*) as total 
+                FROM huesped_reserva hr
+                WHERE hr.rela_huesped = ?";
+        
+        $result = $this->query($sql, [$huespedId]);
+        $row = $result->fetch_assoc();
+        
+        return (int)($row['total'] ?? 0);
+    }
+
+    /**
+     * Calcular gasto total del huésped
+     */
+    private function getGastoTotal($huespedId)
+    {
+        $sql = "SELECT SUM(c.cabania_precio) as total_gasto
+                FROM huesped_reserva hr
+                INNER JOIN reserva r ON hr.rela_reserva = r.id_reserva
+                INNER JOIN cabania c ON r.rela_cabania = c.id_cabania
+                WHERE hr.rela_huesped = ? 
+                AND r.rela_estadoreserva IN (2, 3)";
+        
+        $result = $this->query($sql, [$huespedId]);
+        $row = $result->fetch_assoc();
+        
+        return (float)($row['total_gasto'] ?? 0);
+    }
+
+    /**
+     * Obtener fecha de la última reserva
+     */
+    private function getUltimaReserva($huespedId)
+    {
+        $sql = "SELECT MAX(r.reserva_fhinicio) as ultima_reserva
+                FROM huesped_reserva hr
+                INNER JOIN reserva r ON hr.rela_reserva = r.id_reserva
+                WHERE hr.rela_huesped = ?";
+        
+        $result = $this->query($sql, [$huespedId]);
+        $row = $result->fetch_assoc();
+        
+        return $row['ultima_reserva'] ?? null;
+    }
+
+    /**
+     * Obtener condiciones de salud del huésped
+     */
+    public function getCondicionesSalud($huespedId)
+    {
+        $sql = "SELECT rela_condicionsalud, huespedcondicionsalud_estado 
+                FROM huesped_condicionsalud 
+                WHERE rela_huesped = ?";
+        
+        $result = $this->query($sql, [$huespedId]);
+        
+        $condiciones = [];
+        while ($row = $result->fetch_assoc()) {
+            $condiciones[$row['rela_condicionsalud']] = $row['huespedcondicionsalud_estado'];
+        }
+        
+        return $condiciones;
+    }
+
+    /**
+     * Guardar todas las condiciones de salud del huésped (con estados)
+     */
+    public function saveCondicionesSalud($huespedId, $todasCondiciones, $condicionesSeleccionadas)
+    {
+        $sql = "INSERT INTO huesped_condicionsalud (rela_huesped, rela_condicionsalud, huespedcondicionsalud_estado) VALUES (?, ?, ?)";
+        $stmt = $this->db->prepare($sql);
+        
+        foreach ($todasCondiciones as $condicion) {
+            $idCondicion = $condicion['id_condicionsalud'];
+            $estado = in_array($idCondicion, $condicionesSeleccionadas) ? 1 : 0;
+            
+            $stmt->bind_param('iii', $huespedId, $idCondicion, $estado);
+            if (!$stmt->execute()) {
+                $stmt->close();
+                return false;
+            }
+        }
+        
+        $stmt->close();
+        return true;
+    }
+
+    /**
+     * Actualizar condiciones de salud del huésped
+     */
+    public function updateCondicionesSalud($huespedId, $todasCondiciones, $condicionesSeleccionadas)
+    {
+        // Obtener condiciones existentes
+        $sqlExistentes = "SELECT rela_condicionsalud FROM huesped_condicionsalud WHERE rela_huesped = ?";
+        $result = $this->query($sqlExistentes, [$huespedId]);
+        
+        $condicionesExistentes = [];
+        while ($row = $result->fetch_assoc()) {
+            $condicionesExistentes[] = $row['rela_condicionsalud'];
+        }
+        
+        // Actualizar o insertar condiciones
+        foreach ($todasCondiciones as $condicion) {
+            $idCondicion = $condicion['id_condicionsalud'];
+            $estado = in_array($idCondicion, $condicionesSeleccionadas) ? 1 : 0;
+            
+            if (in_array($idCondicion, $condicionesExistentes)) {
+                // Actualizar existente
+                $sqlUpdate = "UPDATE huesped_condicionsalud SET huespedcondicionsalud_estado = ? WHERE rela_huesped = ? AND rela_condicionsalud = ?";
+                $stmtUpdate = $this->db->prepare($sqlUpdate);
+                $stmtUpdate->bind_param('iii', $estado, $huespedId, $idCondicion);
+                if (!$stmtUpdate->execute()) {
+                    $stmtUpdate->close();
+                    return false;
+                }
+                $stmtUpdate->close();
+            } else {
+                // Insertar nueva
+                $sqlInsert = "INSERT INTO huesped_condicionsalud (rela_huesped, rela_condicionsalud, huespedcondicionsalud_estado) VALUES (?, ?, ?)";
+                $stmtInsert = $this->db->prepare($sqlInsert);
+                $stmtInsert->bind_param('iii', $huespedId, $idCondicion, $estado);
+                if (!$stmtInsert->execute()) {
+                    $stmtInsert->close();
+                    return false;
+                }
+                $stmtInsert->close();
+            }
+        }
+        
+        return true;
+    }
+
+    /**
+     * Asociar huésped con reserva
+     */
+    public function asociarReserva($huespedId, $reservaId)
+    {
+        $sql = "INSERT INTO huesped_reserva (rela_reserva, rela_huesped) VALUES (?, ?)";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('ii', $reservaId, $huespedId);
+        $result = $stmt->execute();
+        $stmt->close();
+        
+        return $result;
+    }
+
+    /**
+     * Obtener ID de reserva asociada al huésped
+     */
+    public function getReservaAsociada($huespedId)
+    {
+        $sql = "SELECT rela_reserva FROM huesped_reserva WHERE rela_huesped = ? ORDER BY id_huespedreserva DESC LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $huespedId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stmt->close();
+        
+        return $row ? $row['rela_reserva'] : null;
+    }
+
+    /**
+     * Eliminar reserva asociada al huésped
+     */
+    public function eliminarReservaAsociada($huespedId)
+    {
+        $sql = "DELETE FROM huesped_reserva WHERE rela_huesped = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $huespedId);
+        $result = $stmt->execute();
+        $stmt->close();
+        
+        return $result;
+    }
+
+    /**
+     * Iniciar transacción
+     */
+    public function beginTransaction()
+    {
+        $this->db->beginTransaction();
+    }
+
+    /**
+     * Confirmar transacción
+     */
+    public function commit()
+    {
+        $this->db->commit();
+    }
+
+    /**
+     * Revertir transacción
+     */
+    public function rollback()
+    {
+        $this->db->rollback();
     }
 
     /**
@@ -118,49 +427,5 @@ class Huesped extends Model
     {
         $huesped = $this->findWhere("rela_persona = ?", [$personaId]);
         return $huesped !== false && $huesped !== null;
-    }
-
-    /**
-     * Actualizar huésped
-     */
-    public function updateHuesped($id, $data)
-    {
-        return $this->update($id, $data);
-    }
-
-    /**
-     * Eliminar huésped (baja lógica)
-     */
-    public function deleteHuesped($id)
-    {
-        return $this->update($id, ['huesped_estado' => 0]);
-    }
-
-    /**
-     * Restaurar huésped
-     */
-    public function restoreHuesped($id)
-    {
-        return $this->update($id, ['huesped_estado' => 1]);
-    }
-
-    /**
-     * Obtener reservas del huésped
-     */
-    public function getReservas($huespedId)
-    {
-        $sql = "SELECT r.* 
-                FROM reserva r 
-                WHERE r.rela_huesped = ? 
-                ORDER BY r.reserva_fecha DESC";
-        
-        $result = $this->query($sql, [$huespedId]);
-        
-        $reservas = [];
-        while ($row = $result->fetch_assoc()) {
-            $reservas[] = $row;
-        }
-        
-        return $reservas;
     }
 }
