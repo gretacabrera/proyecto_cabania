@@ -8,7 +8,7 @@
                     <h4 class="mb-0">Gestión de Costos por Daño</h4>
                 </div>
                 <div class="col-auto">
-                    <a href="<?= url('/costodanio/create') ?>" class="btn btn-primary btn-sm">
+                    <a href="<?= url('/costosdanio/create') ?>" class="btn btn-primary btn-sm">
                         <i class="fas fa-plus me-1"></i>Nuevo Costo por Daño
                     </a>
                 </div>
@@ -16,7 +16,7 @@
         </div>
         <!-- Filtros compactos -->
         <div class="card-body pb-0">
-            <form method="GET" action="<?= url('/costodanio') ?>" class="mb-3">
+            <form method="GET" action="<?= url('/costosdanio') ?>" class="mb-3">
                 <div class="row g-2 align-items-end">
                     <div class="col-auto">
                         <label class="form-label small mb-1 text-muted">Filtros de búsqueda</label>
@@ -56,7 +56,7 @@
                             <button type="submit" class="btn btn-primary btn-sm" title="Buscar">
                                 <i class="fas fa-search"></i>
                             </button>
-                            <a href="<?= url('/costodanio') ?>" class="btn btn-info btn-sm" title="Limpiar filtros">
+                            <a href="<?= url('/costosdanio') ?>" class="btn btn-info btn-sm" title="Limpiar filtros">
                                 <i class="fas fa-times"></i>
                             </a>
                         </div>
@@ -99,7 +99,7 @@
                     </div>
                     <h6 class="text-muted">No se encontraron costos por daño</h6>
                     <p class="text-muted small mb-3">Intenta modificar los filtros o crea un nuevo costo por daño.</p>
-                    <a href="<?= url('/costodanio/create') ?>" class="btn btn-outline-dark btn-sm">
+                    <a href="<?= url('/costosdanio/create') ?>" class="btn btn-outline-dark btn-sm">
                         <i class="fas fa-plus fa-sm"></i> Crear costo por daño
                     </a>
                 </div>
@@ -220,12 +220,12 @@
                                     </td>
                                     <td class="border-0 py-3 text-center">
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <a href="<?= url('/costodanio/' . $costo['id_costodanio']) ?>"
+                                            <a href="<?= url('/costosdanio/' . $costo['id_costodanio']) ?>"
                                                class="btn btn-outline-primary btn-sm"
                                                title="Ver detalle">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="<?= url('/costodanio/' . $costo['id_costodanio']) . '/edit'?>"
+                                            <a href="<?= url('/costosdanio/' . $costo['id_costodanio']) . '/edit'?>"
                                                class="btn btn-outline-warning btn-sm"
                                                title="Editar">
                                                 <i class="fas fa-edit"></i>
@@ -298,7 +298,7 @@ function cambiarEstadoCosto(id, nuevoEstado, descripcion) {
     
     confirmar.then(confirmed => {
         if (confirmed) {
-            const url = `<?= url('/costodanio') ?>/${id}/estado`;
+            const url = `<?= url('/costosdanio') ?>/${id}/estado`;
             
             fetch(url, {
                 method: 'POST',
@@ -369,7 +369,7 @@ function exportarCostos(event) {
     }
     
     const urlParams = new URLSearchParams(window.location.search);
-    const baseExportUrl = '<?= url('/costodanio/exportar') ?>';
+    const baseExportUrl = '<?= url('/costosdanio/exportar') ?>';
     const exportUrl = baseExportUrl + '?' + urlParams.toString();
     
     const link = document.createElement('a');
@@ -414,7 +414,7 @@ function exportarCostosPDF(event) {
     }
     
     const urlParams = new URLSearchParams(window.location.search);
-    const basePdfUrl = '<?= url('/costodanio/exportar-pdf') ?>';
+    const basePdfUrl = '<?= url('/costosdanio/exportar-pdf') ?>';
     const pdfUrl = basePdfUrl + '?' + urlParams.toString();
     
     const link = document.createElement('a');

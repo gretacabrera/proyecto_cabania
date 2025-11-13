@@ -131,15 +131,15 @@ class Application
         $this->router->post('/huespedes/{id}/estado', 'HuespedesController@cambiarEstado');
 
         // Rutas de Costos por Daño
-        $this->router->get('/costodanio', 'CostosDanioController@index');
-        $this->router->any('/costodanio/create', 'CostosDanioController@create');
-        $this->router->get('/costodanio/exportar', 'CostosDanioController@exportar');
-        $this->router->get('/costodanio/exportar-pdf', 'CostosDanioController@exportarPdf');
-        $this->router->get('/costodanio/{id}', 'CostosDanioController@show');
-        $this->router->any('/costodanio/{id}/edit', 'CostosDanioController@edit');
-        $this->router->post('/costodanio/{id}/delete', 'CostosDanioController@delete');
-        $this->router->post('/costodanio/{id}/restore', 'CostosDanioController@restore');
-        $this->router->post('/costodanio/{id}/estado', 'CostosDanioController@cambiarEstado');
+        $this->router->get('/costosdanio', 'CostosDanioController@index');
+        $this->router->any('/costosdanio/create', 'CostosDanioController@create');
+        $this->router->get('/costosdanio/exportar', 'CostosDanioController@exportar');
+        $this->router->get('/costosdanio/exportar-pdf', 'CostosDanioController@exportarPdf');
+        $this->router->get('/costosdanio/{id}', 'CostosDanioController@show');
+        $this->router->any('/costosdanio/{id}/edit', 'CostosDanioController@edit');
+        $this->router->post('/costosdanio/{id}/delete', 'CostosDanioController@delete');
+        $this->router->post('/costosdanio/{id}/restore', 'CostosDanioController@restore');
+        $this->router->post('/costosdanio/{id}/estado', 'CostosDanioController@cambiarEstado');
 
         // Rutas administrativas de menús (requieren autenticación)
         $this->router->get('/menus', 'MenusController@index');
@@ -173,6 +173,17 @@ class Application
         $this->router->get('/reservas/{id}', 'ReservasController@show');
         $this->router->any('/reservas/{id}/edit', 'ReservasController@edit');
         $this->router->post('/reservas/{id}/change-status', 'ReservasController@changeStatus');
+
+        // Rutas de revisiones
+        $this->router->get('/revisiones', 'RevisionesController@index');
+        $this->router->any('/revisiones/create', 'RevisionesController@create');
+        $this->router->get('/revisiones/exportar', 'RevisionesController@exportar');
+        $this->router->get('/revisiones/exportar-pdf', 'RevisionesController@exportarPdf');
+        $this->router->get('/revisiones/get-inventarios-cabania', 'RevisionesController@getInventariosCabania');
+        $this->router->get('/revisiones/get-costo-danio', 'RevisionesController@getCostoDanio');
+        $this->router->get('/revisiones/{id}', 'RevisionesController@show');
+        $this->router->any('/revisiones/{id}/edit', 'RevisionesController@edit');
+        $this->router->post('/revisiones/{id}/delete', 'RevisionesController@delete');
 
         // ========== NUEVAS RUTAS DE MÓDULOS MIGRADOS ==========
 
@@ -234,26 +245,26 @@ class Application
         $this->router->post('/marcas/{id}/estado', 'MarcasController@cambiarEstado');
 
         // Rutas de niveles de daño
-        $this->router->get('/niveldanio', 'NivelDanioController@index');
-        $this->router->any('/niveldanio/create', 'NivelDanioController@create');
-        $this->router->get('/niveldanio/exportar', 'NivelDanioController@exportar');
-        $this->router->get('/niveldanio/exportar-pdf', 'NivelDanioController@exportarPdf');
-        $this->router->get('/niveldanio/{id}', 'NivelDanioController@show');
-        $this->router->any('/niveldanio/{id}/edit', 'NivelDanioController@edit');
-        $this->router->post('/niveldanio/{id}/delete', 'NivelDanioController@delete');
-        $this->router->post('/niveldanio/{id}/restore', 'NivelDanioController@restore');
-        $this->router->post('/niveldanio/{id}/estado', 'NivelDanioController@cambiarEstado');
+        $this->router->get('/nivelesdanio', 'NivelDanioController@index');
+        $this->router->any('/nivelesdanio/create', 'NivelDanioController@create');
+        $this->router->get('/nivelesdanio/exportar', 'NivelDanioController@exportar');
+        $this->router->get('/nivelesdanio/exportar-pdf', 'NivelDanioController@exportarPdf');
+        $this->router->get('/nivelesdanio/{id}', 'NivelDanioController@show');
+        $this->router->any('/nivelesdanio/{id}/edit', 'NivelDanioController@edit');
+        $this->router->post('/nivelesdanio/{id}/delete', 'NivelDanioController@delete');
+        $this->router->post('/nivelesdanio/{id}/restore', 'NivelDanioController@restore');
+        $this->router->post('/nivelesdanio/{id}/estado', 'NivelDanioController@cambiarEstado');
 
         // Rutas de inventario
-        $this->router->get('/inventario', 'InventarioController@index');
-        $this->router->any('/inventario/create', 'InventarioController@create');
-        $this->router->get('/inventario/exportar', 'InventarioController@exportar');
-        $this->router->get('/inventario/exportar-pdf', 'InventarioController@exportarPdf');
-        $this->router->get('/inventario/{id}', 'InventarioController@show');
-        $this->router->any('/inventario/{id}/edit', 'InventarioController@edit');
-        $this->router->post('/inventario/{id}/delete', 'InventarioController@delete');
-        $this->router->post('/inventario/{id}/restore', 'InventarioController@restore');
-        $this->router->post('/inventario/{id}/estado', 'InventarioController@cambiarEstado');
+        $this->router->get('/inventarios', 'InventarioController@index');
+        $this->router->any('/inventarios/create', 'InventarioController@create');
+        $this->router->get('/inventarios/exportar', 'InventarioController@exportar');
+        $this->router->get('/inventarios/exportar-pdf', 'InventarioController@exportarPdf');
+        $this->router->get('/inventarios/{id}', 'InventarioController@show');
+        $this->router->any('/inventarios/{id}/edit', 'InventarioController@edit');
+        $this->router->post('/inventarios/{id}/delete', 'InventarioController@delete');
+        $this->router->post('/inventarios/{id}/restore', 'InventarioController@restore');
+        $this->router->post('/inventarios/{id}/estado', 'InventarioController@cambiarEstado');
 
         // Rutas de menús
         $this->router->get('/menus', 'MenusController@index');

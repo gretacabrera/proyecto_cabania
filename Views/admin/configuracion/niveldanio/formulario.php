@@ -12,7 +12,7 @@ $isEdit = isset($registro) && !empty($registro);
     <div class="page-actions">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <a href="<?= url('/niveldanio') ?>" class="btn btn-primary">
+                <a href="<?= url('/nivelesdanio') ?>" class="btn btn-primary">
                     <i class="fas fa-arrow-left"></i> Volver al listado
                 </a>
             </div>
@@ -31,7 +31,7 @@ $isEdit = isset($registro) && !empty($registro);
                 </div>
                 <div class="card-body">
                     <form id="formNivelDanio" method="POST" 
-                          action="<?= $isEdit ? url('/niveldanio/' . $registro['id_niveldanio'] . '/edit') : url('/niveldanio/create') ?>" 
+                          action="<?= $isEdit ? url('/nivelesdanio/' . $registro['id_niveldanio'] . '/edit') : url('/nivelesdanio/create') ?>" 
                           novalidate>
                         
                         <?php if ($isEdit): ?>
@@ -67,7 +67,7 @@ $isEdit = isset($registro) && !empty($registro);
                                     </button>
                                 </div>
                                 <div>
-                                    <a href="<?= url('/niveldanio') ?>" class="btn btn-outline-dark btn-lg">
+                                    <a href="<?= url('/nivelesdanio') ?>" class="btn btn-outline-dark btn-lg">
                                         <i class="fas fa-times"></i> Cancelar
                                     </a>
                                 </div>

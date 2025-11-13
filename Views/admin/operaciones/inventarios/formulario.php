@@ -14,7 +14,7 @@ $isEdit = isset($inventario) && !empty($inventario);
     <div class="page-actions">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <a href="<?= url('/inventario') ?>" class="btn btn-primary">
+                <a href="<?= url('/inventarios') ?>" class="btn btn-primary">
                     <i class="fas fa-arrow-left"></i> Volver al listado
                 </a>
             </div>
@@ -33,7 +33,7 @@ $isEdit = isset($inventario) && !empty($inventario);
                 </div>
                 <div class="card-body">
                     <form id="formInventario" method="POST" 
-                          action="<?= $isEdit ? url('/inventario/' . $inventario['id_inventario'] . '/edit') : url('/inventario/create') ?>" 
+                          action="<?= $isEdit ? url('/inventarios/' . $inventario['id_inventario'] . '/edit') : url('/inventarios/create') ?>" 
                           novalidate>
                         
                         <?php if ($isEdit): ?>

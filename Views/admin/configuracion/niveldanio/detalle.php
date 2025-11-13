@@ -16,12 +16,12 @@ if (!isset($registro) || empty($registro)) {
     <div class="page-actions">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <a href="<?= url('/niveldanio') ?>" class="btn btn-primary">
+                <a href="<?= url('/nivelesdanio') ?>" class="btn btn-primary">
                     <i class="fas fa-arrow-left"></i> Volver al listado
                 </a>
             </div>
             <div class="action-buttons">
-                <a href="<?= url('/niveldanio/' . $registro['id_niveldanio'] . '/edit') ?>"
+                <a href="<?= url('/nivelesdanio/' . $registro['id_niveldanio'] . '/edit') ?>"
                     class="btn btn-warning">
                     <i class="fas fa-edit"></i> Editar Nivel de Daño
                 </a>
@@ -132,15 +132,15 @@ if (!isset($registro) || empty($registro)) {
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <a href="<?= url('/costodanio/create') ?>?nivel=<?= $registro['id_niveldanio'] ?>"
+                        <a href="<?= url('/costosdanio/create') ?>?nivel=<?= $registro['id_niveldanio'] ?>"
                             class="btn btn-outline-primary">
                             <i class="fas fa-plus"></i> Registrar Costo por Daño
                         </a>
-                        <a href="<?= url('/costodanio') ?>?nivel=<?= $registro['id_niveldanio'] ?>"
+                        <a href="<?= url('/costosdanio') ?>?nivel=<?= $registro['id_niveldanio'] ?>"
                             class="btn btn-outline-info">
                             <i class="fas fa-list"></i> Ver Costos de este Nivel
                         </a>
-                        <a href="<?= url('/niveldanio') ?>"
+                        <a href="<?= url('/nivelesdanio') ?>"
                             class="btn btn-outline-secondary">
                             <i class="fas fa-arrow-left"></i> Volver al Listado
                         </a>
@@ -174,7 +174,7 @@ function cambiarEstadoNivel(id, nuevoEstado, descripcion) {
     
     confirmar.then(confirmed => {
         if (confirmed) {
-            const url = `<?= url('/niveldanio') ?>/${id}/estado`;
+            const url = `<?= url('/nivelesdanio') ?>/${id}/estado`;
             
             fetch(url, {
                 method: 'POST',

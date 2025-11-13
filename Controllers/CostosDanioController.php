@@ -29,7 +29,7 @@ class CostosDanioController extends Controller
      */
     public function index()
     {
-        $this->requirePermission('costodanio');
+        $this->requirePermission('costosdanio');
 
         $page = (int) $this->get('page', 1);
         $perPage = (int) $this->get('per_page', 10);
@@ -64,7 +64,7 @@ class CostosDanioController extends Controller
             'isAdminArea' => true
         ];
 
-        return $this->render('admin/operaciones/costodanio/listado', $data, 'main');
+        return $this->render('admin/operaciones/costosdanio/listado', $data, 'main');
     }
 
     /**
@@ -72,7 +72,7 @@ class CostosDanioController extends Controller
      */
     public function create()
     {
-        $this->requirePermission('costodanio');
+        $this->requirePermission('costosdanio');
 
         if ($this->isPost()) {
             return $this->store();
@@ -89,7 +89,7 @@ class CostosDanioController extends Controller
             'isAdminArea' => true
         ];
 
-        return $this->render('admin/operaciones/costodanio/formulario', $data, 'main');
+        return $this->render('admin/operaciones/costosdanio/formulario', $data, 'main');
     }
 
     /**
@@ -97,7 +97,7 @@ class CostosDanioController extends Controller
      */
     public function store()
     {
-        $this->requirePermission('costodanio');
+        $this->requirePermission('costosdanio');
 
         $data = [
             'rela_inventario' => $this->post('rela_inventario'),
@@ -108,25 +108,25 @@ class CostosDanioController extends Controller
 
         // Validaciones básicas
         if (empty($data['rela_inventario']) || empty($data['rela_niveldanio']) || empty($data['costodanio_importe'])) {
-            $this->redirect('/costodanio/create', 'Complete los campos obligatorios', 'error');
+            $this->redirect('/costosdanio/create', 'Complete los campos obligatorios', 'error');
             return;
         }
 
         // Validar que el importe sea un número positivo
         if ($data['costodanio_importe'] <= 0) {
-            $this->redirect('/costodanio/create', 'El importe debe ser mayor a 0', 'error');
+            $this->redirect('/costosdanio/create', 'El importe debe ser mayor a 0', 'error');
             return;
         }
 
         try {
             $id = $this->costoDanioModel->create($data);
             if ($id) {
-                $this->redirect('/costodanio', 'Costo por daño creado correctamente', 'exito');
+                $this->redirect('/costosdanio', 'Costo por daño creado correctamente', 'exito');
             } else {
-                $this->redirect('/costodanio/create', 'Error al crear el costo por daño', 'error');
+                $this->redirect('/costosdanio/create', 'Error al crear el costo por daño', 'error');
             }
         } catch (\Exception $e) {
-            $this->redirect('/costodanio/create', 'Error: ' . $e->getMessage(), 'error');
+            $this->redirect('/costosdanio/create', 'Error: ' . $e->getMessage(), 'error');
         }
     }
 
@@ -135,7 +135,7 @@ class CostosDanioController extends Controller
      */
     public function show($id)
     {
-        $this->requirePermission('costodanio');
+        $this->requirePermission('costosdanio');
 
         $costo = $this->costoDanioModel->findWithDetails($id);
         if (!$costo) {
@@ -152,7 +152,7 @@ class CostosDanioController extends Controller
             'isAdminArea' => true
         ];
 
-        return $this->render('admin/operaciones/costodanio/detalle', $data, 'main');
+        return $this->render('admin/operaciones/costosdanio/detalle', $data, 'main');
     }
 
     /**
@@ -160,7 +160,7 @@ class CostosDanioController extends Controller
      */
     public function edit($id)
     {
-        $this->requirePermission('costodanio');
+        $this->requirePermission('costosdanio');
 
         $costo = $this->costoDanioModel->find($id);
         if (!$costo) {
@@ -187,7 +187,7 @@ class CostosDanioController extends Controller
             'isAdminArea' => true
         ];
 
-        return $this->render('admin/operaciones/costodanio/formulario', $data, 'main');
+        return $this->render('admin/operaciones/costosdanio/formulario', $data, 'main');
     }
 
     /**
@@ -195,7 +195,7 @@ class CostosDanioController extends Controller
      */
     public function update($id)
     {
-        $this->requirePermission('costodanio');
+        $this->requirePermission('costosdanio');
 
         $costo = $this->costoDanioModel->find($id);
         if (!$costo) {
@@ -210,24 +210,24 @@ class CostosDanioController extends Controller
 
         // Validaciones básicas
         if (empty($data['rela_inventario']) || empty($data['rela_niveldanio']) || empty($data['costodanio_importe'])) {
-            $this->redirect("/costodanio/$id/edit", 'Complete los campos obligatorios', 'error');
+            $this->redirect("/costosdanio/$id/edit", 'Complete los campos obligatorios', 'error');
             return;
         }
 
         // Validar que el importe sea un número positivo
         if ($data['costodanio_importe'] <= 0) {
-            $this->redirect("/costodanio/$id/edit", 'El importe debe ser mayor a 0', 'error');
+            $this->redirect("/costosdanio/$id/edit", 'El importe debe ser mayor a 0', 'error');
             return;
         }
 
         try {
             if ($this->costoDanioModel->update($id, $data)) {
-                $this->redirect('/costodanio', 'Costo por daño actualizado correctamente', 'exito');
+                $this->redirect('/costosdanio', 'Costo por daño actualizado correctamente', 'exito');
             } else {
-                $this->redirect("/costodanio/$id/edit", 'Error al actualizar el costo por daño', 'error');
+                $this->redirect("/costosdanio/$id/edit", 'Error al actualizar el costo por daño', 'error');
             }
         } catch (\Exception $e) {
-            $this->redirect("/costodanio/$id/edit", 'Error: ' . $e->getMessage(), 'error');
+            $this->redirect("/costosdanio/$id/edit", 'Error: ' . $e->getMessage(), 'error');
         }
     }
 
@@ -236,7 +236,7 @@ class CostosDanioController extends Controller
      */
     public function delete($id)
     {
-        $this->requirePermission('costodanio');
+        $this->requirePermission('costosdanio');
 
         $costo = $this->costoDanioModel->find($id);
         if (!$costo) {
@@ -244,9 +244,9 @@ class CostosDanioController extends Controller
         }
 
         if ($this->costoDanioModel->softDelete($id, 'costodanio_estado')) {
-            $this->redirect('/costodanio', 'Costo por daño eliminado correctamente', 'exito');
+            $this->redirect('/costosdanio', 'Costo por daño eliminado correctamente', 'exito');
         } else {
-            $this->redirect('/costodanio', 'Error al eliminar el costo por daño', 'error');
+            $this->redirect('/costosdanio', 'Error al eliminar el costo por daño', 'error');
         }
     }
 
@@ -255,12 +255,12 @@ class CostosDanioController extends Controller
      */
     public function restore($id)
     {
-        $this->requirePermission('costodanio');
+        $this->requirePermission('costosdanio');
 
         if ($this->costoDanioModel->restore($id, 'costodanio_estado')) {
-            $this->redirect('/costodanio', 'Costo por daño restaurado correctamente', 'exito');
+            $this->redirect('/costosdanio', 'Costo por daño restaurado correctamente', 'exito');
         } else {
-            $this->redirect('/costodanio', 'Error al restaurar el costo por daño', 'error');
+            $this->redirect('/costosdanio', 'Error al restaurar el costo por daño', 'error');
         }
     }
 
@@ -269,7 +269,7 @@ class CostosDanioController extends Controller
      */
     public function cambiarEstado($id)
     {
-        $this->requirePermission('costodanio');
+        $this->requirePermission('costosdanio');
 
         // Verificar que sea una petición AJAX
         if (!$this->isAjax()) {
@@ -314,7 +314,7 @@ class CostosDanioController extends Controller
      */
     public function exportar()
     {
-        $this->requirePermission('costodanio');
+        $this->requirePermission('costosdanio');
 
         try {
             // Obtener todos los filtros de la URL
@@ -331,7 +331,7 @@ class CostosDanioController extends Controller
             $costos = $result['data'];
 
             if (empty($costos)) {
-                $this->redirect('/costodanio', 'No hay datos para exportar', 'error');
+                $this->redirect('/costosdanio', 'No hay datos para exportar', 'error');
                 return;
             }
 
@@ -403,7 +403,7 @@ class CostosDanioController extends Controller
 
         } catch (\Exception $e) {
             error_log("Error al exportar costos por daño: " . $e->getMessage());
-            $this->redirect('/costodanio', 'Error al exportar: ' . $e->getMessage(), 'error');
+            $this->redirect('/costosdanio', 'Error al exportar: ' . $e->getMessage(), 'error');
         }
     }
 
@@ -412,7 +412,7 @@ class CostosDanioController extends Controller
      */
     public function exportarPdf()
     {
-        $this->requirePermission('costodanio');
+        $this->requirePermission('costosdanio');
 
         try {
             // Obtener todos los filtros de la URL
@@ -429,7 +429,7 @@ class CostosDanioController extends Controller
             $costos = $result['data'];
 
             if (empty($costos)) {
-                $this->redirect('/costodanio', 'No hay datos para exportar', 'error');
+                $this->redirect('/costosdanio', 'No hay datos para exportar', 'error');
                 return;
             }
 
@@ -568,7 +568,7 @@ class CostosDanioController extends Controller
 
         } catch (\Exception $e) {
             error_log("Error al exportar costos por daño a PDF: " . $e->getMessage());
-            $this->redirect('/costodanio', 'Error al exportar PDF: ' . $e->getMessage(), 'error');
+            $this->redirect('/costosdanio', 'Error al exportar PDF: ' . $e->getMessage(), 'error');
         }
     }
 }

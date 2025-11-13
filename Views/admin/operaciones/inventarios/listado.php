@@ -8,7 +8,7 @@
                     <h4 class="mb-0">Gestión de Inventario</h4>
                 </div>
                 <div class="col-auto">
-                    <a href="<?= url('/inventario/create') ?>" class="btn btn-primary btn-sm">
+                    <a href="<?= url('/inventarios/create') ?>" class="btn btn-primary btn-sm">
                         <i class="fas fa-plus me-1"></i>Nuevo Inventario
                     </a>
                 </div>
@@ -16,7 +16,7 @@
         </div>
         <!-- Filtros compactos -->
         <div class="card-body pb-0">
-            <form method="GET" action="<?= url('/inventario') ?>" class="mb-3">
+            <form method="GET" action="<?= url('/inventarios') ?>" class="mb-3">
                 <div class="row g-2 align-items-end">
                     <div class="col-auto">
                         <label class="form-label small mb-1 text-muted">Filtros de búsqueda</label>
@@ -45,7 +45,7 @@
                             <button type="submit" class="btn btn-primary btn-sm" title="Buscar">
                                 <i class="fas fa-search"></i>
                             </button>
-                            <a href="<?= url('/inventario') ?>" class="btn btn-info btn-sm" title="Limpiar filtros">
+                            <a href="<?= url('/inventarios') ?>" class="btn btn-info btn-sm" title="Limpiar filtros">
                                 <i class="fas fa-times"></i>
                             </a>
                         </div>
@@ -88,7 +88,7 @@
                     </div>
                     <h6 class="text-muted">No se encontraron registros de inventario</h6>
                     <p class="text-muted small mb-3">Intenta modificar los filtros o crea un nuevo registro.</p>
-                    <a href="<?= url('/inventario/create') ?>" class="btn btn-outline-dark btn-sm">
+                    <a href="<?= url('/inventarios/create') ?>" class="btn btn-outline-dark btn-sm">
                         <i class="fas fa-plus fa-sm"></i> Crear inventario
                     </a>
                 </div>
@@ -205,12 +205,12 @@
                                     </td>
                                     <td class="border-0 py-3 text-center">
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <a href="<?= url('/inventario/' . $inventario['id_inventario']) ?>"
+                                            <a href="<?= url('/inventarios/' . $inventario['id_inventario']) ?>"
                                                class="btn btn-outline-primary btn-sm"
                                                title="Ver detalle">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="<?= url('/inventario/' . $inventario['id_inventario']) . '/edit'?>"
+                                            <a href="<?= url('/inventarios/' . $inventario['id_inventario']) . '/edit'?>"
                                                class="btn btn-outline-warning btn-sm"
                                                title="Editar">
                                                 <i class="fas fa-edit"></i>
@@ -287,7 +287,7 @@ function cambiarEstadoInventario(id, nuevoEstado, descripcion) {
     
     confirmar.then(confirmed => {
         if (confirmed) {
-            const url = `<?= url('/inventario') ?>/${id}/estado`;
+            const url = `<?= url('/inventarios') ?>/${id}/estado`;
             console.log('URL de petición:', url);
             
             fetch(url, {
@@ -371,7 +371,7 @@ function exportarInventario(event) {
     const urlParams = new URLSearchParams(window.location.search);
     
     // Crear la URL de exportación manteniendo todos los filtros
-    const baseExportUrl = '<?= url('/inventario/exportar') ?>';
+    const baseExportUrl = '<?= url('/inventarios/exportar') ?>';
     const exportUrl = baseExportUrl + '?' + urlParams.toString();
     
     // Crear un enlace temporal para la descarga
@@ -427,7 +427,7 @@ function exportarInventarioPDF(event) {
     const urlParams = new URLSearchParams(window.location.search);
     
     // Crear la URL de exportación PDF manteniendo todos los filtros
-    const basePdfUrl = '<?= url('/inventario/exportar-pdf') ?>';
+    const basePdfUrl = '<?= url('/inventarios/exportar-pdf') ?>';
     const pdfUrl = basePdfUrl + '?' + urlParams.toString();
     
     // Crear un enlace temporal para la descarga

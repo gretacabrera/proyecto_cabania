@@ -23,7 +23,7 @@ class NivelDanioController extends Controller
      */
     public function index()
     {
-        $this->requirePermission('niveldanio');
+        $this->requirePermission('nivelesdanio');
 
         $page = (int) $this->get('page', 1);
         $perPage = (int) $this->get('per_page', 10);
@@ -49,7 +49,7 @@ class NivelDanioController extends Controller
             'isAdminArea' => true
         ];
 
-        return $this->render('admin/configuracion/niveldanio/listado', $data, 'main');
+        return $this->render('admin/configuracion/nivelesdanio/listado', $data, 'main');
     }
 
     /**
@@ -57,7 +57,7 @@ class NivelDanioController extends Controller
      */
     public function create()
     {
-        $this->requirePermission('niveldanio');
+        $this->requirePermission('nivelesdanio');
 
         if ($this->isPost()) {
             return $this->store();
@@ -68,7 +68,7 @@ class NivelDanioController extends Controller
             'isAdminArea' => true
         ];
 
-        return $this->render('admin/configuracion/niveldanio/formulario', $data, 'main');
+        return $this->render('admin/configuracion/nivelesdanio/formulario', $data, 'main');
     }
 
     /**
@@ -76,7 +76,7 @@ class NivelDanioController extends Controller
      */
     public function store()
     {
-        $this->requirePermission('niveldanio');
+        $this->requirePermission('nivelesdanio');
 
         $data = [
             'niveldanio_descripcion' => $this->post('niveldanio_descripcion'),
@@ -85,18 +85,18 @@ class NivelDanioController extends Controller
 
         // Validaciones básicas
         if (empty($data['niveldanio_descripcion'])) {
-            $this->redirect('/niveldanio/create', 'Complete los campos obligatorios', 'error');
+            $this->redirect('/nivelesdanio/create', 'Complete los campos obligatorios', 'error');
         }
 
         try {
             $id = $this->modelo->create($data);
             if ($id) {
-                $this->redirect('/niveldanio', 'Nivel de daño creado correctamente', 'exito');
+                $this->redirect('/nivelesdanio', 'Nivel de daño creado correctamente', 'exito');
             } else {
-                $this->redirect('/niveldanio/create', 'Error al crear el nivel de daño', 'error');
+                $this->redirect('/nivelesdanio/create', 'Error al crear el nivel de daño', 'error');
             }
         } catch (\Exception $e) {
-            $this->redirect('/niveldanio/create', 'Error: ' . $e->getMessage(), 'error');
+            $this->redirect('/nivelesdanio/create', 'Error: ' . $e->getMessage(), 'error');
         }
     }
 
@@ -105,7 +105,7 @@ class NivelDanioController extends Controller
      */
     public function show($id)
     {
-        $this->requirePermission('niveldanio');
+        $this->requirePermission('nivelesdanio');
 
         $registro = $this->modelo->find($id);
         if (!$registro) {
@@ -122,7 +122,7 @@ class NivelDanioController extends Controller
             'isAdminArea' => true
         ];
 
-        return $this->render('admin/configuracion/niveldanio/detalle', $data, 'main');
+        return $this->render('admin/configuracion/nivelesdanio/detalle', $data, 'main');
     }
 
     /**
@@ -130,7 +130,7 @@ class NivelDanioController extends Controller
      */
     public function edit($id)
     {
-        $this->requirePermission('niveldanio');
+        $this->requirePermission('nivelesdanio');
 
         $registro = $this->modelo->find($id);
         if (!$registro) {
@@ -151,7 +151,7 @@ class NivelDanioController extends Controller
             'isAdminArea' => true
         ];
 
-        return $this->render('admin/configuracion/niveldanio/formulario', $data, 'main');
+        return $this->render('admin/configuracion/nivelesdanio/formulario', $data, 'main');
     }
 
     /**
@@ -159,7 +159,7 @@ class NivelDanioController extends Controller
      */
     public function update($id)
     {
-        $this->requirePermission('niveldanio');
+        $this->requirePermission('nivelesdanio');
 
         $registro = $this->modelo->find($id);
         if (!$registro) {
@@ -171,17 +171,17 @@ class NivelDanioController extends Controller
         ];
 
         if (empty($data['niveldanio_descripcion'])) {
-            $this->redirect("/niveldanio/$id/edit", 'Complete los campos obligatorios', 'error');
+            $this->redirect("/nivelesdanio/$id/edit", 'Complete los campos obligatorios', 'error');
         }
 
         try {
             if ($this->modelo->update($id, $data)) {
-                $this->redirect('/niveldanio', 'Nivel de daño actualizado correctamente', 'exito');
+                $this->redirect('/nivelesdanio', 'Nivel de daño actualizado correctamente', 'exito');
             } else {
-                $this->redirect("/niveldanio/$id/edit", 'Error al actualizar el nivel de daño', 'error');
+                $this->redirect("/nivelesdanio/$id/edit", 'Error al actualizar el nivel de daño', 'error');
             }
         } catch (\Exception $e) {
-            $this->redirect("/niveldanio/$id/edit", 'Error: ' . $e->getMessage(), 'error');
+            $this->redirect("/nivelesdanio/$id/edit", 'Error: ' . $e->getMessage(), 'error');
         }
     }
 
@@ -190,7 +190,7 @@ class NivelDanioController extends Controller
      */
     public function delete($id)
     {
-        $this->requirePermission('niveldanio');
+        $this->requirePermission('nivelesdanio');
 
         $registro = $this->modelo->find($id);
         if (!$registro) {
@@ -198,9 +198,9 @@ class NivelDanioController extends Controller
         }
 
         if ($this->modelo->softDelete($id, 'niveldanio_estado')) {
-            $this->redirect('/niveldanio', 'Nivel de daño eliminado correctamente', 'exito');
+            $this->redirect('/nivelesdanio', 'Nivel de daño eliminado correctamente', 'exito');
         } else {
-            $this->redirect('/niveldanio', 'Error al eliminar el nivel de daño', 'error');
+            $this->redirect('/nivelesdanio', 'Error al eliminar el nivel de daño', 'error');
         }
     }
 
@@ -209,12 +209,12 @@ class NivelDanioController extends Controller
      */
     public function restore($id)
     {
-        $this->requirePermission('niveldanio');
+        $this->requirePermission('nivelesdanio');
 
         if ($this->modelo->restore($id, 'niveldanio_estado')) {
-            $this->redirect('/niveldanio', 'Nivel de daño restaurado correctamente', 'exito');
+            $this->redirect('/nivelesdanio', 'Nivel de daño restaurado correctamente', 'exito');
         } else {
-            $this->redirect('/niveldanio', 'Error al restaurar el nivel de daño', 'error');
+            $this->redirect('/nivelesdanio', 'Error al restaurar el nivel de daño', 'error');
         }
     }
 
@@ -223,7 +223,7 @@ class NivelDanioController extends Controller
      */
     public function cambiarEstado($id)
     {
-        $this->requirePermission('niveldanio');
+        $this->requirePermission('nivelesdanio');
 
         // Verificar que sea una petición AJAX
         if (!$this->isAjax()) {
@@ -268,7 +268,7 @@ class NivelDanioController extends Controller
      */
     public function exportar()
     {
-        $this->requirePermission('niveldanio');
+        $this->requirePermission('nivelesdanio');
 
         try {
             // Obtener todos los filtros de la URL
@@ -282,7 +282,7 @@ class NivelDanioController extends Controller
             $datos = $result['data'];
 
             if (empty($datos)) {
-                $this->redirect('/niveldanio', 'No hay datos para exportar', 'error');
+                $this->redirect('/nivelesdanio', 'No hay datos para exportar', 'error');
                 return;
             }
 
@@ -345,7 +345,7 @@ class NivelDanioController extends Controller
 
         } catch (\Exception $e) {
             error_log("Error al exportar niveles de daño: " . $e->getMessage());
-            $this->redirect('/niveldanio', 'Error al exportar: ' . $e->getMessage(), 'error');
+            $this->redirect('/nivelesdanio', 'Error al exportar: ' . $e->getMessage(), 'error');
         }
     }
 
@@ -354,7 +354,7 @@ class NivelDanioController extends Controller
      */
     public function exportarPdf()
     {
-        $this->requirePermission('niveldanio');
+        $this->requirePermission('nivelesdanio');
 
         try {
             // Obtener todos los filtros de la URL
@@ -368,7 +368,7 @@ class NivelDanioController extends Controller
             $datos = $result['data'];
 
             if (empty($datos)) {
-                $this->redirect('/niveldanio', 'No hay datos para exportar', 'error');
+                $this->redirect('/nivelesdanio', 'No hay datos para exportar', 'error');
                 return;
             }
 
@@ -493,7 +493,7 @@ class NivelDanioController extends Controller
 
         } catch (\Exception $e) {
             error_log("Error al exportar niveles de daño a PDF: " . $e->getMessage());
-            $this->redirect('/niveldanio', 'Error al exportar PDF: ' . $e->getMessage(), 'error');
+            $this->redirect('/nivelesdanio', 'Error al exportar PDF: ' . $e->getMessage(), 'error');
         }
     }
 }

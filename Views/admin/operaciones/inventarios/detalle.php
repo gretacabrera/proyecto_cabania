@@ -19,12 +19,12 @@ if (!isset($inventario) || empty($inventario)) {
     <div class="page-actions">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <a href="<?= $this->url('/inventario') ?>" class="btn btn-primary">
+                <a href="<?= $this->url('/inventarios') ?>" class="btn btn-primary">
                     <i class="fas fa-arrow-left"></i> Volver al listado
                 </a>
             </div>
             <div class="action-buttons">
-                <a href="<?= $this->url('/inventario/' . $inventario['id_inventario']) . '/edit' ?>"
+                <a href="<?= $this->url('/inventarios/' . $inventario['id_inventario']) . '/edit' ?>"
                     class="btn btn-warning">
                     <i class="fas fa-edit"></i> Editar Inventario
                 </a>
@@ -135,7 +135,7 @@ if (!isset($inventario) || empty($inventario)) {
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <a href="<?= $this->url('/inventario/' . $inventario['id_inventario']) . '/edit' ?>"
+                        <a href="<?= $this->url('/inventarios/' . $inventario['id_inventario']) . '/edit' ?>"
                             class="btn btn-outline-warning">
                             <i class="fas fa-edit"></i> Editar Inventario
                         </a>
@@ -146,7 +146,7 @@ if (!isset($inventario) || empty($inventario)) {
                             </button>
                         <?php endif; ?>
                         
-                        <a href="<?= $this->url('/inventario') ?>" class="btn btn-outline-secondary">
+                        <a href="<?= $this->url('/inventarios') ?>" class="btn btn-outline-secondary">
                             <i class="fas fa-list"></i> Ver Todos
                         </a>
                     </div>
@@ -195,7 +195,7 @@ function cambiarEstadoInventario(id, nuevoEstado, descripcion) {
     
     confirmar.then(confirmed => {
         if (confirmed) {
-            const url = `<?= $this->url('/inventario') ?>/${id}/estado`;
+            const url = `<?= $this->url('/inventarios') ?>/${id}/estado`;
             console.log('URL de petición:', url);
             
             fetch(url, {

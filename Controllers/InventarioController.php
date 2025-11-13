@@ -23,7 +23,7 @@ class InventarioController extends Controller
      */
     public function index()
     {
-        $this->requirePermission('inventario');
+        $this->requirePermission('inventarios');
 
         $page = (int) $this->get('page', 1);
         $perPage = (int) $this->get('per_page', 10);
@@ -50,7 +50,7 @@ class InventarioController extends Controller
             'isAdminArea' => true
         ];
 
-        return $this->render('admin/operaciones/inventario/listado', $data, 'main');
+        return $this->render('admin/operaciones/inventarios/listado', $data, 'main');
     }
 
     /**
@@ -58,7 +58,7 @@ class InventarioController extends Controller
      */
     public function create()
     {
-        $this->requirePermission('inventario');
+        $this->requirePermission('inventarios');
 
         if ($this->isPost()) {
             return $this->store();
@@ -69,7 +69,7 @@ class InventarioController extends Controller
             'isAdminArea' => true
         ];
 
-        return $this->render('admin/operaciones/inventario/formulario', $data, 'main');
+        return $this->render('admin/operaciones/inventarios/formulario', $data, 'main');
     }
 
     /**
@@ -77,7 +77,7 @@ class InventarioController extends Controller
      */
     public function store()
     {
-        $this->requirePermission('inventario');
+        $this->requirePermission('inventarios');
 
         $data = [
             'inventario_descripcion' => $this->post('inventario_descripcion'),
@@ -87,23 +87,23 @@ class InventarioController extends Controller
 
         // Validaciones básicas
         if (empty($data['inventario_descripcion'])) {
-            $this->redirect('/inventario/create', 'Complete los campos obligatorios', 'error');
+            $this->redirect('/inventarios/create', 'Complete los campos obligatorios', 'error');
         }
 
         // Validar que el stock sea un número válido
         if (!is_numeric($data['inventario_stock']) || $data['inventario_stock'] < 0) {
-            $this->redirect('/inventario/create', 'El stock debe ser un número válido mayor o igual a 0', 'error');
+            $this->redirect('/inventarios/create', 'El stock debe ser un número válido mayor o igual a 0', 'error');
         }
 
         try {
             $id = $this->inventarioModel->create($data);
             if ($id) {
-                $this->redirect('/inventario', 'Inventario creado correctamente', 'exito');
+                $this->redirect('/inventarios', 'Inventario creado correctamente', 'exito');
             } else {
-                $this->redirect('/inventario/create', 'Error al crear el inventario', 'error');
+                $this->redirect('/inventarios/create', 'Error al crear el inventario', 'error');
             }
         } catch (\Exception $e) {
-            $this->redirect('/inventario/create', 'Error: ' . $e->getMessage(), 'error');
+            $this->redirect('/inventarios/create', 'Error: ' . $e->getMessage(), 'error');
         }
     }
 
@@ -112,7 +112,7 @@ class InventarioController extends Controller
      */
     public function show($id)
     {
-        $this->requirePermission('inventario');
+        $this->requirePermission('inventarios');
 
         $inventario = $this->inventarioModel->find($id);
         if (!$inventario) {
@@ -129,7 +129,7 @@ class InventarioController extends Controller
             'isAdminArea' => true
         ];
 
-        return $this->render('admin/operaciones/inventario/detalle', $data, 'main');
+        return $this->render('admin/operaciones/inventarios/detalle', $data, 'main');
     }
 
     /**
@@ -137,7 +137,7 @@ class InventarioController extends Controller
      */
     public function edit($id)
     {
-        $this->requirePermission('inventario');
+        $this->requirePermission('inventarios');
 
         $inventario = $this->inventarioModel->find($id);
         if (!$inventario) {
@@ -154,7 +154,7 @@ class InventarioController extends Controller
             'isAdminArea' => true
         ];
 
-        return $this->render('admin/operaciones/inventario/formulario', $data, 'main');
+        return $this->render('admin/operaciones/inventarios/formulario', $data, 'main');
     }
 
     /**
@@ -162,7 +162,7 @@ class InventarioController extends Controller
      */
     public function update($id)
     {
-        $this->requirePermission('inventario');
+        $this->requirePermission('inventarios');
 
         $inventario = $this->inventarioModel->find($id);
         if (!$inventario) {
@@ -175,22 +175,22 @@ class InventarioController extends Controller
         ];
 
         if (empty($data['inventario_descripcion'])) {
-            $this->redirect("/inventario/$id/edit", 'Complete los campos obligatorios', 'error');
+            $this->redirect("/inventarios/$id/edit", 'Complete los campos obligatorios', 'error');
         }
 
         // Validar que el stock sea un número válido
         if (!is_numeric($data['inventario_stock']) || $data['inventario_stock'] < 0) {
-            $this->redirect("/inventario/$id/edit", 'El stock debe ser un número válido mayor o igual a 0', 'error');
+            $this->redirect("/inventarios/$id/edit", 'El stock debe ser un número válido mayor o igual a 0', 'error');
         }
 
         try {
             if ($this->inventarioModel->update($id, $data)) {
-                $this->redirect('/inventario', 'Inventario actualizado correctamente', 'exito');
+                $this->redirect('/inventarios', 'Inventario actualizado correctamente', 'exito');
             } else {
-                $this->redirect("/inventario/$id/edit", 'Error al actualizar el inventario', 'error');
+                $this->redirect("/inventarios/$id/edit", 'Error al actualizar el inventario', 'error');
             }
         } catch (\Exception $e) {
-            $this->redirect("/inventario/$id/edit", 'Error: ' . $e->getMessage(), 'error');
+            $this->redirect("/inventarios/$id/edit", 'Error: ' . $e->getMessage(), 'error');
         }
     }
 
@@ -199,7 +199,7 @@ class InventarioController extends Controller
      */
     public function delete($id)
     {
-        $this->requirePermission('inventario');
+        $this->requirePermission('inventarios');
 
         $inventario = $this->inventarioModel->find($id);
         if (!$inventario) {
@@ -207,9 +207,9 @@ class InventarioController extends Controller
         }
 
         if ($this->inventarioModel->softDelete($id, 'inventario_estado')) {
-            $this->redirect('/inventario', 'Inventario eliminado correctamente', 'exito');
+            $this->redirect('/inventarios', 'Inventario eliminado correctamente', 'exito');
         } else {
-            $this->redirect('/inventario', 'Error al eliminar el inventario', 'error');
+            $this->redirect('/inventarios', 'Error al eliminar el inventario', 'error');
         }
     }
 
@@ -218,12 +218,12 @@ class InventarioController extends Controller
      */
     public function restore($id)
     {
-        $this->requirePermission('inventario');
+        $this->requirePermission('inventarios');
 
         if ($this->inventarioModel->restore($id, 'inventario_estado')) {
-            $this->redirect('/inventario', 'Inventario restaurado correctamente', 'exito');
+            $this->redirect('/inventarios', 'Inventario restaurado correctamente', 'exito');
         } else {
-            $this->redirect('/inventario', 'Error al restaurar el inventario', 'error');
+            $this->redirect('/inventarios', 'Error al restaurar el inventario', 'error');
         }
     }
 
@@ -236,7 +236,7 @@ class InventarioController extends Controller
         error_log("Método HTTP: " . $_SERVER['REQUEST_METHOD']);
         error_log("URL completa: " . $_SERVER['REQUEST_URI']);
         
-        $this->requirePermission('inventario');
+        $this->requirePermission('inventarios');
 
         // Verificar que sea una petición AJAX
         if (!$this->isAjax()) {
@@ -289,7 +289,7 @@ class InventarioController extends Controller
      */
     public function exportar()
     {
-        $this->requirePermission('inventario');
+        $this->requirePermission('inventarios');
 
         try {
             // Obtener todos los filtros de la URL
@@ -304,7 +304,7 @@ class InventarioController extends Controller
             $inventarios = $result['data'];
 
             if (empty($inventarios)) {
-                $this->redirect('/inventario', 'No hay datos para exportar', 'error');
+                $this->redirect('/inventarios', 'No hay datos para exportar', 'error');
                 return;
             }
 
@@ -371,7 +371,7 @@ class InventarioController extends Controller
 
         } catch (\Exception $e) {
             error_log("Error al exportar inventario: " . $e->getMessage());
-            $this->redirect('/inventario', 'Error al exportar: ' . $e->getMessage(), 'error');
+            $this->redirect('/inventarios', 'Error al exportar: ' . $e->getMessage(), 'error');
         }
     }
 
@@ -380,7 +380,7 @@ class InventarioController extends Controller
      */
     public function exportarPdf()
     {
-        $this->requirePermission('inventario');
+        $this->requirePermission('inventarios');
 
         try {
             // Obtener todos los filtros de la URL
@@ -395,7 +395,7 @@ class InventarioController extends Controller
             $inventarios = $result['data'];
 
             if (empty($inventarios)) {
-                $this->redirect('/inventario', 'No hay datos para exportar', 'error');
+                $this->redirect('/inventarios', 'No hay datos para exportar', 'error');
                 return;
             }
 
@@ -526,7 +526,7 @@ class InventarioController extends Controller
 
         } catch (\Exception $e) {
             error_log("Error al exportar inventario a PDF: " . $e->getMessage());
-            $this->redirect('/inventario', 'Error al exportar PDF: ' . $e->getMessage(), 'error');
+            $this->redirect('/inventarios', 'Error al exportar PDF: ' . $e->getMessage(), 'error');
         }
     }
 }

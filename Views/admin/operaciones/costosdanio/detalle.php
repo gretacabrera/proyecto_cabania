@@ -16,12 +16,12 @@ if (!isset($costo) || empty($costo)) {
     <div class="page-actions">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <a href="<?= url('/costodanio') ?>" class="btn btn-primary">
+                <a href="<?= url('/costosdanio') ?>" class="btn btn-primary">
                     <i class="fas fa-arrow-left"></i> Volver al listado
                 </a>
             </div>
             <div class="action-buttons">
-                <a href="<?= url('/costodanio/' . $costo['id_costodanio']) . '/edit' ?>"
+                <a href="<?= url('/costosdanio/' . $costo['id_costodanio']) . '/edit' ?>"
                     class="btn btn-warning">
                     <i class="fas fa-edit"></i> Editar Costo
                 </a>
@@ -153,15 +153,15 @@ if (!isset($costo) || empty($costo)) {
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <a href="<?= url('/inventario/' . $costo['rela_inventario']) ?>"
+                        <a href="<?= url('/inventarios/' . $costo['rela_inventario']) ?>"
                             class="btn btn-outline-primary">
                             <i class="fas fa-box"></i> Ver Inventario
                         </a>
-                        <a href="<?= url('/costodanio') ?>?inventario=<?= urlencode($costo['inventario_descripcion']) ?>"
+                        <a href="<?= url('/costosdanio') ?>?inventario=<?= urlencode($costo['inventario_descripcion']) ?>"
                             class="btn btn-outline-info">
                             <i class="fas fa-list"></i> Costos del Inventario
                         </a>
-                        <a href="<?= url('/costodanio') ?>?niveldanio=<?= urlencode($costo['niveldanio_descripcion']) ?>"
+                        <a href="<?= url('/costosdanio') ?>?niveldanio=<?= urlencode($costo['niveldanio_descripcion']) ?>"
                             class="btn btn-outline-secondary">
                             <i class="fas fa-filter"></i> Costos por Nivel
                         </a>
@@ -209,7 +209,7 @@ function cambiarEstadoCosto(id, nuevoEstado, descripcion) {
     
     confirmar.then(confirmed => {
         if (confirmed) {
-            const url = `<?= url('/costodanio') ?>/${id}/estado`;
+            const url = `<?= url('/costosdanio') ?>/${id}/estado`;
             
             fetch(url, {
                 method: 'POST',

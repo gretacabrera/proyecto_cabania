@@ -1,37 +1,37 @@
 <div class="container-fluid">
-    <!-- Encabezado moderno -->
+    <!-- Encabezado moderno similar al diseño de referencia -->
     <div class="card border-0 shadow-sm">
         <!-- Header oscuro -->
         <div class="card-header text-dark py-3 mb-0">
             <div class="row align-items-center">
                 <div class="col">
-                    <h4 class="mb-0">Gestión de Niveles de Daño</h4>
+                    <h4 class="mb-0">Gestión de Revisiones</h4>
                 </div>
                 <div class="col-auto">
-                    <a href="<?= url('/nivelesdanio/create') ?>" class="btn btn-primary btn-sm">
-                        <i class="fas fa-plus me-1"></i>Nuevo Nivel de Daño
+                    <a href="<?= url('/revisiones/create') ?>" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-1"></i>Nueva Revisión
                     </a>
                 </div>
             </div>
         </div>
         <!-- Filtros compactos -->
         <div class="card-body pb-0">
-            <form method="GET" action="<?= url('/nivelesdanio') ?>" class="mb-3">
+            <form method="GET" action="<?= url('/revisiones') ?>" class="mb-3">
                 <div class="row g-2 align-items-end">
                     <div class="col-auto">
                         <label class="form-label small mb-1 text-muted">Filtros de búsqueda</label>
                     </div>
                     <div class="col-auto">
-                        <label class="form-label small mb-1">Descripción</label>
-                        <input type="text" name="niveldanio_descripcion" class="form-control form-control-sm" 
-                               placeholder="" value="<?= htmlspecialchars($_GET['niveldanio_descripcion'] ?? '') ?>" style="width: 200px;">
+                        <label class="form-label small mb-1">Cabaña</label>
+                        <input type="text" name="cabania_nombre" class="form-control form-control-sm" 
+                               placeholder="Nombre de cabaña" value="<?= htmlspecialchars($filters['cabania_nombre'] ?? '') ?>" style="width: 250px;">
                     </div>
                     <div class="col-auto ms-auto">
                         <label class="form-label small mb-1">Estado</label>
-                        <select name="niveldanio_estado" class="form-select form-select-sm" style="width: 120px;">
+                        <select name="estado" class="form-select form-select-sm" style="width: 120px;">
                             <option value="">Todos</option>
-                            <option value="1" <?= ($_GET['niveldanio_estado'] ?? '') == '1' ? 'selected' : '' ?>>Activo</option>
-                            <option value="0" <?= ($_GET['niveldanio_estado'] ?? '') == '0' ? 'selected' : '' ?>>Inactivo</option>
+                            <option value="1" <?= ($filters['estado'] ?? '') == '1' ? 'selected' : '' ?>>Activo</option>
+                            <option value="0" <?= ($filters['estado'] ?? '') == '0' ? 'selected' : '' ?>>Anulado</option>
                         </select>
                     </div>
                     <div class="col-auto">
@@ -39,7 +39,7 @@
                             <button type="submit" class="btn btn-primary btn-sm" title="Buscar">
                                 <i class="fas fa-search"></i>
                             </button>
-                            <a href="<?= url('/nivelesdanio') ?>" class="btn btn-info btn-sm" title="Limpiar filtros">
+                            <a href="<?= url('/revisiones') ?>" class="btn btn-info btn-sm" title="Limpiar filtros">
                                 <i class="fas fa-times"></i>
                             </a>
                         </div>
@@ -61,10 +61,10 @@
                     <div class="col"></div>
                     <div class="col-auto">
                         <div class="btn-group" role="group">
-                            <button type="button" onclick="exportarNiveles(event)" class="btn btn-success btn-sm" title="Exportar a Excel">
+                            <button type="button" onclick="exportarRevisiones(event)" class="btn btn-success btn-sm" title="Exportar a Excel">
                                 <i class="fas fa-file-excel me-1"></i> Excel
                             </button>
-                            <button type="button" onclick="exportarNivelesPDF(event)" class="btn btn-danger btn-sm" title="Exportar a PDF">
+                            <button type="button" onclick="exportarRevisionesPDF(event)" class="btn btn-danger btn-sm" title="Exportar a PDF">
                                 <i class="fas fa-file-pdf me-1"></i> PDF
                             </button>
                         </div>
@@ -75,15 +75,15 @@
 
         <!-- Tabla estilo moderno -->
         <div class="card-body p-0">
-            <?php if (empty($registros)): ?>
+            <?php if (empty($revisiones)): ?>
                 <div class="empty-state py-5 text-center">
                     <div class="mb-4">
-                        <i class="fas fa-exclamation-triangle fa-3x text-muted opacity-50"></i>
+                        <i class="fas fa-clipboard-check fa-3x text-muted opacity-50"></i>
                     </div>
-                    <h6 class="text-muted">No se encontraron niveles de daño</h6>
-                    <p class="text-muted small mb-3">Intenta modificar los filtros o crea un nuevo nivel de daño.</p>
-                    <a href="<?= url('/nivelesdanio/create') ?>" class="btn btn-outline-dark btn-sm">
-                        <i class="fas fa-plus fa-sm"></i> Crear nivel de daño
+                    <h6 class="text-muted">No se encontraron revisiones</h6>
+                    <p class="text-muted small mb-3">Intenta modificar los filtros o registra una nueva revisión.</p>
+                    <a href="<?= url('/revisiones/create') ?>" class="btn btn-outline-dark btn-sm">
+                        <i class="fas fa-plus fa-sm"></i> Crear revisión
                     </a>
                 </div>
             <?php else: ?>
@@ -159,7 +159,6 @@
                         </div>
                     <?php }; ?>
                     
-                    <!-- Paginación superior -->
                     <div class="card-header bg-light border-bottom py-2">
                         <?php $renderPagination(true); ?>
                     </div>
@@ -169,49 +168,57 @@
                     <table class="table table-hover mb-0">
                         <thead class="thead-light">
                             <tr>
-                                <th class="border-0 py-3">Descripción</th>
+                                <th class="border-0 py-3">Reserva</th>
+                                <th class="border-0 py-3">Cabaña</th>
+                                <th class="border-0 py-3">Items Dañados</th>
+                                <th class="border-0 py-3">Costo Total</th>
                                 <th class="border-0 py-3">Estado</th>
                                 <th class="border-0 py-3 text-center">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($registros as $registro): ?>
+                            <?php foreach ($revisiones as $revision): ?>
                                 <tr>
                                     <td class="border-0 py-3">
-                                        <div class="fw-medium text-dark"><?= htmlspecialchars($registro['niveldanio_descripcion']) ?></div>
+                                        <strong>#<?= $revision['rela_reserva'] ?></strong>
+                                        <br>
+                                        <small class="text-muted">
+                                            <?= date('d/m/Y', strtotime($revision['reserva_fhinicio'])) ?> - 
+                                            <?= date('d/m/Y', strtotime($revision['reserva_fhfin'])) ?>
+                                        </small>
                                     </td>
                                     <td class="border-0 py-3">
-                                        <?php if ($registro['niveldanio_estado'] == 1): ?>
+                                        <?= htmlspecialchars($revision['cabania_nombre']) ?>
+                                        <br>
+                                        <small class="text-muted"><?= htmlspecialchars($revision['cabania_codigo']) ?></small>
+                                    </td>
+                                    <td class="border-0 py-3">
+                                        <span class="badge bg-info"><?= $revision['total_items'] ?> item(s)</span>
+                                    </td>
+                                    <td class="border-0 py-3">
+                                        <strong class="text-danger">$<?= number_format($revision['total_costo'], 2) ?></strong>
+                                    </td>
+                                    <td class="border-0 py-3">
+                                        <?php if ($revision['revision_estado'] == 1): ?>
                                             <span class="badge bg-success">Activo</span>
                                         <?php else: ?>
-                                            <span class="badge bg-danger">Inactivo</span>
+                                            <span class="badge bg-danger">Anulado</span>
                                         <?php endif; ?>
                                     </td>
                                     <td class="border-0 py-3 text-center">
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            <a href="<?= url('/nivelesdanio/' . $registro['id_niveldanio']) ?>"
-                                               class="btn btn-outline-primary"
-                                               title="Ver detalle">
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="<?= url('/revisiones/' . $revision['rela_reserva']) ?>" 
+                                               class="btn btn-outline-primary" title="Ver detalle">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="<?= url('/nivelesdanio/' . $registro['id_niveldanio'] . '/edit') ?>"
-                                               class="btn btn-outline-warning"
-                                               title="Editar">
+                                            <a href="<?= url('/revisiones/' . $revision['rela_reserva'] . '/edit') ?>" 
+                                               class="btn btn-outline-warning" title="Editar">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <?php if ($registro['niveldanio_estado'] == 1): ?>
-                                                <button class="btn btn-outline-danger"
-                                                        onclick="cambiarEstadoNivel(<?= $registro['id_niveldanio'] ?>, 0, '<?= addslashes($registro['niveldanio_descripcion']) ?>')"
-                                                        title="Desactivar">
-                                                    <i class="fas fa-ban"></i>
-                                                </button>
-                                            <?php else: ?>
-                                                <button class="btn btn-outline-success"
-                                                        onclick="cambiarEstadoNivel(<?= $registro['id_niveldanio'] ?>, 1, '<?= addslashes($registro['niveldanio_descripcion']) ?>')"
-                                                        title="Activar">
-                                                    <i class="fas fa-check"></i>
-                                                </button>
-                                            <?php endif; ?>
+                                            <button type="button" onclick="anularRevision(<?= $revision['rela_reserva'] ?>)" 
+                                                    class="btn btn-outline-danger" title="Anular">
+                                                <i class="fas fa-ban"></i>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -219,7 +226,7 @@
                         </tbody>
                     </table>
                 </div>
-                
+
                 <!-- Paginación inferior -->
                 <?php if (isset($pagination) && $pagination['total'] > 0): ?>
                     <div class="card-footer bg-white border-top py-3">
@@ -227,162 +234,41 @@
                     </div>
                 <?php endif; ?>
             <?php endif; ?>
+        </div>
     </div>
 </div>
 
-<!-- JavaScript para funcionalidades -->
 <script>
-function cambiarEstadoNivel(id, nuevoEstado, descripcion) {
-    const accion = nuevoEstado == 1 ? 'activar' : 'desactivar';
-    const mensaje = nuevoEstado == 1 ? 
-        'El nivel de daño estará disponible para registrar incidencias' : 
-        'El nivel de daño no estará disponible';
-    const color = nuevoEstado == 1 ? '#28a745' : '#dc3545';
-    
-    const confirmar = typeof Swal !== 'undefined' ? 
-        Swal.fire({
-            title: `¿${accion.charAt(0).toUpperCase() + accion.slice(1)} nivel de daño?`,
-            text: `¿Está seguro que desea ${accion} "${descripcion}"? ${mensaje}`,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: `Sí, ${accion}`,
-            cancelButtonText: 'Cancelar',
-            confirmButtonColor: color
-        }).then(result => result.isConfirmed) :
-        Promise.resolve(confirm(`¿Está seguro que desea ${accion} "${descripcion}"?`));
-    
-    confirmar.then(confirmed => {
-        if (confirmed) {
-            const url = `<?= url('/nivelesdanio') ?>/${id}/estado`;
-            
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({estado: nuevoEstado})
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    if (typeof Swal !== 'undefined') {
-                        Swal.fire({
-                            title: '¡Éxito!',
-                            text: `Nivel de daño ${accion}do correctamente`,
-                            icon: 'success',
-                            timer: 1500,
-                            showConfirmButton: false
-                        }).then(() => location.reload());
-                    } else {
-                        alert(`Nivel de daño ${accion}do correctamente`);
-                        location.reload();
-                    }
-                } else {
-                    const errorMsg = 'Error al cambiar el estado: ' + (data.message || 'Error desconocido');
-                    if (typeof Swal !== 'undefined') {
-                        Swal.fire('Error', errorMsg, 'error');
-                    } else {
-                        alert(errorMsg);
-                    }
-                }
-            })
-            .catch(error => {
-                const errorMsg = 'Error al cambiar el estado: ' + error.message;
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire('Error', errorMsg, 'error');
-                } else {
-                    alert(errorMsg);
-                }
-            });
+function exportarRevisiones(event) {
+    event.preventDefault();
+    const params = new URLSearchParams(window.location.search);
+    window.location.href = '<?= url('/revisiones/exportar') ?>?' + params.toString();
+}
+
+function exportarRevisionesPDF(event) {
+    event.preventDefault();
+    const params = new URLSearchParams(window.location.search);
+    window.location.href = '<?= url('/revisiones/exportar-pdf') ?>?' + params.toString();
+}
+
+function anularRevision(idReserva) {
+    Swal.fire({
+        title: '¿Anular revisión?',
+        text: 'Se anularán todas las revisiones de esta reserva',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, anular',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '<?= url('/revisiones/') ?>' + idReserva + '/delete';
+            document.body.appendChild(form);
+            form.submit();
         }
     });
-}
-
-function exportarNiveles(event) {
-    if (event) {
-        event.preventDefault();
-    }
-    
-    if (typeof Swal !== 'undefined') {
-        Swal.fire({
-            title: 'Generando archivo...',
-            text: 'Por favor espere mientras se procesa la exportación',
-            icon: 'info',
-            allowOutsideClick: false,
-            showConfirmButton: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        });
-    }
-    
-    const urlParams = new URLSearchParams(window.location.search);
-    const exportUrl = '<?= url('/nivelesdanio/exportar') ?>' + '?' + urlParams.toString();
-    
-    const link = document.createElement('a');
-    link.href = exportUrl;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    setTimeout(() => {
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                title: '¡Exportación iniciada!',
-                text: 'El archivo se descargará automáticamente',
-                icon: 'success',
-                timer: 2000,
-                showConfirmButton: false
-            });
-        }
-    }, 1000);
-}
-
-function exportarNivelesPDF(event) {
-    if (event) {
-        event.preventDefault();
-    }
-    
-    if (typeof Swal !== 'undefined') {
-        Swal.fire({
-            title: 'Generando PDF...',
-            text: 'Por favor espere mientras se procesa la exportación',
-            icon: 'info',
-            allowOutsideClick: false,
-            showConfirmButton: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        });
-    }
-    
-    const urlParams = new URLSearchParams(window.location.search);
-    const pdfUrl = '<?= url('/nivelesdanio/exportar-pdf') ?>' + '?' + urlParams.toString();
-    
-    const link = document.createElement('a');
-    link.href = pdfUrl;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    setTimeout(() => {
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                title: '¡PDF generado!',
-                text: 'El archivo PDF se descargará automáticamente',
-                icon: 'success',
-                timer: 2000,
-                showConfirmButton: false
-            });
-        }
-    }, 1000);
 }
 </script>
