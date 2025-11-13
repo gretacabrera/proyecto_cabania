@@ -201,12 +201,15 @@ class Application
         // Rutas de usuarios
         $this->router->get('/usuarios', 'UsuariosController@index');
         $this->router->any('/usuarios/create', 'UsuariosController@create');
+        $this->router->get('/usuarios/exportar', 'UsuariosController@exportar');
+        $this->router->get('/usuarios/exportar-pdf', 'UsuariosController@exportarPdf');
+        $this->router->get('/usuarios/{id}', 'UsuariosController@show');
         $this->router->any('/usuarios/{id}/edit', 'UsuariosController@edit');
-        $this->router->get('/usuarios/{id}/delete', 'UsuariosController@delete');
-        $this->router->get('/usuarios/{id}/toggle-status', 'UsuariosController@toggleStatus');
-        $this->router->get('/usuarios/{id}/profile', 'UsuariosController@profile');
-        $this->router->get('/usuarios/profile', 'UsuariosController@profile'); // Perfil actual
+        $this->router->post('/usuarios/{id}/delete', 'UsuariosController@delete');
+        $this->router->post('/usuarios/{id}/restore', 'UsuariosController@restore');
+        $this->router->post('/usuarios/{id}/estado', 'UsuariosController@cambiarEstado');
         $this->router->get('/usuarios/{id}/resend-verification', 'UsuariosController@resendVerification');
+
 
         // Rutas de servicios
         $this->router->get('/servicios', 'ServiciosController@index');

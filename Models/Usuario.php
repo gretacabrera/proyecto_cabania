@@ -49,17 +49,33 @@ class Usuario extends Model
     }
 
     /**
-     * Obtener usuarios activos con paginación
+     * Obtener usuarios con filtros y paginación
      */
-    public function getActivePaginated($page = 1, $perPage = 10, $search = '')
+    public function getWithDetails($page = 1, $perPage = 10, $filters = [])
     {
-        $baseWhere = "u.usuario_estado = 1";
+        $where = "1=1";
         $params = [];
         
-        if ($search) {
-            $searchPattern = '%' . $search . '%';
-            $baseWhere .= " AND (u.usuario_nombre LIKE ? OR pe.persona_nombre LIKE ? OR pe.persona_apellido LIKE ?)";
-            $params = [$searchPattern, $searchPattern, $searchPattern];
+        // Aplicar filtros
+        if (!empty($filters['usuario_nombre'])) {
+            $where .= " AND u.usuario_nombre LIKE ?";
+            $params[] = '%' . $filters['usuario_nombre'] . '%';
+        }
+        
+        if (!empty($filters['persona_nombre'])) {
+            $where .= " AND (pe.persona_nombre LIKE ? OR pe.persona_apellido LIKE ?)";
+            $params[] = '%' . $filters['persona_nombre'] . '%';
+            $params[] = '%' . $filters['persona_nombre'] . '%';
+        }
+        
+        if (!empty($filters['perfil_descripcion'])) {
+            $where .= " AND pr.perfil_descripcion LIKE ?";
+            $params[] = '%' . $filters['perfil_descripcion'] . '%';
+        }
+        
+        if (isset($filters['usuario_estado']) && $filters['usuario_estado'] !== '') {
+            $where .= " AND u.usuario_estado = ?";
+            $params[] = (int) $filters['usuario_estado'];
         }
         
         $sql = "SELECT u.*, pe.persona_nombre, pe.persona_apellido,
@@ -73,16 +89,159 @@ class Usuario extends Model
                 FROM usuario u
                 LEFT JOIN persona pe ON u.rela_persona = pe.id_persona
                 LEFT JOIN perfil pr ON u.rela_perfil = pr.id_perfil
-                WHERE $baseWhere
-                ORDER BY u.usuario_nombre";
+                WHERE $where
+                ORDER BY u.usuario_nombre ASC";
         
         $countSql = "SELECT COUNT(*) as total 
                      FROM usuario u
                      LEFT JOIN persona pe ON u.rela_persona = pe.id_persona
                      LEFT JOIN perfil pr ON u.rela_perfil = pr.id_perfil
-                     WHERE $baseWhere";
+                     WHERE $where";
         
         return $this->paginateCustom($sql, $countSql, $page, $perPage, $params);
+    }
+
+    /**
+     * Obtener todos los usuarios con filtros para exportación (sin paginación)
+     */
+    public function getAllWithDetailsForExport($filters = [])
+    {
+        $where = "1=1";
+        $params = [];
+        
+        // Aplicar los mismos filtros que getWithDetails
+        if (!empty($filters['usuario_nombre'])) {
+            $where .= " AND u.usuario_nombre LIKE ?";
+            $params[] = '%' . $filters['usuario_nombre'] . '%';
+        }
+        
+        if (!empty($filters['persona_nombre'])) {
+            $where .= " AND (pe.persona_nombre LIKE ? OR pe.persona_apellido LIKE ?)";
+            $params[] = '%' . $filters['persona_nombre'] . '%';
+            $params[] = '%' . $filters['persona_nombre'] . '%';
+        }
+        
+        if (!empty($filters['perfil_descripcion'])) {
+            $where .= " AND pr.perfil_descripcion LIKE ?";
+            $params[] = '%' . $filters['perfil_descripcion'] . '%';
+        }
+        
+        if (isset($filters['usuario_estado']) && $filters['usuario_estado'] !== '') {
+            $where .= " AND u.usuario_estado = ?";
+            $params[] = (int) $filters['usuario_estado'];
+        }
+        
+        // Query para contar total (para estadísticas)
+        $countSql = "SELECT COUNT(*) as total 
+                     FROM usuario u
+                     LEFT JOIN persona pe ON u.rela_persona = pe.id_persona
+                     LEFT JOIN perfil pr ON u.rela_perfil = pr.id_perfil
+                     WHERE $where";
+        
+        if (!empty($params)) {
+            $totalResult = $this->query($countSql, $params);
+        } else {
+            $totalResult = $this->db->query($countSql);
+        }
+        $totalRow = $totalResult->fetch_assoc();
+        $total = (int) $totalRow['total'];
+        
+        // Query para obtener todos los registros
+        $sql = "SELECT u.*, pe.persona_nombre, pe.persona_apellido,
+                       (SELECT c.contacto_descripcion FROM contacto c 
+                        JOIN tipocontacto tc ON c.rela_tipocontacto = tc.id_tipocontacto 
+                        WHERE tc.tipocontacto_descripcion = 'email' 
+                        AND c.rela_persona = pe.id_persona 
+                        AND c.contacto_estado = 1 
+                        LIMIT 1) AS persona_email,
+                       pr.perfil_descripcion
+                FROM usuario u
+                LEFT JOIN persona pe ON u.rela_persona = pe.id_persona
+                LEFT JOIN perfil pr ON u.rela_perfil = pr.id_perfil
+                WHERE $where
+                ORDER BY u.usuario_nombre ASC";
+        
+        if (!empty($params)) {
+            $result = $this->query($sql, $params);
+        } else {
+            $result = $this->db->query($sql);
+        }
+        $data = [];
+        while ($row = $result->fetch_assoc()) {
+            $data[] = $row;
+        }
+        
+        return [
+            'data' => $data,
+            'total' => $total
+        ];
+    }
+
+    /**
+     * Obtener estadísticas de un usuario
+     */
+    public function getStatistics($id)
+    {
+        $estadisticas = [
+            'total_reservas' => 0,
+            'reservas_activas' => 0,
+            'total_gastado' => 0,
+            'ultima_reserva' => null
+        ];
+        
+        // Total de reservas realizadas
+        $sql = "SELECT COUNT(DISTINCT r.id_reserva) as total 
+                FROM reserva r
+                JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
+                JOIN huesped h ON hr.rela_huesped = h.id_huesped
+                JOIN persona p ON h.rela_persona = p.id_persona
+                JOIN usuario u ON u.rela_persona = p.id_persona
+                WHERE u.id_usuario = ?";
+        $result = $this->query($sql, [$id]);
+        $row = $result->fetch_assoc();
+        $estadisticas['total_reservas'] = (int) $row['total'];
+        
+        // Reservas activas (estado 1)
+        $sql = "SELECT COUNT(DISTINCT r.id_reserva) as total 
+                FROM reserva r
+                JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
+                JOIN huesped h ON hr.rela_huesped = h.id_huesped
+                JOIN persona p ON h.rela_persona = p.id_persona
+                JOIN usuario u ON u.rela_persona = p.id_persona
+                WHERE u.id_usuario = ? AND r.rela_estadoreserva = 1";
+        $result = $this->query($sql, [$id]);
+        $row = $result->fetch_assoc();
+        $estadisticas['reservas_activas'] = (int) $row['total'];
+        
+        // Total gastado - calculado desde pagos
+        $sql = "SELECT COALESCE(SUM(p.pago_total), 0) as total 
+                FROM pago p
+                JOIN reserva r ON p.rela_reserva = r.id_reserva
+                JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
+                JOIN huesped h ON hr.rela_huesped = h.id_huesped
+                JOIN persona pe ON h.rela_persona = pe.id_persona
+                JOIN usuario u ON u.rela_persona = pe.id_persona
+                WHERE u.id_usuario = ? AND p.pago_estado = 1";
+        $result = $this->query($sql, [$id]);
+        $row = $result->fetch_assoc();
+        $estadisticas['total_gastado'] = (float) $row['total'];
+        
+        // Última reserva
+        $sql = "SELECT r.reserva_fhinicio, r.reserva_fhfin 
+                FROM reserva r
+                JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
+                JOIN huesped h ON hr.rela_huesped = h.id_huesped
+                JOIN persona p ON h.rela_persona = p.id_persona
+                JOIN usuario u ON u.rela_persona = p.id_persona
+                WHERE u.id_usuario = ?
+                ORDER BY r.reserva_fhinicio DESC
+                LIMIT 1";
+        $result = $this->query($sql, [$id]);
+        if ($result->num_rows > 0) {
+            $estadisticas['ultima_reserva'] = $result->fetch_assoc();
+        }
+        
+        return $estadisticas;
     }
 
     /**
