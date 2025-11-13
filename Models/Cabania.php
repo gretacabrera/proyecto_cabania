@@ -358,6 +358,93 @@ class Cabania extends Model
     }
 
     /**
+     * Obtener inventario asignado a la cabaña
+     */
+    public function getInventario($cabaniaId)
+    {
+        $sql = "SELECT rela_inventario, inventariocabania_estado 
+                FROM inventario_cabania 
+                WHERE rela_cabania = ?";
+        
+        $result = $this->query($sql, [$cabaniaId]);
+        
+        $inventario = [];
+        while ($row = $result->fetch_assoc()) {
+            $inventario[$row['rela_inventario']] = $row['inventariocabania_estado'];
+        }
+        
+        return $inventario;
+    }
+
+    /**
+     * Guardar todos los elementos de inventario de la cabaña (con estados)
+     */
+    public function saveInventario($cabaniaId, $todosInventarios, $inventariosSeleccionados)
+    {
+        $sql = "INSERT INTO inventario_cabania (rela_cabania, rela_inventario, inventariocabania_estado) VALUES (?, ?, ?)";
+        $stmt = $this->db->prepare($sql);
+        
+        foreach ($todosInventarios as $inventario) {
+            $idInventario = $inventario['id_inventario'];
+            $estado = in_array($idInventario, $inventariosSeleccionados) ? 1 : 0;
+            
+            $stmt->bind_param('iii', $cabaniaId, $idInventario, $estado);
+            if (!$stmt->execute()) {
+                $stmt->close();
+                return false;
+            }
+        }
+        
+        $stmt->close();
+        return true;
+    }
+
+    /**
+     * Actualizar inventario de la cabaña
+     */
+    public function updateInventario($cabaniaId, $todosInventarios, $inventariosSeleccionados)
+    {
+        // Obtener inventarios existentes
+        $sqlExistentes = "SELECT rela_inventario FROM inventario_cabania WHERE rela_cabania = ?";
+        $result = $this->query($sqlExistentes, [$cabaniaId]);
+        
+        $inventariosExistentes = [];
+        while ($row = $result->fetch_assoc()) {
+            $inventariosExistentes[] = $row['rela_inventario'];
+        }
+        
+        // Actualizar o insertar inventarios
+        foreach ($todosInventarios as $inventario) {
+            $idInventario = $inventario['id_inventario'];
+            $estado = in_array($idInventario, $inventariosSeleccionados) ? 1 : 0;
+            
+            if (in_array($idInventario, $inventariosExistentes)) {
+                // Actualizar existente
+                $sqlUpdate = "UPDATE inventario_cabania SET inventariocabania_estado = ? WHERE rela_cabania = ? AND rela_inventario = ?";
+                $stmtUpdate = $this->db->prepare($sqlUpdate);
+                $stmtUpdate->bind_param('iii', $estado, $cabaniaId, $idInventario);
+                if (!$stmtUpdate->execute()) {
+                    $stmtUpdate->close();
+                    return false;
+                }
+                $stmtUpdate->close();
+            } else {
+                // Insertar nueva
+                $sqlInsert = "INSERT INTO inventario_cabania (rela_cabania, rela_inventario, inventariocabania_estado) VALUES (?, ?, ?)";
+                $stmtInsert = $this->db->prepare($sqlInsert);
+                $stmtInsert->bind_param('iii', $cabaniaId, $idInventario, $estado);
+                if (!$stmtInsert->execute()) {
+                    $stmtInsert->close();
+                    return false;
+                }
+                $stmtInsert->close();
+            }
+        }
+        
+        return true;
+    }
+
+    /**
      * Obtener estadísticas de una cabaña específica
      */
     public function getStatistics($cabaniaId)
@@ -366,7 +453,8 @@ class Cabania extends Model
             'reservas_activas' => $this->getReservasActivas($cabaniaId),
             'reservas_totales' => $this->getReservasTotales($cabaniaId),
             'ocupacion_porcentaje' => $this->getOcupacionPorcentaje($cabaniaId),
-            'ingresos_mes' => $this->getIngresosMes($cabaniaId)
+            'ingresos_mes' => $this->getIngresosMes($cabaniaId),
+            'items_inventario' => $this->getItemsInventario($cabaniaId)
         ];
         
         return $stats;
@@ -475,5 +563,48 @@ class Cabania extends Model
         $precioBase = $cabania ? (float)$cabania['cabania_precio'] : 0;
         
         return $totalReservas * $precioBase;
+    }
+
+    /**
+     * Obtener número de items de inventario asignados
+     */
+    private function getItemsInventario($cabaniaId)
+    {
+        $sql = "SELECT COUNT(*) as total 
+                FROM inventario_cabania 
+                WHERE rela_cabania = ? 
+                AND inventariocabania_estado = 1";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $cabaniaId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        
+        return (int)($row['total'] ?? 0);
+    }
+
+    /**
+     * Iniciar transacción
+     */
+    public function beginTransaction()
+    {
+        $this->db->beginTransaction();
+    }
+
+    /**
+     * Confirmar transacción
+     */
+    public function commit()
+    {
+        $this->db->commit();
+    }
+
+    /**
+     * Revertir transacción
+     */
+    public function rollback()
+    {
+        $this->db->rollback();
     }
 }

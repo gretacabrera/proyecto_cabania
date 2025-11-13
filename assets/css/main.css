@@ -2044,6 +2044,13 @@ textarea:focus {
     border: 1px solid #007bff !important;
 }
 
+/* Estado: Seleccionado - Naranja para inventario */
+.asignacion-badge.seleccionado-inventario {
+    background-color: #fd7e14 !important;
+    color: #ffffff !important;
+    border: 1px solid #fd7e14 !important;
+}
+
 /* Variante genérica seleccionada (azul por defecto) */
 .asignacion-badge.seleccionado {
     background-color: #007bff !important;

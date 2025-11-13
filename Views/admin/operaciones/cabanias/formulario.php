@@ -205,6 +205,53 @@ $isEdit = isset($cabania) && !empty($cabania);
                             </div>
                         </div>
 
+                        <!-- Inventario asignado -->
+                        <hr class="my-4">
+
+                        <h6 class="border-bottom pb-2 mb-3">
+                            <i class="fas fa-box"></i> Inventario Asignado
+                        </h6>
+
+                        <div class="form-group">
+                            <div class="asignaciones-container">
+                                <?php if (isset($inventarios) && !empty($inventarios)): ?>
+                                    <?php foreach ($inventarios as $inventario): ?>
+                                        <?php
+                                        $idInventario = $inventario['id_inventario'];
+                                        $estaSeleccionado = false;
+                                        if ($isEdit && isset($inventarioCabania[$idInventario]) && $inventarioCabania[$idInventario] == 1) {
+                                            $estaSeleccionado = true;
+                                        }
+                                        $claseEstado = $estaSeleccionado ? 'seleccionado-inventario' : 'no-seleccionado';
+                                        ?>
+                                        <span class="badge asignacion-badge <?= $claseEstado ?>" 
+                                              data-inventario-id="<?= $idInventario ?>" 
+                                              data-tipo="inventario">
+                                            <?= htmlspecialchars($inventario['inventario_descripcion']) ?>
+                                        </span>
+                                    <?php endforeach; ?>
+                                    <!-- Inputs hidden para enviar los inventarios seleccionados -->
+                                    <div id="inventarios-hidden-container">
+                                        <?php if ($isEdit): ?>
+                                            <?php foreach ($inventarios as $inventario): ?>
+                                                <?php if (isset($inventarioCabania[$inventario['id_inventario']]) && $inventarioCabania[$inventario['id_inventario']] == 1): ?>
+                                                    <input type="hidden" name="inventarios[]" value="<?= $inventario['id_inventario'] ?>" id="hidden-inventario-<?= $inventario['id_inventario'] ?>">
+                                                <?php endif; ?>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php else: ?>
+                                    <p class="text-muted small">No hay inventario disponible para asignar</p>
+                                <?php endif; ?>
+                            </div>
+                            <small class="form-text text-muted d-block mt-3">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Haga clic en los elementos de inventario que desea asignar a esta cabaña
+                            </small>
+                        </div>
+
+                        <hr class="my-4">
+
                         <!-- Botones de acción -->
                         <div class="form-group mt-4">
                             <div class="d-flex justify-content-between">
@@ -249,18 +296,27 @@ $isEdit = isset($cabania) && !empty($cabania);
                     <div class="info-section">
                         <h6><i class="fas fa-chart-line text-info"></i> Estadísticas</h6>
                         <br>
-                        <?php if ($isEdit): ?>
+                        <?php if ($isEdit && isset($estadisticas)): ?>
                             <div class="row text-center">
                                 <div class="col-6">
                                     <div class="stat-item">
-                                        <div class="stat-value">0</div>
+                                        <div class="stat-value"><?= number_format($estadisticas['reservas_activas']) ?></div>
                                         <div class="stat-label small text-muted">Reservas</div>
                                     </div>
                                 </div>
                                 <div class="col-6">
                                     <div class="stat-item">
-                                        <div class="stat-value">$0</div>
+                                        <div class="stat-value">$<?= number_format($estadisticas['ingresos_mes'], 0) ?></div>
                                         <div class="stat-label small text-muted">Ingresos</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="row text-center">
+                                <div class="col-12">
+                                    <div class="stat-item">
+                                        <div class="stat-value text-secondary"><?= number_format($estadisticas['items_inventario']) ?></div>
+                                        <div class="stat-label small text-muted">Items de Inventario</div>
                                     </div>
                                 </div>
                             </div>
@@ -275,3 +331,111 @@ $isEdit = isset($cabania) && !empty($cabania);
         </div>
     </div>
 </div>
+
+<script>
+// Limpiar formulario
+function limpiarFormulario() {
+    const form = document.getElementById('formCabania');
+    form.reset();
+    
+    // Resetear badges de inventario
+    const badges = document.querySelectorAll('.asignacion-badge[data-tipo="inventario"]');
+    badges.forEach(function(badge) {
+        badge.classList.remove('seleccionado-inventario');
+        badge.classList.add('no-seleccionado');
+    });
+    
+    // Limpiar inputs hidden
+    const hiddenContainer = document.getElementById('inventarios-hidden-container');
+    if (hiddenContainer) {
+        hiddenContainer.innerHTML = '';
+    }
+    
+    // Limpiar preview de imagen
+    const previewDiv = document.getElementById('previewImagen');
+    if (previewDiv) {
+        previewDiv.style.display = 'none';
+    }
+}
+
+// Contador de caracteres para descripción
+document.addEventListener('DOMContentLoaded', function() {
+    const descripcion = document.getElementById('cabania_descripcion');
+    const contador = document.getElementById('contadorDescripcion');
+    
+    if (descripcion && contador) {
+        // Actualizar contador inicial
+        contador.textContent = descripcion.value.length;
+        
+        // Actualizar en tiempo real
+        descripcion.addEventListener('input', function() {
+            contador.textContent = this.value.length;
+        });
+    }
+    
+    // Preview de imagen
+    const fotoInput = document.getElementById('cabania_foto');
+    if (fotoInput) {
+        fotoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('imgPreview');
+                    const previewDiv = document.getElementById('previewImagen');
+                    if (preview && previewDiv) {
+                        preview.src = e.target.result;
+                        previewDiv.style.display = 'block';
+                    }
+                };
+                reader.readAsDataURL(file);
+                
+                // Actualizar label del custom-file
+                const label = fotoInput.nextElementSibling;
+                if (label) {
+                    label.textContent = file.name;
+                }
+            }
+        });
+    }
+
+    // Manejo de badges de inventario
+    const badges = document.querySelectorAll('.asignacion-badge[data-tipo="inventario"]');
+    const hiddenContainer = document.getElementById('inventarios-hidden-container');
+
+    if (badges.length > 0 && hiddenContainer) {
+        badges.forEach(function(badge) {
+            badge.addEventListener('click', function(e) {
+                // Prevenir cualquier comportamiento de formulario
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const inventarioId = this.getAttribute('data-inventario-id');
+                const isSelected = this.classList.contains('seleccionado-inventario');
+
+                if (isSelected) {
+                    // Deseleccionar
+                    this.classList.remove('seleccionado-inventario');
+                    this.classList.add('no-seleccionado');
+                    // Remover input hidden
+                    const hiddenInput = document.getElementById('hidden-inventario-' + inventarioId);
+                    if (hiddenInput) {
+                        hiddenInput.remove();
+                    }
+                } else {
+                    // Seleccionar
+                    this.classList.remove('no-seleccionado');
+                    this.classList.add('seleccionado-inventario');
+                    // Agregar input hidden
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'inventarios[]';
+                    input.value = inventarioId;
+                    input.id = 'hidden-inventario-' + inventarioId;
+                    hiddenContainer.appendChild(input);
+                }
+            });
+        });
+    }
+});
+</script>

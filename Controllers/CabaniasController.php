@@ -68,8 +68,13 @@ class CabaniasController extends Controller
             return $this->store();
         }
 
+        // Obtener inventario activo
+        $inventarioModel = new \App\Models\Inventario();
+        $inventarios = $inventarioModel->findAll("inventario_estado = 1", "inventario_descripcion ASC");
+
         $data = [
             'title' => 'Nueva Cabaña',
+            'inventarios' => $inventarios,
             'isAdminArea' => true
         ];
 
@@ -113,20 +118,44 @@ class CabaniasController extends Controller
             'cabania_estado' => 1
         ];
 
+        // Inventarios seleccionados
+        $inventariosSeleccionados = $this->post('inventarios', []);
+
         // Validaciones básicas
         if (empty($data['cabania_codigo']) || empty($data['cabania_nombre'])) {
             $this->redirect('/admin/cabanias/create', 'Complete los campos obligatorios', 'error');
+            return;
         }
 
         try {
+            // Iniciar transacción
+            $this->cabaniaModel->beginTransaction();
+
+            // 1. Crear cabaña
             $id = $this->cabaniaModel->create($data);
-            if ($id) {
-                $this->redirect('/cabanias', 'Cabaña creada correctamente', 'exito');
-            } else {
-                $this->redirect('/cabanias/create', 'Error al crear la cabaña', 'error');
+            if (!$id) {
+                throw new \Exception('Error al crear la cabaña');
             }
+
+            // 2. Obtener TODOS los inventarios activos
+            $inventarioModel = new \App\Models\Inventario();
+            $todosInventarios = $inventarioModel->findAll("inventario_estado = 1");
+            
+            // 3. Guardar TODOS los inventarios con estado según selección
+            if (!empty($todosInventarios)) {
+                if (!$this->cabaniaModel->saveInventario($id, $todosInventarios, $inventariosSeleccionados)) {
+                    throw new \Exception('Error al asignar inventario');
+                }
+            }
+
+            // Commit de la transacción
+            $this->cabaniaModel->commit();
+
+            $this->redirect('/cabanias', 'Cabaña creada correctamente', 'exito');
         } catch (\Exception $e) {
-            $this->redirect('/cabanias/create', 'Error: ' . $e->getMessage(), 'error');
+            // Rollback en caso de error
+            $this->cabaniaModel->rollback();
+            $this->redirect('/cabanias/create', 'Error al crear la cabaña: ' . $e->getMessage(), 'error');
         }
     }
 
@@ -145,10 +174,19 @@ class CabaniasController extends Controller
         // Obtener estadísticas de la cabaña
         $estadisticas = $this->cabaniaModel->getStatistics($id);
 
+        // Obtener inventario de la cabaña
+        $inventarioCabania = $this->cabaniaModel->getInventario($id);
+        
+        // Cargar todos los inventarios para mostrar los que tiene
+        $inventarioModel = new \App\Models\Inventario();
+        $todosInventarios = $inventarioModel->findAll("inventario_estado = 1", "inventario_descripcion ASC");
+
         $data = [
             'title' => 'Detalle de Cabaña',
             'cabania' => $cabania,
             'estadisticas' => $estadisticas,
+            'inventarioCabania' => $inventarioCabania,
+            'todosInventarios' => $todosInventarios,
             'isAdminArea' => true
         ];
 
@@ -171,9 +209,22 @@ class CabaniasController extends Controller
             return $this->update($id);
         }
 
+        // Obtener estadísticas de la cabaña
+        $estadisticas = $this->cabaniaModel->getStatistics($id);
+        
+        // Obtener todos los inventarios activos
+        $inventarioModel = new \App\Models\Inventario();
+        $inventarios = $inventarioModel->findAll("inventario_estado = 1", "inventario_descripcion ASC");
+        
+        // Obtener inventarios asignados a la cabaña
+        $inventarioCabania = $this->cabaniaModel->getInventario($id);
+
         $data = [
             'title' => 'Editar Cabaña',
             'cabania' => $cabania,
+            'estadisticas' => $estadisticas,
+            'inventarios' => $inventarios,
+            'inventarioCabania' => $inventarioCabania,
             'isAdminArea' => true
         ];
 
@@ -225,18 +276,42 @@ class CabaniasController extends Controller
             'cabania_foto' => $cabania_foto
         ];
 
+        // Inventarios seleccionados
+        $inventariosSeleccionados = $this->post('inventarios', []);
+
         if (empty($data['cabania_codigo']) || empty($data['cabania_nombre'])) {
             $this->redirect("/cabanias/$id/edit", 'Complete los campos obligatorios', 'error');
+            return;
         }
 
         try {
-            if ($this->cabaniaModel->update($id, $data)) {
-                $this->redirect('/cabanias', 'Cabaña actualizada correctamente', 'exito');
-            } else {
-                $this->redirect("/cabanias/$id/edit", 'Error al actualizar la cabaña', 'error');
+            // Iniciar transacción
+            $this->cabaniaModel->beginTransaction();
+
+            // 1. Actualizar datos de la cabaña
+            if (!$this->cabaniaModel->update($id, $data)) {
+                throw new \Exception('Error al actualizar la cabaña');
             }
+
+            // 2. Obtener TODOS los inventarios activos
+            $inventarioModel = new \App\Models\Inventario();
+            $todosInventarios = $inventarioModel->findAll("inventario_estado = 1");
+
+            // 3. Actualizar inventarios
+            if (!empty($todosInventarios)) {
+                if (!$this->cabaniaModel->updateInventario($id, $todosInventarios, $inventariosSeleccionados)) {
+                    throw new \Exception('Error al actualizar inventario');
+                }
+            }
+
+            // Commit de la transacción
+            $this->cabaniaModel->commit();
+
+            $this->redirect('/cabanias', 'Cabaña actualizada correctamente', 'exito');
         } catch (\Exception $e) {
-            $this->redirect("/cabanias/$id/edit", 'Error: ' . $e->getMessage(), 'error');
+            // Rollback en caso de error
+            $this->cabaniaModel->rollback();
+            $this->redirect("/cabanias/$id/edit", 'Error al actualizar la cabaña: ' . $e->getMessage(), 'error');
         }
     }
 

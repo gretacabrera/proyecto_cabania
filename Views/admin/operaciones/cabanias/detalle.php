@@ -194,19 +194,68 @@ if (!isset($cabania) || empty($cabania)) {
                     <hr>
 
                     <div class="row text-center">
-                        <div class="col-6">
+                        <div class="col-4">
                             <div class="metric-box">
                                 <div class="metric-value text-info"><?= $estadisticas['ocupacion_porcentaje'] ?>%</div>
                                 <div class="metric-label">Ocupación</div>
                             </div>
                         </div>
-                        <div class="col-6">
+                        <div class="col-4">
                             <div class="metric-box">
                                 <div class="metric-value text-warning">$<?= number_format($estadisticas['ingresos_mes'], 0, ',', '.') ?></div>
                                 <div class="metric-label">Ingresos mes</div>
                             </div>
                         </div>
+                        <div class="col-4">
+                            <div class="metric-box">
+                                <div class="metric-value text-secondary"><?= number_format($estadisticas['items_inventario']) ?></div>
+                                <div class="metric-label">Items asignados</div>
+                            </div>
+                        </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Inventario asignado -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-box"></i> Inventario Asignado
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <?php if (!empty($inventarioCabania)): ?>
+                        <?php
+                        // Filtrar solo los activos para mostrar
+                        $inventariosActivos = array_filter($inventarioCabania, function($estado) {
+                            return $estado == 1;
+                        });
+                        ?>
+                        
+                        <?php if (count($inventariosActivos) > 0): ?>
+                            <div class="list-group list-group-flush">
+                                <?php foreach ($todosInventarios as $inventario): ?>
+                                    <?php if (isset($inventarioCabania[$inventario['id_inventario']]) && $inventarioCabania[$inventario['id_inventario']] == 1): ?>
+                                        <div class="list-group-item px-0 py-2">
+                                            <div class="d-flex align-items-center">
+                                                <div class="flex-grow-1">
+                                                    <small class="fw-bold"><?= htmlspecialchars($inventario['inventario_descripcion']) ?></small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php else: ?>
+                            <p class="text-muted small mb-0">
+                                <i class="fas fa-info-circle"></i> No hay inventario asignado a esta cabaña.
+                            </p>
+                        <?php endif; ?>
+                    <?php else: ?>
+                        <p class="text-muted small mb-0">
+                            <i class="fas fa-info-circle"></i> No hay inventario asignado a esta cabaña.
+                        </p>
+                    <?php endif; ?>
                 </div>
             </div>
 
