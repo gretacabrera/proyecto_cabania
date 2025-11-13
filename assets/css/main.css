@@ -1996,6 +1996,61 @@ textarea:focus {
     color: rgba(255, 255, 255, 0.8) !important;
 }
 
+/* ===========================
+   BADGES DE ASIGNACIÓN (HUÉSPEDES-CONDICIONES, PERFILES-MÓDULOS)
+   =========================== */
+
+/* Contenedor de badges */
+.asignaciones-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+/* Badge base de asignación */
+.asignacion-badge {
+    cursor: pointer;
+    margin: 5px;
+    padding: 8px 12px;
+    font-size: 0.875rem;
+    user-select: none;
+    transition: all 0.3s ease;
+    border-radius: 0.375rem;
+}
+
+.asignacion-badge:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+/* Estado: No seleccionado */
+.asignacion-badge.no-seleccionado {
+    background-color: #ffffff !important;
+    color: #333 !important;
+    border: 1px solid #000 !important;
+}
+
+/* Estado: Seleccionado - Verde para condiciones de salud */
+.asignacion-badge.seleccionado-salud {
+    background-color: #28a745 !important;
+    color: #ffffff !important;
+    border: 1px solid #28a745 !important;
+}
+
+/* Estado: Seleccionado - Azul para módulos/permisos */
+.asignacion-badge.seleccionado-modulo {
+    background-color: #007bff !important;
+    color: #ffffff !important;
+    border: 1px solid #007bff !important;
+}
+
+/* Variante genérica seleccionada (azul por defecto) */
+.asignacion-badge.seleccionado {
+    background-color: #007bff !important;
+    color: #ffffff !important;
+    border: 1px solid #007bff !important;
+}
+
 /* Tarjetas y componentes */
 .card {
     border: none;

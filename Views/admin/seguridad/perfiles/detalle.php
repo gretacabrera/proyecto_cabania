@@ -84,6 +84,42 @@ if (!isset($perfil) || empty($perfil)) {
                     </div>
                 </div>
             </div>
+
+            <!-- Módulos Asignados -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-key"></i> Módulos Asignados
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="modulos-container">
+                        <?php 
+                        $tieneModulos = false;
+                        if (!empty($todosModulos) && !empty($modulosPerfil)): 
+                            foreach ($todosModulos as $modulo): 
+                                $idModulo = $modulo['id_modulo'];
+                                $tieneModulo = isset($modulosPerfil[$idModulo]) && $modulosPerfil[$idModulo] == 1;
+                                if ($tieneModulo): 
+                                    $tieneModulos = true;
+                        ?>
+                                    <span class="badge" style="margin: 5px; padding: 8px 12px; font-size: 0.875rem;">
+                                        <?= htmlspecialchars($modulo['modulo_descripcion']) ?>
+                                    </span>
+                        <?php 
+                                endif;
+                            endforeach;
+                        endif;
+                        
+                        if (!$tieneModulos): 
+                        ?>
+                            <p class="text-muted mb-0">
+                                <i class="fas fa-info-circle"></i> No tiene módulos asignados
+                            </p>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Panel lateral -->
@@ -178,3 +214,11 @@ function cambiarEstadoPerfil(id, nuevoEstado, nombre) {
     });
 }
 </script>
+
+<style>
+.modulos-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+</style>

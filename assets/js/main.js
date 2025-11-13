@@ -4158,8 +4158,8 @@ function initPerfilesFormValidation() {
 
     // Actualizar preview de color
     function actualizarColorPreview() {
-        const color = colorInput.value;
-        if (colorPreview) {
+        if (colorInput && colorPreview) {
+            const color = colorInput.value;
             colorPreview.style.backgroundColor = color;
             colorPreview.style.borderColor = color;
         }
@@ -4185,9 +4185,20 @@ function initPerfilesFormValidation() {
         const descripcion = descripcionInput.value.trim().toLowerCase();
         const perfilesSistema = ['administrador', 'admin', 'root', 'sistema'];
         
-        const esSistema = document.body.dataset.perfilSistema === 'true';
+        // Obtener el contexto: ¿es creación o edición?
+        const form = document.getElementById('formPerfil') || document.getElementById('perfilForm');
+        if (!form) return;
         
+        const perfilIdInput = form.querySelector('input[name="id_perfil"]');
+        const isEdit = perfilIdInput && perfilIdInput.value;
+        
+        // Obtener el perfil actual si estamos editando
+        const esSistema = document.querySelector('.content-wrapper')?.dataset.perfilSistema === 'true';
+        
+        // Validación: Solo rechazar nombres reservados si NO es el perfil del sistema que ya tiene ese nombre
         if (perfilesSistema.includes(descripcion) && !esSistema) {
+            // Si estamos editando y el perfil actual ya tiene este nombre, permitirlo
+            // (esto se maneja con esSistema = true para perfiles del sistema)
             descripcionInput.setCustomValidity('Este nombre está reservado para perfiles del sistema');
             descripcionInput.classList.add('is-invalid');
         } else {
@@ -4238,7 +4249,7 @@ function initPerfilesFormValidation() {
     // Inicializar
     if (descCounter) actualizarContador(descripcionInput, descCounter, 100);
     if (obsCounter && observacionesTextarea) actualizarContador(observacionesTextarea, obsCounter, 500);
-    actualizarColorPreview();
+    if (colorInput) actualizarColorPreview();
 
     // Validación del formulario
     const form = document.getElementById('perfilForm');

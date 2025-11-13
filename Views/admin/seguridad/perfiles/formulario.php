@@ -7,9 +7,10 @@
  */
 
 $isEdit = isset($perfil) && !empty($perfil);
+$esSistema = $isEdit && isset($perfil['perfil_sistema']) && $perfil['perfil_sistema'] == 1;
 ?>
 
-<div class="content-wrapper">
+<div class="content-wrapper" data-perfil-sistema="<?= $esSistema ? 'true' : 'false' ?>">
     <!-- Acciones principales -->
     <div class="page-actions">
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -48,7 +49,7 @@ $isEdit = isset($perfil) && !empty($perfil);
                             <input type="text" class="form-control" id="perfil_descripcion" name="perfil_descripcion" 
                                    value="<?= htmlspecialchars($perfil['perfil_descripcion'] ?? '') ?>"
                                    required maxlength="45" placeholder="Ej: Administrador, Recepcionista, Operador...">
-                            <div class="invalid-feedback"></div>
+                            <div class="invalid-feedback">Por favor ingrese la descripción del perfil</div>
                             <small class="form-text text-muted">
                                 Nombre descriptivo del perfil de usuario (máximo 45 caracteres)
                             </small>
@@ -70,6 +71,51 @@ $isEdit = isset($perfil) && !empty($perfil);
                             </small>
                         </div>
                         <?php endif; ?>
+
+                        <hr class="my-4">
+
+                        <!-- Módulos -->
+                        <h6 class="border-bottom pb-2 mb-3">
+                            <i class="fas fa-key"></i> Módulos Asignados
+                        </h6>
+
+                        <div class="form-group">
+                            <div class="asignaciones-container">
+                                <?php if (!empty($modulos)): ?>
+                                    <?php foreach ($modulos as $modulo): ?>
+                                        <?php
+                                        $idModulo = $modulo['id_modulo'];
+                                        $estaSeleccionado = false;
+                                        if ($isEdit && isset($modulosPerfil[$idModulo]) && $modulosPerfil[$idModulo] == 1) {
+                                            $estaSeleccionado = true;
+                                        }
+                                        $claseEstado = $estaSeleccionado ? 'seleccionado-modulo' : 'no-seleccionado';
+                                        ?>
+                                        <span class="badge asignacion-badge <?= $claseEstado ?>" 
+                                              data-modulo-id="<?= $idModulo ?>" 
+                                              data-tipo="modulo">
+                                            <?= htmlspecialchars($modulo['modulo_descripcion']) ?>
+                                        </span>
+                                    <?php endforeach; ?>
+                                    <!-- Inputs hidden para enviar los módulos seleccionados -->
+                                    <div id="modulos-hidden-container">
+                                        <?php if ($isEdit): ?>
+                                            <?php foreach ($modulos as $modulo): ?>
+                                                <?php if (isset($modulosPerfil[$modulo['id_modulo']]) && $modulosPerfil[$modulo['id_modulo']] == 1): ?>
+                                                    <input type="hidden" name="modulos[]" value="<?= $modulo['id_modulo'] ?>" id="hidden-modulo-<?= $modulo['id_modulo'] ?>">
+                                                <?php endif; ?>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php else: ?>
+                                    <p class="text-muted small">No hay módulos disponibles</p>
+                                <?php endif; ?>
+                            </div>
+                            <small class="form-text text-muted d-block mt-3">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Haga clic en los módulos que desea asignar a este perfil
+                            </small>
+                        </div>
 
                         <!-- Botones de acción -->
                         <div class="form-group mt-4">
@@ -148,18 +194,130 @@ function limpiarFormulario() {
     const form = document.getElementById('formPerfil');
     form.reset();
     form.classList.remove('was-validated');
+    
+    // Resetear badges de módulos
+    const badges = document.querySelectorAll('.asignacion-badge[data-tipo="modulo"]');
+    badges.forEach(function(badge) {
+        badge.classList.remove('seleccionado-modulo');
+        badge.classList.add('no-seleccionado');
+    });
+    
+    // Limpiar inputs hidden
+    const hiddenContainer = document.getElementById('modulos-hidden-container');
+    if (hiddenContainer) {
+        hiddenContainer.innerHTML = '';
+    }
 }
 
 // Validación del formulario
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('formPerfil');
     
+    // Esperar a que main.js agregue sus listeners, luego removerlos
+    setTimeout(function() {
+        const descripcionInput = document.getElementById('perfil_descripcion');
+        if (descripcionInput) {
+            const clone = descripcionInput.cloneNode(true);
+            descripcionInput.parentNode.replaceChild(clone, descripcionInput);
+            
+            // Agregar solo validación básica al clon
+            clone.addEventListener('input', function() {
+                if (this.value.trim() !== '') {
+                    this.classList.remove('is-invalid');
+                    this.classList.add('is-valid');
+                } else {
+                    this.classList.remove('is-valid');
+                }
+            });
+            
+            // Marcar como válido si ya tiene valor
+            if (clone.value && clone.value.trim() !== '') {
+                clone.classList.add('is-valid');
+            }
+        }
+    }, 100);
+    
+    // Marcar otros campos que ya tienen valor como válidos (al cargar página)
+    const inputs = form.querySelectorAll('input[required]:not(#perfil_descripcion), textarea[required], select[required]');
+    inputs.forEach(function(input) {
+        if (input.value && input.value.trim() !== '') {
+            input.classList.remove('is-invalid');
+            input.classList.add('is-valid');
+        }
+        
+        input.addEventListener('input', function() {
+            if (this.value.trim() !== '') {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            } else {
+                this.classList.remove('is-valid');
+            }
+        });
+    });
+    
     form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Limpiar clases de validación previas
+        form.classList.remove('was-validated');
+        
+        // Verificar validez del formulario
         if (!form.checkValidity()) {
+            form.classList.add('was-validated');
+            return false;
+        }
+        
+        // Si todo está válido, enviar
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+        }
+        
+        // Enviar el formulario
+        form.submit();
+    });
+
+    // Manejo de badges de módulos
+    const badges = document.querySelectorAll('.asignacion-badge[data-tipo="modulo"]');
+    const hiddenContainer = document.getElementById('modulos-hidden-container');
+
+    badges.forEach(function(badge) {
+        badge.addEventListener('click', function(e) {
+            // Prevenir cualquier comportamiento de formulario
             e.preventDefault();
             e.stopPropagation();
-        }
-        form.classList.add('was-validated');
+            
+            const moduloId = this.getAttribute('data-modulo-id');
+            const isSelected = this.classList.contains('seleccionado-modulo');
+
+            if (isSelected) {
+                // Deseleccionar
+                this.classList.remove('seleccionado-modulo');
+                this.classList.add('no-seleccionado');
+                // Remover input hidden
+                const hiddenInput = document.getElementById('hidden-modulo-' + moduloId);
+                if (hiddenInput) {
+                    hiddenInput.remove();
+                }
+            } else {
+                // Seleccionar
+                this.classList.remove('no-seleccionado');
+                this.classList.add('seleccionado-modulo');
+                // Agregar input hidden
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'modulos[]';
+                input.value = moduloId;
+                input.id = 'hidden-modulo-' + moduloId;
+                hiddenContainer.appendChild(input);
+            }
+        });
     });
 });
 </script>
+
+<style>
+/* Estilos específicos de perfiles (badges centralizados en main.css) */
+</style>

@@ -63,8 +63,13 @@ class PerfilesController extends Controller
             return $this->store();
         }
 
+        // Obtener módulos activos
+        $moduloModel = new \App\Models\Modulo();
+        $modulos = $moduloModel->findAll("modulo_estado = 1", "modulo_descripcion ASC");
+
         $data = [
             'title' => 'Nuevo Perfil',
+            'modulos' => $modulos,
             'isAdminArea' => true
         ];
 
@@ -83,12 +88,42 @@ class PerfilesController extends Controller
             'perfil_estado' => 1
         ];
 
-        $perfilId = $this->perfilModel->create($data);
-        
-        if ($perfilId) {
+        // Módulos seleccionados
+        $modulosSeleccionados = $this->post('modulos', []);
+
+        // Validaciones
+        if (empty($data['perfil_descripcion'])) {
+            $this->redirect('/perfiles/create', 'La descripción es obligatoria', 'error');
+            return;
+        }
+
+        try {
+            // Iniciar transacción
+            $this->perfilModel->beginTransaction();
+
+            // 1. Crear perfil
+            $perfilId = $this->perfilModel->create($data);
+            if (!$perfilId) {
+                throw new \Exception('Error al crear el perfil');
+            }
+
+            // 2. Obtener TODOS los módulos activos
+            $moduloModel = new \App\Models\Modulo();
+            $todosModulos = $moduloModel->findAll("modulo_estado = 1");
+            
+            // 3. Guardar TODOS los módulos con estado según selección
+            if (!$this->perfilModel->saveModulos($perfilId, $todosModulos, $modulosSeleccionados)) {
+                throw new \Exception('Error al asignar módulos');
+            }
+
+            // Commit de la transacción
+            $this->perfilModel->commit();
+
             $this->redirect('/perfiles', 'Perfil creado exitosamente', 'success');
-        } else {
-            $this->redirect('/perfiles/create', 'Error al crear el perfil', 'error');
+        } catch (\Exception $e) {
+            // Rollback en caso de error
+            $this->perfilModel->rollback();
+            $this->redirect('/perfiles/create', 'Error al crear el perfil: ' . $e->getMessage(), 'error');
         }
     }
 
@@ -111,11 +146,20 @@ class PerfilesController extends Controller
 
         // Obtener estadísticas del perfil
         $estadisticas = $this->perfilModel->getStatistics($id);
+        
+        // Obtener todos los módulos activos
+        $moduloModel = new \App\Models\Modulo();
+        $modulos = $moduloModel->findAll("modulo_estado = 1", "modulo_descripcion ASC");
+        
+        // Obtener módulos asignados al perfil
+        $modulosPerfil = $this->perfilModel->getModulos($id);
 
         $data = [
             'title' => 'Editar Perfil',
             'perfil' => $perfil,
             'estadisticas' => $estadisticas,
+            'modulos' => $modulos,
+            'modulosPerfil' => $modulosPerfil,
             'isAdminArea' => true
         ];
 
@@ -137,13 +181,44 @@ class PerfilesController extends Controller
 
         $data = [
             'perfil_descripcion' => $this->post('perfil_descripcion'),
-            'perfil_estado' => $this->post('perfil_estado', 1)
+            'perfil_estado' => $this->post('perfil_estado') ? 1 : 0
         ];
 
-        if ($this->perfilModel->update($id, $data)) {
+        // Módulos seleccionados
+        $modulosSeleccionados = $this->post('modulos', []);
+
+        // Validaciones
+        if (empty($data['perfil_descripcion'])) {
+            $this->redirect("/perfiles/{$id}/edit", 'La descripción es obligatoria', 'error');
+            return;
+        }
+
+        try {
+            // Iniciar transacción
+            $this->perfilModel->beginTransaction();
+
+            // 1. Actualizar datos del perfil
+            if (!$this->perfilModel->update($id, $data)) {
+                throw new \Exception('Error al actualizar el perfil');
+            }
+
+            // 2. Obtener TODOS los módulos activos
+            $moduloModel = new \App\Models\Modulo();
+            $todosModulos = $moduloModel->findAll("modulo_estado = 1");
+
+            // 3. Actualizar módulos
+            if (!$this->perfilModel->updateModulos($id, $todosModulos, $modulosSeleccionados)) {
+                throw new \Exception('Error al actualizar módulos');
+            }
+
+            // Commit de la transacción
+            $this->perfilModel->commit();
+
             $this->redirect('/perfiles', 'Perfil actualizado exitosamente', 'success');
-        } else {
-            $this->redirect("/perfiles/{$id}/edit", 'Error al actualizar el perfil', 'error');
+        } catch (\Exception $e) {
+            // Rollback en caso de error
+            $this->perfilModel->rollback();
+            $this->redirect("/perfiles/{$id}/edit", 'Error al actualizar el perfil: ' . $e->getMessage(), 'error');
         }
     }
 
@@ -163,10 +238,19 @@ class PerfilesController extends Controller
         // Obtener estadísticas del perfil
         $estadisticas = $this->perfilModel->getStatistics($id);
 
+        // Obtener módulos del perfil
+        $modulosPerfil = $this->perfilModel->getModulos($id);
+        
+        // Cargar todos los módulos para mostrar los que tiene
+        $moduloModel = new \App\Models\Modulo();
+        $todosModulos = $moduloModel->findAll("modulo_estado = 1", "modulo_descripcion ASC");
+
         $data = [
             'title' => 'Detalle del Perfil',
             'perfil' => $perfil,
             'estadisticas' => $estadisticas,
+            'modulosPerfil' => $modulosPerfil,
+            'todosModulos' => $todosModulos,
             'isAdminArea' => true
         ];
 

@@ -104,12 +104,12 @@ $isEdit = isset($huesped) && !empty($huesped);
                             </h6>
 
                             <div class="form-group">
-                                <div class="condiciones-container">
+                                <div class="asignaciones-container">
                                     <?php if (!empty($condicionesSalud)): ?>
                                         <?php foreach ($condicionesSalud as $condicion): ?>
-                                            <span class="badge condicion-badge condicion-no-seleccionada" 
-                                                  data-condicion-id="<?= $condicion['id_condicionsalud'] ?>"
-                                                  style="cursor: pointer; margin: 5px; padding: 8px 12px; font-size: 0.875rem; user-select: none;">
+                                            <span class="badge asignacion-badge no-seleccionado" 
+                                                  data-condicion-id="<?= $condicion['id_condicionsalud'] ?>" 
+                                                  data-tipo="condicion">
                                                 <?= htmlspecialchars($condicion['condicionsalud_descripcion']) ?>
                                             </span>
                                         <?php endforeach; ?>
@@ -227,17 +227,17 @@ $isEdit = isset($huesped) && !empty($huesped);
                             </h6>
 
                             <div class="form-group">
-                                <div class="condiciones-container">
+                                <div class="asignaciones-container">
                                     <?php if (!empty($condicionesSalud)): ?>
                                         <?php foreach ($condicionesSalud as $condicion): ?>
                                             <?php
                                             $idCondicion = $condicion['id_condicionsalud'];
                                             $estaSeleccionada = isset($condicionesHuesped[$idCondicion]) && $condicionesHuesped[$idCondicion] == 1;
-                                            $claseEstado = $estaSeleccionada ? 'condicion-seleccionada' : 'condicion-no-seleccionada';
+                                            $claseEstado = $estaSeleccionada ? 'seleccionado-salud' : 'no-seleccionado';
                                             ?>
-                                            <span class="badge condicion-badge <?= $claseEstado ?>" 
-                                                  data-condicion-id="<?= $idCondicion ?>"
-                                                  style="cursor: pointer; margin: 5px; padding: 8px 12px; font-size: 0.875rem; user-select: none;">
+                                            <span class="badge asignacion-badge <?= $claseEstado ?>" 
+                                                  data-condicion-id="<?= $idCondicion ?>" 
+                                                  data-tipo="condicion">
                                                 <?= htmlspecialchars($condicion['condicionsalud_descripcion']) ?>
                                             </span>
                                         <?php endforeach; ?>
@@ -465,18 +465,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Manejo de badges de condiciones de salud
-    const badges = document.querySelectorAll('.condicion-badge');
+    const badges = document.querySelectorAll('.asignacion-badge[data-tipo="condicion"]');
     const hiddenContainer = document.getElementById('condiciones-hidden-container');
 
     badges.forEach(function(badge) {
         badge.addEventListener('click', function() {
             const condicionId = this.getAttribute('data-condicion-id');
-            const isSelected = this.classList.contains('condicion-seleccionada');
+            const isSelected = this.classList.contains('seleccionado-salud');
 
             if (isSelected) {
                 // Deseleccionar
-                this.classList.remove('condicion-seleccionada');
-                this.classList.add('condicion-no-seleccionada');
+                this.classList.remove('seleccionado-salud');
+                this.classList.add('no-seleccionado');
                 // Remover input hidden
                 const hiddenInput = document.getElementById('hidden-condicion-' + condicionId);
                 if (hiddenInput) {
@@ -484,8 +484,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } else {
                 // Seleccionar
-                this.classList.remove('condicion-no-seleccionada');
-                this.classList.add('condicion-seleccionada');
+                this.classList.remove('no-seleccionado');
+                this.classList.add('seleccionado-salud');
                 // Agregar input hidden
                 const input = document.createElement('input');
                 input.type = 'hidden';
@@ -505,10 +505,10 @@ function limpiarFormulario() {
         form.classList.remove('was-validated');
         
         // Resetear badges
-        const badges = document.querySelectorAll('.condicion-badge');
+        const badges = document.querySelectorAll('.asignacion-badge[data-tipo="condicion"]');
         badges.forEach(function(badge) {
-            badge.classList.remove('condicion-seleccionada');
-            badge.classList.add('condicion-no-seleccionada');
+            badge.classList.remove('seleccionado-salud');
+            badge.classList.add('no-seleccionado');
         });
         
         // Limpiar inputs hidden
@@ -545,30 +545,5 @@ function limpiarFormulario() {
     margin-bottom: 1.5rem;
 }
 
-.condiciones-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-}
-
-.condicion-badge {
-    transition: all 0.3s ease;
-}
-
-.condicion-badge:hover {
-    transform: scale(1.05);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
-
-.condicion-no-seleccionada {
-    background-color: #ffffff !important;
-    color: #333 !important;
-    border: 1px solid #000 !important;
-}
-
-.condicion-seleccionada {
-    background-color: #28a745 !important;
-    color: #ffffff !important;
-    border: 1px solid #28a745 !important;
-}
+/* Estilos específicos de huéspedes (badges centralizados en main.css) */
 </style>

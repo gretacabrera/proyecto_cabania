@@ -344,4 +344,115 @@ class Perfil extends Model
         
         return $newPerfilId;
     }
+
+    /**
+     * Obtener módulos del perfil
+     */
+    public function getModulos($perfilId)
+    {
+        $sql = "SELECT rela_modulo, perfilmodulo_estado 
+                FROM perfil_modulo 
+                WHERE rela_perfil = ?";
+        
+        $result = $this->query($sql, [$perfilId]);
+        
+        $modulos = [];
+        while ($row = $result->fetch_assoc()) {
+            $modulos[$row['rela_modulo']] = $row['perfilmodulo_estado'];
+        }
+        
+        return $modulos;
+    }
+
+    /**
+     * Guardar todos los módulos del perfil (con estados)
+     */
+    public function saveModulos($perfilId, $todosModulos, $modulosSeleccionados)
+    {
+        $sql = "INSERT INTO perfil_modulo (rela_perfil, rela_modulo, perfilmodulo_estado) VALUES (?, ?, ?)";
+        $stmt = $this->db->prepare($sql);
+        
+        foreach ($todosModulos as $modulo) {
+            $idModulo = $modulo['id_modulo'];
+            $estado = in_array($idModulo, $modulosSeleccionados) ? 1 : 0;
+            
+            $stmt->bind_param('iii', $perfilId, $idModulo, $estado);
+            if (!$stmt->execute()) {
+                $stmt->close();
+                return false;
+            }
+        }
+        
+        $stmt->close();
+        return true;
+    }
+
+    /**
+     * Actualizar módulos del perfil
+     */
+    public function updateModulos($perfilId, $todosModulos, $modulosSeleccionados)
+    {
+        // Obtener módulos existentes
+        $sqlExistentes = "SELECT rela_modulo FROM perfil_modulo WHERE rela_perfil = ?";
+        $result = $this->query($sqlExistentes, [$perfilId]);
+        
+        $modulosExistentes = [];
+        while ($row = $result->fetch_assoc()) {
+            $modulosExistentes[] = $row['rela_modulo'];
+        }
+        
+        // Actualizar o insertar módulos
+        foreach ($todosModulos as $modulo) {
+            $idModulo = $modulo['id_modulo'];
+            $estado = in_array($idModulo, $modulosSeleccionados) ? 1 : 0;
+            
+            if (in_array($idModulo, $modulosExistentes)) {
+                // Actualizar existente
+                $sqlUpdate = "UPDATE perfil_modulo SET perfilmodulo_estado = ? WHERE rela_perfil = ? AND rela_modulo = ?";
+                $stmtUpdate = $this->db->prepare($sqlUpdate);
+                $stmtUpdate->bind_param('iii', $estado, $perfilId, $idModulo);
+                if (!$stmtUpdate->execute()) {
+                    $stmtUpdate->close();
+                    return false;
+                }
+                $stmtUpdate->close();
+            } else {
+                // Insertar nueva
+                $sqlInsert = "INSERT INTO perfil_modulo (rela_perfil, rela_modulo, perfilmodulo_estado) VALUES (?, ?, ?)";
+                $stmtInsert = $this->db->prepare($sqlInsert);
+                $stmtInsert->bind_param('iii', $perfilId, $idModulo, $estado);
+                if (!$stmtInsert->execute()) {
+                    $stmtInsert->close();
+                    return false;
+                }
+                $stmtInsert->close();
+            }
+        }
+        
+        return true;
+    }
+
+    /**
+     * Iniciar transacción
+     */
+    public function beginTransaction()
+    {
+        $this->db->beginTransaction();
+    }
+
+    /**
+     * Confirmar transacción
+     */
+    public function commit()
+    {
+        $this->db->commit();
+    }
+
+    /**
+     * Revertir transacción
+     */
+    public function rollback()
+    {
+        $this->db->rollback();
+    }
 }
