@@ -173,7 +173,7 @@ class HuespedConsumosController extends Controller
             return;
         }
 
-        $consumo = $this->consumoModel->find($id);
+        $consumo = $this->consumoModel->findWithRelations($id);
         if (!$consumo) {
             $this->redirect('/huesped/consumos', 'Consumo no encontrado', 'error');
             return;
