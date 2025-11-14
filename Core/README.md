@@ -725,6 +725,57 @@ class YourModel extends Model
 
 ---
 
+## 🌐 **Sistema de Enrutamiento - Rutas del Proyecto**
+
+### **Rutas del Sistema de Consumos (3 Módulos)**
+
+El sistema implementa **17 rutas** para los 3 módulos de consumos:
+
+#### **Módulo Admin (Operaciones)**
+```php
+GET  /admin/consumos              → ConsumosController@index (listado)
+GET  /admin/consumos/create       → ConsumosController@create (formulario múltiple)
+POST /admin/consumos/store        → ConsumosController@store (guardar batch)
+GET  /admin/consumos/{id}         → ConsumosController@show (detalle)
+GET  /admin/consumos/{id}/edit    → ConsumosController@edit
+POST /admin/consumos/{id}/update  → ConsumosController@update
+POST /admin/consumos/{id}/delete  → ConsumosController@delete
+GET  /admin/consumos/exportar     → ConsumosController@exportar (Excel)
+GET  /admin/consumos/exportar-pdf → ConsumosController@exportarPdf
+```
+
+#### **Módulo Huésped (Self-Service)**
+```php
+GET  /huesped/consumos                → HuespedConsumosController@index
+GET  /huesped/consumos/solicitar      → HuespedConsumosController@solicitar
+POST /huesped/consumos/solicitar      → HuespedConsumosController@solicitar
+GET  /huesped/consumos/{id}/edit      → HuespedConsumosController@edit
+POST /huesped/consumos/{id}/update    → HuespedConsumosController@update
+POST /huesped/consumos/{id}/delete    → HuespedConsumosController@delete
+GET  /huesped/consumos/{id}           → HuespedConsumosController@show
+```
+
+#### **Módulo Totem (Sin Autenticación)**
+```php
+GET  /totem/consumos                  → TotemConsumosController@index
+GET  /totem/consumos/configurar       → TotemConsumosController@configurar
+POST /totem/consumos/configurar       → TotemConsumosController@configurar
+GET  /totem/consumos/menu             → TotemConsumosController@menu
+POST /totem/consumos/pedido           → TotemConsumosController@pedido (AJAX)
+GET  /totem/consumos/historial        → TotemConsumosController@historial
+GET  /totem/consumos/reset            → TotemConsumosController@reset
+GET  /totem/consumos/precio/{id}      → TotemConsumosController@getPrecioProducto (API)
+```
+
+### **Características del Sistema de Rutas**
+- ✅ **Separación de módulos** por prefijo de URL
+- ✅ **RESTful conventions** para operaciones CRUD
+- ✅ **APIs AJAX** para operaciones dinámicas
+- ✅ **Parámetros dinámicos** en URLs con `{id}`
+- ✅ **Métodos HTTP** apropiados (GET/POST)
+
+---
+
 ## 📚 **Referencias Adicionales**
 
 ### **Documentación del Proyecto**

@@ -34,7 +34,7 @@ Modelos para la gestión comercial:
 
 - **`Producto.php`** - Productos vendibles (consumibles, souvenirs)
 - **`Servicio.php`** - Servicios ofrecidos (spa, tours, restaurante)
-- **`Consumo.php`** - Consumos realizados por huéspedes
+- **`Consumo.php`** - **ACTUALIZADO**: Consumos realizados por huéspedes con soporte multimodal
 - **`Categoria.php`** - Categorías de productos
 - **`Marca.php`** - Marcas de productos
 
@@ -435,6 +435,179 @@ class Persona extends Model
 ```
 
 ### **🛍️ Modelos Comerciales**
+
+#### **`Consumo.php` - ACTUALIZADO**
+```php
+<?php
+
+namespace App\Models;
+
+use App\Core\Model;
+
+class Consumo extends Model
+{
+    protected $table = 'consumo';
+    protected $primaryKey = 'id_consumo';
+    
+    protected $fillable = [
+        'consumo_descripcion', 'consumo_cantidad', 'consumo_precio',
+        'rela_producto', 'rela_servicio', 'rela_reserva'
+    ];
+
+    /**
+     * NUEVO - Crear múltiples consumos transaccionalmente
+     * Uso: Módulo Admin para registro batch
+     */
+    public function createMultiple($consumos)
+    {
+        $this->db->begin_transaction();
+        try {
+            $ids = [];
+            foreach ($consumos as $consumo) {
+                $id = $this->create($consumo);
+                $ids[] = $id;
+            }
+            $this->db->commit();
+            return $ids;
+        } catch (Exception $e) {
+            $this->db->rollback();
+            throw $e;
+        }
+    }
+
+    /**
+     * NUEVO - Obtener consumos de una reserva con detalles completos
+     * Uso: Módulos Admin y Huésped
+     */
+    public function getConsumosByReservaWithDetails($idReserva)
+    {
+        $sql = "SELECT c.*, 
+                       COALESCE(p.producto_nombre, s.servicio_nombre) as item_nombre,
+                       COALESCE(p.producto_foto, 'default.jpg') as item_foto,
+                       (c.consumo_cantidad * c.consumo_precio) as subtotal
+                FROM consumo c
+                LEFT JOIN producto p ON c.rela_producto = p.id_producto
+                LEFT JOIN servicio s ON c.rela_servicio = s.id_servicio
+                WHERE c.rela_reserva = ?
+                ORDER BY c.id_consumo DESC";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param("i", $idReserva);
+        $stmt->execute();
+        return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    }
+
+    /**
+     * NUEVO - Obtener reserva activa por cabaña
+     * Uso: Módulo Totem para validación
+     */
+    public function getReservaActivaByCabania($idCabania)
+    {
+        $sql = "SELECT r.* FROM reserva r
+                WHERE r.rela_cabania = ?
+                AND r.rela_estado IN (
+                    SELECT id_estadoreserva FROM estadoreserva 
+                    WHERE estadoreserva_descripcion IN ('CONFIRMADA', 'EN_CURSO')
+                )
+                ORDER BY r.reserva_fechainicio DESC
+                LIMIT 1";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param("i", $idCabania);
+        $stmt->execute();
+        return $stmt->get_result()->fetch_assoc();
+    }
+
+    /**
+     * NUEVO - Obtener productos disponibles
+     * Uso: Catálogo visual en módulos Huésped y Totem
+     */
+    public function getProductosDisponibles()
+    {
+        $sql = "SELECT p.*, c.categoria_descripcion, m.marca_descripcion
+                FROM producto p
+                LEFT JOIN categoria c ON p.rela_categoria = c.id_categoria
+                LEFT JOIN marca m ON p.rela_marca = m.id_marca
+                WHERE p.producto_estado = 1
+                ORDER BY p.producto_nombre";
+        
+        return $this->db->query($sql)->fetch_all(MYSQLI_ASSOC);
+    }
+
+    /**
+     * NUEVO - Obtener servicios disponibles
+     * Uso: Catálogo visual en módulos Huésped y Totem
+     */
+    public function getServiciosDisponibles()
+    {
+        $sql = "SELECT s.*, ts.tiposervicio_descripcion
+                FROM servicio s
+                LEFT JOIN tiposervicio ts ON s.rela_tiposervicio = ts.id_tiposervicio
+                WHERE s.servicio_activo = 1
+                ORDER BY s.servicio_nombre";
+        
+        return $this->db->query($sql)->fetch_all(MYSQLI_ASSOC);
+    }
+
+    /**
+     * NUEVO - Obtener reservas del usuario actual
+     * Uso: Módulo Huésped para filtrar consumos propios
+     */
+    public function getReservasUsuario($idUsuario)
+    {
+        $sql = "SELECT r.id_reserva 
+                FROM reserva r
+                INNER JOIN huesped h ON r.id_reserva = h.rela_reserva
+                INNER JOIN persona p ON h.rela_persona = p.id_persona
+                INNER JOIN usuario u ON p.id_persona = u.rela_persona
+                WHERE u.id_usuario = ?";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param("i", $idUsuario);
+        $stmt->execute();
+        $result = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        return array_column($result, 'id_reserva');
+    }
+
+    /**
+     * NUEVO - Actualizar consumo
+     * Uso: Módulos Admin y Huésped
+     */
+    public function updateConsumo($idConsumo, $data)
+    {
+        return $this->update($idConsumo, $data);
+    }
+
+    /**
+     * NUEVO - Eliminar consumo
+     * Uso: Módulos Admin y Huésped
+     */
+    public function deleteConsumo($idConsumo)
+    {
+        return $this->delete($idConsumo);
+    }
+
+    /**
+     * NUEVO - Obtener cabaña por código
+     * Uso: Módulo Totem para configuración
+     */
+    public function getCabaniaByCodigo($codigo)
+    {
+        $sql = "SELECT * FROM cabania WHERE cabania_codigo = ? LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param("s", $codigo);
+        $stmt->execute();
+        return $stmt->get_result()->fetch_assoc();
+    }
+}
+```
+
+**Nuevas Características del Modelo Consumo:**
+- ✅ **Transaccionalidad**: Método `createMultiple()` para registros batch atómicos
+- ✅ **Consultas Optimizadas**: JOINs con productos/servicios para datos completos
+- ✅ **Seguridad**: Validación de propiedad de consumos por usuario
+- ✅ **Multi-Módulo**: Métodos específicos para Admin, Huésped y Totem
+- ✅ **APIs Flexibles**: Métodos para catálogos, reservas y validaciones
 
 #### **`Producto.php`**
 ```php

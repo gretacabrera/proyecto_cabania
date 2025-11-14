@@ -24,6 +24,8 @@ Controladores accesibles para usuarios públicos y huéspedes:
 - **`ComentariosController.php`** - Sistema de comentarios y feedback
 - **`IngresosController.php`** - Proceso de check-in para huéspedes
 - **`SalidasController.php`** - Proceso de check-out para huéspedes
+- **`HuespedConsumosController.php`** - **NUEVO**: Módulo self-service de consumos para huéspedes autenticados
+- **`TotemConsumosController.php`** - **NUEVO**: Módulo totem de pedidos sin autenticación
 
 #### **🏢 Controladores Administrativos**
 
@@ -184,6 +186,71 @@ protected function error($message, $code = 400)
 
 ---
 
+## 🛒 **Sistema de Consumos Multimodal - 3 Controladores**
+
+### **1. ConsumosController.php (Módulo Admin)**
+**Ubicación**: `Controllers/ConsumosController.php`  
+**Acceso**: Administrativo (requiere autenticación)
+
+**Métodos Implementados:**
+- `index()` - Listado con filtros y paginación
+- `create()` - Formulario de creación múltiple
+- `store()` - Guardar múltiples consumos transaccionalmente
+- `show($id)` - Detalle de consumo
+- `edit($id)` - Formulario de edición
+- `update($id)` - Actualizar consumo
+- `delete($id)` - Eliminar consumo
+- `exportar()` - Exportar a Excel
+- `exportarPdf()` - Exportar a PDF
+
+**Características:**
+- ✅ Formulario dinámico con JavaScript para múltiples items
+- ✅ Cálculo automático de subtotales y total
+- ✅ Soporte transaccional con método `createMultiple()`
+- ✅ Validación completa de datos
+- ✅ Exportación con filtros aplicados
+
+### **2. HuespedConsumosController.php (Módulo Self-Service)**
+**Ubicación**: `Controllers/HuespedConsumosController.php`  
+**Acceso**: Huésped autenticado
+
+**Métodos Implementados:**
+- `index()` - Listado de consumos propios del huésped
+- `solicitar()` - Catálogo visual para solicitar productos/servicios (GET/POST)
+- `edit($id)` - Editar cantidad de consumo propio
+- `update($id)` - Actualizar consumo
+- `delete($id)` - Eliminar consumo propio (AJAX)
+- `show($id)` - Detalle de consumo
+
+**Características:**
+- ✅ Seguridad: Solo puede ver/editar consumos propios
+- ✅ Validación de propiedad mediante cadena usuario→persona→huesped→reserva
+- ✅ Catálogo visual con imágenes de productos/servicios
+- ✅ Interfaz optimizada para experiencia de usuario
+- ✅ Operaciones AJAX para mejor UX
+
+### **3. TotemConsumosController.php (Módulo Sin Autenticación)**
+**Ubicación**: `Controllers/TotemConsumosController.php`  
+**Acceso**: Público (sin autenticación requerida)
+
+**Métodos Implementados:**
+- `index()` - Página inicial del totem
+- `configurar()` - Configuración del totem con código de cabaña (GET/POST)
+- `menu()` - Catálogo de productos/servicios disponibles
+- `pedido()` - Procesar pedido AJAX
+- `historial()` - Historial de pedidos en sesión
+- `reset()` - Limpiar configuración y volver al inicio
+- `getPrecioProducto()` - API para obtener precio de producto (AJAX)
+
+**Características:**
+- ✅ Sistema basado en sesión PHP (sin BD de configuración)
+- ✅ Validación de cabaña mediante código único
+- ✅ Validación de reserva activa para la cabaña
+- ✅ Diseño fullscreen optimizado para tablets
+- ✅ Layout púrpura distintivo con gradiente
+- ✅ Operaciones AJAX sin recarga de página
+- ✅ Almacenamiento temporal de pedidos en sesión
+
 ## 🔐 **Control de Acceso y Seguridad**
 
 ### **Niveles de Acceso por Controlador**
@@ -191,15 +258,18 @@ protected function error($message, $code = 400)
 #### **Acceso Público** (Sin autenticación requerida)
 - `HomeController` - Página principal
 - `AuthController` - Login/registro
+- `TotemConsumosController` - **NUEVO**: Totem de pedidos sin autenticación
 
 #### **Acceso de Huésped** (Autenticación de huésped)
 - `CatalogoController` - Ver cabañas disponibles
 - `ComentariosController` - Dejar comentarios
 - `IngresosController` - Check-in
 - `SalidasController` - Check-out
+- `HuespedConsumosController` - **NUEVO**: Self-service de consumos
 
 #### **Acceso Administrativo** (Autenticación administrativa)
 - Todos los controladores de configuración, operaciones y administración
+- `ConsumosController` - Gestión administrativa de consumos
 - `ReportesController` - Reportes ejecutivos
 
 ### **Validación de Permisos**

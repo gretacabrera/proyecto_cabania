@@ -541,6 +541,52 @@ $numero = $factura->generateNumeroFactura($tipoComprobante);
 // Resultado: "FACA-00000001" (dependiendo del tipo)
 ```
 
+### **🛒 Sistema de Consumos Multimodal**
+
+**3 Módulos Independientes para Gestión de Consumos:**
+
+#### **1. Módulo Admin (Panel Administrativo)**
+- **Ubicación**: `/admin/operaciones/consumos/`
+- **Acceso**: Requiere autenticación administrativa
+- **Características**:
+  - ✅ CRUD completo de consumos
+  - ✅ Registro transaccional de múltiples productos/servicios
+  - ✅ Formulario dinámico con JavaScript para agregar/quitar items
+  - ✅ Cálculo automático de subtotales y total
+  - ✅ Listado con filtros y paginación
+  - ✅ Exportación Excel/PDF
+  - ✅ Gestión completa de estados
+
+#### **2. Módulo Huésped (Self-Service)**
+- **Ubicación**: `/huesped/consumos/`
+- **Acceso**: Requiere autenticación de huésped
+- **Características**:
+  - ✅ Solicitud de productos/servicios con catálogo visual
+  - ✅ Visualización de consumos propios únicamente
+  - ✅ Edición de cantidades de consumos no facturados
+  - ✅ Detalle completo de cada consumo
+  - ✅ Validación de propiedad de consumos (seguridad)
+  - ✅ Interfaz optimizada para experiencia de usuario
+
+#### **3. Módulo Totem (Sin Autenticación)**
+- **Ubicación**: `/totem/consumos/`
+- **Acceso**: Sin autenticación requerida (ideal para tablets)
+- **Características**:
+  - ✅ Configuración por código de cabaña
+  - ✅ Menú de productos con catálogo visual
+  - ✅ Sistema de pedidos AJAX sin recargar página
+  - ✅ Historial de pedidos en sesión
+  - ✅ Diseño fullscreen optimizado para pantallas táctiles
+  - ✅ Layout púrpura distintivo con gradiente
+  - ✅ Validación de reservas activas por cabaña
+
+#### **Tecnologías y Funcionalidades Transversales**
+- **Base de Datos**: Operaciones atómicas con soporte transaccional
+- **Método Clave**: `createMultiple()` para registro batch de consumos
+- **Seguridad**: Validación de propiedad, sanitización de datos, CSRF protection
+- **UX**: SweetAlert2 para confirmaciones, loading states, responsive design
+- **APIs**: Endpoints AJAX para operaciones dinámicas
+
 ### **🔧 Panel Administrativo**
 
 #### **Navegación Principal**
@@ -552,7 +598,7 @@ $numero = $factura->generateNumeroFactura($tipoComprobante);
 │   ├── Reservas                      # Gestión de reservas  
 │   ├── Productos                     # Inventario
 │   ├── Servicios                     # Servicios ofrecidos
-│   └── Consumos                      # Registro de consumos
+│   └── Consumos                      # Registro administrativo de consumos
 ├── ⚙️ Configuración/              # Configuración básica
 │   ├── Categorías                    # Categorías de productos
 │   ├── Estados                       # Estados del sistema
@@ -567,6 +613,12 @@ $numero = $factura->generateNumeroFactura($tipoComprobante);
     ├── Consumos                      # Reportes de ventas
     ├── Demográfico                   # Análisis de huéspedes
     └── Comentarios                   # Feedback de clientes
+
+/huesped/                          # Módulo Self-Service para Huéspedes
+└── Consumos                          # Solicitud y gestión de consumos propios
+
+/totem/                            # Módulo Totem sin Autenticación
+└── Consumos                          # Sistema de pedidos desde cabañas
 ```
 
 ## 💻 **Desarrollo y Personalización**
@@ -926,6 +978,8 @@ Para información detallada sobre cada componente, consultar:
 - **[Models/README.md](Models/README.md)** - Modelos de datos y relaciones  
 - **[Views/README.md](Views/README.md)** - Sistema de vistas y flujos
 - **[ESTADOS_RESERVA_README.md](ESTADOS_RESERVA_README.md)** - Sistema de estados sin hardcode
+- **[SISTEMA_CONSUMOS.md](SISTEMA_CONSUMOS.md)** - Sistema de consumos multimodal (3 módulos)
+- **[GUIA_USO_CONSUMOS.md](GUIA_USO_CONSUMOS.md)** - Guía de usuario para sistema de consumos
 
 ---
 

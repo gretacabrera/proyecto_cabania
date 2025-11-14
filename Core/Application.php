@@ -401,17 +401,45 @@ class Application
         $this->router->get('/comentarios/search', 'ComentariosController@search');
         $this->router->post('/comentarios/{id}/report', 'ComentariosController@report');
 
-        // Rutas de consumos
+        // Rutas de consumos (Admin)
         $this->router->get('/consumos', 'ConsumosController@index');
         $this->router->any('/consumos/create', 'ConsumosController@create');
+        $this->router->get('/consumos/exportar', 'ConsumosController@exportar');
+        $this->router->get('/consumos/exportar-pdf', 'ConsumosController@exportarPdf');
         $this->router->get('/consumos/{id}', 'ConsumosController@show');
         $this->router->any('/consumos/{id}/edit', 'ConsumosController@edit');
         $this->router->get('/consumos/{id}/delete', 'ConsumosController@delete');
         $this->router->get('/consumos/{id}/restore', 'ConsumosController@restore');
+        $this->router->post('/consumos/{id}/estado', 'ConsumosController@cambiarEstado');
         $this->router->get('/consumos/reserva/{id}', 'ConsumosController@byReserva');
         $this->router->any('/consumos/facturar/{id}', 'ConsumosController@facturar');
         $this->router->get('/consumos/producto/{id}/precio', 'ConsumosController@getPrecioProducto');
         $this->router->any('/consumos/reporte', 'ConsumosController@reporte');
+
+        // Rutas de consumos para huéspedes (Público)
+        $this->router->get('/huesped/consumos', 'HuespedConsumosController@index');
+        $this->router->any('/huesped/consumos/solicitar', 'HuespedConsumosController@solicitar');
+        $this->router->get('/huesped/consumos/api/categorias', 'HuespedConsumosController@getCategorias');
+        $this->router->get('/huesped/consumos/api/tipos-servicio', 'HuespedConsumosController@getTiposServicio');
+        $this->router->get('/huesped/consumos/api/productos/{categoriaId}', 'HuespedConsumosController@getProductosPorCategoria');
+        $this->router->get('/huesped/consumos/api/servicios/{tipoId}', 'HuespedConsumosController@getServiciosPorTipo');
+        $this->router->get('/huesped/consumos/{id}', 'HuespedConsumosController@show');
+        $this->router->any('/huesped/consumos/{id}/edit', 'HuespedConsumosController@edit');
+        $this->router->post('/huesped/consumos/{id}/delete', 'HuespedConsumosController@delete');
+
+        // Rutas del tótem de consumos (Sin autenticación)
+        $this->router->get('/totem', 'TotemConsumosController@index');
+        $this->router->post('/totem/configurar', 'TotemConsumosController@configurar');
+        $this->router->get('/totem/menu', 'TotemConsumosController@menu');
+        $this->router->get('/totem/solicitar', 'TotemConsumosController@solicitar');
+        $this->router->post('/totem/pedido', 'TotemConsumosController@pedido');
+        $this->router->get('/totem/historial', 'TotemConsumosController@historial');
+        $this->router->get('/totem/reset', 'TotemConsumosController@reset');
+        $this->router->get('/totem/api/categorias', 'TotemConsumosController@getCategorias');
+        $this->router->get('/totem/api/tipos-servicio', 'TotemConsumosController@getTiposServicio');
+        $this->router->get('/totem/api/productos/{categoriaId}', 'TotemConsumosController@getProductosPorCategoria');
+        $this->router->get('/totem/api/servicios/{tipoId}', 'TotemConsumosController@getServiciosPorTipo');
+        $this->router->get('/totem/producto/{id}/precio', 'TotemConsumosController@getPrecioProducto');
 
         // Rutas de ingresos
         $this->router->get('/ingresos', 'IngresosController@index');

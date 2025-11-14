@@ -1930,11 +1930,11 @@ class ReservasController extends Controller
             $result = $stmt->fetch();
             
             // Verificar que se obtuvo resultado válido
-            if ($result === false) {
+            if ($result === false || !is_array($result)) {
                 return true; // Si no hay resultados, no hay conflictos
             }
             
-            return $result['conflictos'] == 0;
+            return isset($result['conflictos']) && $result['conflictos'] == 0;
             
         } catch (\Exception $e) {
             error_log('Error verificando disponibilidad: ' . $e->getMessage());
