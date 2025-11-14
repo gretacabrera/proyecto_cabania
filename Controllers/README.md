@@ -11,48 +11,54 @@ Los controladores están organizados por funcionalidad y siguen una nomenclatura
 - **Namespace**: `App\Controllers`
 - **Herencia**: Extienden de `App\Core\Controller`
 
-### 📋 **Inventario Completo de Controladores (27 controladores activos)**
+### 📋 **Inventario Completo de Controladores (32 controladores activos)**
 
 ✅ **MIGRACIÓN COMPLETADA**: Todos los controladores han sido actualizados para usar las nuevas rutas de vistas organizadas.
 
-#### **🏠 Controladores Públicos**
+#### **🏠 Controladores Públicos (8 controladores)**
 Controladores accesibles para usuarios públicos y huéspedes:
 
-- **`HomeController.php`** - Página principal del sitio
-- **`AuthController.php`** - Autenticación (login, logout, registro)
-- **`CatalogoController.php`** - Catálogo público de cabañas
+- **`HomeController.php`** - Página principal del sitio con dashboards contextuales
+- **`AuthController.php`** - Autenticación (login, logout, registro, recuperación de contraseña)
+- **`EmailVerificationController.php`** - Verificación de correo electrónico
+- **`CatalogoController.php`** - Catálogo público de cabañas con disponibilidad
 - **`ComentariosController.php`** - Sistema de comentarios y feedback
 - **`IngresosController.php`** - Proceso de check-in para huéspedes
 - **`SalidasController.php`** - Proceso de check-out para huéspedes
-- **`HuespedConsumosController.php`** - **NUEVO**: Módulo self-service de consumos para huéspedes autenticados
-- **`TotemConsumosController.php`** - **NUEVO**: Módulo totem de pedidos sin autenticación
+- **`HuespedConsumosController.php`** - Módulo self-service de consumos para huéspedes autenticados
+- **`TotemConsumosController.php`** - Módulo totem de pedidos sin autenticación
 
 #### **🏢 Controladores Administrativos**
 
-##### **Configuración Básica** (10 controladores)
+##### **Configuración Básica (13 controladores)**
 Controladores para la configuración fundamental del sistema:
 
 - **`CategoriasController.php`** - Gestión de categorías de productos
 - **`CondicionesSaludController.php`** - Condiciones médicas de huéspedes
+- **`CostosDanioController.php`** - Costos asociados a daños en cabañas
 - **`EstadosPersonasController.php`** - Estados de huéspedes (activo, inactivo, etc.)
 - **`EstadosProductosController.php`** - Estados de productos
 - **`EstadosReservasController.php`** - Estados de reservas (pendiente, confirmada, etc.)
+- **`InventarioController.php`** - Gestión de inventario por cabaña
 - **`MarcasController.php`** - Gestión de marcas de productos
 - **`MetodosPagosController.php`** - Métodos de pago disponibles
+- **`NivelDanioController.php`** - Niveles de daño (leve, moderado, grave)
 - **`PeriodosController.php`** - Gestión de períodos/temporadas
 - **`TiposContactosController.php`** - Tipos de contacto
 - **`TiposServiciosController.php`** - Tipos de servicios ofrecidos
 
-##### **Operaciones del Negocio** (5 controladores)
+##### **Operaciones del Negocio (7 controladores)**
 Controladores para la gestión operativa diaria:
 
 - **`CabaniasController.php`** - Gestión completa de cabañas
-- **`ConsumosController.php`** - Registro de consumos de huéspedes
+- **`ConsumosController.php`** - Registro administrativo de consumos de huéspedes
+- **`HuespedesController.php`** - Gestión de huéspedes y datos personales
 - **`ProductosController.php`** - Gestión de inventario y productos
-- **`ReservasController.php`** - Gestión integral de reservas
+- **`ReservasController.php`** - Gestión integral de reservas online y administrativas
+- **`RevisionesController.php`** - Revisiones de inventario por reserva
 - **`ServiciosController.php`** - Gestión de servicios ofrecidos
 
-##### **Administración del Sistema** (5 controladores)
+##### **Administración del Sistema (5 controladores)**
 Controladores para la configuración avanzada del sistema:
 
 - **`MenusController.php`** - Configuración de menús del sistema
@@ -61,11 +67,8 @@ Controladores para la configuración avanzada del sistema:
 - **`PerfilesModulosController.php`** - Asignación de permisos por perfil
 - **`UsuariosController.php`** - Gestión de usuarios del sistema
 
-##### **Sistema de Reportes** (1 controlador)
-- **`ReportesController.php`** - Generación de reportes y analytics
-
-#### **🔧 Controladores de Sistema**
-- ~~ModuleController.php~~ - **ELIMINADO** - Era un controlador legacy que ya no se necesita
+##### **Sistema de Reportes (1 controlador)**
+- **`ReportesController.php`** - Generación de reportes y analytics ejecutivos
 
 ---
 
@@ -256,21 +259,26 @@ protected function error($message, $code = 400)
 ### **Niveles de Acceso por Controlador**
 
 #### **Acceso Público** (Sin autenticación requerida)
-- `HomeController` - Página principal
-- `AuthController` - Login/registro
-- `TotemConsumosController` - **NUEVO**: Totem de pedidos sin autenticación
+- `HomeController` - Página principal con dashboards contextuales
+- `AuthController` - Login, registro y recuperación de contraseña
+- `EmailVerificationController` - Verificación de email
+- `TotemConsumosController` - Totem de pedidos sin autenticación
 
 #### **Acceso de Huésped** (Autenticación de huésped)
-- `CatalogoController` - Ver cabañas disponibles
-- `ComentariosController` - Dejar comentarios
-- `IngresosController` - Check-in
-- `SalidasController` - Check-out
-- `HuespedConsumosController` - **NUEVO**: Self-service de consumos
+- `CatalogoController` - Ver cabañas disponibles y reservar
+- `ComentariosController` - Dejar comentarios y feedback
+- `IngresosController` - Proceso de check-in
+- `SalidasController` - Proceso de check-out
+- `HuespedConsumosController` - Self-service de consumos
+- `ReservasController` - Gestión de reservas propias (modo online)
 
 #### **Acceso Administrativo** (Autenticación administrativa)
-- Todos los controladores de configuración, operaciones y administración
-- `ConsumosController` - Gestión administrativa de consumos
-- `ReportesController` - Reportes ejecutivos
+- **Configuración Básica**: Todos los controladores de estados, tipos, marcas, categorías, etc.
+- **Operaciones**: `CabaniasController`, `HuespedesController`, `ProductosController`, `ServiciosController`
+- **Gestión de Reservas**: `ReservasController` (modo admin), `RevisionesController`, `IngresosController`, `SalidasController`
+- **Consumos**: `ConsumosController` - Gestión administrativa de consumos
+- **Sistema**: `MenusController`, `ModulosController`, `PerfilesController`, `UsuariosController`
+- **Reportes**: `ReportesController` - Reportes ejecutivos y analytics
 
 ### **Validación de Permisos**
 
@@ -302,29 +310,102 @@ Los controladores están diseñados para integrarse con la nueva estructura de v
 
 ```php
 // Controladores públicos
-HomeController        → Views/public/home.php
-AuthController        → Views/public/auth/*
-CatalogoController    → Views/public/catalogo/*
-ReservasController    → Views/public/reservas/* (nuevo sistema completo)
+HomeController           → Views/public/home.php
+AuthController           → Views/public/auth/*
+EmailVerificationController → Views/public/auth/verification/*
+CatalogoController       → Views/public/catalogo/*
+ReservasController       → Views/public/reservas/* (flujo online completo)
+ComentariosController    → Views/public/comentarios/*
+
+// Controladores de huésped
+HuespedConsumosController → Views/public/consumos/*
+IngresosController       → Views/public/ingresos/*
+SalidasController        → Views/public/salidas/*
+
+// Totem (sin autenticación)
+TotemConsumosController  → Views/totem/consumos/* (layout: totem)
 
 // Controladores administrativos
-CabaniasController    → Views/admin/operaciones/cabanias/*
-UsuariosController    → Views/admin/seguridad/usuarios/*
-ReportesController    → Views/admin/reportes/*
+CabaniasController       → Views/admin/operaciones/cabanias/*
+HuespedesController      → Views/admin/operaciones/huespedes/*
+ProductosController      → Views/admin/operaciones/productos/*
+ServiciosController      → Views/admin/operaciones/servicios/*
+ReservasController       → Views/admin/operaciones/reservas/* (modo admin)
+RevisionesController     → Views/admin/operaciones/revisiones/*
+ConsumosController       → Views/admin/operaciones/consumos/*
+InventarioController     → Views/admin/operaciones/inventarios/*
+CostosDanioController    → Views/admin/operaciones/costosdanio/*
+
+// Sistema y seguridad
+UsuariosController       → Views/admin/seguridad/usuarios/*
+PerfilesController       → Views/admin/seguridad/perfiles/*
+MenusController          → Views/admin/sistema/menus/*
+ModulosController        → Views/admin/sistema/modulos/*
+PerfilesModulosController → Views/admin/sistema/perfilesmodulos/*
+
+// Configuración
+CategoriasController     → Views/admin/configuracion/categorias/*
+MarcasController         → Views/admin/configuracion/marcas/*
+EstadosReservasController → Views/admin/configuracion/estadosreservas/*
+// ... (otros controladores de configuración)
+
+// Reportes
+ReportesController       → Views/admin/reportes/*
 ```
 
 ### **Rutas Recomendadas**
 
 ```php
 // Rutas públicas
-GET  /                    → HomeController@index
-GET  /catalogo           → CatalogoController@index
-POST /reservas/confirmar → ReservasController@confirmar
+GET  /                         → HomeController@index
+GET  /about                    → HomeController@about
+POST /contact                  → HomeController@contact
+GET  /catalogo                 → CatalogoController@index
+POST /catalogo/reserve         → CatalogoController@reserve
 
-// Rutas administrativas
-GET  /admin/cabanias     → CabaniasController@index
-GET  /admin/usuarios     → UsuariosController@index
-GET  /admin/reportes     → ReportesController@index
+// Autenticación
+GET  /auth/login               → AuthController@login
+POST /auth/login               → AuthController@login
+GET  /auth/register            → AuthController@register
+POST /auth/register            → AuthController@register
+GET  /auth/logout              → AuthController@logout
+GET  /auth/verify              → EmailVerificationController@verify
+
+// Reservas online (público/huésped)
+GET  /reservas/online          → ReservasController@online
+POST /reservas/servicios       → ReservasController@servicios
+GET  /reservas/resumen         → ReservasController@resumen
+POST /reservas/proceder-pago   → ReservasController@procederPago
+GET  /reservas/exito/{id}      → ReservasController@exito
+
+// Consumos de huésped
+GET  /huesped/consumos         → HuespedConsumosController@index
+GET  /huesped/consumos/solicitar → HuespedConsumosController@solicitar
+
+// Totem (sin autenticación)
+GET  /totem                    → TotemConsumosController@index
+POST /totem/configurar         → TotemConsumosController@configurar
+GET  /totem/menu               → TotemConsumosController@menu
+POST /totem/pedido             → TotemConsumosController@pedido
+
+// Rutas administrativas (requieren autenticación y permisos)
+GET  /cabanias                 → CabaniasController@index
+GET  /cabanias/create          → CabaniasController@create
+GET  /cabanias/{id}            → CabaniasController@show
+GET  /cabanias/{id}/edit       → CabaniasController@edit
+GET  /cabanias/exportar        → CabaniasController@exportar
+
+GET  /huespedes                → HuespedesController@index
+GET  /productos                → ProductosController@index
+GET  /servicios                → ServiciosController@index
+GET  /reservas                 → ReservasController@index (modo admin)
+GET  /consumos                 → ConsumosController@index
+GET  /revisiones               → RevisionesController@index
+
+GET  /usuarios                 → UsuariosController@index
+GET  /perfiles                 → PerfilesController@index
+GET  /modulos                  → ModulosController@index
+GET  /reportes                 → ReportesController@index
 ```
 
 ---
@@ -332,22 +413,30 @@ GET  /admin/reportes     → ReportesController@index
 ## 📊 **Estado de Implementación**
 
 ### ✅ **Completado**
-- Estructura base de todos los controladores
-- Integración con el sistema de autenticación
-- Patrones MVC implementados
-- Controladores para todas las entidades del sistema
+- ✅ Estructura base de todos los controladores (32 controladores activos)
+- ✅ Integración completa con el sistema de autenticación
+- ✅ Patrones MVC implementados consistentemente
+- ✅ Controladores para todas las entidades del sistema
+- ✅ Sistema de reservas online completo con flujo de pago
+- ✅ Sistema multimodal de consumos (Admin, Huésped, Totem)
+- ✅ Sistema de reportes con 6 reportes ejecutivos
+- ✅ Gestión de perfiles y permisos
+- ✅ Control de acceso por roles (Público, Huésped, Admin)
+- ✅ Exportación a Excel y PDF en módulos principales
 
-### ⏳ **Pendiente de Actualización**
-- Migración de rutas de vistas a nueva estructura
-- Implementación completa del sistema de reservas online
-- Optimización de consultas y cachés
-- Tests unitarios para controladores
+### 🎯 **En Producción**
+- Sistema de verificación de email
+- Dashboard contextual por perfil de usuario
+- Proceso completo de check-in/check-out
+- Gestión de inventario y revisiones
+- Sistema de comentarios con moderación
 
-### 🚨 **Próximas Tareas Críticas**
-1. **Actualizar rutas de vistas** en controladores para nueva estructura
-2. **Implementar ReservasController** completo para sistema online
-3. **Validar permisos** por módulo en cada controlador
-4. **Optimizar consultas** y implementar paginación
+### 🔄 **Optimizaciones Continuas**
+- Optimización de consultas en listados grandes
+- Implementación de caché para reportes
+- Mejoras en validaciones de negocio
+- Refactorización de código duplicado
+- Tests unitarios para controladores críticos
 
 ---
 
@@ -362,5 +451,5 @@ GET  /admin/reportes     → ReportesController@index
 
 ---
 
-*Documentación actualizada el 12/10/2025 - Casa de Palos Cabañas*
+*Documentación actualizada el 14/11/2025 - Casa de Palos Cabañas*
 *Sistema de Gestión Integral de Cabañas - SIRCA*

@@ -4,7 +4,7 @@ Este directorio contiene el núcleo del framework MVC personalizado para el Sist
 
 ## 🏗️ **Arquitectura del Core Framework**
 
-### 📁 **Componentes del Framework (11 archivos)**
+### 📁 **Componentes del Framework (12 archivos)**
 
 #### **🚀 Clases Principales del Framework**
 
@@ -45,24 +45,30 @@ Este directorio contiene el núcleo del framework MVC personalizado para el Sist
    - Validación de permisos por perfil
    - Control de acceso a módulos
 
-8. **`Validator.php`** - Sistema de validación
+8. **`EmailService.php`** - Servicio de envío de emails
+   - Integración con PHPMailer
+   - Envío de emails transaccionales
+   - Verificación de cuentas y recuperación de contraseñas
+   - Templates HTML personalizables
+
+9. **`Validator.php`** - Sistema de validación
    - Validación de formularios
    - Reglas de validación personalizables
    - Mensajes de error localizados
 
-9. **`Autoloader.php`** - Carga automática de clases
-   - Implementación PSR-4
-   - Mapeo de namespaces
-   - Carga bajo demanda de clases
+10. **`Autoloader.php`** - Carga automática de clases
+    - Implementación PSR-4
+    - Mapeo de namespaces
+    - Carga bajo demanda de clases
 
 #### **⚙️ Archivos de Configuración y Utilidades**
 
-10. **`config.php`** - Configuración central del sistema
+11. **`config.php`** - Configuración central del sistema
     - Parámetros de base de datos
     - Configuraciones de ambiente
     - Constantes del sistema
 
-11. **`helpers.php`** - Funciones auxiliares globales
+12. **`helpers.php`** - Funciones auxiliares globales
     - Utilidades para vistas
     - Helpers para debugging
     - Funciones de conveniencia
@@ -634,28 +640,34 @@ function array_get($array, $key, $default = null)
 ## 📊 **Estado del Framework**
 
 ### ✅ **Completado y Funcional**
-- Arquitectura MVC completa
-- Sistema de enrutamiento
-- Autenticación y autorización
-- Conexión a base de datos
-- Sistema de vistas con layouts
-- Validación de datos
-- Manejo de errores
-- Carga automática de clases
+- ✅ Arquitectura MVC completa con 12 componentes core
+- ✅ Sistema de enrutamiento con soporte para parámetros dinámicos
+- ✅ Autenticación y autorización por perfiles
+- ✅ Conexión a base de datos con patrón Singleton
+- ✅ Sistema de vistas con layouts organizados
+- ✅ Validación de datos en formularios
+- ✅ Manejo de errores y excepciones
+- ✅ Carga automática de clases (PSR-4)
+- ✅ Servicio de email con PHPMailer integrado
+- ✅ Sistema de verificación de email
+- ✅ Helpers globales para desarrollo
+- ✅ Configuración centralizada por ambiente
 
-### ⏳ **En Desarrollo**
-- Cache system
-- Queue management  
-- Event broadcasting
-- CLI commands
-- Testing framework
+### 🎯 **En Producción**
+- Sistema de reservas online completo
+- Dashboards contextuales por perfil de usuario
+- Exportación a Excel y PDF
+- Sistema multimodal de consumos (Admin, Huésped, Totem)
+- Gestión integral de cabañas, huéspedes y productos
+- Sistema de reportes ejecutivos
 
-### 🚀 **Próximas Mejoras**
-- **Performance**: Implementar sistema de caché
+### 🔄 **Optimizaciones Continuas**
+- **Performance**: Sistema de caché para consultas frecuentes
 - **Testing**: Framework de pruebas unitarias
-- **CLI**: Comandos de consola para mantenimiento
+- **CLI**: Comandos de consola para tareas administrativas
 - **Events**: Sistema de eventos y listeners
 - **Middleware**: Pipeline de middleware para requests
+- **API REST**: Endpoints para integración con apps móviles
 
 ---
 
@@ -733,15 +745,15 @@ El sistema implementa **17 rutas** para los 3 módulos de consumos:
 
 #### **Módulo Admin (Operaciones)**
 ```php
-GET  /admin/consumos              → ConsumosController@index (listado)
-GET  /admin/consumos/create       → ConsumosController@create (formulario múltiple)
-POST /admin/consumos/store        → ConsumosController@store (guardar batch)
-GET  /admin/consumos/{id}         → ConsumosController@show (detalle)
-GET  /admin/consumos/{id}/edit    → ConsumosController@edit
-POST /admin/consumos/{id}/update  → ConsumosController@update
-POST /admin/consumos/{id}/delete  → ConsumosController@delete
-GET  /admin/consumos/exportar     → ConsumosController@exportar (Excel)
-GET  /admin/consumos/exportar-pdf → ConsumosController@exportarPdf
+GET  /consumos                    → ConsumosController@index (listado)
+GET  /consumos/create             → ConsumosController@create (formulario múltiple)
+POST /consumos/create             → ConsumosController@create (guardar batch)
+GET  /consumos/{id}               → ConsumosController@show (detalle)
+GET  /consumos/{id}/edit          → ConsumosController@edit
+POST /consumos/{id}/edit          → ConsumosController@update
+GET  /consumos/{id}/delete        → ConsumosController@delete
+GET  /consumos/exportar           → ConsumosController@exportar (Excel)
+GET  /consumos/exportar-pdf       → ConsumosController@exportarPdf
 ```
 
 #### **Módulo Huésped (Self-Service)**
@@ -750,21 +762,21 @@ GET  /huesped/consumos                → HuespedConsumosController@index
 GET  /huesped/consumos/solicitar      → HuespedConsumosController@solicitar
 POST /huesped/consumos/solicitar      → HuespedConsumosController@solicitar
 GET  /huesped/consumos/{id}/edit      → HuespedConsumosController@edit
-POST /huesped/consumos/{id}/update    → HuespedConsumosController@update
+POST /huesped/consumos/{id}/edit      → HuespedConsumosController@update
 POST /huesped/consumos/{id}/delete    → HuespedConsumosController@delete
 GET  /huesped/consumos/{id}           → HuespedConsumosController@show
 ```
 
 #### **Módulo Totem (Sin Autenticación)**
 ```php
-GET  /totem/consumos                  → TotemConsumosController@index
-GET  /totem/consumos/configurar       → TotemConsumosController@configurar
-POST /totem/consumos/configurar       → TotemConsumosController@configurar
-GET  /totem/consumos/menu             → TotemConsumosController@menu
-POST /totem/consumos/pedido           → TotemConsumosController@pedido (AJAX)
-GET  /totem/consumos/historial        → TotemConsumosController@historial
-GET  /totem/consumos/reset            → TotemConsumosController@reset
-GET  /totem/consumos/precio/{id}      → TotemConsumosController@getPrecioProducto (API)
+GET  /totem                       → TotemConsumosController@index
+POST /totem/configurar            → TotemConsumosController@configurar
+GET  /totem/menu                  → TotemConsumosController@menu
+GET  /totem/solicitar             → TotemConsumosController@solicitar
+POST /totem/pedido                → TotemConsumosController@pedido (AJAX)
+GET  /totem/historial             → TotemConsumosController@historial
+GET  /totem/reset                 → TotemConsumosController@reset
+GET  /totem/producto/{id}/precio  → TotemConsumosController@getPrecioProducto (API)
 ```
 
 ### **Características del Sistema de Rutas**
@@ -799,5 +811,5 @@ GET  /totem/consumos/precio/{id}      → TotemConsumosController@getPrecioProdu
 
 ---
 
-*Framework Core documentado el 12/10/2025 - Casa de Palos Cabañas*
-*Arquitectura MVC personalizada con 13 componentes integrados*
+*Framework Core documentado el 14/11/2025 - Casa de Palos Cabañas*
+*Arquitectura MVC personalizada con 12 componentes core integrados*

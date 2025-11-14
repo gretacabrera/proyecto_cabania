@@ -12,15 +12,17 @@ Los modelos están organizados por entidades de negocio y siguen una nomenclatur
 - **Nomenclatura**: PascalCase, singular (ej: `Usuario`, `Reserva`)
 - **Convenciones**: Propiedades protegidas, métodos públicos
 
-### 📋 **Inventario Completo de Modelos (25 modelos)**
+### 📋 **Inventario Completo de Modelos (28 modelos)**
 
 #### **🏠 Modelos de Alojamiento y Reservas**
 Modelos para la gestión del negocio principal:
 
 - **`Cabania.php`** - Gestión de cabañas del complejo
 - **`Reserva.php`** - Reservas de huéspedes (online y presenciales)
+- **`Huesped.php`** - Relación huésped-reserva con datos específicos
 - **`Ingreso.php`** - Registros de check-in de huéspedes
 - **`Salida.php`** - Registros de check-out de huéspedes
+- **`Revision.php`** - Revisiones de inventario por reserva
 - **`Comentario.php`** - Comentarios y feedback de huéspedes
 
 #### **👥 Modelos de Personas y Usuarios**
@@ -34,14 +36,20 @@ Modelos para la gestión comercial:
 
 - **`Producto.php`** - Productos vendibles (consumibles, souvenirs)
 - **`Servicio.php`** - Servicios ofrecidos (spa, tours, restaurante)
-- **`Consumo.php`** - **ACTUALIZADO**: Consumos realizados por huéspedes con soporte multimodal
+- **`Consumo.php`** - Consumos realizados por huéspedes con soporte multimodal
+- **`Inventario.php`** - Control de inventario por cabaña
+- **`CostoDanio.php`** - Registro de costos por daños
+- **`NivelDanio.php`** - Niveles de daño (leve, moderado, grave)
 - **`Categoria.php`** - Categorías de productos
 - **`Marca.php`** - Marcas de productos
 
 #### **💳 Modelos Financieros**
-Modelos para gestión de pagos y métodos:
+Modelos para gestión de pagos y facturación:
 
 - **`MetodoPago.php`** - Métodos de pago disponibles
+- **`Pago.php`** - Registros de pagos realizados
+- **`Factura.php`** - Facturas generadas
+- **`FacturaDetalle.php`** - Detalles de items en facturas
 
 #### **📊 Modelos de Estados y Configuración**
 Modelos para configuración del sistema:
@@ -57,6 +65,7 @@ Modelos para gestión de contactos:
 
 - **`TipoContacto.php`** - Tipos de contacto (teléfono, email, etc.)
 - **`TipoServicio.php`** - Tipos de servicios ofrecidos
+- **`Contacto.php`** - Registro de contactos de personas
 
 #### **🔐 Modelos de Seguridad y Permisos**
 Modelos para el sistema de autenticación y autorización:
@@ -826,25 +835,30 @@ public function toArray()
 ## 📊 **Estado de Implementación**
 
 ### ✅ **Completado**
-- **25 modelos** implementados y funcionales
-- Relaciones entre modelos establecidas
-- Operaciones CRUD básicas
-- Validaciones de datos
-- Métodos específicos por modelo
-- Integración con base de datos
+- ✅ **28 modelos** implementados y funcionales
+- ✅ Relaciones entre modelos establecidas (35+ relaciones)
+- ✅ Operaciones CRUD básicas en todos los modelos
+- ✅ Validaciones de datos por modelo
+- ✅ Métodos específicos y consultas optimizadas
+- ✅ Integración completa con base de datos
+- ✅ Sistema multimodal de consumos (Admin, Huésped, Totem)
+- ✅ Soporte transaccional para operaciones críticas
+- ✅ Métodos de exportación (Excel, PDF)
+- ✅ Paginación optimizada con filtros
 
-### ⏳ **En Desarrollo**
-- Cachés de consultas frecuentes
-- Optimización de consultas complejas
-- Eventos de modelo (creating, created, etc.)
-- Scopes globales y locales
+### 🎯 **En Producción**
+- Sistema de facturación completo
+- Gestión de inventario por cabaña
+- Control de daños y costos asociados
+- Revisiones de check-in/check-out
+- Reportes ejecutivos con agregaciones
 
-### 🚀 **Próximas Mejoras**
-- **Performance**: Implementar eager loading para relaciones
-- **Validation**: Expandir sistema de validaciones
-- **Events**: Sistema de eventos para modelos
-- **Caching**: Cache inteligente de consultas
-- **Observers**: Observadores para auditoría
+### 🔄 **Optimizaciones Continuas**
+- **Performance**: Eager loading para relaciones frecuentes
+- **Validation**: Reglas de validación personalizadas
+- **Caching**: Cache inteligente de consultas complejas
+- **Events**: Observadores para auditoría automática
+- **Testing**: Pruebas unitarias de modelos críticos
 
 ---
 
@@ -905,24 +919,25 @@ $reservaCompleta = $reserva->crearReservaCompleta($datosReserva, $servicios);
 ## 📈 **Métricas del Sistema de Modelos**
 
 ### **Distribución por Categoría**
-- **🏠 Alojamiento y Reservas**: 5 modelos (20%)
-- **👥 Personas y Usuarios**: 2 modelos (8%)
-- **🛍️ Comercial**: 6 modelos (24%)
-- **💳 Financiero**: 1 modelo (4%)
-- **📊 Configuración**: 7 modelos (28%)
-- **📞 Contacto**: 2 modelos (8%)
-- **🔐 Seguridad**: 4 modelos (16%)
+- **🏠 Alojamiento y Reservas**: 7 modelos (25%)
+- **👥 Personas y Usuarios**: 2 modelos (7%)
+- **🛍️ Comercial**: 8 modelos (29%)
+- **💳 Financiero**: 4 modelos (14%)
+- **📊 Configuración**: 5 modelos (18%)
+- **📞 Contacto**: 3 modelos (11%)
+- **🔐 Seguridad**: 4 modelos (14%)
 - **📈 Reportes**: 1 modelo (4%)
 
 ### **Complejidad por Modelo**
-- **Alta Complejidad** (8 modelos): Reserva, Cabania, Usuario, Producto, Servicio
-- **Media Complejidad** (12 modelos): Estados, Consumo, Perfil, etc.
-- **Baja Complejidad** (5 modelos): Categoria, Marca, TipoContacto, etc.
+- **Alta Complejidad** (10 modelos): Reserva, Cabania, Usuario, Producto, Servicio, Consumo, Factura, Revision, Huesped, Inventario
+- **Media Complejidad** (13 modelos): Estados, Perfil, Pago, CostoDanio, Ingreso, Salida, etc.
+- **Baja Complejidad** (5 modelos): Categoria, Marca, TipoContacto, TipoServicio, NivelDanio
 
 ### **Relaciones Implementadas**
-- **hasMany (1:N)**: 15 relaciones establecidas
-- **belongsTo (N:1)**: 20 relaciones establecidas  
-- **belongsToMany (N:N)**: 3 relaciones (huesped_reserva, etc.)
+- **hasMany (1:N)**: 18 relaciones establecidas
+- **belongsTo (N:1)**: 25 relaciones establecidas  
+- **belongsToMany (N:N)**: 4 relaciones (perfil_modulo, huesped_reserva, etc.)
+- **Total**: 47 relaciones entre modelos
 
 ---
 
@@ -940,5 +955,5 @@ $reservaCompleta = $reserva->crearReservaCompleta($datosReserva, $servicios);
 
 ---
 
-*Modelos documentados el 12/10/2025 - Casa de Palos Cabañas*  
-*25 modelos implementados con Active Record y relaciones complejas*
+*Modelos documentados el 14/11/2025 - Casa de Palos Cabañas*  
+*28 modelos implementados con Active Record y 47 relaciones establecidas*
