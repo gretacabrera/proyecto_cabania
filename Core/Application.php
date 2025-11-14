@@ -419,6 +419,10 @@ class Application
         // Rutas de consumos para huéspedes (Público)
         $this->router->get('/huesped/consumos', 'HuespedConsumosController@index');
         $this->router->any('/huesped/consumos/solicitar', 'HuespedConsumosController@solicitar');
+        $this->router->get('/huesped/consumos/api/categorias', 'HuespedConsumosController@getCategorias');
+        $this->router->get('/huesped/consumos/api/tipos-servicio', 'HuespedConsumosController@getTiposServicio');
+        $this->router->get('/huesped/consumos/api/productos/{categoriaId}', 'HuespedConsumosController@getProductosPorCategoria');
+        $this->router->get('/huesped/consumos/api/servicios/{tipoId}', 'HuespedConsumosController@getServiciosPorTipo');
         $this->router->get('/huesped/consumos/{id}', 'HuespedConsumosController@show');
         $this->router->any('/huesped/consumos/{id}/edit', 'HuespedConsumosController@edit');
         $this->router->post('/huesped/consumos/{id}/delete', 'HuespedConsumosController@delete');

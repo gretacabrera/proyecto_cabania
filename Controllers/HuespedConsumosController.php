@@ -39,24 +39,13 @@ class HuespedConsumosController extends Controller
             return;
         }
         
-        // Obtener IDs de reservas del usuario
-        $reservasIds = $this->consumoModel->getReservasUsuario($userId);
-        
-        // Obtener reservas completas con detalles
-        $reservas = [];
-        if (!empty($reservasIds)) {
-            foreach ($reservasIds as $id) {
-                $reserva = $this->reservaModel->find($id);
-                if ($reserva) {
-                    $reservas[] = $reserva;
-                }
-            }
-        }
+        // Obtener reservas completas del usuario con todos los detalles
+        $reservas = $this->consumoModel->getReservasUsuario($userId);
         
         // Obtener ID de reserva seleccionada o la más reciente
         $reservaId = $this->get('reserva_id');
-        if (!$reservaId && !empty($reservasIds)) {
-            $reservaId = $reservasIds[0];
+        if (!$reservaId && !empty($reservas)) {
+            $reservaId = $reservas[0]['id_reserva'];
         }
         
         // Obtener consumos de la reserva
@@ -65,8 +54,8 @@ class HuespedConsumosController extends Controller
         if ($reservaId) {
             $consumos = $this->consumoModel->getConsumosByReservaWithDetails($reservaId);
             foreach ($consumos as $consumo) {
-                $subtotal = floatval($consumo['consumo_cantidad']) * floatval($consumo['consumo_precio']);
-                $totalConsumos += $subtotal;
+                // El total ya viene calculado en consumo_total
+                $totalConsumos += floatval($consumo['consumo_total']);
             }
         }
         
@@ -99,48 +88,47 @@ class HuespedConsumosController extends Controller
             return;
         }
 
+        // Obtener reserva actual del usuario
+        $reservaActual = $this->consumoModel->getReservaActualUsuario($userId);
+        if (!$reservaActual) {
+            $this->redirect('/huesped/consumos', 'No tiene una reserva confirmada disponible para solicitar consumos', 'warning');
+            return;
+        }
+
         if ($this->isPost()) {
-            $reservaId = $this->post('reserva_id');
-            $productosIds = $this->post('productos', []);
-            $cantidades = $this->post('cantidades', []);
+            // Recibir carrito de consumos
+            $carrito = json_decode($this->post('carrito', '[]'), true);
             
-            // Verificar que la reserva pertenece al usuario
-            $reservasUsuario = $this->consumoModel->getReservasUsuario($userId);
-            if (!in_array($reservaId, $reservasUsuario)) {
-                $this->redirect('/huesped/consumos', 'No tiene permiso para solicitar consumos en esta reserva', 'error');
+            if (empty($carrito)) {
+                $this->redirect('/huesped/consumos/solicitar', 'El carrito está vacío', 'error');
                 return;
             }
             
-            // Validar datos básicos
-            if (empty($reservaId) || empty($productosIds)) {
-                $this->redirect('/huesped/consumos/solicitar', 'Debe seleccionar una reserva y al menos un producto', 'error');
-                return;
-            }
-            
-            // Preparar array de consumos
+            // Preparar array de consumos desde el carrito
             $consumosData = [];
-            $db = \App\Core\Database::getInstance();
             
-            foreach ($productosIds as $index => $productoId) {
-                if (empty($productoId)) continue;
+            foreach ($carrito as $item) {
+                if (empty($item['id']) || empty($item['tipo']) || empty($item['cantidad'])) continue;
                 
-                $cantidad = floatval($cantidades[$index] ?? 1);
+                $cantidad = floatval($item['cantidad']);
                 if ($cantidad <= 0) continue;
                 
-                // Obtener precio del producto
-                $stmt = $db->prepare("SELECT * FROM producto WHERE id_producto = ?");
-                $stmt->bind_param("i", $productoId);
-                $stmt->execute();
-                $producto = $stmt->get_result()->fetch_assoc();
-                if (!$producto) continue;
-                
-                $consumosData[] = [
-                    'rela_reserva' => $reservaId,
-                    'rela_producto' => $productoId,
-                    'consumo_descripcion' => 'Producto: ' . $producto['producto_nombre'],
-                    'consumo_cantidad' => $cantidad,
-                    'consumo_precio' => $producto['producto_precio']
+                $consumoData = [
+                    'rela_reserva' => $reservaActual['id_reserva'],
+                    'consumo_cantidad' => $cantidad
                 ];
+                
+                if ($item['tipo'] === 'producto') {
+                    $consumoData['rela_producto'] = $item['id'];
+                    $consumoData['rela_servicio'] = null;
+                    $consumoData['consumo_descripcion'] = $item['nombre'];
+                } else {
+                    $consumoData['rela_servicio'] = $item['id'];
+                    $consumoData['rela_producto'] = null;
+                    $consumoData['consumo_descripcion'] = $item['nombre'];
+                }
+                
+                $consumosData[] = $consumoData;
             }
             
             if (empty($consumosData)) {
@@ -159,25 +147,9 @@ class HuespedConsumosController extends Controller
             return;
         }
 
-        // Obtener IDs de reservas del usuario y luego los datos completos
-        $reservasIds = $this->consumoModel->getReservasUsuario($userId);
-        $reservas = [];
-        if (!empty($reservasIds)) {
-            foreach ($reservasIds as $id) {
-                $reserva = $this->reservaModel->find($id);
-                if ($reserva) {
-                    $reservas[] = $reserva;
-                }
-            }
-        }
-        $productos = $this->consumoModel->getProductosDisponibles();
-        $servicios = $this->consumoModel->getServiciosDisponibles();
-
         $data = [
             'title' => 'Solicitar Consumos',
-            'reservas' => $reservas,
-            'productos' => $productos,
-            'servicios' => $servicios,
+            'reserva' => $reservaActual,
             'isPublicArea' => true
         ];
 
@@ -209,7 +181,9 @@ class HuespedConsumosController extends Controller
         
         // Verificar que el consumo pertenece a una reserva del usuario
         $reservasUsuario = $this->consumoModel->getReservasUsuario($userId);
-        if (!in_array($consumo['rela_reserva'], $reservasUsuario)) {
+        $reservaIds = array_column($reservasUsuario, 'id_reserva');
+        
+        if (!in_array($consumo['rela_reserva'], $reservaIds)) {
             $this->redirect('/huesped/consumos', 'No tiene permiso para editar este consumo', 'error');
             return;
         }
@@ -267,7 +241,9 @@ class HuespedConsumosController extends Controller
         
         // Verificar que el consumo pertenece a una reserva del usuario
         $reservasUsuario = $this->consumoModel->getReservasUsuario($userId);
-        if (!in_array($consumo['rela_reserva'], $reservasUsuario)) {
+        $reservaIds = array_column($reservasUsuario, 'id_reserva');
+        
+        if (!in_array($consumo['rela_reserva'], $reservaIds)) {
             return $this->json(['success' => false, 'message' => 'No tiene permiso para eliminar este consumo'], 403);
         }
         
@@ -295,17 +271,22 @@ class HuespedConsumosController extends Controller
             return;
         }
 
-        // Obtener consumo con detalles
+        // Obtener consumo con detalles completos
         $db = \App\Core\Database::getInstance();
         $stmt = $db->prepare("
             SELECT c.*, 
-                   COALESCE(p.producto_nombre, s.servicio_nombre) as item_nombre,
-                   COALESCE(p.producto_foto, 'default.jpg') as item_foto,
-                   r.reserva_fechainicio, r.reserva_fechafin
+                   p.producto_nombre, p.producto_foto, p.producto_precio,
+                   s.servicio_descripcion, s.servicio_precio,
+                   COALESCE(p.producto_nombre, s.servicio_descripcion) as item_nombre,
+                   COALESCE(p.producto_precio, s.servicio_precio) as item_precio,
+                   COALESCE(p.producto_foto, NULL) as producto_foto,
+                   r.reserva_fhinicio, r.reserva_fhfin, r.id_reserva,
+                   cab.cabania_nombre, cab.cabania_codigo
             FROM consumo c
             LEFT JOIN producto p ON c.rela_producto = p.id_producto
             LEFT JOIN servicio s ON c.rela_servicio = s.id_servicio
             LEFT JOIN reserva r ON c.rela_reserva = r.id_reserva
+            LEFT JOIN cabania cab ON r.rela_cabania = cab.id_cabania
             WHERE c.id_consumo = ?
         ");
         $stmt->bind_param("i", $id);
@@ -319,7 +300,9 @@ class HuespedConsumosController extends Controller
         
         // Verificar que el consumo pertenece a una reserva del usuario
         $reservasUsuario = $this->consumoModel->getReservasUsuario($userId);
-        if (!in_array($consumo['rela_reserva'], $reservasUsuario)) {
+        $reservaIds = array_column($reservasUsuario, 'id_reserva');
+        
+        if (!in_array($consumo['rela_reserva'], $reservaIds)) {
             $this->redirect('/huesped/consumos', 'No tiene permiso para ver este consumo', 'error');
             return;
         }
@@ -331,5 +314,69 @@ class HuespedConsumosController extends Controller
         ];
 
         return $this->render('public/consumos/detalle', $data, 'main');
+    }
+
+    /**
+     * API: Obtener categorías de productos
+     */
+    public function getCategorias()
+    {
+        header('Content-Type: application/json');
+        
+        if (!\App\Core\Auth::check()) {
+            echo json_encode(['success' => false, 'message' => 'No autenticado']);
+            return;
+        }
+        
+        $categorias = $this->consumoModel->getCategorias();
+        echo json_encode(['success' => true, 'data' => $categorias]);
+    }
+
+    /**
+     * API: Obtener tipos de servicio
+     */
+    public function getTiposServicio()
+    {
+        header('Content-Type: application/json');
+        
+        if (!\App\Core\Auth::check()) {
+            echo json_encode(['success' => false, 'message' => 'No autenticado']);
+            return;
+        }
+        
+        $tipos = $this->consumoModel->getTiposServicio();
+        echo json_encode(['success' => true, 'data' => $tipos]);
+    }
+
+    /**
+     * API: Obtener productos por categoría
+     */
+    public function getProductosPorCategoria($categoriaId)
+    {
+        header('Content-Type: application/json');
+        
+        if (!\App\Core\Auth::check()) {
+            echo json_encode(['success' => false, 'message' => 'No autenticado']);
+            return;
+        }
+        
+        $productos = $this->consumoModel->getProductosPorCategoria($categoriaId);
+        echo json_encode(['success' => true, 'data' => $productos]);
+    }
+
+    /**
+     * API: Obtener servicios por tipo
+     */
+    public function getServiciosPorTipo($tipoId)
+    {
+        header('Content-Type: application/json');
+        
+        if (!\App\Core\Auth::check()) {
+            echo json_encode(['success' => false, 'message' => 'No autenticado']);
+            return;
+        }
+        
+        $servicios = $this->consumoModel->getServiciosPorTipo($tipoId);
+        echo json_encode(['success' => true, 'data' => $servicios]);
     }
 }

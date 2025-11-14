@@ -36,7 +36,7 @@ if (session_status() == PHP_SESSION_NONE) {
         <div class="collapse navbar-collapse" id="navbarNav">
             <!-- Enlaces principales (derecha) -->
             <ul class="navbar-nav ml-auto">
-                <!-- Catálogo solo para usuarios no autenticados -->
+                <!-- Catálogo para usuarios no autenticados y huéspedes -->
                 <?php if (!Auth::check()): ?>
                 <li class="nav-item">
                     <a class="nav-link" href="<?= $this->url('/catalogo') ?>">Catálogo</a>
@@ -45,6 +45,30 @@ if (session_status() == PHP_SESSION_NONE) {
 
                 <!-- Módulos del usuario autenticado organizados por menú -->
                 <?php if (Auth::check()): ?>
+                    <?php 
+                    // Menú específico para perfil huésped
+                    $userProfile = strtolower(Auth::getUserProfile() ?? '');
+                    if ($userProfile === 'huesped'): 
+                    ?>
+                        <li class="nav-item">
+                            <a class="nav-link" href="<?= $this->url('/catalogo') ?>">Catálogo</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="<?= $this->url('/reservas') ?>">Reservas</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="<?= $this->url('/huesped/consumos') ?>">Consumos</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="<?= $this->url('/ingresos') ?>">Ingresos</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="<?= $this->url('/salidas') ?>">Salidas</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="<?= $this->url('/comentarios') ?>">Comentarios</a>
+                        </li>
+                    <?php else: ?>
                     <?php 
                     $userModules = Auth::getUserModules();
                     $groupedModules = [];
@@ -95,7 +119,8 @@ if (session_status() == PHP_SESSION_NONE) {
                             </li>
                         <?php endif; ?>
                     <?php endforeach; ?>
-                <?php endif; ?>
+                    <?php endif; // Fin del else del perfil huésped ?>
+                <?php endif; // Fin del Auth::check() ?>
             </ul>
 
             <!-- Enlaces de usuario (derecha) -->

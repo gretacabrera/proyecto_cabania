@@ -589,7 +589,7 @@ class Consumo extends Model
                 FROM producto p
                 LEFT JOIN categoria c ON p.rela_categoria = c.id_categoria
                 LEFT JOIN marca m ON p.rela_marca = m.id_marca
-                WHERE p.producto_estado = 1
+                WHERE p.rela_estadoproducto = 1
                 AND p.producto_stock > 0
                 ORDER BY p.producto_nombre";
         
@@ -629,20 +629,20 @@ class Consumo extends Model
      */
     public function getReservasUsuario($userId)
     {
-        $sql = "SELECT r.*, c.cabania_nombre, c.cabania_codigo,
-                       er.estadoreserva_descripcion
-                FROM reserva r
-                LEFT JOIN cabania c ON r.rela_cabania = c.id_cabania
-                LEFT JOIN estadoreserva er ON r.rela_estadoreserva = er.id_estadoreserva
-                LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
-                LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
-                LEFT JOIN persona p ON h.rela_persona = p.id_persona
-                LEFT JOIN usuario u ON p.id_persona = u.rela_persona
+        $sql = "SELECT DISTINCT r.*, cab.cabania_nombre, cab.cabania_codigo
+                FROM usuario u
+                INNER JOIN persona p ON u.rela_persona = p.id_persona
+                INNER JOIN huesped h ON p.id_persona = h.rela_persona
+                INNER JOIN huesped_reserva hr ON h.id_huesped = hr.rela_huesped
+                INNER JOIN reserva r ON hr.rela_reserva = r.id_reserva
+                INNER JOIN cabania cab ON r.rela_cabania = cab.id_cabania
                 WHERE u.id_usuario = ?
-                AND r.rela_estadoreserva IN (1, 2, 3)
                 ORDER BY r.reserva_fhinicio DESC";
         
-        $result = $this->query($sql, [$userId]);
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param("i", $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
         
         $reservas = [];
         while ($row = $result->fetch_assoc()) {
@@ -650,6 +650,124 @@ class Consumo extends Model
         }
         
         return $reservas;
+    }
+
+    /**
+     * Obtener reserva actual (en curso) del usuario
+     * Permite reservas confirmadas aunque no hayan comenzado
+     */
+    public function getReservaActualUsuario($userId)
+    {
+        $sql = "SELECT r.*, cab.cabania_nombre, cab.cabania_codigo,
+                       er.estadoreserva_descripcion
+                FROM usuario u
+                INNER JOIN persona p ON u.rela_persona = p.id_persona
+                INNER JOIN huesped h ON p.id_persona = h.rela_persona
+                INNER JOIN huesped_reserva hr ON h.id_huesped = hr.rela_huesped
+                INNER JOIN reserva r ON hr.rela_reserva = r.id_reserva
+                INNER JOIN cabania cab ON r.rela_cabania = cab.id_cabania
+                LEFT JOIN estadoreserva er ON r.rela_estadoreserva = er.id_estadoreserva
+                WHERE u.id_usuario = ?
+                AND r.reserva_fhfin >= NOW()
+                AND r.rela_estadoreserva IN (2, 3)
+                ORDER BY r.reserva_fhinicio ASC
+                LIMIT 1";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param("i", $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        return $result->fetch_assoc();
+    }
+
+    /**
+     * Obtener categorías activas que tengan productos con stock
+     */
+    public function getCategorias()
+    {
+        $sql = "SELECT DISTINCT c.* 
+                FROM categoria c
+                INNER JOIN producto p ON c.id_categoria = p.rela_categoria
+                WHERE c.categoria_estado = 1 
+                AND p.rela_estadoproducto = 1
+                AND p.producto_stock > 0
+                ORDER BY c.categoria_descripcion";
+        
+        $result = $this->db->query($sql);
+        
+        $categorias = [];
+        while ($row = $result->fetch_assoc()) {
+            $categorias[] = $row;
+        }
+        
+        return $categorias;
+    }
+
+    /**
+     * Obtener tipos de servicio activos que tengan servicios disponibles
+     */
+    public function getTiposServicio()
+    {
+        $sql = "SELECT DISTINCT ts.* 
+                FROM tiposervicio ts
+                INNER JOIN servicio s ON ts.id_tiposervicio = s.rela_tiposervicio
+                WHERE ts.tiposervicio_estado = 1 
+                AND s.servicio_estado = 1
+                ORDER BY ts.tiposervicio_descripcion";
+        
+        $result = $this->db->query($sql);
+        
+        $tipos = [];
+        while ($row = $result->fetch_assoc()) {
+            $tipos[] = $row;
+        }
+        
+        return $tipos;
+    }
+
+    /**
+     * Obtener productos por categoría
+     */
+    public function getProductosPorCategoria($categoriaId)
+    {
+        $sql = "SELECT p.*, m.marca_descripcion
+                FROM producto p
+                LEFT JOIN marca m ON p.rela_marca = m.id_marca
+                WHERE p.rela_categoria = ?
+                AND p.rela_estadoproducto = 1
+                AND p.producto_stock > 0
+                ORDER BY p.producto_nombre";
+        
+        $result = $this->query($sql, [(int)$categoriaId]);
+        
+        $productos = [];
+        while ($row = $result->fetch_assoc()) {
+            $productos[] = $row;
+        }
+        
+        return $productos;
+    }
+
+    /**
+     * Obtener servicios por tipo
+     */
+    public function getServiciosPorTipo($tipoId)
+    {
+        $sql = "SELECT s.*
+                FROM servicio s
+                WHERE s.rela_tiposervicio = ?
+                AND s.servicio_estado = 1
+                ORDER BY s.servicio_descripcion";
+        
+        $result = $this->query($sql, [(int)$tipoId]);
+        
+        $servicios = [];
+        while ($row = $result->fetch_assoc()) {
+            $servicios[] = $row;
+        }
+        
+        return $servicios;
     }
 
     /**

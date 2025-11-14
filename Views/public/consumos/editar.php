@@ -1,9 +1,4 @@
-<?php
-$this->extend('layouts/main');
-$this->section('title', $title);
-$this->section('content');
-?>
-
+<!-- Vista de edición de consumo del huésped -->
 <div class="container py-4">
     <div class="row justify-content-center">
         <div class="col-md-8">
@@ -131,5 +126,3 @@ btnDecrementar.addEventListener('click', function() {
 
 inputCantidad.addEventListener('input', actualizarSubtotal);
 </script>
-
-<?php $this->endSection(); ?>

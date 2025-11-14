@@ -1,256 +1,823 @@
-<?php
-$this->extend('layouts/main');
-$this->section('title', $title);
-$this->section('content');
-?>
-
-<div class="container py-4">
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-header bg-success text-white">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">
-                            <i class="fas fa-plus-circle me-2"></i><?= $title ?>
-                        </h5>
-                        <a href="<?= url('/huesped/consumos') ?>" class="btn btn-light btn-sm">
-                            <i class="fas fa-arrow-left"></i> Volver
+<!-- Vista de solicitud de consumos del huésped - Componente unificado -->
+<div class="container-fluid" style="height: 100vh; overflow: hidden; padding: 1rem;">
+    <div style="height: 100%; display: flex; flex-direction: column;">
+        <!-- Card unificada -->
+        <div class="card" style="height: 700px; max-height: 90vh;">
+            <!-- Header global del componente -->
+            <div class="card-header bg-white border-bottom">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <a href="<?= url('/huesped/consumos') ?>" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i>
                         </a>
+                        <h5 class="mb-0">Solicitar Consumos</h5>
+                    </div>
+                    <div class="text-muted small">
+                        <strong>Cabaña:</strong> <?= htmlspecialchars($reserva['cabania_nombre']) ?> | 
+                        <strong>Estadía:</strong> 
+                        <?= date('d/m/Y', strtotime($reserva['reserva_fhinicio'])) ?> - 
+                        <?= date('d/m/Y', strtotime($reserva['reserva_fhfin'])) ?>
                     </div>
                 </div>
-
-                <div class="card-body">
-                    <form method="POST" id="formSolicitarConsumos">
-                        <!-- Selección de Reserva -->
-                        <div class="row mb-4">
-                            <div class="col-md-12">
-                                <label for="reserva_id" class="form-label fw-bold">
-                                    <i class="fas fa-calendar-check text-primary"></i> Mi Reserva
-                                    <span class="text-danger">*</span>
-                                </label>
-                                <select name="reserva_id" id="reserva_id" class="form-select" required>
-                                    <option value="">-- Seleccione una reserva --</option>
-                                    <?php foreach ($reservas as $reserva): ?>
-                                        <option value="<?= $reserva['id_reserva'] ?>">
-                                            <?= htmlspecialchars($reserva['cabania_nombre']) ?> - 
-                                            <?= date('d/m/Y', strtotime($reserva['reserva_fhinicio'])) ?> a 
-                                            <?= date('d/m/Y', strtotime($reserva['reserva_fhfin'])) ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
+            </div>
+            
+            <!-- Cuerpo con 3 columnas -->
+            <div class="card-body p-0" style="height: calc(100% - 73px);">
+                <div class="row g-0 h-100">
+                    <!-- Columna izquierda: Tipos y Categorías -->
+                    <div class="col-lg-2 d-flex flex-column border-end p-3" style="height: 100%; overflow: hidden;">
+                        <!-- Selector de Tipo -->
+                        <div class="mb-3" style="flex-shrink: 0;">
+                            <h6 class="mb-2">Seleccionar Tipo</h6>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="tipoSelector" id="radioProducto" value="producto" onchange="seleccionarTipo('producto')">
+                                <label class="form-check-label" for="radioProducto">Producto</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="tipoSelector" id="radioServicio" value="servicio" onchange="seleccionarTipo('servicio')">
+                                <label class="form-check-label" for="radioServicio">Servicio</label>
                             </div>
                         </div>
 
-                        <hr class="my-4">
+                        <hr class="my-2" style="flex-shrink: 0;">
 
-                        <!-- Catálogo de Productos -->
-                        <div class="mb-4">
-                            <label class="form-label fw-bold">
-                                <i class="fas fa-box-open text-success"></i> Productos Disponibles
-                            </label>
-                            
-                            <div class="row" id="catalogoProductos">
-                                <?php foreach ($productos as $producto): ?>
-                                    <div class="col-md-4 col-lg-3 mb-3">
-                                        <div class="card h-100 producto-card" data-id="<?= $producto['id_producto'] ?>" data-precio="<?= $producto['producto_precio'] ?>" data-nombre="<?= htmlspecialchars($producto['producto_nombre']) ?>">
-                                            <?php if (!empty($producto['producto_foto'])): ?>
-                                                <img src="<?= url('/imagenes/productos/' . $producto['producto_foto']) ?>" 
-                                                     class="card-img-top" 
-                                                     alt="<?= htmlspecialchars($producto['producto_nombre']) ?>"
-                                                     style="height: 150px; object-fit: cover;">
-                                            <?php else: ?>
-                                                <div class="bg-light d-flex align-items-center justify-content-center" style="height: 150px;">
-                                                    <i class="fas fa-box fa-3x text-secondary"></i>
-                                                </div>
-                                            <?php endif; ?>
-                                            <div class="card-body">
-                                                <h6 class="card-title"><?= htmlspecialchars($producto['producto_nombre']) ?></h6>
-                                                <p class="card-text">
-                                                    <small class="text-muted"><?= htmlspecialchars($producto['categoria_descripcion'] ?? '') ?></small>
-                                                </p>
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <span class="fw-bold text-success">$<?= number_format($producto['producto_precio'], 2) ?></span>
-                                                    <span class="badge bg-info">Stock: <?= intval($producto['producto_stock']) ?></span>
-                                                </div>
-                                                <div class="mt-2">
-                                                    <div class="input-group input-group-sm">
-                                                        <button class="btn btn-outline-secondary btn-decrementar" type="button">
-                                                            <i class="fas fa-minus"></i>
-                                                        </button>
-                                                        <input type="number" class="form-control text-center cantidad-producto" 
-                                                               value="0" min="0" max="<?= intval($producto['producto_stock']) ?>" readonly>
-                                                        <button class="btn btn-outline-secondary btn-incrementar" type="button">
-                                                            <i class="fas fa-plus"></i>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-
-                        <hr class="my-4">
-
-                        <!-- Resumen del Pedido -->
-                        <div class="card bg-light">
-                            <div class="card-body">
-                                <h5 class="card-title">
-                                    <i class="fas fa-receipt"></i> Resumen del Pedido
-                                </h5>
-                                <div id="resumenPedido" class="mt-3">
-                                    <p class="text-muted">No hay productos seleccionados</p>
-                                </div>
-                                <hr>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <h5 class="mb-0">TOTAL:</h5>
-                                    <h4 class="mb-0 text-success" id="totalPedido">$0.00</h4>
+                        <!-- Lista de Categorías con scroll -->
+                        <h6 class="mb-2" style="flex-shrink: 0;">Seleccionar Categoría</h6>
+                        <div class="flex-grow-1 overflow-auto">
+                            <div id="listaCategorias">
+                                <div class="text-muted text-center py-3">
+                                    <small>Seleccione un tipo</small>
                                 </div>
                             </div>
                         </div>
+                    </div>                    <!-- Columna central: Grid de productos con carrusel -->
+                    <div class="col-lg-7 d-flex flex-column border-end p-3" style="height: 100%; position: relative; overflow: hidden;">
+                        <div id="contenedorProductos" class="flex-grow-1 overflow-hidden">
+                            <div class="text-center text-muted py-5">
+                                <p>Seleccione un tipo y categoría</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Flechas de navegación (a media altura del contenedor de productos) -->
+                        <button id="btnCarruselPrev" class="btn-carrusel position-absolute translate-middle-y" style="display: none; z-index: 10; left: -25px; top: 50%; width: 50px; height: 80px; background: rgba(255, 255, 255, 0.9); border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; cursor: pointer;" onclick="moverCarrusel(-1)">
+                            <i class="fas fa-chevron-left fa-2x" style="color: #333;"></i>
+                        </button>
+                        <button id="btnCarruselNext" class="btn-carrusel position-absolute translate-middle-y" style="display: none; z-index: 10; right: -25px; top: 50%; width: 50px; height: 80px; background: rgba(255, 255, 255, 0.9); border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; cursor: pointer;" onclick="moverCarrusel(1)">
+                            <i class="fas fa-chevron-right fa-2x" style="color: #333;"></i>
+                        </button>
+                    </div>
 
-                        <!-- Botones -->
-                        <div class="d-flex justify-content-end gap-2 mt-4">
-                            <a href="<?= url('/huesped/consumos') ?>" class="btn btn-secondary">
-                                <i class="fas fa-times"></i> Cancelar
-                            </a>
-                            <button type="submit" class="btn btn-success" id="btnEnviarPedido">
-                                <i class="fas fa-paper-plane"></i> Enviar Pedido
+                    <!-- Columna derecha: Carrito -->
+                    <div class="col-lg-3 d-flex flex-column p-3" style="height: 100%; overflow: hidden;">
+                        <h6 class="mb-3">
+                            <i class="fas fa-shopping-cart text-muted"></i> Carrito
+                        </h6>
+                        
+                        <div class="flex-grow-1 overflow-auto mb-3">
+                            <div id="listaCarrito">
+                                <div class="text-center text-muted py-5">
+                                    <p class="small mb-0">Carrito vacío</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="btnLimpiarCarrito" onclick="limpiarCarrito()" disabled style="flex: 0 0 auto;">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <button type="button" class="btn btn-dark w-100" id="btnRegistrarSolicitud" onclick="confirmarSolicitud()" disabled>
+                                <i class="fas fa-check"></i> Registrar
                             </button>
                         </div>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>
+        </div>
     </div>
-</div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const productos = document.querySelectorAll('.producto-card');
-    const resumenPedido = document.getElementById('resumenPedido');
-    const totalPedido = document.getElementById('totalPedido');
-    let pedido = {};
-    
-    productos.forEach(card => {
-        const btnIncrementar = card.querySelector('.btn-incrementar');
-        const btnDecrementar = card.querySelector('.btn-decrementar');
-        const inputCantidad = card.querySelector('.cantidad-producto');
-        const id = card.dataset.id;
-        const precio = parseFloat(card.dataset.precio);
-        const nombre = card.dataset.nombre;
-        const max = parseInt(inputCantidad.max);
-        
-        btnIncrementar.addEventListener('click', () => {
-            let cantidad = parseInt(inputCantidad.value);
-            if (cantidad < max) {
-                cantidad++;
-                inputCantidad.value = cantidad;
-                actualizarPedido(id, nombre, precio, cantidad);
-            }
-        });
-        
-        btnDecrementar.addEventListener('click', () => {
-            let cantidad = parseInt(inputCantidad.value);
-            if (cantidad > 0) {
-                cantidad--;
-                inputCantidad.value = cantidad;
-                actualizarPedido(id, nombre, precio, cantidad);
-            }
-        });
-    });
-    
-    function actualizarPedido(id, nombre, precio, cantidad) {
-        if (cantidad > 0) {
-            pedido[id] = { nombre, precio, cantidad, subtotal: precio * cantidad };
-        } else {
-            delete pedido[id];
-        }
-        renderizarResumen();
-    }
-    
-    function renderizarResumen() {
-        if (Object.keys(pedido).length === 0) {
-            resumenPedido.innerHTML = '<p class="text-muted">No hay productos seleccionados</p>';
-            totalPedido.textContent = '$0.00';
-            return;
-        }
-        
-        let html = '<ul class="list-unstyled mb-0">';
-        let total = 0;
-        
-        for (let id in pedido) {
-            const item = pedido[id];
-            html += `
-                <li class="d-flex justify-content-between align-items-center mb-2">
-                    <span>${item.nombre} x ${item.cantidad}</span>
-                    <span class="fw-bold">$${item.subtotal.toFixed(2)}</span>
-                </li>
-            `;
-            total += item.subtotal;
-        }
-        
-        html += '</ul>';
-        resumenPedido.innerHTML = html;
-        totalPedido.textContent = '$' + total.toFixed(2);
-    }
-    
-    // Validación del formulario
-    document.getElementById('formSolicitarConsumos').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const reservaId = document.getElementById('reserva_id').value;
-        
-        if (!reservaId) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Debe seleccionar una reserva'
-            });
-            return false;
-        }
-        
-        if (Object.keys(pedido).length === 0) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Debe seleccionar al menos un producto'
-            });
-            return false;
-        }
-        
-        // Preparar datos para enviar
-        const formData = new FormData();
-        formData.append('reserva_id', reservaId);
-        
-        let index = 0;
-        for (let id in pedido) {
-            formData.append(`productos[${index}]`, id);
-            formData.append(`cantidades[${index}]`, pedido[id].cantidad);
-            index++;
-        }
-        
-        // Enviar
-        this.submit();
-    });
-});
-</script>
+<!-- Modal de Confirmación -->
+<form id="formSolicitud" method="POST" style="display: none;">
+    <input type="hidden" name="carrito" id="inputCarrito">
+</form>
 
 <style>
-.producto-card {
-    transition: transform 0.2s, box-shadow 0.2s;
+/* Estilos minimalistas */
+body {
+    background: #1a2332;
+    overflow: hidden;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.border {
+    border: 2px solid #dee2e6 !important;
+}
+
+/* Categorías - estilo simple */
+.categoria-item {
+    padding: 10px 15px;
+    margin-bottom: 5px;
+    border: 1px solid #e0e0e0;
+    background: white;
     cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 4px;
 }
 
-.producto-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+.categoria-item:hover {
+    background: #f8f9fa;
+    border-color: #0d6efd;
 }
 
-.cantidad-producto {
-    background-color: white !important;
+.categoria-item.active {
+    background: #0d6efd;
+    color: white;
+    border-color: #0d6efd;
+}
+
+/* Productos - estilo minimalista */
+.producto-card {
+    border: 1px solid #dee2e6;
+    padding: 15px;
+    text-align: center;
+    background: white;
+    border-radius: 4px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* Productos y Servicios - Cards grandes con fotos */
+.producto-card-large {
+    border: 1px solid #dee2e6;
+    padding: 10px;
+    text-align: center;
+    background: white;
+    border-radius: 4px;
+    height: 85%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+}
+
+.producto-foto {
+    width: 100%;
+    height: 65%;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-radius: 4px;
+    margin-bottom: 6px;
+    background-color: #f8f9fa;
+    flex-shrink: 0;
+}
+
+.producto-nombre-small {
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+    line-height: 1.2;
+    font-weight: 500;
+    padding: 0 5px;
+    flex-shrink: 1;
+}
+
+.servicio-nombre-large {
+    font-size: 1.3rem;
+    font-weight: 600;
+    flex: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+    line-height: 1.3;
+    padding: 20px 10px;
+    color: #333;
+}
+
+.producto-nombre {
+    font-size: 0.85rem;
+    margin-bottom: 5px;
+    min-height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.2;
+}
+
+.producto-precio {
+    font-size: 0.85rem;
+    color: #28a745;
+    font-weight: bold;
+    margin-bottom: 0;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.producto-card-large:hover {
+    background: #f8f9fa;
+    border-color: #28a745;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Carrito - estilo compacto y optimizado */
+.carrito-item {
+    padding: 8px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.carrito-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.carrito-item-nombre {
+    font-size: 0.8rem;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.carrito-item-precio-unitario {
+    font-size: 0.7rem;
+    color: #28a745;
+}
+
+.carrito-item-controles-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+}
+
+.carrito-item-controles {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.carrito-item-controles button {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid #dee2e6;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.carrito-item-controles button:hover {
+    background: #f8f9fa;
+}
+
+.carrito-item-controles span {
+    min-width: 24px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 0.8rem;
+}
+
+.carrito-item-borrar {
+    color: #dc3545;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: bold;
+    width: 24px;
+    height: 24px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.carrito-item-borrar:hover {
+    background: #ffe5e5;
+}
+
+/* Flechas de navegación */
+.btn-carrusel {
+    cursor: pointer;
+    transition: none;
+    background: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
 </style>
 
-<?php $this->endSection(); ?>
+<script>
+// Estado de la aplicación
+const app = {
+    reservaId: <?= $reserva['id_reserva'] ?>,
+    tipoSeleccionado: null,
+    categoriaSeleccionada: null,
+    carrito: [],
+    paginaCarrusel: 0,
+    itemsPorPagina: 8, // 2 filas × 4 columnas
+    totalItems: 0,
+    itemsActuales: [],
+    tipoActual: null
+};
+
+// Seleccionar tipo (Producto o Servicio)
+function seleccionarTipo(tipo) {
+    app.tipoSeleccionado = tipo;
+    app.categoriaSeleccionada = null;
+    
+    // Cargar categorías o tipos de servicio
+    if (tipo === 'producto') {
+        cargarCategorias();
+    } else {
+        cargarTiposServicio();
+    }
+    
+    // Limpiar productos
+    document.getElementById('contenedorProductos').innerHTML = `
+        <div class="text-center text-muted py-5">
+            <p>Seleccione una categoría</p>
+        </div>
+    `;
+}
+
+// Cargar categorías
+async function cargarCategorias() {
+    try {
+        const response = await fetch('<?= url('/huesped/consumos/api/categorias') ?>');
+        
+        if (!response.ok) {
+            throw new Error('Error en la respuesta del servidor');
+        }
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+            Swal.fire('Error', data.message || 'No se pudieron cargar las categorías', 'error');
+            return;
+        }
+        
+        if (!data.data || data.data.length === 0) {
+            document.getElementById('listaCategorias').innerHTML = `
+                <div class="text-muted text-center py-3">
+                    <small>No hay categorías disponibles</small>
+                </div>
+            `;
+            return;
+        }
+        
+        const container = document.getElementById('listaCategorias');
+        container.innerHTML = '';
+        
+        data.data.forEach(cat => {
+            const div = document.createElement('div');
+            div.className = 'categoria-item';
+            div.textContent = cat.categoria_descripcion;
+            div.onclick = () => seleccionarCategoria(cat.id_categoria, cat.categoria_descripcion, div);
+            container.appendChild(div);
+        });
+    } catch (error) {
+        console.error('Error completo:', error);
+        Swal.fire('Error', 'No se pudieron cargar las categorías: ' + error.message, 'error');
+    }
+}
+
+// Cargar tipos de servicio
+async function cargarTiposServicio() {
+    try {
+        const response = await fetch('<?= url('/huesped/consumos/api/tipos-servicio') ?>');
+        const data = await response.json();
+        
+        if (!data.success) {
+            document.getElementById('listaCategorias').innerHTML = `
+                <div class="text-muted text-center py-3">
+                    <small>No hay tipos de servicio disponibles</small>
+                </div>
+            `;
+            return;
+        }
+        
+        const container = document.getElementById('listaCategorias');
+        container.innerHTML = '';
+        
+        data.data.forEach(tipo => {
+            const div = document.createElement('div');
+            div.className = 'categoria-item';
+            div.textContent = tipo.tiposervicio_descripcion;
+            div.onclick = () => seleccionarTipoServicio(tipo.id_tiposervicio, tipo.tiposervicio_descripcion, div);
+            container.appendChild(div);
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire('Error', 'No se pudieron cargar los tipos de servicio', 'error');
+    }
+}
+
+// Seleccionar categoría de producto
+async function seleccionarCategoria(id, nombre, element) {
+    app.categoriaSeleccionada = id;
+    
+    // Actualizar estado activo
+    document.querySelectorAll('.categoria-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    element.classList.add('active');
+    
+    try {
+        const response = await fetch(`<?= url('/huesped/consumos/api/productos/') ?>${id}`);
+        const data = await response.json();
+        
+        if (data.success && data.data.length > 0) {
+            renderizarProductos(data.data, 'producto');
+        } else {
+            document.getElementById('contenedorProductos').innerHTML = `
+                <div class="text-center text-muted py-5">
+                    <p>No hay productos disponibles</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire('Error', 'No se pudieron cargar los productos', 'error');
+    }
+}
+
+// Seleccionar tipo de servicio
+async function seleccionarTipoServicio(id, nombre, element) {
+    app.categoriaSeleccionada = id;
+    
+    // Actualizar estado activo
+    document.querySelectorAll('.categoria-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    element.classList.add('active');
+    
+    try {
+        const response = await fetch(`<?= url('/huesped/consumos/api/servicios/') ?>${id}`);
+        const data = await response.json();
+        
+        if (data.success && data.data.length > 0) {
+            renderizarProductos(data.data, 'servicio');
+        } else {
+            document.getElementById('contenedorProductos').innerHTML = `
+                <div class="text-center text-muted py-5">
+                    <p>No hay servicios disponibles</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire('Error', 'No se pudieron cargar los servicios', 'error');
+    }
+}
+
+// Renderizar productos en grid con paginación
+function renderizarProductos(items, tipo) {
+    app.totalItems = items.length;
+    app.paginaCarrusel = 0;
+    app.itemsActuales = items;
+    app.tipoActual = tipo;
+    
+    mostrarPaginaCarrusel();
+    actualizarControlesCarrusel();
+}
+
+// Mostrar página actual del carrusel
+function mostrarPaginaCarrusel() {
+    const container = document.getElementById('contenedorProductos');
+    const inicio = app.paginaCarrusel * app.itemsPorPagina;
+    const fin = inicio + app.itemsPorPagina;
+    const itemsPagina = app.itemsActuales.slice(inicio, fin);
+    
+    // Grid con 2 filas fijas de altura definida (elementos grandes)
+    container.innerHTML = '<div class="row g-3"></div>';
+    const row = container.querySelector('.row');
+    
+    // Crear 8 slots (2 filas × 4 columnas) - algunos pueden estar vacíos
+    for (let i = 0; i < 8; i++) {
+        const col = document.createElement('div');
+        col.className = 'col-lg-3 col-md-4 col-6';
+        col.style.height = '280px'; // Altura mayor para mostrar fotos
+        
+        if (i < itemsPagina.length) {
+            const item = itemsPagina[i];
+            const id = app.tipoActual === 'producto' ? item.id_producto : item.id_servicio;
+            const nombre = app.tipoActual === 'producto' ? item.producto_nombre : item.servicio_descripcion;
+            const precio = app.tipoActual === 'producto' ? item.producto_precio : item.servicio_precio;
+            const foto = app.tipoActual === 'producto' && item.producto_foto ? item.producto_foto : null;
+            
+            const nombreEscapado = nombre.replace(/'/g, "\\'");
+            const precioFormateado = parseFloat(precio).toLocaleString('es-AR');
+            
+            // Diseño diferente para productos (con foto) y servicios (solo texto grande)
+            let contenidoCard = '';
+            if (app.tipoActual === 'producto' && foto) {
+                contenidoCard = `
+                    <div class="producto-foto" style="background-image: url('<?= url('/imagenes/productos/') ?>${foto}');"></div>
+                    <div class="producto-nombre-small">${nombre}</div>
+                `;
+            } else {
+                contenidoCard = `
+                    <div class="servicio-nombre-large">${nombre}</div>
+                `;
+            }
+            
+            col.innerHTML = `
+                <div class="producto-card-large" onclick="agregarAlCarrito(${id}, '${app.tipoActual}', '${nombreEscapado}', ${precio})" style="cursor: pointer; transition: all 0.2s;">
+                    ${contenidoCard}
+                    <div class="producto-precio">$ ${precioFormateado}</div>
+                </div>
+            `;
+        } else {
+            // Slot vacío para mantener el grid de 2 filas
+            col.innerHTML = '<div style="height: 100%;"></div>';
+        }
+        
+        row.appendChild(col);
+    }
+}
+
+// Mover carrusel
+function moverCarrusel(direccion) {
+    const totalPaginas = Math.ceil(app.totalItems / app.itemsPorPagina);
+    app.paginaCarrusel += direccion;
+    
+    if (app.paginaCarrusel < 0) app.paginaCarrusel = 0;
+    if (app.paginaCarrusel >= totalPaginas) app.paginaCarrusel = totalPaginas - 1;
+    
+    mostrarPaginaCarrusel();
+    actualizarControlesCarrusel();
+}
+
+// Actualizar visibilidad de controles del carrusel
+function actualizarControlesCarrusel() {
+    const totalPaginas = Math.ceil(app.totalItems / app.itemsPorPagina);
+    const btnPrev = document.getElementById('btnCarruselPrev');
+    const btnNext = document.getElementById('btnCarruselNext');
+    
+    // Mostrar controles solo si hay más de una página
+    if (totalPaginas > 1) {
+        btnPrev.style.display = app.paginaCarrusel > 0 ? 'block' : 'none';
+        btnNext.style.display = app.paginaCarrusel < totalPaginas - 1 ? 'block' : 'none';
+    } else {
+        btnPrev.style.display = 'none';
+        btnNext.style.display = 'none';
+    }
+}
+
+// Agregar al carrito desde la galería
+function agregarAlCarrito(id, tipo, nombre, precio) {
+    const itemEnCarrito = app.carrito.find(c => c.id === id && c.tipo === tipo);
+    
+    if (itemEnCarrito) {
+        itemEnCarrito.cantidad += 1;
+    } else {
+        app.carrito.push({ id, tipo, nombre, precio, cantidad: 1 });
+    }
+    
+    actualizarUI();
+}
+
+// Modificar cantidad en carrito (desde el carrito lateral)
+function modificarCantidad(id, tipo, cambio) {
+    const itemEnCarrito = app.carrito.find(c => c.id === id && c.tipo === tipo);
+    
+    if (itemEnCarrito) {
+        itemEnCarrito.cantidad += cambio;
+        if (itemEnCarrito.cantidad <= 0) {
+            app.carrito = app.carrito.filter(c => !(c.id === id && c.tipo === tipo));
+        }
+    }
+    
+    actualizarUI();
+}
+
+// Actualizar interfaz
+function actualizarUI() {
+    // Si hay items mostrados, re-renderizar la página actual del carrusel
+    if (app.itemsActuales && app.itemsActuales.length > 0) {
+        mostrarPaginaCarrusel();
+        actualizarControlesCarrusel();
+    }
+    
+    // Actualizar carrito lateral
+    renderizarCarrito();
+    
+    // Habilitar/deshabilitar botones
+    const carritoVacio = app.carrito.length === 0;
+    document.getElementById('btnRegistrarSolicitud').disabled = carritoVacio;
+    document.getElementById('btnLimpiarCarrito').disabled = carritoVacio;
+}
+
+// Renderizar carrito lateral
+function renderizarCarrito() {
+    const container = document.getElementById('listaCarrito');
+    
+    if (app.carrito.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted py-5">
+                <p class="small mb-0">Carrito vacío</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = '';
+    
+    app.carrito.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'carrito-item';
+        
+        const nombreEscapado = item.nombre.replace(/'/g, "\\'");
+        const precioFormateado = parseFloat(item.precio).toLocaleString('es-AR');
+        
+        div.innerHTML = `
+            <div class="carrito-item-info">
+                <span class="carrito-item-nombre" title="${item.nombre}">${item.nombre}</span>
+                <span class="carrito-item-precio-unitario">$ ${precioFormateado}</span>
+            </div>
+            <div class="carrito-item-controles-wrapper">
+                <div class="carrito-item-controles">
+                    <button onclick="modificarCantidad(${item.id}, '${item.tipo}', -1)">-</button>
+                    <span>${item.cantidad}</span>
+                    <button onclick="modificarCantidad(${item.id}, '${item.tipo}', 1)">+</button>
+                </div>
+                <span class="carrito-item-borrar" onclick="eliminarDelCarrito(${item.id}, '${item.tipo}')" title="Eliminar">×</span>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+}
+
+// Eliminar del carrito
+function eliminarDelCarrito(id, tipo) {
+    app.carrito = app.carrito.filter(c => !(c.id === id && c.tipo === tipo));
+    actualizarUI();
+}
+
+// Limpiar todo el carrito
+function limpiarCarrito() {
+    Swal.fire({
+        title: '¿Limpiar carrito?',
+        text: 'Se eliminarán todos los items del carrito',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, limpiar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            app.carrito = [];
+            actualizarUI();
+            Swal.fire({
+                title: 'Carrito limpiado',
+                icon: 'success',
+                timer: 1500,
+                showConfirmButton: false
+            });
+        }
+    });
+}
+
+// Confirmar solicitud
+function confirmarSolicitud() {
+    if (app.carrito.length === 0) {
+        Swal.fire('Advertencia', 'El carrito está vacío', 'warning');
+        return;
+    }
+    
+    // Calcular total
+    const total = app.carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+    
+    // Generar resumen detallado con precios
+    let resumenHTML = `
+        <div style="text-align: left;">
+            <div style="max-height: 350px; overflow-y: auto; margin-bottom: 15px;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead style="position: sticky; top: 0; background: white; border-bottom: 2px solid #dee2e6;">
+                        <tr>
+                            <th style="padding: 8px; text-align: left; font-size: 0.85rem; color: #6c757d;">Producto/Servicio</th>
+                            <th style="padding: 8px; text-align: center; font-size: 0.85rem; color: #6c757d; width: 80px;">Cant.</th>
+                            <th style="padding: 8px; text-align: right; font-size: 0.85rem; color: #6c757d; width: 120px;">P. Unit.</th>
+                            <th style="padding: 8px; text-align: right; font-size: 0.85rem; color: #6c757d; width: 130px;">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+    `;
+    
+    app.carrito.forEach(item => {
+        const precioUnitario = parseFloat(item.precio).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const subtotal = (item.precio * item.cantidad).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        
+        resumenHTML += `
+            <tr style="border-bottom: 1px solid #f1f1f1;">
+                <td style="padding: 10px 8px; font-size: 0.9rem;">${item.nombre}</td>
+                <td style="padding: 10px 8px; text-align: center; font-weight: 600; font-size: 0.9rem;">× ${item.cantidad}</td>
+                <td style="padding: 10px 8px; text-align: right; font-size: 0.85rem; color: #6c757d;">$ ${precioUnitario}</td>
+                <td style="padding: 10px 8px; text-align: right; font-weight: 500; font-size: 0.9rem;">$ ${subtotal}</td>
+            </tr>
+        `;
+    });
+    
+    const totalFormateado = total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    
+    resumenHTML += `
+                    </tbody>
+                </table>
+            </div>
+            <div style="padding: 15px 8px; border-top: 2px solid #dee2e6; background: white; text-align: right;">
+                <div style="font-size: 1.1rem; font-weight: 600; color: #212529;">
+                    TOTAL: <span style="color: #28a745; font-size: 1.3rem;">$ ${totalFormateado}</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    Swal.fire({
+        title: '¿Confirmar solicitud?',
+        html: resumenHTML,
+        icon: 'question',
+        width: '600px',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, registrar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            registrarSolicitud();
+        }
+    });
+}
+
+// Registrar solicitud
+function registrarSolicitud() {
+    const form = document.getElementById('formSolicitud');
+    document.getElementById('inputCarrito').value = JSON.stringify(app.carrito);
+    form.submit();
+}
+</script>
+
+<form id="formSolicitud" method="POST" style="display: none;">
+    <input type="hidden" name="carrito" id="inputCarrito">
+</form>
+
+<style>
+.list-group-item.active {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.list-group-item-action {
+    cursor: pointer;
+}
+
+.list-group-item-action:hover {
+    background-color: #f8f9fa;
+}
+</style>
