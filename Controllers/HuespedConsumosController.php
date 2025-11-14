@@ -111,21 +111,24 @@ class HuespedConsumosController extends Controller
                 if (empty($item['id']) || empty($item['tipo']) || empty($item['cantidad'])) continue;
                 
                 $cantidad = floatval($item['cantidad']);
-                if ($cantidad <= 0) continue;
+                $precio = floatval($item['precio'] ?? 0);
+                
+                if ($cantidad <= 0 || $precio <= 0) continue;
                 
                 $consumoData = [
                     'rela_reserva' => $reservaActual['id_reserva'],
-                    'consumo_cantidad' => $cantidad
+                    'consumo_cantidad' => $cantidad,
+                    'consumo_precio_unitario' => $precio
                 ];
                 
                 if ($item['tipo'] === 'producto') {
                     $consumoData['rela_producto'] = $item['id'];
                     $consumoData['rela_servicio'] = null;
-                    $consumoData['consumo_descripcion'] = $item['nombre'];
+                    $consumoData['consumo_descripcion'] = 'Producto: ' . $item['nombre'];
                 } else {
                     $consumoData['rela_servicio'] = $item['id'];
                     $consumoData['rela_producto'] = null;
-                    $consumoData['consumo_descripcion'] = $item['nombre'];
+                    $consumoData['consumo_descripcion'] = 'Servicio: ' . $item['nombre'];
                 }
                 
                 $consumosData[] = $consumoData;
@@ -153,7 +156,39 @@ class HuespedConsumosController extends Controller
             'isPublicArea' => true
         ];
 
-        return $this->render('public/consumos/solicitar', $data, 'main');
+        // Detectar si es dispositivo móvil
+        $isMobile = $this->isMobileDevice();
+        $vista = $isMobile ? 'public/consumos/solicitar-mobile' : 'public/consumos/solicitar';
+
+        return $this->render($vista, $data, 'main');
+    }
+
+    /**
+     * Detectar si es dispositivo móvil por User Agent
+     */
+    private function isMobileDevice()
+    {
+        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+        
+        // Patrones comunes de dispositivos móviles
+        $mobilePatterns = [
+            '/android/i',
+            '/webos/i',
+            '/iphone/i',
+            '/ipad/i',
+            '/ipod/i',
+            '/blackberry/i',
+            '/windows phone/i',
+            '/mobile/i'
+        ];
+        
+        foreach ($mobilePatterns as $pattern) {
+            if (preg_match($pattern, $userAgent)) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     /**

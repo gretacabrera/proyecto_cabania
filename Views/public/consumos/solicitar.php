@@ -25,7 +25,7 @@
             <div class="card-body p-0" style="height: calc(100% - 73px);">
                 <div class="row g-0 h-100">
                     <!-- Columna izquierda: Tipos y Categorías -->
-                    <div class="col-lg-2 d-flex flex-column border-end p-3" style="height: 100%; overflow: hidden;">
+                    <div class="col-12 col-lg-2 d-flex flex-column border-end p-3 mobile-section" style="height: 100%; overflow: hidden;">
                         <!-- Selector de Tipo -->
                         <div class="mb-3" style="flex-shrink: 0;">
                             <h6 class="mb-2">Seleccionar Tipo</h6>
@@ -51,7 +51,7 @@
                             </div>
                         </div>
                     </div>                    <!-- Columna central: Grid de productos con carrusel -->
-                    <div class="col-lg-7 d-flex flex-column border-end p-3" style="height: 100%; position: relative; overflow: hidden;">
+                    <div class="col-12 col-lg-7 d-flex flex-column border-end p-3 mobile-section" style="height: 100%; position: relative; overflow: hidden;">
                         <div id="contenedorProductos" class="flex-grow-1 overflow-hidden">
                             <div class="text-center text-muted py-5">
                                 <p>Seleccione un tipo y categoría</p>
@@ -68,7 +68,7 @@
                     </div>
 
                     <!-- Columna derecha: Carrito -->
-                    <div class="col-lg-3 d-flex flex-column p-3" style="height: 100%; overflow: hidden;">
+                    <div class="col-12 col-lg-3 d-flex flex-column p-3 mobile-section" style="height: 100%; overflow: hidden;">
                         <h6 class="mb-3">
                             <i class="fas fa-shopping-cart text-muted"></i> Carrito
                         </h6>
@@ -113,6 +113,21 @@ html, body {
     margin: 0;
     padding: 0;
     overflow: hidden;
+}
+
+/* Mobile: columnas apiladas sin scroll */
+@media (max-width: 991px) {
+    .mobile-section {
+        height: calc(33.33vh - 30px) !important;
+        min-height: 180px !important;
+        max-height: 250px !important;
+        border-bottom: 1px solid #dee2e6;
+        border-right: none !important;
+    }
+    
+    .mobile-section:last-child {
+        border-bottom: none;
+    }
 }
 
 .border {
@@ -166,6 +181,14 @@ html, body {
     flex-direction: column;
     justify-content: space-between;
     overflow: hidden;
+}
+
+/* Mobile: 1 item por página, altura completa */
+@media (max-width: 991px) {
+    .producto-card-large {
+        height: 100% !important;
+        max-height: 100% !important;
+    }
 }
 
 .producto-foto {
@@ -359,11 +382,24 @@ const app = {
     categoriaSeleccionada: null,
     carrito: [],
     paginaCarrusel: 0,
-    itemsPorPagina: 8, // 2 filas × 4 columnas
+    itemsPorPagina: window.innerWidth <= 991 ? 1 : 8, // 1 en mobile, 8 en desktop
     totalItems: 0,
     itemsActuales: [],
     tipoActual: null
 };
+
+// Actualizar itemsPorPagina al cambiar tamaño de ventana
+window.addEventListener('resize', () => {
+    const nuevoItemsPorPagina = window.innerWidth <= 991 ? 1 : 8;
+    if (nuevoItemsPorPagina !== app.itemsPorPagina) {
+        app.itemsPorPagina = nuevoItemsPorPagina;
+        app.paginaCarrusel = 0;
+        if (app.itemsActuales.length > 0) {
+            mostrarPaginaCarrusel();
+            actualizarControlesCarrusel();
+        }
+    }
+});
 
 // Seleccionar tipo (Producto o Servicio)
 function seleccionarTipo(tipo) {
@@ -533,18 +569,15 @@ function mostrarPaginaCarrusel() {
     const fin = inicio + app.itemsPorPagina;
     const itemsPagina = app.itemsActuales.slice(inicio, fin);
     
-    // Grid con 2 filas fijas de altura definida (elementos grandes)
-    container.innerHTML = '<div class="row g-3"></div>';
-    const row = container.querySelector('.row');
+    const isMobile = window.innerWidth <= 991;
     
-    // Crear 8 slots (2 filas × 4 columnas) - algunos pueden estar vacíos
-    for (let i = 0; i < 8; i++) {
-        const col = document.createElement('div');
-        col.className = 'col-lg-3 col-md-4 col-6';
-        col.style.height = '280px'; // Altura mayor para mostrar fotos
+    if (isMobile) {
+        // MOBILE: 1 item centrado con altura completa
+        container.innerHTML = '<div class="d-flex align-items-center justify-content-center h-100 p-2"></div>';
+        const wrapper = container.querySelector('div');
         
-        if (i < itemsPagina.length) {
-            const item = itemsPagina[i];
+        if (itemsPagina.length > 0) {
+            const item = itemsPagina[0];
             const id = app.tipoActual === 'producto' ? item.id_producto : item.id_servicio;
             const nombre = app.tipoActual === 'producto' ? item.producto_nombre : item.servicio_descripcion;
             const precio = app.tipoActual === 'producto' ? item.producto_precio : item.servicio_precio;
@@ -553,31 +586,70 @@ function mostrarPaginaCarrusel() {
             const nombreEscapado = nombre.replace(/'/g, "\\'");
             const precioFormateado = parseFloat(precio).toLocaleString('es-AR');
             
-            // Diseño diferente para productos (con foto) y servicios (solo texto grande)
             let contenidoCard = '';
             if (app.tipoActual === 'producto' && foto) {
                 contenidoCard = `
-                    <div class="producto-foto" style="background-image: url('<?= url('/imagenes/productos/') ?>${foto}');"></div>
-                    <div class="producto-nombre-small">${nombre}</div>
+                    <div class="producto-foto" style="background-image: url('<?= url('/imagenes/productos/') ?>${foto}'); height: 70%;"></div>
+                    <div class="producto-nombre-small" style="font-size: 1.1rem; margin: 10px 0;">${nombre}</div>
                 `;
             } else {
                 contenidoCard = `
-                    <div class="servicio-nombre-large">${nombre}</div>
+                    <div class="servicio-nombre-large" style="font-size: 1.5rem;">${nombre}</div>
                 `;
             }
             
-            col.innerHTML = `
-                <div class="producto-card-large" onclick="agregarAlCarrito(${id}, '${app.tipoActual}', '${nombreEscapado}', ${precio})" style="cursor: pointer; transition: all 0.2s;">
+            wrapper.innerHTML = `
+                <div class="producto-card-large" onclick="agregarAlCarrito(${id}, '${app.tipoActual}', '${nombreEscapado}', ${precio})" 
+                     style="cursor: pointer; transition: all 0.2s; width: 100%; max-width: 400px;">
                     ${contenidoCard}
-                    <div class="producto-precio">$ ${precioFormateado}</div>
+                    <div class="producto-precio" style="font-size: 1.3rem; margin-top: 10px;">$ ${precioFormateado}</div>
                 </div>
             `;
-        } else {
-            // Slot vacío para mantener el grid de 2 filas
-            col.innerHTML = '<div style="height: 100%;"></div>';
         }
+    } else {
+        // DESKTOP: Grid con 2 filas (2 × 4 = 8 items)
+        container.innerHTML = '<div class="row g-3"></div>';
+        const row = container.querySelector('.row');
         
-        row.appendChild(col);
+        for (let i = 0; i < 8; i++) {
+            const col = document.createElement('div');
+            col.className = 'col-lg-3 col-md-4 col-6';
+            col.style.height = '280px';
+            
+            if (i < itemsPagina.length) {
+                const item = itemsPagina[i];
+                const id = app.tipoActual === 'producto' ? item.id_producto : item.id_servicio;
+                const nombre = app.tipoActual === 'producto' ? item.producto_nombre : item.servicio_descripcion;
+                const precio = app.tipoActual === 'producto' ? item.producto_precio : item.servicio_precio;
+                const foto = app.tipoActual === 'producto' && item.producto_foto ? item.producto_foto : null;
+                
+                const nombreEscapado = nombre.replace(/'/g, "\\'");
+                const precioFormateado = parseFloat(precio).toLocaleString('es-AR');
+                
+                let contenidoCard = '';
+                if (app.tipoActual === 'producto' && foto) {
+                    contenidoCard = `
+                        <div class="producto-foto" style="background-image: url('<?= url('/imagenes/productos/') ?>${foto}');"></div>
+                        <div class="producto-nombre-small">${nombre}</div>
+                    `;
+                } else {
+                    contenidoCard = `
+                        <div class="servicio-nombre-large">${nombre}</div>
+                    `;
+                }
+                
+                col.innerHTML = `
+                    <div class="producto-card-large" onclick="agregarAlCarrito(${id}, '${app.tipoActual}', '${nombreEscapado}', ${precio})" style="cursor: pointer; transition: all 0.2s;">
+                        ${contenidoCard}
+                        <div class="producto-precio">$ ${precioFormateado}</div>
+                    </div>
+                `;
+            } else {
+                col.innerHTML = '<div style="height: 100%;"></div>';
+            }
+            
+            row.appendChild(col);
+        }
     }
 }
 
@@ -741,9 +813,9 @@ function confirmarSolicitud() {
                 <table style="width: 100%; border-collapse: collapse;">
                     <thead style="position: sticky; top: 0; background: white; border-bottom: 2px solid #dee2e6;">
                         <tr>
-                            <th style="padding: 8px; text-align: left; font-size: 0.85rem; color: #6c757d;">Producto/Servicio</th>
-                            <th style="padding: 8px; text-align: center; font-size: 0.85rem; color: #6c757d; width: 80px;">Cant.</th>
-                            <th style="padding: 8px; text-align: right; font-size: 0.85rem; color: #6c757d; width: 120px;">P. Unit.</th>
+                            <th style="padding: 8px; text-align: left; font-size: 0.85rem; color: #6c757d;">Item</th>
+                            <th style="padding: 8px; text-align: right; font-size: 0.85rem; color: #6c757d; width: 120px;">Precio Unitario</th>
+                            <th style="padding: 8px; text-align: center; font-size: 0.85rem; color: #6c757d; width: 80px;">Cantidad</th>
                             <th style="padding: 8px; text-align: right; font-size: 0.85rem; color: #6c757d; width: 130px;">Subtotal</th>
                         </tr>
                     </thead>
@@ -757,8 +829,8 @@ function confirmarSolicitud() {
         resumenHTML += `
             <tr style="border-bottom: 1px solid #f1f1f1;">
                 <td style="padding: 10px 8px; font-size: 0.9rem;">${item.nombre}</td>
-                <td style="padding: 10px 8px; text-align: center; font-weight: 600; font-size: 0.9rem;">× ${item.cantidad}</td>
                 <td style="padding: 10px 8px; text-align: right; font-size: 0.85rem; color: #6c757d;">$ ${precioUnitario}</td>
+                <td style="padding: 10px 8px; text-align: center; font-weight: 600; font-size: 0.9rem;">× ${item.cantidad}</td>
                 <td style="padding: 10px 8px; text-align: right; font-weight: 500; font-size: 0.9rem;">$ ${subtotal}</td>
             </tr>
         `;

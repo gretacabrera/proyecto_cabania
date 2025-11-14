@@ -166,9 +166,22 @@ class TotemConsumosController extends Controller
                 $consumosData[] = [
                     'rela_reserva' => $reservaId,
                     'rela_producto' => $itemId,
+                    'rela_servicio' => null,
                     'consumo_descripcion' => 'Producto: ' . $producto['producto_nombre'],
                     'consumo_cantidad' => $cantidad,
                     'consumo_precio_unitario' => $producto['producto_precio']
+                ];
+            } elseif ($tipo === 'servicio') {
+                $servicio = $this->consumoModel->getServicio($itemId);
+                if (!$servicio) continue;
+                
+                $consumosData[] = [
+                    'rela_reserva' => $reservaId,
+                    'rela_producto' => null,
+                    'rela_servicio' => $itemId,
+                    'consumo_descripcion' => 'Servicio: ' . $servicio['servicio_descripcion'],
+                    'consumo_cantidad' => $cantidad,
+                    'consumo_precio_unitario' => $servicio['servicio_precio']
                 ];
             }
         }
