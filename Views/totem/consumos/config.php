@@ -1,9 +1,3 @@
-<?php
-$this->extend('layouts/totem');
-$this->section('title', $title);
-$this->section('content');
-?>
-
 <div class="totem-header text-center">
     <h1 class="display-4 mb-0">
         <i class="fas fa-home text-primary"></i> Bienvenido al Sistema de Pedidos
@@ -125,5 +119,3 @@ document.getElementById('cabania_codigo').addEventListener('input', function(e) 
     this.value = this.value.toUpperCase();
 });
 </script>
-
-<?php $this->endSection(); ?>

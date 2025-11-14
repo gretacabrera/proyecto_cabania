@@ -705,6 +705,14 @@ class Consumo extends Model
     }
 
     /**
+     * Obtener categorías activas (alias para consistencia)
+     */
+    public function getCategoriasActivas()
+    {
+        return $this->getCategorias();
+    }
+
+    /**
      * Obtener tipos de servicio activos que tengan servicios disponibles
      */
     public function getTiposServicio()
@@ -724,6 +732,14 @@ class Consumo extends Model
         }
         
         return $tipos;
+    }
+
+    /**
+     * Obtener tipos de servicio activos (alias para consistencia)
+     */
+    public function getTiposServicioActivos()
+    {
+        return $this->getTiposServicio();
     }
 
     /**
@@ -750,6 +766,14 @@ class Consumo extends Model
     }
 
     /**
+     * Obtener productos por categoría (alias para consistencia)
+     */
+    public function getProductosByCategoria($categoriaId)
+    {
+        return $this->getProductosPorCategoria($categoriaId);
+    }
+
+    /**
      * Obtener servicios por tipo
      */
     public function getServiciosPorTipo($tipoId)
@@ -768,6 +792,24 @@ class Consumo extends Model
         }
         
         return $servicios;
+    }
+
+    /**
+     * Obtener servicios por tipo (alias para consistencia)
+     */
+    public function getServiciosByTipo($tipoId)
+    {
+        return $this->getServiciosPorTipo($tipoId);
+    }
+
+    /**
+     * Obtener servicio por ID
+     */
+    public function getServicio($servicioId)
+    {
+        $sql = "SELECT * FROM servicio WHERE id_servicio = " . intval($servicioId) . " LIMIT 1";
+        $result = $this->db->query($sql);
+        return $result->fetch_assoc();
     }
 
     /**
@@ -799,7 +841,7 @@ class Consumo extends Model
      */
     public function getCabaniaByCodigo($codigo)
     {
-        $sql = "SELECT * FROM cabania WHERE cabania_codigo = ? AND cabania_baja = 0 LIMIT 1";
+        $sql = "SELECT * FROM cabania WHERE cabania_codigo = ? AND cabania_estado = 1 LIMIT 1";
         $result = $this->query($sql, [$codigo]);
         return $result->fetch_assoc();
     }

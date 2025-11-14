@@ -286,7 +286,7 @@ class Reserva extends Model
         
         $sql = "SELECT c.* 
                 FROM cabania c
-                WHERE c.cabania_baja = 0
+                WHERE c.cabania_estado = 1
                 AND c.id_cabania NOT IN (
                     SELECT DISTINCT r.rela_cabania 
                     FROM reserva r

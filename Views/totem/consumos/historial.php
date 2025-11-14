@@ -1,9 +1,3 @@
-<?php
-$this->extend('layouts/totem');
-$this->section('title', $title);
-$this->section('content');
-?>
-
 <div class="totem-header">
     <div class="row align-items-center">
         <div class="col-md-4">
@@ -97,5 +91,3 @@ $this->section('content');
         </div>
     <?php endif; ?>
 </div>
-
-<?php $this->endSection(); ?>

@@ -123,6 +123,27 @@ class TotemConsumosController extends Controller
     }
 
     /**
+     * Vista para solicitar consumos (versión slider)
+     */
+    public function solicitar()
+    {
+        // Verificar configuración
+        if (!isset($_SESSION['totem_cabania_id'])) {
+            $this->redirect('/totem', 'Debe configurar el tótem primero', 'error');
+            return;
+        }
+        
+        $data = [
+            'title' => 'Solicitar Consumos - ' . $_SESSION['totem_cabania_nombre'],
+            'cabaniaNombre' => $_SESSION['totem_cabania_nombre'],
+            'huespedNombre' => $_SESSION['totem_reserva_huesped'],
+            'isTotemArea' => true
+        ];
+
+        return $this->render('totem/consumos/solicitar-totem', $data, 'totem');
+    }
+
+    /**
      * Registrar pedido desde el tótem
      */
     public function pedido()
@@ -139,8 +160,12 @@ class TotemConsumosController extends Controller
             ], 401);
         }
         
+        // Leer JSON del body
+        $json = file_get_contents('php://input');
+        $data = json_decode($json, true);
+        
         $reservaId = $_SESSION['totem_reserva_id'];
-        $items = $this->post('items', []);
+        $items = $data['items'] ?? [];
         
         if (empty($items)) {
             return $this->json([
@@ -242,6 +267,58 @@ class TotemConsumosController extends Controller
         unset($_SESSION['totem_reserva_huesped']);
         
         $this->redirect('/totem', 'Configuración del tótem reiniciada', 'success');
+    }
+
+    /**
+     * API: Obtener categorías disponibles (AJAX)
+     */
+    public function getCategorias()
+    {
+        $categorias = $this->consumoModel->getCategoriasActivas();
+        
+        return $this->json([
+            'success' => true,
+            'data' => $categorias
+        ]);
+    }
+
+    /**
+     * API: Obtener tipos de servicio disponibles (AJAX)
+     */
+    public function getTiposServicio()
+    {
+        $tipos = $this->consumoModel->getTiposServicioActivos();
+        
+        return $this->json([
+            'success' => true,
+            'data' => $tipos
+        ]);
+    }
+
+    /**
+     * API: Obtener productos por categoría (AJAX)
+     */
+    public function getProductosPorCategoria($categoriaId)
+    {
+        $productos = $this->consumoModel->getProductosByCategoria($categoriaId);
+        
+        return $this->json([
+            'success' => true,
+            'data' => $productos
+        ]);
+    }
+
+    /**
+     * API: Obtener servicios por tipo (AJAX)
+     */
+    public function getServiciosPorTipo($tipoId)
+    {
+        $servicios = $this->consumoModel->getServiciosByTipo($tipoId);
+        
+        return $this->json([
+            'success' => true,
+            'data' => $servicios
+        ]);
     }
 
     /**

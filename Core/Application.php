@@ -431,9 +431,14 @@ class Application
         $this->router->get('/totem', 'TotemConsumosController@index');
         $this->router->post('/totem/configurar', 'TotemConsumosController@configurar');
         $this->router->get('/totem/menu', 'TotemConsumosController@menu');
+        $this->router->get('/totem/solicitar', 'TotemConsumosController@solicitar');
         $this->router->post('/totem/pedido', 'TotemConsumosController@pedido');
         $this->router->get('/totem/historial', 'TotemConsumosController@historial');
         $this->router->get('/totem/reset', 'TotemConsumosController@reset');
+        $this->router->get('/totem/api/categorias', 'TotemConsumosController@getCategorias');
+        $this->router->get('/totem/api/tipos-servicio', 'TotemConsumosController@getTiposServicio');
+        $this->router->get('/totem/api/productos/{categoriaId}', 'TotemConsumosController@getProductosPorCategoria');
+        $this->router->get('/totem/api/servicios/{tipoId}', 'TotemConsumosController@getServiciosPorTipo');
         $this->router->get('/totem/producto/{id}/precio', 'TotemConsumosController@getPrecioProducto');
 
         // Rutas de ingresos
