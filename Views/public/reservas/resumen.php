@@ -90,17 +90,17 @@
                                 </div>
                                 <div class="card-body">
                                     <div class="row g-3">
-                                        <div class="col-md-6">
+                                        <div class="col-md-12">
                                             <small class="text-muted d-block">Nombre Completo</small>
                                             <strong><?= htmlspecialchars($persona['persona_nombre'] . ' ' . $persona['persona_apellido']) ?></strong>
                                         </div>
                                         <div class="col-md-6">
-                                            <small class="text-muted d-block">Teléfono</small>
-                                            <strong><?= htmlspecialchars($persona['persona_telefono'] ?? 'No especificado') ?></strong>
+                                            <small class="text-muted d-block"><i class="fas fa-phone me-1"></i>Teléfono</small>
+                                            <strong><?= !empty($huesped['telefono']) ? htmlspecialchars($huesped['telefono']) : 'No especificado' ?></strong>
                                         </div>
                                         <div class="col-md-6">
-                                            <small class="text-muted d-block">Email</small>
-                                            <strong><?= htmlspecialchars($persona['persona_email'] ?? 'No especificado') ?></strong>
+                                            <small class="text-muted d-block"><i class="fas fa-envelope me-1"></i>Email</small>
+                                            <strong><?= !empty($huesped['email']) ? htmlspecialchars($huesped['email']) : 'No especificado' ?></strong>
                                         </div>
                                     </div>
                                 </div>
@@ -116,29 +116,57 @@
                                         </h5>
                                     </div>
                                     <div class="card-body">
-                                        <div class="table-responsive">
-                                            <table class="table table-sm">
-                                                <thead class="thead-light">
-                                                    <tr>
-                                                        <th>Servicio</th>
-                                                        <th class="text-center">Cantidad</th>
-                                                        <th class="text-end">Precio Unit.</th>
-                                                        <th class="text-end">Subtotal</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <?php foreach ($reserva['servicios'] as $servicio): ?>
+                                        <!-- Versión Desktop (tabla) -->
+                                        <div class="d-none d-md-block">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm mb-0">
+                                                    <thead class="thead-light">
                                                         <tr>
-                                                            <td>
-                                                                <strong><?= htmlspecialchars($servicio['nombre']) ?></strong>
-                                                            </td>
-                                                            <td class="text-center">1</td>
-                                                            <td class="text-end">$<?= number_format($servicio['precio'], 0, ',', '.') ?></td>
-                                                            <td class="text-end">$<?= number_format($servicio['precio'], 0, ',', '.') ?></td>
+                                                            <th>Servicio</th>
+                                                            <th class="text-center">Cantidad</th>
+                                                            <th class="text-end">Precio Unit.</th>
+                                                            <th class="text-end">Subtotal</th>
                                                         </tr>
-                                                    <?php endforeach; ?>
-                                                </tbody>
-                                            </table>
+                                                    </thead>
+                                                    <tbody>
+                                                        <?php foreach ($reserva['servicios'] as $servicio): ?>
+                                                            <tr>
+                                                                <td>
+                                                                    <strong><?= htmlspecialchars($servicio['nombre']) ?></strong>
+                                                                </td>
+                                                                <td class="text-center">1</td>
+                                                                <td class="text-end">$<?= number_format($servicio['precio'], 0, ',', '.') ?></td>
+                                                                <td class="text-end">$<?= number_format($servicio['precio'], 0, ',', '.') ?></td>
+                                                            </tr>
+                                                        <?php endforeach; ?>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Versión Mobile (cards) -->
+                                        <div class="d-md-none">
+                                            <?php foreach ($reserva['servicios'] as $index => $servicio): ?>
+                                                <div class="service-mobile-card <?= $index < count($reserva['servicios']) - 1 ? 'mb-2' : '' ?>">
+                                                    <div class="d-flex justify-content-between align-items-start bg-light p-3 rounded">
+                                                        <div class="flex-grow-1">
+                                                            <h6 class="mb-1 text-dark">
+                                                                <i class="fas fa-check-circle text-success me-1"></i>
+                                                                <?= htmlspecialchars($servicio['nombre']) ?>
+                                                            </h6>
+                                                            <small class="text-muted">
+                                                                <i class="fas fa-hashtag me-1"></i>Cantidad: 1
+                                                            </small>
+                                                        </div>
+                                                        <div class="text-end">
+                                                            <div class="fw-bold text-success">
+                                                                $<?= number_format($servicio['precio'], 0, ',', '.') ?>
+                                                            </div>
+                                                            <small class="text-muted">Total</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            <?php endforeach; ?>
                                         </div>
                                     </div>
                                 </div>
@@ -212,21 +240,16 @@
                     <!-- Botones de Acción -->
                     <div class="row mt-4">
                         <div class="col-md-4">
-                            <a href="/reservas/servicios" class="btn btn-outline-secondary w-100">
+                            <button type="button" onclick="volverAServicios()" class="btn btn-outline-secondary w-100">
                                 <i class="fas fa-arrow-left me-1"></i>
                                 Modificar Servicios
-                            </a>
+                            </button>
                         </div>
                         <div class="col-md-4">
-                            <form method="POST" action="/reservas/cancelar" class="d-inline w-100">
-                                <input type="hidden" name="reserva_temp_id" value="<?= htmlspecialchars($reserva['temp_id'] ?? '') ?>">
-                                <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
-                                <button type="submit" class="btn btn-outline-danger w-100" 
-                                        onclick="return confirm('¿Está seguro que desea cancelar esta reserva?')">
-                                    <i class="fas fa-times me-1"></i>
-                                    Cancelar Reserva
-                                </button>
-                            </form>
+                            <button type="button" onclick="confirmarCancelacion()" class="btn btn-outline-danger w-100">
+                                <i class="fas fa-times me-1"></i>
+                                Cancelar Reserva
+                            </button>
                         </div>
                         <div class="col-md-4">
                             <form method="POST" action="<?= $this->url('/reservas/proceder-pago') ?>" class="d-inline w-100">
@@ -238,6 +261,23 @@
                             </form>
                         </div>
                     </div>
+                    
+                    <!-- Formulario oculto para volver a servicios -->
+                    <form id="formVolverServicios" method="POST" action="<?= $this->url('/reservas/servicios') ?>" style="display: none;">
+                        <input type="hidden" name="cabania_id" value="<?= htmlspecialchars($reserva['cabania_id']) ?>">
+                        <input type="hidden" name="fecha_ingreso" value="<?= htmlspecialchars($reserva['fecha_ingreso']) ?>">
+                        <input type="hidden" name="fecha_salida" value="<?= htmlspecialchars($reserva['fecha_salida']) ?>">
+                        <input type="hidden" name="cantidad_personas" value="<?= htmlspecialchars($reserva['cantidad_personas']) ?>">
+                        <input type="hidden" name="id_persona" value="<?= htmlspecialchars($reserva['id_persona']) ?>">
+                        <input type="hidden" name="subtotal" value="<?= htmlspecialchars($reserva['subtotal_alojamiento']) ?>">
+                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+                    </form>
+                    
+                    <!-- Formulario oculto para cancelar reserva -->
+                    <form id="formCancelarReserva" method="POST" action="<?= $this->url('/reservas/cancelar') ?>" style="display: none;">
+                        <input type="hidden" name="reserva_temp_id" value="<?= htmlspecialchars($reserva['temp_id'] ?? '') ?>">
+                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+                    </form>
 
                 </div>
             </div>
@@ -289,6 +329,44 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+// Función para volver a servicios con los datos
+function volverAServicios() {
+    document.getElementById('formVolverServicios').submit();
+}
+
+// Función para confirmar cancelación de reserva
+function confirmarCancelacion() {
+    Swal.fire({
+        title: '¿Cancelar reserva?',
+        html: '<p class="mb-2">Estás a punto de cancelar esta reserva.</p><p class="text-muted small">Esta acción no se puede deshacer y perderás todos los datos ingresados.</p>',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#5a6268',
+        confirmButtonText: '<i class="fas fa-trash me-1"></i> Sí, cancelar',
+        cancelButtonText: '<i class="fas fa-times me-1"></i> No, continuar',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Mostrar loading
+            Swal.fire({
+                title: 'Cancelando reserva...',
+                text: 'Por favor espera un momento',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                willOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Redirigir al home después de un breve momento
+            setTimeout(() => {
+                window.location.href = '<?= $this->url('/') ?>';
+            }, 800);
+        }
+    });
+}
 </script>
 
 <!-- SweetAlert2 -->

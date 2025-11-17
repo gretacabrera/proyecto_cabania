@@ -585,6 +585,19 @@ class ReservasController extends Controller
             return;
         }
         
+        // Obtener datos de la persona con sus contactos (igual que en confirmar)
+        $personaConContactos = $this->personaModel->getWithContacts($reservaTemporal['id_persona']);
+        
+        // Datos del huésped con contactos (igual que en confirmar)
+        $huesped = [
+            'id_persona' => $persona['id_persona'],
+            'nombre' => $persona['persona_nombre'],
+            'apellido' => $persona['persona_apellido'],
+            'fecha_nacimiento' => $persona['persona_fechanac'],
+            'email' => $personaConContactos['contacto_email'] ?? '',
+            'telefono' => $personaConContactos['contacto_telefono'] ?? ''
+        ];
+        
         // Calcular días de estadía
         $fechaInicioObj = new \DateTime($reservaTemporal['fecha_ingreso']);
         $fechaFinObj = new \DateTime($reservaTemporal['fecha_salida']);
@@ -600,6 +613,7 @@ class ReservasController extends Controller
             'reserva' => $reservaTemporal,
             'cabania' => $cabania,
             'persona' => $persona,
+            'huesped' => $huesped,
             'noches' => $dias,
             'isAdminArea' => false
         ];

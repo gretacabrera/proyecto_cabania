@@ -125,14 +125,6 @@
                                     <i class="fas fa-calendar-alt"></i>
                                     Ver Disponibilidad
                                 </button>
-                                
-                                <button type="button" 
-                                        class="btn btn-primary btn-reserve" 
-                                        data-cabin-id="<?= $cabania['id_cabania'] ?>"
-                                        disabled>
-                                    <i class="fas fa-booking"></i>
-                                    Reservar Ahora
-                                </button>
                             </div>
                         </div>
                     </div>
