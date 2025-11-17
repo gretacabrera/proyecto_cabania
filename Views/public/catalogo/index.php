@@ -202,7 +202,7 @@
         <div class="modal-header-new">
             <h3 class="modal-title-new">
                 <i class="fas fa-calendar-check"></i>
-                Disponibilidad - <span id="modalCabinName"></span>
+                <span class="d-none d-sm-inline">Disponibilidad - </span><span id="modalCabinName"></span>
             </h3>
             <button type="button" class="modal-close-new" onclick="closeAvailabilityModal()">
                 <i class="fas fa-times"></i>
@@ -210,81 +210,89 @@
         </div>
         
         <div class="modal-body-new">
-            <!-- Información de fechas seleccionadas -->
-            <div class="selected-dates-display" id="selectedDatesDisplay" style="display: none;">
-                <div class="dates-summary">
-                    <div class="date-box checkin-date">
-                        <span class="date-label">Entrada</span>
-                        <span class="date-value" id="displayCheckinDate">--</span>
+            <div class="modal-content-grid">
+                <!-- Columna izquierda: Calendario -->
+                <div class="calendar-column">
+                    <!-- Calendario simplificado -->
+                    <div class="simple-calendar">
+                        <div class="calendar-nav">
+                            <button type="button" class="nav-button prev" id="prevMonthNew">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <h4 class="month-title" id="monthTitleNew">Enero 2025</h4>
+                            <button type="button" class="nav-button next" id="nextMonthNew">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="calendar-table">
+                            <div class="calendar-header-row">
+                                <div class="day-header"><span class="d-none d-sm-inline">Dom</span><span class="d-inline d-sm-none">D</span></div>
+                                <div class="day-header"><span class="d-none d-sm-inline">Lun</span><span class="d-inline d-sm-none">L</span></div>
+                                <div class="day-header"><span class="d-none d-sm-inline">Mar</span><span class="d-inline d-sm-none">M</span></div>
+                                <div class="day-header"><span class="d-none d-sm-inline">Mié</span><span class="d-inline d-sm-none">X</span></div>
+                                <div class="day-header"><span class="d-none d-sm-inline">Jue</span><span class="d-inline d-sm-none">J</span></div>
+                                <div class="day-header"><span class="d-none d-sm-inline">Vie</span><span class="d-inline d-sm-none">V</span></div>
+                                <div class="day-header"><span class="d-none d-sm-inline">Sáb</span><span class="d-inline d-sm-none">S</span></div>
+                            </div>
+                            <div class="calendar-body" id="calendarBodyNew">
+                                <!-- Los días se generan aquí -->
+                            </div>
+                        </div>
                     </div>
-                    <div class="date-arrow">
-                        <i class="fas fa-long-arrow-alt-right"></i>
-                    </div>
-                    <div class="date-box checkout-date">
-                        <span class="date-label">Salida</span>
-                        <span class="date-value" id="displayCheckoutDate">--</span>
-                    </div>
-                </div>
-                <div class="nights-summary" id="nightsSummary"></div>
-            </div>
-            
-            <!-- Calendario simplificado -->
-            <div class="simple-calendar">
-                <div class="calendar-nav">
-                    <button type="button" class="nav-button prev" id="prevMonthNew">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <h4 class="month-title" id="monthTitleNew">Enero 2025</h4>
-                    <button type="button" class="nav-button next" id="nextMonthNew">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
                 </div>
                 
-                <div class="calendar-table">
-                    <div class="calendar-header-row">
-                        <div class="day-header">Dom</div>
-                        <div class="day-header">Lun</div>
-                        <div class="day-header">Mar</div>
-                        <div class="day-header">Mié</div>
-                        <div class="day-header">Jue</div>
-                        <div class="day-header">Vie</div>
-                        <div class="day-header">Sáb</div>
+                <!-- Columna derecha: Información -->
+                <div class="info-column">
+                    <!-- Información de fechas seleccionadas -->
+                    <div class="selected-dates-display" id="selectedDatesDisplay" style="display: none;">
+                        <div class="dates-summary">
+                            <div class="date-box checkin-date">
+                                <span class="date-label">Entrada</span>
+                                <span class="date-value" id="displayCheckinDate">--</span>
+                            </div>
+                            <div class="date-arrow">
+                                <i class="fas fa-long-arrow-alt-right"></i>
+                            </div>
+                            <div class="date-box checkout-date">
+                                <span class="date-label">Salida</span>
+                                <span class="date-value" id="displayCheckoutDate">--</span>
+                            </div>
+                        </div>
+                        <div class="nights-summary d-none d-sm-block" id="nightsSummary"></div>
                     </div>
-                    <div class="calendar-body" id="calendarBodyNew">
-                        <!-- Los días se generan aquí -->
+                    
+                    <!-- Leyenda simplificada -->
+                    <div class="calendar-legend-new">
+                        <div class="legend-row">
+                            <div class="legend-item-new">
+                                <span class="legend-square available"></span>
+                                <span>Disponible</span>
+                            </div>
+                            <div class="legend-item-new">
+                                <span class="legend-square occupied"></span>
+                                <span>Ocupado</span>
+                            </div>
+                            <div class="legend-item-new">
+                                <span class="legend-square selected-start"></span>
+                                <span>Entrada</span>
+                            </div>
+                            <div class="legend-item-new">
+                                <span class="legend-square selected-end"></span>
+                                <span>Salida</span>
+                            </div>
+                            <div class="legend-item-new">
+                                <span class="legend-square in-range"></span>
+                                <span>Estancia</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Mensaje de instrucciones -->
+                    <div class="instruction-message" id="instructionMessage">
+                        Selecciona la fecha de entrada
                     </div>
                 </div>
-            </div>
-            
-            <!-- Leyenda simplificada -->
-            <div class="calendar-legend-new">
-                <div class="legend-row">
-                    <div class="legend-item-new">
-                        <span class="legend-square available"></span>
-                        <span>Disponible</span>
-                    </div>
-                    <div class="legend-item-new">
-                        <span class="legend-square occupied"></span>
-                        <span>Ocupado</span>
-                    </div>
-                    <div class="legend-item-new">
-                        <span class="legend-square selected-start"></span>
-                        <span>Entrada</span>
-                    </div>
-                    <div class="legend-item-new">
-                        <span class="legend-square selected-end"></span>
-                        <span>Salida</span>
-                    </div>
-                    <div class="legend-item-new">
-                        <span class="legend-square in-range"></span>
-                        <span>Estancia</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Mensaje de instrucciones -->
-            <div class="instruction-message" id="instructionMessage">
-                Selecciona la fecha de entrada
             </div>
         </div>
         

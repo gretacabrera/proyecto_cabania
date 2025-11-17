@@ -31,9 +31,9 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
     <!-- Estilos CSS Públicos -->
-    <link href="<?= $this->asset('assets/css/main.css') ?>" rel="stylesheet">
-    <link href="<?= $this->asset('assets/css/components.css') ?>" rel="stylesheet">
-    <link href="<?= $this->asset('assets/css/public.css') ?>" rel="stylesheet">
+    <link href="<?= $this->asset('assets/css/main.css?v=' . time()) ?>" rel="stylesheet">
+    <link href="<?= $this->asset('assets/css/components.css?v=' . time()) ?>" rel="stylesheet">
+    <link href="<?= $this->asset('assets/css/public.css?v=' . time()) ?>" rel="stylesheet">
 </head>
 <body class="public-layout">
     <!-- Navegación pública -->
