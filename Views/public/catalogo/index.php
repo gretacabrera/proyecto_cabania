@@ -5,83 +5,81 @@
  */
 ?>
 
-<!-- Hero Section Minimalista -->
-<div class="hero-section catalog-hero minimal-hero">
-    <div class="container">
-        <div class="hero-minimal-content">
-            <h1 class="minimal-title">Catálogo de Cabañas</h1>
-            <p class="minimal-subtitle">Encuentra la cabaña perfecta para tu mejor experiencia</p>
-            
-            <div class="minimal-filters">
-                <form method="GET" class="minimal-form">
-                    <div class="minimal-grid">
-                        <input type="text" 
-                               id="busqueda" 
-                               name="busqueda" 
-                               value="<?= $this->escape($filters['busqueda']) ?>" 
-                               placeholder="Buscar cabaña..."
-                               class="minimal-input">
-                        
-                        <select id="capacidad" name="capacidad" class="minimal-select">
-                            <option value="">Personas</option>
-                            <?php for ($i = 1; $i <= 10; $i++): ?>
-                                <option value="<?= $i ?>" <?= $filters['capacidad'] == $i ? 'selected' : '' ?>>
-                                    <?= $i ?> <?= $i > 1 ? 'personas' : 'persona' ?>
-                                </option>
-                            <?php endfor; ?>
-                        </select>
-                        
-                        <input type="number" 
-                               id="precio_max" 
-                               name="precio_max" 
-                               value="<?= $this->escape($filters['precio_max']) ?>" 
-                               placeholder="Precio máx"
-                               step="0.01"
-                               min="0"
-                               class="minimal-input price-input">
-                        
-                        <div class="minimal-actions">
-                            <button type="submit" class="btn-minimal btn-search" title="Buscar">
-                                <i class="fas fa-search"></i>
-                            </button>
-                            <a href="<?= $this->url('/catalogo') ?>" class="btn-minimal btn-clear" title="Limpiar filtros">
-                                <i class="fas fa-times"></i>
-                            </a>
+<!-- Resultados -->
+<div class="container-fluid px-2 px-md-4 py-3 py-md-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Card contenedora -->
+            <div class="card shadow-sm">
+                <div class="card-body p-3 p-md-4">
+                    <!-- Hero Section Minimalista -->
+                    <div class="hero-section catalog-hero minimal-hero">
+                        <div class="container">
+                            <div class="hero-minimal-content">
+                                <h1 class="minimal-title">Catálogo de Cabañas</h1>
+                                <p class="minimal-subtitle">Encuentra la cabaña perfecta para tu mejor experiencia</p>
+                                
+                                <div class="minimal-filters">
+                                    <form method="GET" class="minimal-form">
+                                        <div class="minimal-grid">
+                                            <input type="text" 
+                                                id="busqueda" 
+                                                name="busqueda" 
+                                                value="<?= $this->escape($filters['busqueda']) ?>" 
+                                                placeholder="Buscar cabaña..."
+                                                class="minimal-input">
+                                            
+                                            <select id="capacidad" name="capacidad" class="minimal-select">
+                                                <option value="">Personas</option>
+                                                <?php for ($i = 1; $i <= 10; $i++): ?>
+                                                    <option value="<?= $i ?>" <?= $filters['capacidad'] == $i ? 'selected' : '' ?>>
+                                                        <?= $i ?> <?= $i > 1 ? 'personas' : 'persona' ?>
+                                                    </option>
+                                                <?php endfor; ?>
+                                            </select>
+                                            
+                                            <input type="number" 
+                                                id="precio_max" 
+                                                name="precio_max" 
+                                                value="<?= $this->escape($filters['precio_max']) ?>" 
+                                                placeholder="Precio máx"
+                                                step="0.01"
+                                                min="0"
+                                                class="minimal-input price-input">
+                                            
+                                            <div class="minimal-actions">
+                                                <button type="submit" class="btn-minimal btn-search" title="Buscar">
+                                                    <i class="fas fa-search"></i>
+                                                </button>
+                                                <a href="<?= $this->url('/catalogo') ?>" class="btn-minimal btn-clear" title="Limpiar filtros">
+                                                    <i class="fas fa-times"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- Resultados -->
-<section class="catalog-results">
-    <div class="container">
-        <!-- Form oculto para envío de datos de reserva -->
-        <form id="reservationForm" method="POST" action="<?= $this->url('/catalogo/reserve') ?>" class="hidden-form">
-            <input type="hidden" name="cabania_id" id="reserveCabinId">
-            <input type="hidden" name="fecha_inicio" id="reserveDateStart">
-            <input type="hidden" name="fecha_fin" id="reserveDateEnd">
-        </form>
+                    <br>
 
-        <!-- Resultados del Catálogo -->
-<section class="catalog-results">
-    <div class="container">
-        <div class="results-header">
-            <div class="results-info">
-                <h2>
+                    <!-- Mensaje de resultados de búsqueda -->
                     <?php if ($total_results > 0): ?>
-                        <?= $total_results ?> cabaña<?= $total_results > 1 ? 's' : '' ?> encontrada<?= $total_results > 1 ? 's' : '' ?>
-                    <?php else: ?>
-                        No se encontraron cabañas
+                        <p class="mb-4" style="font-weight: 500; color: #2c3e50;">
+                            Se encontraron <strong><?= $total_results ?></strong> cabaña<?= $total_results > 1 ? 's' : '' ?> para éstos filtros de búsqueda
+                        </p>
                     <?php endif; ?>
-                </h2>
-            </div>
-        </div>
-        
-        <?php if (!empty($cabanias)): ?>
-            <div class="cabins-grid">
+
+                    <!-- Form oculto para envío de datos de reserva -->
+                    <form id="reservationForm" method="POST" action="<?= $this->url('/catalogo/reserve') ?>" class="hidden-form">
+                        <input type="hidden" name="cabania_id" id="reserveCabinId">
+                        <input type="hidden" name="fecha_inicio" id="reserveDateStart">
+                        <input type="hidden" name="fecha_fin" id="reserveDateEnd">
+                    </form>
+                    
+                    <?php if (!empty($cabanias)): ?>
+                        <div class="cabins-grid">
                 <?php foreach ($cabanias as $cabania): ?>
                     <div class="cabin-card" data-cabin-id="<?= $cabania['id_cabania'] ?>">
                         <div class="cabin-image">
@@ -129,63 +127,64 @@
                         </div>
                     </div>
                 <?php endforeach; ?>
-            </div>
-            
-            <!-- Paginación -->
-            <?php if ($pagination['total_pages'] > 1): ?>
-                <div class="pagination-container">
-                    <nav class="pagination">
-                        <?php
-                        $currentPage = $pagination['current_page'];
-                        $totalPages = $pagination['total_pages'];
-                        $baseUrl = $this->url('/catalogo') . '?' . http_build_query(array_filter($filters));
-                        $baseUrl .= $baseUrl && strpos($baseUrl, '?') ? '&' : '?';
-                        ?>
-                        
-                        <?php if ($currentPage > 1): ?>
-                            <a href="<?= $baseUrl ?>page=<?= $currentPage - 1 ?>" class="pagination-btn">
-                                <i class="fas fa-chevron-left"></i> Anterior
-                            </a>
-                        <?php endif; ?>
-                        
-                        <div class="pagination-numbers">
-                            <?php
-                            $start = max(1, $currentPage - 2);
-                            $end = min($totalPages, $currentPage + 2);
-                            ?>
-                            
-                            <?php for ($i = $start; $i <= $end; $i++): ?>
-                                <a href="<?= $baseUrl ?>page=<?= $i ?>" 
-                                   class="pagination-number <?= $i == $currentPage ? 'active' : '' ?>">
-                                    <?= $i ?>
-                                </a>
-                            <?php endfor; ?>
                         </div>
                         
-                        <?php if ($currentPage < $totalPages): ?>
-                            <a href="<?= $baseUrl ?>page=<?= $currentPage + 1 ?>" class="pagination-btn">
-                                Siguiente <i class="fas fa-chevron-right"></i>
-                            </a>
+                        <!-- Paginación -->
+                        <?php if ($pagination['total_pages'] > 1): ?>
+                            <div class="pagination-container mt-4">
+                                <nav class="pagination">
+                                    <?php
+                                    $currentPage = $pagination['current_page'];
+                                    $totalPages = $pagination['total_pages'];
+                                    $baseUrl = $this->url('/catalogo') . '?' . http_build_query(array_filter($filters));
+                                    $baseUrl .= $baseUrl && strpos($baseUrl, '?') ? '&' : '?';
+                                    ?>
+                                    
+                                    <?php if ($currentPage > 1): ?>
+                                        <a href="<?= $baseUrl ?>page=<?= $currentPage - 1 ?>" class="pagination-btn">
+                                            <i class="fas fa-chevron-left"></i> Anterior
+                                        </a>
+                                    <?php endif; ?>
+                                    
+                                    <div class="pagination-numbers">
+                                        <?php
+                                        $start = max(1, $currentPage - 2);
+                                        $end = min($totalPages, $currentPage + 2);
+                                        ?>
+                                        
+                                        <?php for ($i = $start; $i <= $end; $i++): ?>
+                                            <a href="<?= $baseUrl ?>page=<?= $i ?>" 
+                                               class="pagination-number <?= $i == $currentPage ? 'active' : '' ?>">
+                                                <?= $i ?>
+                                            </a>
+                                        <?php endfor; ?>
+                                    </div>
+                                    
+                                    <?php if ($currentPage < $totalPages): ?>
+                                        <a href="<?= $baseUrl ?>page=<?= $currentPage + 1 ?>" class="pagination-btn">
+                                            Siguiente <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    <?php endif; ?>
+                                </nav>
+                            </div>
                         <?php endif; ?>
-                    </nav>
+                        
+                    <?php else: ?>
+                        <!-- Estado vacío -->
+                        <div class="text-center py-5">
+                            <i class="fas fa-search fa-4x text-muted mb-3"></i>
+                            <h4 class="text-muted">No se encontraron cabañas</h4>
+                            <p class="text-muted mb-4">Intenta ajustar los filtros de búsqueda para encontrar más opciones.</p>
+                            <a href="<?= $this->url('/catalogo') ?>" class="btn btn-primary">
+                                <i class="fas fa-refresh"></i> Ver todas las cabañas
+                            </a>
+                        </div>
+                    <?php endif; ?>
                 </div>
-            <?php endif; ?>
-            
-        <?php else: ?>
-            <!-- Estado vacío -->
-            <div class="empty-state">
-                <div class="empty-icon">
-                    <i class="fas fa-search"></i>
-                </div>
-                <h3>No se encontraron cabañas</h3>
-                <p>Intenta ajustar los filtros de búsqueda para encontrar más opciones.</p>
-                <a href="<?= $this->url('/catalogo') ?>" class="btn btn-primary">
-                    <i class="fas fa-refresh"></i> Ver todas las cabañas
-                </a>
             </div>
-        <?php endif; ?>
+        </div>
     </div>
-</section>
+</div>
 
 <!-- Modal de Calendario de Disponibilidad Rediseñado -->
 <div class="availability-modal-redesigned" id="availabilityModal" style="display: none;">

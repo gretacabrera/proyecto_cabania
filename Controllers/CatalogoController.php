@@ -56,7 +56,10 @@ class CatalogoController extends Controller
             'total_results' => $pagination['total']
         ];
         
-        return $this->render('public/catalogo/index', $data, 'public');
+        // Usar layout 'main' si está autenticado, 'public' si no lo está
+        $layout = Auth::check() ? 'main' : 'public';
+        
+        return $this->render('public/catalogo/index', $data, $layout);
     }
     
     /**
