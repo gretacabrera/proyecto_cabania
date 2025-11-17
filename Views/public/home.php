@@ -120,18 +120,8 @@
         <!-- Header de bienvenida -->
         <div class="dashboard-header">
             <div class="welcome-section">
-                <div class="welcome-avatar">
-                    <i class="fas fa-user-circle"></i>
-                </div>
                 <div class="welcome-info">
-                    <h1>¡Bienvenido/a, <?= $this->escape($user) ?>!</h1>
-                    <p class="user-role">Huésped</p>
-                    <?php if (isset($persona)): ?>
-                        <p class="user-details">
-                            <i class="fas fa-id-card"></i>
-                            <?= $this->escape($persona['persona_nombre'] . ' ' . $persona['persona_apellido']) ?>
-                        </p>
-                    <?php endif; ?>
+                    <h1>¡Bienvenido/a, <?= $this->escape($persona['persona_nombre'] . ' ' . $persona['persona_apellido']) ?>!</h1>
                 </div>
             </div>
             
@@ -176,9 +166,6 @@
                 <div class="empty-state">
                     <i class="fas fa-calendar-times"></i>
                     <p>No tienes reservas próximas</p>
-                    <a href="<?= $this->url('/catalogo') ?>" class="btn btn-primary">
-                        Hacer una Reserva
-                    </a>
                 </div>
             <?php endif; ?>
         </div>

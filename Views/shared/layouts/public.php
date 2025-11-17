@@ -52,6 +52,72 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="<?= $this->asset('assets/js/public.js') ?>"></script>
     
+    <!-- Script del menú público -->
+    <script>
+    $(document).ready(function() {
+        const menuToggle = $('#publicMenuToggle');
+        const navbarCollapse = $('#publicNavbar');
+        let isMenuOpen = false;
+        
+        // Manejar click en el botón hamburguesa
+        menuToggle.on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (isMenuOpen) {
+                // Cerrar menú
+                navbarCollapse.removeClass('show');
+                menuToggle.removeClass('active');
+                menuToggle.attr('aria-expanded', 'false');
+                isMenuOpen = false;
+            } else {
+                // Abrir menú
+                navbarCollapse.addClass('show');
+                menuToggle.addClass('active');
+                menuToggle.attr('aria-expanded', 'true');
+                isMenuOpen = true;
+            }
+        });
+        
+        // Cerrar menú móvil al hacer clic en un enlace
+        navbarCollapse.find('.nav-link:not(.dropdown-toggle)').on('click', function() {
+            if ($(window).width() <= 991) {
+                navbarCollapse.removeClass('show');
+                menuToggle.removeClass('active');
+                menuToggle.attr('aria-expanded', 'false');
+                isMenuOpen = false;
+            }
+        });
+        
+        // Manejar dropdowns personalizados (si hay usuario autenticado)
+        $('.dropdown-toggle').on('click', function(e) {
+            const currentDropdown = $(this).next('.dropdown-menu');
+            const isCurrentlyOpen = currentDropdown.hasClass('show');
+            
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Cerrar TODOS los dropdowns primero
+            $('.dropdown-menu.show').removeClass('show')
+                .prev('.dropdown-toggle').attr('aria-expanded', 'false');
+            
+            // Si el dropdown actual no estaba abierto, abrirlo
+            if (!isCurrentlyOpen) {
+                currentDropdown.addClass('show');
+                $(this).attr('aria-expanded', 'true');
+            }
+        });
+        
+        // Cerrar dropdowns al hacer clic fuera
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('.dropdown').length) {
+                $('.dropdown-menu.show').removeClass('show')
+                    .prev('.dropdown-toggle').attr('aria-expanded', 'false');
+            }
+        });
+    });
+    </script>
+    
     <!-- Body class para identificar página -->
     <script>
         document.body.classList.add('<?= isset($bodyClass) ? $this->escape($bodyClass) : 'public-page' ?>');

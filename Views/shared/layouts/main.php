@@ -49,15 +49,6 @@
     <script src="<?= asset('assets/js/forms.js') ?>"></script>
     <script src="<?= asset('assets/js/public.js') ?>"></script><?php if (isset($isAdminArea) && $isAdminArea): ?>
     <script src="<?= asset('assets/js/admin.js') ?>"></script><?php endif; ?>
-    
-    <?php if (isset($showReservaButton) && $showReservaButton): ?>
-    <!-- Botón flotante para reservas -->
-    <div class="floating-action">
-        <button class="btn-float btn-primary" data-action="navegar-reserva" data-url="<?= url('/catalogo') ?>">>
-            <i class="fas fa-calendar-plus"></i>
-            <span>Nueva Reserva</span>
-        </button>
-    </div>
-    <?php endif; ?>
+
 </body>
 </html>

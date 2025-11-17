@@ -25,7 +25,7 @@ if (session_status() == PHP_SESSION_NONE) {
         </a>
 
         <!-- Botón hamburguesa para móvil -->
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" 
+        <button class="navbar-toggler" type="button" id="menuToggle"
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span></span>
             <span></span>
@@ -130,10 +130,10 @@ if (session_status() == PHP_SESSION_NONE) {
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-expanded="false">
                             <img src="<?= $this->asset('imagenes/home.png') ?>" alt="Avatar" class="user-avatar">
-                            <?= htmlspecialchars(Auth::user()) ?>
+                            Usuario: <?= htmlspecialchars(Auth::user()) ?>
                         </a>
                         <div class="dropdown-menu dropdown-menu-right">
-                            <h6 class="dropdown-header" style="color: #2c3e50;">Usuario: <?= htmlspecialchars(Auth::user()) ?></h6>
+                            <h6 class="dropdown-header">Perfil: <?= htmlspecialchars(Auth::getUserProfile()) ?></h6>
                             <div class="dropdown-divider"></div>
                             <a class="dropdown-item" href="<?= $this->url('/auth/change-password') ?>">
                                 <i class="fas fa-key me-2"></i>Cambiar Contraseña
@@ -159,79 +159,66 @@ if (session_status() == PHP_SESSION_NONE) {
 <div style="height: 20px;"></div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Manejar el cierre automático de dropdowns
-    const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
+$(document).ready(function() {
+    const menuToggle = $('#menuToggle');
+    const navbarCollapse = $('#navbarNav');
+    let isMenuOpen = false;
     
-    dropdownToggles.forEach(toggle => {
-        toggle.addEventListener('click', function(e) {
-            const currentDropdown = this.nextElementSibling;
-            const isCurrentlyOpen = currentDropdown && currentDropdown.classList.contains('show');
-            
-            // Siempre prevenir el comportamiento por defecto para manejar manualmente
-            e.preventDefault();
-            e.stopPropagation();
-            
-            // Cerrar TODOS los dropdowns primero
-            document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
-                menu.classList.remove('show');
-                const associatedToggle = menu.previousElementSibling;
-                if (associatedToggle) {
-                    associatedToggle.setAttribute('aria-expanded', 'false');
-                }
-            });
-            
-            // Si el dropdown actual no estaba abierto, abrirlo
-            if (!isCurrentlyOpen && currentDropdown) {
-                currentDropdown.classList.add('show');
-                this.setAttribute('aria-expanded', 'true');
-            }
-        });
+    // Manejar click en el botón hamburguesa
+    menuToggle.on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (isMenuOpen) {
+            // Cerrar menú
+            navbarCollapse.removeClass('show');
+            menuToggle.removeClass('active');
+            menuToggle.attr('aria-expanded', 'false');
+            isMenuOpen = false;
+        } else {
+            // Abrir menú
+            navbarCollapse.addClass('show');
+            menuToggle.addClass('active');
+            menuToggle.attr('aria-expanded', 'true');
+            isMenuOpen = true;
+        }
+    });
+    
+    // Cerrar menú móvil al hacer clic en un enlace
+    navbarCollapse.find('.nav-link:not(.dropdown-toggle)').on('click', function() {
+        if ($(window).width() <= 991) {
+            navbarCollapse.removeClass('show');
+            menuToggle.removeClass('active');
+            menuToggle.attr('aria-expanded', 'false');
+            isMenuOpen = false;
+        }
+    });
+    
+    // Manejar dropdowns personalizados
+    $('.dropdown-toggle').on('click', function(e) {
+        const currentDropdown = $(this).next('.dropdown-menu');
+        const isCurrentlyOpen = currentDropdown.hasClass('show');
+        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Cerrar TODOS los dropdowns primero
+        $('.dropdown-menu.show').removeClass('show')
+            .prev('.dropdown-toggle').attr('aria-expanded', 'false');
+        
+        // Si el dropdown actual no estaba abierto, abrirlo
+        if (!isCurrentlyOpen) {
+            currentDropdown.addClass('show');
+            $(this).attr('aria-expanded', 'true');
+        }
     });
     
     // Cerrar dropdowns al hacer clic fuera
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.dropdown')) {
-            document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
-                menu.classList.remove('show');
-                const associatedToggle = menu.previousElementSibling;
-                if (associatedToggle) {
-                    associatedToggle.setAttribute('aria-expanded', 'false');
-                }
-            });
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('.dropdown').length) {
+            $('.dropdown-menu.show').removeClass('show')
+                .prev('.dropdown-toggle').attr('aria-expanded', 'false');
         }
     });
-    
-    // Mejorar la experiencia en móvil con Bootstrap 4.6.2
-    if (window.innerWidth <= 991) {
-        const navbarToggler = document.querySelector('.navbar-toggler');
-        const navbarCollapse = document.querySelector('.navbar-collapse');
-        
-        if (navbarToggler && navbarCollapse) {
-            // Manejar el toggle del menú móvil
-            navbarToggler.addEventListener('click', function() {
-                const isExpanded = this.getAttribute('aria-expanded') === 'true';
-                
-                if (isExpanded) {
-                    navbarCollapse.classList.remove('show');
-                    this.setAttribute('aria-expanded', 'false');
-                    this.classList.remove('active');
-                } else {
-                    navbarCollapse.classList.add('show');
-                    this.setAttribute('aria-expanded', 'true');
-                    this.classList.add('active');
-                }
-            });
-            
-            // Cerrar menú móvil al hacer clic en un enlace
-            navbarCollapse.querySelectorAll('.nav-link:not(.dropdown-toggle)').forEach(link => {
-                link.addEventListener('click', function() {
-                    navbarCollapse.classList.remove('show');
-                    navbarToggler.setAttribute('aria-expanded', 'false');
-                    navbarToggler.classList.remove('active');
-                });
-            });
-        }
-    }
 });
 </script>
