@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Core\NotificationService;
 use App\Models\Reserva;
 use App\Models\Cabania;
 use App\Models\Persona;
@@ -22,6 +23,7 @@ class ReservasController extends Controller
     protected $servicioModel;
     protected $consumoModel;
     protected $estadoReservaModel;
+    protected $notificationService;
 
     public function __construct()
     {
@@ -29,6 +31,7 @@ class ReservasController extends Controller
         $this->reservaModel = new Reserva();
         $this->cabaniaModel = new Cabania();
         $this->personaModel = new Persona();
+        $this->notificationService = new NotificationService();
         $this->servicioModel = new Servicio();
         $this->consumoModel = new Consumo();
         $this->estadoReservaModel = new EstadoReserva();
@@ -1045,6 +1048,24 @@ class ReservasController extends Controller
                 error_log('WARNING: Error enviando email (pago ya procesado): ' . $emailError->getMessage());
             }
             
+            // Notificar reserva cercana si el check-in es pronto
+            try {
+                $fechaInicio = new \DateTime($reserva['reserva_fecha_inicio']);
+                $hoy = new \DateTime();
+                $diasRestantes = $hoy->diff($fechaInicio)->days;
+                
+                if ($diasRestantes <= 7 && $diasRestantes >= 0) {
+                    // Obtener usuario_id del huésped de la reserva
+                    $usuarioId = $this->reservaModel->getUsuarioIdFromReserva($reservaId);
+                    
+                    if ($usuarioId) {
+                        $this->notificationService->notifyReservaCercana($reserva, $diasRestantes, $usuarioId);
+                    }
+                }
+            } catch (\Exception $notifError) {
+                error_log('WARNING: Error enviando notificación de reserva cercana: ' . $notifError->getMessage());
+            }
+            
             // Guardar datos para página de éxito
             $_SESSION['reserva_exitosa'] = [
                 'reserva_id' => $reservaId,
@@ -1194,6 +1215,23 @@ class ReservasController extends Controller
         // Si hay external_reference, podríamos actualizar el estado de la reserva
         if ($externalReference) {
             error_log("Pago pendiente para reserva ID: $externalReference");
+            
+            // Enviar notificación de pago pendiente
+            try {
+                $reserva = $this->reservaModel->find($externalReference);
+                if ($reserva) {
+                    $montoPendiente = $reserva['reserva_monto_total'] ?? 0;
+                    
+                    // Obtener usuario_id del huésped de la reserva
+                    $usuarioId = $this->reservaModel->getUsuarioIdFromReserva($externalReference);
+                    
+                    if ($usuarioId) {
+                        $this->notificationService->notifyPagoPendiente($reserva, $montoPendiente, $usuarioId);
+                    }
+                }
+            } catch (\Exception $notifError) {
+                error_log('WARNING: Error enviando notificación de pago pendiente: ' . $notifError->getMessage());
+            }
             // Aquí podrías actualizar el estado de la reserva a "Pago Pendiente" si tu sistema lo soporta
         }
         

@@ -114,6 +114,31 @@ if (session_status() == PHP_SESSION_NONE) {
             <!-- Enlaces de usuario (derecha) -->
             <ul class="navbar-nav">
                 <?php if (Auth::check()): ?>
+                    <!-- Notificaciones en tiempo real (solo para usuarios huéspedes) -->
+                    <?php 
+                    $userProfile = strtolower(Auth::getUserProfile() ?? '');
+                    if ($userProfile === 'huesped'): 
+                    ?>
+                    <li class="nav-item dropdown mr-3">
+                        <a class="nav-link position-relative" href="#" role="button" data-toggle="dropdown" aria-expanded="false" title="Notificaciones">
+                            <i class="fas fa-bell fa-lg"></i>
+                            <span id="notifications-badge" class="badge badge-danger badge-pill position-absolute d-none" 
+                                  style="top: 0; right: 5px; font-size: 0.65rem; padding: 0.25em 0.5em;">0</span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right p-0" style="min-width: 350px; max-height: 500px; overflow-y: auto;">
+                            <div class="dropdown-header bg-primary text-white d-flex justify-content-between align-items-center">
+                                <strong><i class="fas fa-bell mr-2"></i>Notificaciones</strong>
+                                <button class="btn btn-sm btn-link text-white p-0" onclick="NotificationService.clearAll()" title="Limpiar todo">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                            <div id="notifications-list" class="py-2">
+                                <div class="dropdown-item text-center text-muted">Sin notificaciones</div>
+                            </div>
+                        </div>
+                    </li>
+                    <?php endif; ?>
+                    
                     <!-- Dropdown de usuario -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-expanded="false">

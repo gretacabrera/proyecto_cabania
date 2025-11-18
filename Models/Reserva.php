@@ -823,4 +823,34 @@ class Reserva extends Model
         }
     }
 
+    /**
+     * Obtener el ID del usuario propietario de una reserva
+     * (usuario del primer huésped de la reserva)
+     */
+    public function getUsuarioIdFromReserva($reservaId)
+    {
+        try {
+            $sql = "SELECT u.id_usuario 
+                    FROM reserva r 
+                    LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva 
+                    LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped 
+                    LEFT JOIN persona p ON h.rela_persona = p.id_persona 
+                    LEFT JOIN usuario u ON p.id_persona = u.rela_persona 
+                    WHERE r.id_reserva = ?
+                    LIMIT 1";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param("i", $reservaId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $row = $result->fetch_assoc();
+            $stmt->close();
+            
+            return $row ? (int)$row['id_usuario'] : null;
+        } catch (\Exception $e) {
+            error_log('Error obteniendo usuario de reserva: ' . $e->getMessage());
+            return null;
+        }
+    }
+
 }

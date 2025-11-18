@@ -74,4 +74,12 @@ return [
         'public_key' => getenv('MERCADOPAGO_PUBLIC_KEY'),
         'base_url' => getenv('MERCADOPAGO_BASE_URL'),
     ],
+    
+    'pusher' => [
+        'app_id' => getenv('PUSHER_APP_ID'),
+        'app_key' => getenv('PUSHER_APP_KEY'),
+        'app_secret' => getenv('PUSHER_APP_SECRET'),
+        'app_cluster' => getenv('PUSHER_APP_CLUSTER') ?: 'us2',
+        'use_tls' => true,
+    ],
 ];

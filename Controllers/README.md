@@ -11,7 +11,7 @@ Los controladores están organizados por funcionalidad y siguen una nomenclatura
 - **Namespace**: `App\Controllers`
 - **Herencia**: Extienden de `App\Core\Controller`
 
-### 📋 **Inventario Completo de Controladores (32 controladores activos)**
+### 📋 **Inventario Completo de Controladores (33 controladores activos)**
 
 ✅ **MIGRACIÓN COMPLETADA**: Todos los controladores han sido actualizados para usar las nuevas rutas de vistas organizadas.
 
@@ -30,11 +30,13 @@ Controladores accesibles para usuarios públicos y huéspedes:
   - Callbacks de MercadoPago (success, failure, pending)
   - Webhook IPN para notificaciones
   - Página de confirmación final
+  - **Notificaciones push** para huéspedes (reserva cercana, pago pendiente)
 - **`ComentariosController.php`** - Sistema de comentarios y feedback
 - **`IngresosController.php`** - Proceso de check-in para huéspedes
 - **`SalidasController.php`** - Proceso de check-out para huéspedes
 - **`HuespedConsumosController.php`** - Módulo self-service de consumos para huéspedes autenticados
 - **`TotemConsumosController.php`** - Módulo totem de pedidos sin autenticación
+- **`PusherController.php`** - **Autenticación de canales privados Pusher** para notificaciones en tiempo real
 
 #### **🏢 Controladores Administrativos**
 
@@ -359,6 +361,225 @@ error_log("DEBUG: Resultado: " . json_encode($resultado));
 
 ---
 
+## 🔔 **PusherController - Autenticación de Notificaciones en Tiempo Real**
+
+### **Ubicación**: `Controllers/PusherController.php`
+
+### **Propósito**
+Controlador especializado para manejar la autenticación de canales privados de Pusher, garantizando que cada usuario huésped solo pueda suscribirse a su propio canal de notificaciones.
+
+### **Métodos Implementados**
+
+#### **`auth()` - Autenticación de Canal Privado (POST)**
+
+Endpoint llamado automáticamente por Pusher JS cuando un cliente intenta suscribirse a un canal privado.
+
+**Proceso de Autenticación:**
+
+```php
+public function auth()
+{
+    // 1. Verificar autenticación del usuario
+    if (!isset($_SESSION['usuario_id'])) {
+        http_response_code(403);
+        echo json_encode(['error' => 'No autenticado']);
+        return;
+    }
+
+    // 2. Obtener datos de la solicitud
+    $socketId = $_POST['socket_id'] ?? null;
+    $channelName = $_POST['channel_name'] ?? null;
+
+    // 3. Validar que el usuario solo acceda a su propio canal
+    $userId = $_SESSION['usuario_id'];
+    $expectedChannel = "private-user-{$userId}";
+
+    if ($channelName !== $expectedChannel) {
+        http_response_code(403);
+        echo json_encode(['error' => 'No autorizado para este canal']);
+        return;
+    }
+
+    // 4. Generar firma de autenticación con Pusher SDK
+    $pusher = new Pusher(/*...credenciales...*/);
+    $auth = $pusher->authorizeChannel($channelName, $socketId);
+
+    // 5. Devolver respuesta de autenticación
+    header('Content-Type: application/json');
+    echo json_encode($auth);
+}
+```
+
+### **Arquitectura de Seguridad**
+
+#### **Validaciones Implementadas**
+
+1. **Autenticación de Sesión**
+   - Verifica que `$_SESSION['usuario_id']` exista
+   - Rechaza solicitudes de usuarios no autenticados (403)
+
+2. **Validación de Parámetros**
+   - `socket_id` requerido (identificador único de conexión Pusher)
+   - `channel_name` requerido (nombre del canal a suscribirse)
+   - Retorna error 400 si faltan parámetros
+
+3. **Validación de Propiedad del Canal**
+   - Construye canal esperado: `private-user-{usuarioId}`
+   - Compara con el canal solicitado
+   - Solo permite acceso al canal propio del usuario
+
+4. **Configuración de Pusher**
+   - Carga credenciales desde `config.php`
+   - Valida que credenciales estén configuradas
+   - Retorna error 500 si configuración incompleta
+
+### **Flujo de Autenticación**
+
+```
+1. Frontend intenta suscribirse a canal privado
+   → pusher.subscribe('private-user-123')
+   ↓
+2. Pusher JS detecta canal privado
+   → Requiere autenticación del servidor
+   ↓
+3. Pusher JS envía POST a /pusher/auth
+   → Body: { socket_id: 'xxx', channel_name: 'private-user-123' }
+   ↓
+4. PusherController@auth procesa solicitud
+   → Verifica sesión del usuario
+   → Valida que usuario 123 solicite canal private-user-123
+   ↓
+5. Genera firma con Pusher SDK
+   → pusher->authorizeChannel(channelName, socketId)
+   ↓
+6. Devuelve respuesta JSON
+   → { auth: "signature_string" }
+   ↓
+7. Pusher JS completa suscripción
+   → Usuario ahora escucha notificaciones en su canal privado
+```
+
+### **Integración con Sistema de Notificaciones**
+
+**NotificationService** envía notificaciones a canales privados:
+
+```php
+// En NotificationService::notifyReservaCercana()
+$usuarioId = $reserva->getUsuarioIdFromReserva($reservaId);
+$channelName = "private-user-{$usuarioId}";
+
+$this->pusher->trigger($channelName, 'reserva-cercana', [
+    'title' => 'Tu reserva está cerca',
+    'message' => "Tu estadía comienza en {$diasRestantes} días",
+    // ... más datos
+]);
+```
+
+**Frontend recibe notificación:**
+
+```javascript
+// En notifications.js
+const channel = pusher.subscribe(`private-user-${userId}`);
+
+channel.bind('reserva-cercana', function(data) {
+    // Mostrar toast
+    // Actualizar badge
+    // Reproducir sonido
+});
+```
+
+### **Configuración de Ruta**
+
+**En `Core/Application.php`:**
+
+```php
+// Ruta de autenticación Pusher (sin requireAuth)
+$this->router->post('/pusher/auth', 'PusherController@auth');
+```
+
+**Características:**
+- ✅ No requiere `requireAuth()` middleware (maneja autenticación internamente)
+- ✅ Accesible solo mediante POST
+- ✅ Retorna respuestas JSON
+- ✅ Logging de errores para debugging
+
+### **Manejo de Errores**
+
+```php
+try {
+    // Crear instancia Pusher
+    $pusher = new Pusher(/*...*/);
+    $auth = $pusher->authorizeChannel($channelName, $socketId);
+    
+    header('Content-Type: application/json');
+    echo json_encode($auth);
+    
+} catch (Exception $e) {
+    error_log("Error autenticando canal Pusher: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['error' => 'Error de autenticación']);
+}
+```
+
+### **Respuestas HTTP**
+
+| Código | Situación | Respuesta |
+|--------|-----------|-----------|
+| 200 | Éxito | `{ "auth": "signature_string" }` |
+| 400 | Parámetros faltantes | `{ "error": "Parámetros inválidos" }` |
+| 403 | No autenticado | `{ "error": "No autenticado" }` |
+| 403 | Canal no autorizado | `{ "error": "No autorizado para este canal" }` |
+| 500 | Error de configuración | `{ "error": "Error de autenticación" }` |
+
+### **Dependencias**
+
+**Namespace:**
+```php
+namespace App\Controllers;
+
+use App\Core\Controller;
+use Pusher\Pusher;
+use Exception;
+```
+
+**Composer:**
+```json
+{
+    "require": {
+        "pusher/pusher-php-server": "^7.2"
+    }
+}
+```
+
+### **Debugging**
+
+**Logs del servidor:**
+```
+Error autenticando canal Pusher: Configuración de Pusher incompleta
+```
+
+**Consola del navegador:**
+```javascript
+// Éxito
+Pusher : State changed : connecting -> connected
+Pusher : Event sent : {"event":"pusher:subscribe","data":{"channel":"private-user-123"}}
+Pusher : Event recd : {"event":"pusher_internal:subscription_succeeded","channel":"private-user-123"}
+
+// Error
+Pusher : Error : {"type":"WebSocketError","error":{"type":"PusherError","data":{"code":403,"message":"Forbidden"}}}
+```
+
+### **Características de Seguridad**
+
+- ✅ **Aislamiento de usuarios**: Cada huésped solo recibe sus propias notificaciones
+- ✅ **Validación server-side**: La autenticación se verifica en el backend
+- ✅ **Firma criptográfica**: Pusher valida la autenticidad de la firma
+- ✅ **Session-based**: Usa sesiones PHP existentes
+- ✅ **Sin tokens adicionales**: No requiere JWT ni OAuth
+- ✅ **Logging de intentos**: Registra errores de autenticación
+
+---
+
 ## 🛍️ **Sistema de Consumos Multimodal - 3 Controladores**
 
 ### **1. ConsumosController.php (Módulo Admin)**
@@ -367,12 +588,13 @@ error_log("DEBUG: Resultado: " . json_encode($resultado));
 
 **Métodos Implementados:**
 - `index()` - Listado con filtros y paginación
-- `create()` - Formulario de creación múltiple
+- `create()` - Formulario de creación múltiple con **notificación push** al huésped
 - `store()` - Guardar múltiples consumos transaccionalmente
 - `show($id)` - Detalle de consumo
 - `edit($id)` - Formulario de edición
 - `update($id)` - Actualizar consumo
 - `delete($id)` - Eliminar consumo
+- `reportarInconveniente($id)` - Reportar problema con pedido (AJAX) con **notificación push**
 - `exportar()` - Exportar a Excel
 - `exportarPdf()` - Exportar a PDF
 
@@ -382,6 +604,7 @@ error_log("DEBUG: Resultado: " . json_encode($resultado));
 - ✅ Soporte transaccional con método `createMultiple()`
 - ✅ Validación completa de datos
 - ✅ Exportación con filtros aplicados
+- ✅ **Notificaciones push** a huéspedes cuando se crea pedido o reporta inconveniente
 
 ### **2. HuespedConsumosController.php (Módulo Self-Service)**
 **Ubicación**: `Controllers/HuespedConsumosController.php`  
@@ -583,7 +806,7 @@ GET  /reportes                 → ReportesController@index
 ## 📊 **Estado de Implementación**
 
 ### ✅ **Completado**
-- ✅ Estructura base de todos los controladores (32 controladores activos)
+- ✅ Estructura base de todos los controladores (33 controladores activos)
 - ✅ Integración completa con el sistema de autenticación
 - ✅ Patrones MVC implementados consistentemente
 - ✅ Controladores para todas las entidades del sistema
@@ -593,6 +816,9 @@ GET  /reportes                 → ReportesController@index
 - ✅ **Callbacks y webhooks** para procesamiento asíncrono
 - ✅ **Transacciones SQL garantizadas** (Reserva → Factura → Pago)
 - ✅ **Sistema de emails** con datos completos de pago y huéspedes
+- ✅ **Sistema de notificaciones push** con Pusher PHP Server SDK v7.2.7
+- ✅ **PusherController** para autenticación segura de canales privados
+- ✅ **Notificaciones en tiempo real** para huéspedes (4 tipos)
 - ✅ Sistema multimodal de consumos (Admin, Huésped, Totem)
 - ✅ Sistema de reportes con 6 reportes ejecutivos
 - ✅ Gestión de perfiles y permisos
@@ -608,6 +834,7 @@ GET  /reportes                 → ReportesController@index
 - **Pasarela de pago MercadoPago** completamente funcional
 - **Flujo de reserva online** de principio a fin
 - **Emails de confirmación** con datos de pago y huéspedes
+- **Notificaciones push** para reservas, pagos, pedidos e inconvenientes
 
 ### 🔄 **Optimizaciones Continuas**
 - Optimización de consultas en listados grandes

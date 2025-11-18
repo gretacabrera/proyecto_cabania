@@ -4,7 +4,7 @@ Este directorio contiene el núcleo del framework MVC personalizado para el Sist
 
 ## 🏗️ **Arquitectura del Core Framework**
 
-### 📁 **Componentes del Framework (12 archivos)**
+### 📁 **Componentes del Framework (13 archivos)**
 
 #### **🚀 Clases Principales del Framework**
 
@@ -54,29 +54,34 @@ Este directorio contiene el núcleo del framework MVC personalizado para el Sist
    - Verificación de cuentas y recuperación de contraseñas
    - Templates HTML personalizables con información completa de pagos
 
-9. **`Validator.php`** - Sistema de validación
-   - Validación de formularios
-   - Reglas de validación personalizables
-   - Mensajes de error localizados
+9. **`NotificationService.php`** - Servicio de notificaciones en tiempo real
+   - Integración con Pusher PHP Server SDK v7.2.7
+   - **Canales privados** por usuario (`private-user-{userId}`)
+   - 4 tipos de notificaciones push para huéspedes
+   - Autenticación segura de suscripciones
 
-10. **`Autoloader.php`** - Carga automática de clases
+10. **`Validator.php`** - Sistema de validación
+    - Validación de formularios
+    - Reglas de validación personalizables
+    - Mensajes de error localizados
+
+11. **`Autoloader.php`** - Carga automática de clases
     - Implementación PSR-4
     - Mapeo de namespaces
     - Carga bajo demanda de clases
 
 #### **⚙️ Archivos de Configuración y Utilidades**
 
-11. **`config.php`** - Configuración central del sistema
+12. **`config.php`** - Configuración central del sistema
     - Parámetros de base de datos
     - Configuraciones de ambiente
     - Constantes del sistema
+    - **Credenciales de Pusher** (app_id, app_key, app_secret, cluster)
 
-12. **`helpers.php`** - Funciones auxiliares globales
+13. **`helpers.php`** - Funciones auxiliares globales
     - Utilidades para vistas
     - Helpers para debugging
-    - Funciones de conveniencia
-
----
+    - Funciones de conveniencia---
 
 ## 🎯 **Detalles Técnicos por Componente**
 
@@ -643,7 +648,7 @@ function array_get($array, $key, $default = null)
 ## 📊 **Estado del Framework**
 
 ### ✅ **Completado y Funcional**
-- ✅ Arquitectura MVC completa con 12 componentes core
+- ✅ Arquitectura MVC completa con 13 componentes core
 - ✅ Sistema de enrutamiento con soporte para parámetros dinámicos (180+ rutas)
 - ✅ Autenticación y autorización por perfiles (Admin, Cajero, Recepcionista, Huésped)
 - ✅ Conexión a base de datos con patrón Singleton
@@ -654,6 +659,8 @@ function array_get($array, $key, $default = null)
 - ✅ **Integración completa con MercadoPago SDK v3.7.1**
 - ✅ **Checkout Pro con Wallet Brick** para pagos online
 - ✅ **Webhooks IPN** para notificaciones de pago
+- ✅ **Sistema de notificaciones Pusher** en tiempo real para huéspedes
+- ✅ **Canales privados por usuario** con autenticación segura
 - ✅ Servicio de email con PHPMailer integrado
 - ✅ Sistema de verificación de email
 - ✅ **Emails de confirmación de reserva** con datos de pago completos
@@ -663,6 +670,7 @@ function array_get($array, $key, $default = null)
 ### 🎯 **En Producción**
 - Sistema de reservas online completo con pasarela de pago
 - **Flujo de pago MercadoPago**: Catálogo → Confirmar → Servicios → Resumen → Pasarela → Pago → Éxito
+- **Notificaciones push en tiempo real** para huéspedes (reserva cercana, pago pendiente, pedido en cabaña, inconvenientes)
 - Dashboards contextuales por perfil de usuario
 - Exportación a Excel (.xlsx) y PDF
 - Sistema multimodal de consumos (Admin, Huésped, Totem)
@@ -753,7 +761,7 @@ class YourModel extends Model
 
 El sistema implementa una arquitectura de rutas completa y organizada por módulos funcionales.
 
-### **🏠 Rutas Principales y Autenticación (8 rutas)**
+### **🏠 Rutas Principales y Autenticación (9 rutas)**
 
 ```php
 GET  /                           → HomeController@index (landing pública)
@@ -764,6 +772,7 @@ GET  /logout                     → AuthController@logout
 GET  /registro                   → AuthController@registro
 POST /registro                   → AuthController@registro
 GET  /verificar-email/{token}    → EmailVerificationController@verify
+POST /pusher/auth                → PusherController@auth (autenticación canales privados)
 ```
 
 ### **🏨 Rutas de Reservas y Pagos (18 rutas)**
@@ -846,6 +855,303 @@ GET  /totem/producto/{id}/precio  → TotemConsumosController@getPrecioProducto 
 - ✅ **Callbacks externos** sin autenticación (MercadoPago webhooks)
 - ✅ **Redirecciones seguras** desde ngrok a localhost para callbacks
 - ✅ **Rutas públicas** para catálogo y totem (sin requireAuth)
+
+---
+
+## 🔔 **Sistema de Notificaciones en Tiempo Real (Pusher)**
+
+### **Servicio de Notificaciones**
+
+El sistema implementa notificaciones push en tiempo real para usuarios huéspedes mediante **Pusher PHP Server SDK v7.2.7**.
+
+### **NotificationService.php - Arquitectura**
+
+```php
+namespace App\Core;
+
+use Pusher\Pusher;
+
+class NotificationService
+{
+    private $pusher;
+    private $enabled = false;
+
+    public function __construct()
+    {
+        $config = require_once __DIR__ . '/config.php';
+        
+        if ($this->isConfigured($config)) {
+            $this->pusher = new Pusher(
+                $config['pusher']['app_key'],
+                $config['pusher']['app_secret'],
+                $config['pusher']['app_id'],
+                [
+                    'cluster' => $config['pusher']['app_cluster'],
+                    'useTLS' => true
+                ]
+            );
+            $this->enabled = true;
+        }
+    }
+
+    /**
+     * Enviar notificación a canal privado de usuario
+     */
+    private function send($channelName, $event, $data)
+    {
+        if (!$this->enabled) return false;
+
+        try {
+            $this->pusher->trigger($channelName, $event, $data);
+            error_log("Notificación Pusher enviada: $event");
+            return true;
+        } catch (Exception $e) {
+            error_log("Error enviando notificación Pusher: " . $e->getMessage());
+            return false;
+        }
+    }
+}
+```
+
+### **Tipos de Notificaciones Implementadas**
+
+#### **1. Reserva Cercana** (`reserva-cercana`)
+```php
+public function notifyReservaCercana($reserva, $diasRestantes, $usuarioId)
+{
+    $channelName = "private-user-{$usuarioId}";
+    
+    $data = [
+        'type' => 'reserva_cercana',
+        'title' => 'Tu reserva está cerca',
+        'message' => "Tu estadía comienza en {$diasRestantes} días",
+        'reserva_id' => $reserva['id_reserva'],
+        'cabania' => $reserva['cabania_nombre'],
+        'fecha_inicio' => $reserva['reserva_fechainicio'],
+        'url' => "/reservas/{$reserva['id_reserva']}",
+        'icon' => 'fa-calendar-check',
+        'color' => 'info',
+        'sound' => false,
+        'timestamp' => date('Y-m-d H:i:s')
+    ];
+    
+    return $this->send($channelName, 'reserva-cercana', $data);
+}
+```
+
+#### **2. Pago Pendiente** (`pago-pendiente`)
+```php
+public function notifyPagoPendiente($reserva, $montoPendiente, $usuarioId)
+{
+    $channelName = "private-user-{$usuarioId}";
+    
+    $data = [
+        'type' => 'pago_pendiente',
+        'title' => 'Pago pendiente de confirmación',
+        'message' => "Tu pago de \${$montoPendiente} está siendo procesado",
+        'reserva_id' => $reserva['id_reserva'],
+        'monto_pendiente' => $montoPendiente,
+        'monto_total' => $reserva['reserva_total'],
+        'url' => "/reservas/{$reserva['id_reserva']}",
+        'icon' => 'fa-credit-card',
+        'color' => 'warning',
+        'sound' => true,
+        'timestamp' => date('Y-m-d H:i:s')
+    ];
+    
+    return $this->send($channelName, 'pago-pendiente', $data);
+}
+```
+
+#### **3. Pedido en Cabaña** (`pedido-cabania`)
+```php
+public function notifyPedidoCabania($consumo, $reserva, $usuarioId)
+{
+    $channelName = "private-user-{$usuarioId}";
+    
+    $data = [
+        'type' => 'pedido_cabania',
+        'title' => 'Pedido confirmado',
+        'message' => "Tu pedido ha sido registrado en {$reserva['cabania_nombre']}",
+        'consumo_id' => $consumo['id_consumo'],
+        'cabania' => $reserva['cabania_nombre'],
+        'cantidad_items' => $consumo['cantidad'],
+        'monto_total' => $consumo['total'],
+        'url' => "/huesped/consumos/{$consumo['id_consumo']}",
+        'icon' => 'fa-shopping-cart',
+        'color' => 'success',
+        'sound' => true,
+        'timestamp' => date('Y-m-d H:i:s')
+    ];
+    
+    return $this->send($channelName, 'pedido-cabania', $data);
+}
+```
+
+#### **4. Inconveniente con Pedido** (`inconveniente-pedido`)
+```php
+public function notifyInconvenientePedido($consumo, $tipo, $descripcion, $usuarioId)
+{
+    $channelName = "private-user-{$usuarioId}";
+    
+    $data = [
+        'type' => 'inconveniente_pedido',
+        'title' => 'Inconveniente reportado',
+        'message' => "Tipo: {$tipo} - {$descripcion}",
+        'consumo_id' => $consumo['id_consumo'],
+        'tipo_inconveniente' => $tipo,
+        'descripcion' => $descripcion,
+        'url' => "/huesped/consumos/{$consumo['id_consumo']}",
+        'icon' => 'fa-exclamation-triangle',
+        'color' => 'danger',
+        'sound' => true,
+        'timestamp' => date('Y-m-d H:i:s')
+    ];
+    
+    return $this->send($channelName, 'inconveniente-pedido', $data);
+}
+```
+
+### **Arquitectura de Seguridad**
+
+#### **Canales Privados por Usuario**
+- Cada huésped tiene su propio canal: `private-user-{usuarioId}`
+- Autenticación obligatoria mediante endpoint `/pusher/auth`
+- Validación de que el usuario solo accede a su propio canal
+
+#### **PusherController - Autenticación de Canales**
+```php
+namespace App\Controllers;
+
+use App\Core\Controller;
+use Pusher\Pusher;
+
+class PusherController extends Controller
+{
+    public function auth()
+    {
+        // Verificar autenticación
+        if (!isset($_SESSION['usuario_id'])) {
+            http_response_code(403);
+            echo json_encode(['error' => 'No autenticado']);
+            return;
+        }
+
+        $socketId = $_POST['socket_id'] ?? null;
+        $channelName = $_POST['channel_name'] ?? null;
+
+        // Verificar que el usuario solo acceda a su propio canal
+        $userId = $_SESSION['usuario_id'];
+        $expectedChannel = "private-user-{$userId}";
+
+        if ($channelName !== $expectedChannel) {
+            http_response_code(403);
+            echo json_encode(['error' => 'No autorizado para este canal']);
+            return;
+        }
+
+        // Generar firma de autenticación
+        $pusher = new Pusher(/*...*/);
+        $auth = $pusher->authorizeChannel($channelName, $socketId);
+
+        header('Content-Type: application/json');
+        echo json_encode($auth);
+    }
+}
+```
+
+### **Frontend - Integración JavaScript**
+
+#### **Inicialización de Pusher (header.php)**
+```javascript
+// Solo para usuarios huéspedes autenticados
+NotificationService.init('<?= $pusherKey ?>', '<?= $pusherCluster ?>', <?= $userId ?>);
+```
+
+#### **Cliente JavaScript (notifications.js)**
+```javascript
+function initPusher(appKey, cluster, userId) {
+    pusher = new Pusher(appKey, {
+        cluster: cluster,
+        encrypted: true,
+        authEndpoint: '/pusher/auth',
+        auth: {
+            headers: {
+                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            }
+        }
+    });
+
+    // Suscribirse al canal privado del usuario
+    const channelName = `private-user-${userId}`;
+    channel = pusher.subscribe(channelName);
+
+    // Suscribirse a eventos
+    channel.bind('reserva-cercana', handleReservaCercana);
+    channel.bind('pago-pendiente', handlePagoPendiente);
+    channel.bind('pedido-cabania', handlePedidoCabania);
+    channel.bind('inconveniente-pedido', handleInconvenientePedido);
+}
+```
+
+### **Flujo de Notificaciones**
+
+```
+1. Evento ocurre (pago, pedido, etc.)
+   ↓
+2. Controlador obtiene usuario_id
+   → Reserva::getUsuarioIdFromReserva($reservaId)
+   → JOIN: reserva → huesped_reserva → huesped → persona → usuario
+   ↓
+3. NotificationService envía a canal private-user-{usuarioId}
+   ↓
+4. Pusher distribuye a clientes suscritos
+   ↓
+5. Frontend del huésped recibe notificación
+   ↓
+6. Se activan:
+   → Badge de notificaciones (actualiza contador)
+   → Toast visual (esquina superior derecha)
+   → Sonido diferenciado (según prioridad)
+   → Entrada en dropdown de notificaciones
+```
+
+### **Configuración de Pusher**
+
+Archivo `.env`:
+```env
+# Pusher (Notificaciones en tiempo real)
+PUSHER_APP_ID=your_app_id
+PUSHER_APP_KEY=your_app_key
+PUSHER_APP_SECRET=your_app_secret
+PUSHER_APP_CLUSTER=us2
+```
+
+Archivo `config.php`:
+```php
+'pusher' => [
+    'app_id' => getenv('PUSHER_APP_ID') ?: '',
+    'app_key' => getenv('PUSHER_APP_KEY') ?: '',
+    'app_secret' => getenv('PUSHER_APP_SECRET') ?: '',
+    'app_cluster' => getenv('PUSHER_APP_CLUSTER') ?: 'us2'
+]
+```
+
+### **Características del Sistema**
+- ✅ **4 tipos de notificaciones** push para huéspedes
+- ✅ **Canales privados** con autenticación segura
+- ✅ **Persistencia visual** con badge y dropdown
+- ✅ **Toasts automáticos** con auto-cierre
+- ✅ **Sonidos diferenciados** según prioridad
+- ✅ **Enlaces directos** a detalles del evento
+- ✅ **Manejo de errores** con logging detallado
+- ✅ **Límite de 10 notificaciones** en dropdown
+
+### **Plan Gratuito de Pusher**
+- 200,000 mensajes/día
+- 100 conexiones concurrentes
+- Canales públicos y privados
+- Suficiente para la mayoría de complejos de cabañas
 
 ---
 
@@ -1057,6 +1363,8 @@ Cuando `APP_DEBUG=true`, los errores muestran información completa:
 ---
 
 *Framework Core documentado y actualizado el 18/11/2025 - Casa de Palos Cabañas*  
-*Arquitectura MVC personalizada con 12 componentes core integrados*  
+*Arquitectura MVC personalizada con 13 componentes core integrados*  
 *Integración completa con MercadoPago SDK v3.7.1 - Checkout Pro con Wallet Brick*  
+*Sistema de notificaciones en tiempo real con Pusher PHP Server SDK v7.2.7*
 *Sistema de pagos online funcional con transacciones garantizadas*
+*Notificaciones push seguras para hu�spedes con canales privados*

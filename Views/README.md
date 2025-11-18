@@ -1,6 +1,6 @@
 # Organización de Vistas - Casa de Palos Cabañas
 
-Esta estructura organiza las vistas de manera lógica y escalable, siguiendo patrones de desarrollo modernos para aplicaciones web. Incluye integración completa con **MercadoPago Checkout Pro** para pagos online.
+Esta estructura organiza las vistas de manera lógica y escalable, siguiendo patrones de desarrollo modernos para aplicaciones web. Incluye integración completa con **MercadoPago Checkout Pro** para pagos online y **Sistema de Notificaciones en Tiempo Real con Pusher**.
 
 ## 📁 Estructura Actual (Actualizada - 18/11/2025)
 
@@ -390,6 +390,440 @@ private function contarHuespedesReserva($reservaId) {
 
 ---
 
+## 🔔 **Sistema de Notificaciones en Tiempo Real con Pusher**
+
+### 📋 **Visión General**
+
+Sistema completo de notificaciones push para **huéspedes** implementado con Pusher, proporcionando actualizaciones en tiempo real sobre:
+- 🗓️ **Reservas cercanas** - Recordatorios 24h antes del check-in
+- 💳 **Pagos pendientes** - Alertas cuando quedan pagos sin completar
+- 🛎️ **Pedidos en cabaña** - Confirmación de pedidos solicitados desde totem/menú
+- ⚠️ **Inconvenientes de pedido** - Notificaciones cuando hay problemas con consumos
+
+### 🎯 **Audiencia: Solo Huéspedes**
+
+**IMPORTANTE**: Este sistema está diseñado específicamente para usuarios con perfil **"huésped"** (`perfil_nombre = 'huesped'`). Los administradores NO reciben notificaciones.
+
+### 📡 **Arquitectura Frontend de Notificaciones**
+
+#### **Componentes de Interfaz**
+
+**1. Badge de Notificaciones en Menú (`Views/shared/components/menu.php`)**
+```html
+<!-- Solo visible para huéspedes -->
+<?php if (isset($_SESSION['perfil_nombre']) && $_SESSION['perfil_nombre'] === 'huesped'): ?>
+    <li class="nav-item dropdown" id="notifications-dropdown">
+        <a class="nav-link position-relative" href="#" data-bs-toggle="dropdown">
+            <i class="fas fa-bell"></i>
+            <!-- Badge con contador de notificaciones no leídas -->
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
+                  id="notifications-count" style="display: none;">0</span>
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end" id="notifications-list">
+            <!-- Notificaciones se agregan dinámicamente -->
+            <li class="dropdown-item text-center text-muted">No hay notificaciones</li>
+        </ul>
+    </li>
+<?php endif; ?>
+```
+
+**Características del Badge:**
+- **Posicionamiento**: Esquina superior derecha del icono de campana
+- **Visibilidad dinámica**: `display: none` cuando no hay notificaciones
+- **Contador en tiempo real**: Actualizado vía JavaScript
+- **Estilo Bootstrap**: `badge rounded-pill bg-danger`
+
+**2. Inicialización de Pusher en Header (`Views/shared/layouts/header.php`)**
+```php
+<!-- Solo para huéspedes autenticados -->
+<?php if (isset($_SESSION['perfil_nombre']) && $_SESSION['perfil_nombre'] === 'huesped'): ?>
+    <!-- Pusher JS Library -->
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+    
+    <script>
+        // Configuración de Pusher
+        window.pusherConfig = {
+            key: '<?= getenv('PUSHER_APP_KEY') ?>',
+            cluster: '<?= getenv('PUSHER_APP_CLUSTER') ?>',
+            userId: '<?= $_SESSION['id_usuario'] ?>',
+            authEndpoint: '<?= url('/pusher/auth') ?>'
+        };
+    </script>
+    
+    <!-- Sistema de notificaciones -->
+    <script src="<?= asset('js/notifications.js') ?>"></script>
+    <link rel="stylesheet" href="<?= asset('css/notifications.css') ?>">
+<?php endif; ?>
+```
+
+**Variables de Configuración:**
+- `pusherConfig.key`: Public Key de Pusher desde `.env`
+- `pusherConfig.cluster`: Región del servidor (ej: `us2`)
+- `pusherConfig.userId`: ID del usuario actual de sesión
+- `pusherConfig.authEndpoint`: Endpoint para autenticar canales privados
+
+### 🔐 **Seguridad y Canales Privados**
+
+#### **Canal Privado por Usuario**
+```javascript
+// Estructura del nombre de canal
+const channelName = `private-user-${userId}`;
+
+// Suscripción con autenticación
+const channel = pusher.subscribe(channelName);
+```
+
+**Características de seguridad:**
+- ✅ **Privacidad**: Cada usuario solo recibe SUS notificaciones
+- ✅ **Autenticación obligatoria**: Endpoint `/pusher/auth` valida identidad
+- ✅ **Validación de sesión**: Solo usuarios autenticados pueden suscribirse
+- ✅ **Aislamiento**: Usuario A nunca ve notificaciones de Usuario B
+
+#### **Endpoint de Autenticación (`/pusher/auth`)**
+```php
+// PusherController::auth()
+public function auth()
+{
+    // 1. Validar autenticación
+    if (!Auth::check()) {
+        http_response_code(403);
+        echo json_encode(['error' => 'No autenticado']);
+        return;
+    }
+    
+    // 2. Validar que es huésped
+    if ($_SESSION['perfil_nombre'] !== 'huesped') {
+        http_response_code(403);
+        echo json_encode(['error' => 'Solo huéspedes']);
+        return;
+    }
+    
+    // 3. Extraer datos de solicitud
+    $socketId = $_POST['socket_id'];
+    $channelName = $_POST['channel_name'];
+    
+    // 4. Validar formato de canal
+    $expectedChannel = "private-user-{$_SESSION['id_usuario']}";
+    if ($channelName !== $expectedChannel) {
+        http_response_code(403);
+        echo json_encode(['error' => 'Canal no autorizado']);
+        return;
+    }
+    
+    // 5. Autenticar canal con Pusher
+    $pusher = new Pusher(/* config */);
+    $auth = $pusher->authorizeChannel($channelName, $socketId);
+    
+    // 6. Retornar firma de autenticación
+    echo $auth;
+}
+```
+
+### 🎨 **JavaScript: Sistema de Notificaciones (`assets/js/notifications.js`)**
+
+#### **Código Completo Implementado**
+```javascript
+// Sistema de Notificaciones en Tiempo Real con Pusher
+// Para huéspedes del sistema de cabañas
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificar configuración
+    if (!window.pusherConfig) {
+        console.warn('Pusher no configurado');
+        return;
+    }
+
+    const { key, cluster, userId, authEndpoint } = window.pusherConfig;
+
+    // Inicializar Pusher
+    const pusher = new Pusher(key, {
+        cluster: cluster,
+        authEndpoint: authEndpoint,
+        auth: {
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
+            }
+        }
+    });
+
+    // Suscribirse a canal privado del usuario
+    const channelName = `private-user-${userId}`;
+    const channel = pusher.subscribe(channelName);
+
+    // Manejar errores de suscripción
+    channel.bind('pusher:subscription_error', function(status) {
+        console.error('Error al suscribirse:', status);
+    });
+
+    // Escuchar evento genérico de notificación
+    channel.bind('notification', function(data) {
+        mostrarNotificacion(data);
+        actualizarContador();
+    });
+
+    // Función para mostrar notificación
+    function mostrarNotificacion(data) {
+        const { titulo, mensaje, tipo, icono } = data;
+
+        // Agregar a dropdown
+        const lista = document.getElementById('notifications-list');
+        if (lista.children[0]?.textContent.includes('No hay notificaciones')) {
+            lista.innerHTML = ''; // Limpiar mensaje vacío
+        }
+
+        const item = document.createElement('li');
+        item.className = 'dropdown-item notification-item';
+        item.innerHTML = `
+            <div class="d-flex align-items-start">
+                <i class="${icono} me-2 text-${tipo === 'success' ? 'success' : tipo === 'warning' ? 'warning' : 'danger'}"></i>
+                <div>
+                    <strong>${titulo}</strong>
+                    <p class="mb-0 small text-muted">${mensaje}</p>
+                </div>
+            </div>
+        `;
+        lista.insertBefore(item, lista.firstChild);
+
+        // Toast notification
+        mostrarToast(titulo, mensaje, tipo);
+    }
+
+    // Función para mostrar toast
+    function mostrarToast(titulo, mensaje, tipo) {
+        const bgClass = tipo === 'success' ? 'bg-success' : tipo === 'warning' ? 'bg-warning' : 'bg-danger';
+        
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white ${bgClass} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <strong>${titulo}</strong><br>
+                    ${mensaje}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+
+        let container = document.getElementById('toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            container.className = 'toast-container position-fixed top-0 end-0 p-3';
+            document.body.appendChild(container);
+        }
+
+        container.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast, { delay: 5000 });
+        bsToast.show();
+
+        toast.addEventListener('hidden.bs.toast', () => toast.remove());
+    }
+
+    // Función para actualizar contador
+    function actualizarContador() {
+        const lista = document.getElementById('notifications-list');
+        const contador = document.getElementById('notifications-count');
+        const count = lista.querySelectorAll('.notification-item').length;
+
+        if (count > 0) {
+            contador.textContent = count;
+            contador.style.display = 'inline-block';
+        } else {
+            contador.style.display = 'none';
+        }
+    }
+});
+```
+
+**Funcionalidades implementadas:**
+1. **Inicialización automática**: Al cargar página si hay configuración
+2. **Suscripción a canal privado**: `private-user-{userId}`
+3. **Listener genérico**: Evento `notification` con datos dinámicos
+4. **Dropdown de notificaciones**: Actualización en tiempo real
+5. **Toast visual**: Notificación emergente con auto-cierre (5 segundos)
+6. **Contador de badge**: Actualización automática
+7. **Manejo de errores**: Console logs para debugging
+
+### 🎨 **Estilos CSS (`assets/css/notifications.css`)**
+
+```css
+/* Sistema de Notificaciones en Tiempo Real */
+.notification-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #dee2e6;
+    transition: background-color 0.2s;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+#notifications-dropdown .dropdown-menu {
+    max-width: 350px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+#notifications-count {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.4rem;
+}
+
+.toast-container {
+    z-index: 1050;
+}
+```
+
+### 📊 **Tipos de Notificaciones Implementadas**
+
+#### **1. Reserva Cercana (`reservaCercana()`)**
+```php
+// NotificationService::reservaCercana($usuarioId, $reservaData)
+$data = [
+    'titulo' => '¡Tu reserva es mañana!',
+    'mensaje' => "Tu estadía en {$reservaData['cabania_nombre']} comienza el {$reservaData['reserva_fechainicio']}",
+    'tipo' => 'success',
+    'icono' => 'fas fa-calendar-check'
+];
+```
+**Cuándo se dispara**: 24 horas antes del check-in (job programado)
+
+#### **2. Pago Pendiente (`pagoPendiente()`)**
+```php
+// NotificationService::pagoPendiente($usuarioId, $montoRestante)
+$data = [
+    'titulo' => 'Pago pendiente',
+    'mensaje' => "Tienes un saldo pendiente de $" . number_format($montoRestante, 2),
+    'tipo' => 'warning',
+    'icono' => 'fas fa-exclamation-triangle'
+];
+```
+**Cuándo se dispara**: Cuando hay saldo sin pagar en una reserva
+
+#### **3. Pedido en Cabaña (`pedidoCabania()`)**
+```php
+// NotificationService::pedidoCabania($usuarioId, $consumoData)
+$data = [
+    'titulo' => 'Pedido confirmado',
+    'mensaje' => "Tu pedido de {$consumoData['cantidad']} {$consumoData['item']} fue registrado",
+    'tipo' => 'success',
+    'icono' => 'fas fa-shopping-cart'
+];
+```
+**Cuándo se dispara**: Al crear consumo desde totem/menú
+
+#### **4. Inconveniente de Pedido (`inconvenientePedido()`)**
+```php
+// NotificationService::inconvenientePedido($usuarioId, $motivo)
+$data = [
+    'titulo' => 'Problema con tu pedido',
+    'mensaje' => $motivo,
+    'tipo' => 'danger',
+    'icono' => 'fas fa-times-circle'
+];
+```
+**Cuándo se dispara**: Cuando hay problemas con un consumo (stock, cancelación)
+
+### 🔄 **Flujo Completo de Notificación**
+
+```
+1. [BACKEND] Evento ocurre (ej: nuevo consumo)
+   ↓
+2. [CONTROLLER] Obtiene usuarioId del huésped
+   - ReservasController::pagoExitoso() → getUsuarioIdFromReserva()
+   - ConsumosController::create() → getUsuarioIdFromReserva()
+   ↓
+3. [SERVICE] NotificationService dispara notificación
+   - Valida $usuarioId
+   - Construye payload de datos
+   - Trigger a canal privado: private-user-{$usuarioId}
+   ↓
+4. [PUSHER] Enruta a canal privado
+   - Valida autenticación del canal
+   - Envía solo al usuario correcto
+   ↓
+5. [FRONTEND] JavaScript recibe evento
+   - notifications.js escucha evento 'notification'
+   - Actualiza dropdown de notificaciones
+   - Muestra toast visual
+   - Actualiza badge contador
+   ↓
+6. [USUARIO] Ve notificación en tiempo real
+```
+
+### 🛠️ **Configuración Requerida**
+
+#### **Variables de Entorno (`.env`)**
+```env
+PUSHER_APP_ID=your_app_id
+PUSHER_APP_KEY=your_public_key
+PUSHER_APP_SECRET=your_secret_key
+PUSHER_APP_CLUSTER=us2
+```
+
+#### **Dependencias de Composer**
+```json
+{
+    "require": {
+        "pusher/pusher-php-server": "^7.2"
+    }
+}
+```
+
+#### **Archivos Frontend Requeridos**
+- ✅ `Views/shared/components/menu.php` - Badge de notificaciones
+- ✅ `Views/shared/layouts/header.php` - Inicialización de Pusher
+- ✅ `assets/js/notifications.js` - Lógica de manejo de eventos
+- ✅ `assets/css/notifications.css` - Estilos visuales
+
+### 🧪 **Testing y Debugging**
+
+#### **Console del Navegador**
+```javascript
+// Verificar conexión
+pusher.connection.bind('connected', () => {
+    console.log('✅ Pusher conectado');
+});
+
+// Verificar suscripción
+channel.bind('pusher:subscription_succeeded', () => {
+    console.log('✅ Suscrito a canal privado');
+});
+
+// Log de notificaciones recibidas
+channel.bind('notification', (data) => {
+    console.log('📩 Notificación recibida:', data);
+});
+```
+
+#### **Dashboard de Pusher**
+- **Debug Console**: Ver eventos en tiempo real
+- **Connection Stats**: Usuarios conectados actualmente
+- **Event History**: Historial de eventos disparados
+
+### 📈 **Estadísticas de Implementación**
+
+**Componentes Frontend:**
+- ✅ 1 Badge de notificaciones (menu.php)
+- ✅ 1 Script de inicialización (header.php)
+- ✅ 1 Archivo JavaScript (notifications.js - ~120 líneas)
+- ✅ 1 Archivo CSS (notifications.css - ~30 líneas)
+- ✅ 4 Tipos de notificaciones implementadas
+- ✅ 1 Endpoint de autenticación (/pusher/auth)
+
+**Integración Completa:**
+- ✅ Backend: `NotificationService.php`, `PusherController.php`, `Reserva.php`
+- ✅ Frontend: JavaScript listeners, UI components, estilos
+- ✅ Seguridad: Canales privados, autenticación obligatoria
+- ✅ UX: Toasts, badges, dropdowns, contadores
+
+---
+
 ### 1. **Separación Lógica por Audiencia**
 - **Público**: Módulos accesibles para huéspedes (home, auth, comentarios, check-in/out)
 - **Administrativo**: Módulos internos para staff (catálogos, operaciones, configuración)
@@ -567,7 +1001,7 @@ $this->view('admin/operaciones/cabanias/index', $data);
   - `/reportes/`: 4 reportes especializados (comentarios, consumos, dashboard, demografico)
 - **📁 `/shared/`**: 3 categorías de componentes compartidos (components, errors, layouts)
 
-### **Total**: 31 elementos + **Sistema de Reservas Online** (5 vistas especializadas)
+### **Total**: 31 elementos + **Sistema de Reservas Online** (5 vistas especializadas) + **Sistema de Notificaciones Pusher**
 
 #### Estado de la Implementación:
 - ✅ **Estructura de directorios**: Completamente implementada
@@ -578,6 +1012,7 @@ $this->view('admin/operaciones/cabanias/index', $data);
 - ✅ **Migración de controladores**: COMPLETADA - 32/32 controladores actualizados
 - ✅ **Limpieza de código**: Arquitectura optimizada
 - ✅ **Sistema multimodal**: 3 módulos de consumos (Admin, Huésped, Totem)
+- ✅ **Notificaciones en tiempo real**: Sistema Pusher para huéspedes (4 tipos)
 
 #### Mejoras Implementadas:
 1. ✅ **Sistema de Reservas Online Completo**: 5 vistas especializadas con flujo paso a paso
@@ -592,6 +1027,7 @@ $this->view('admin/operaciones/cabanias/index', $data);
 10. ✅ **UX Optimizada**: Diseño responsive con validación en tiempo real
 11. ✅ **Check-in/Check-out**: Procesos completos de ingreso y salida
 12. ✅ **Control de Inventario**: Gestión por cabaña con revisiones
+13. ✅ **Notificaciones Push en Tiempo Real**: Sistema Pusher para huéspedes (4 tipos de notificaciones)
 
 ---
 
@@ -628,6 +1064,11 @@ $this->view('admin/operaciones/cabanias/index', $data);
   - JavaScript SDK: MercadoPago.js con Wallet Brick
   - Checkout Pro: Interfaz optimizada de pago
   - Webhook IPN: Notificaciones asíncronas
+- **Pusher SDK v7.2.7**: Notificaciones en tiempo real para huéspedes
+  - PHP Server SDK: Pusher\Pusher para triggers
+  - JavaScript Client: Pusher.js v8.2.0
+  - Canales privados: Seguridad por usuario
+  - WebSockets: Comunicación bidireccional
 
 ---
 
@@ -643,8 +1084,10 @@ $this->view('admin/operaciones/cabanias/index', $data);
   - Seguridad: 2 módulos
   - Reportes: 7 reportes con analytics
 - **Compartidas**: 3 categorías (components, errors, layouts con 6 plantillas)
+  - **Notificaciones**: Badge en menu.php, inicialización en header.php
 - **MercadoPago**: 1 vista de pasarela + 1 vista de debug + 3 callbacks
-- **Total General**: **50 módulos/vistas** implementados y funcionales
+- **Pusher**: 4 componentes frontend (notifications.js, notifications.css, menu.php, header.php)
+- **Total General**: **50 módulos/vistas + 4 componentes Pusher** implementados y funcionales
 
 ### **Cobertura por Funcionalidad**
 - **🌐 Experiencia Huésped**: 100% completada
@@ -652,6 +1095,7 @@ $this->view('admin/operaciones/cabanias/index', $data);
 - **🔐 Sistema Seguridad**: 100% completada
 - **📊 Reportes**: 100% completada
 - **📱 Responsive**: 100% completada
+- **🔔 Notificaciones en Tiempo Real**: 100% completada (solo huéspedes)
 
 ---
 
@@ -667,5 +1111,6 @@ $this->view('admin/operaciones/cabanias/index', $data);
 *Estructura actualizada el 18/11/2025 - Casa de Palos Cabañas*
 *✅ MIGRACIÓN COMPLETADA - 32 controladores actualizados*
 *✅ ARQUITECTURA OPTIMIZADA - Sistema modular completo*
-*✅ SISTEMA INTEGRAL - 50 módulos/vistas implementados y funcionales*
+*✅ SISTEMA INTEGRAL - 50 módulos/vistas + 4 componentes Pusher implementados y funcionales*
 *✅ MERCADOPAGO INTEGRADO - SDK v3.7.1 con Checkout Pro y Wallet Brick*
+*✅ PUSHER INTEGRADO - SDK v7.2.7 con notificaciones en tiempo real para huéspedes*

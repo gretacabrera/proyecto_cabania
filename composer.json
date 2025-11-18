@@ -4,7 +4,8 @@
         "phpoffice/phpspreadsheet": "^1.29",
         "tecnickcom/tcpdf": "^6.7",
         "mercadopago/dx-php": "^3.7",
-        "doctrine/annotations": "^1.13"
+        "doctrine/annotations": "^1.13",
+        "pusher/pusher-php-server": "^7.2"
     },
     "autoload": {
         "psr-4": {

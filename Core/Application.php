@@ -82,6 +82,9 @@ class Application
         $this->router->post('/auth/register', 'AuthController@register');
         $this->router->any('/auth/change-password', 'AuthController@changePassword');
         
+        // Rutas de Pusher (autenticación de canales privados)
+        $this->router->post('/pusher/auth', 'PusherController@auth');
+        
         // Rutas de recuperación de contraseña
         $this->router->get('/auth/forgot-password', 'AuthController@forgotPassword');
         $this->router->post('/auth/forgot-password', 'AuthController@forgotPassword');
@@ -431,6 +434,7 @@ class Application
         $this->router->get('/consumos/{id}/delete', 'ConsumosController@delete');
         $this->router->get('/consumos/{id}/restore', 'ConsumosController@restore');
         $this->router->post('/consumos/{id}/estado', 'ConsumosController@cambiarEstado');
+        $this->router->post('/consumos/{id}/reportar-inconveniente', 'ConsumosController@reportarInconveniente');
         $this->router->get('/consumos/reserva/{id}', 'ConsumosController@byReserva');
         $this->router->any('/consumos/facturar/{id}', 'ConsumosController@facturar');
         $this->router->get('/consumos/producto/{id}/precio', 'ConsumosController@getPrecioProducto');

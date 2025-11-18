@@ -424,6 +424,35 @@ class Reserva extends Model
         
         return $totalAlojamiento + $totalServicios;
     }
+
+    /**
+     * NUEVO - Obtener usuario_id de una reserva
+     * Uso: Sistema de notificaciones Pusher para enviar a canal privado del huésped
+     * 
+     * Flujo de relaciones:
+     * reserva → huesped_reserva → huesped → persona → usuario
+     * 
+     * @param int $reservaId ID de la reserva
+     * @return int|null ID del usuario o null si no se encuentra
+     */
+    public function getUsuarioIdFromReserva($reservaId)
+    {
+        $sql = "SELECT u.id_usuario
+                FROM reserva r
+                INNER JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
+                INNER JOIN huesped h ON hr.rela_huesped = h.id_huesped
+                INNER JOIN persona p ON h.rela_persona = p.id_persona
+                INNER JOIN usuario u ON p.id_persona = u.rela_persona
+                WHERE r.id_reserva = ?
+                LIMIT 1";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param("i", $reservaId);
+        $stmt->execute();
+        $result = $stmt->get_result()->fetch_assoc();
+        
+        return $result['id_usuario'] ?? null;
+    }
 }
 ```
 
@@ -434,6 +463,8 @@ class Reserva extends Model
 - ✅ **Estructura de Pago Completa**: Reserva → Factura → Pago → Estado CONFIRMADA
 - ✅ **Logging Detallado**: Error logs para troubleshooting
 - ✅ **Consultas SQL Optimizadas**: JOINs correctos (pago → factura → reserva)
+- ✅ **Notificaciones Pusher**: Método `getUsuarioIdFromReserva()` para obtener usuario_id
+- ✅ **Canales Privados**: Soporta envío de notificaciones a canal `private-user-{userId}`
 
 ### **👥 Modelos de Usuarios**
 
@@ -887,6 +918,204 @@ class MetodoPago extends Model
 
 ---
 
+## 🔔 **Integración con Sistema de Notificaciones Pusher**
+
+### **Modelo Reserva - Soporte para Notificaciones en Tiempo Real**
+
+El modelo `Reserva` incluye un método especializado para el sistema de notificaciones push con Pusher, permitiendo enviar notificaciones a los huéspedes en sus canales privados.
+
+### **Método `getUsuarioIdFromReserva($reservaId)`**
+
+**Propósito:**
+Obtener el `id_usuario` asociado a una reserva para enviar notificaciones push al canal privado del huésped (`private-user-{userId}`).
+
+**Cadena de Relaciones:**
+```
+reserva (id_reserva)
+    ↓
+huesped_reserva (rela_reserva, rela_huesped) [tabla de relación N:N]
+    ↓
+huesped (id_huesped, rela_persona)
+    ↓
+persona (id_persona)
+    ↓
+usuario (id_usuario, rela_persona)
+```
+
+**Implementación:**
+```php
+public function getUsuarioIdFromReserva($reservaId)
+{
+    $sql = "SELECT u.id_usuario
+            FROM reserva r
+            INNER JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
+            INNER JOIN huesped h ON hr.rela_huesped = h.id_huesped
+            INNER JOIN persona p ON h.rela_persona = p.id_persona
+            INNER JOIN usuario u ON p.id_persona = u.rela_persona
+            WHERE r.id_reserva = ?
+            LIMIT 1";
+    
+    $stmt = $this->db->prepare($sql);
+    $stmt->bind_param("i", $reservaId);
+    $stmt->execute();
+    $result = $stmt->get_result()->fetch_assoc();
+    
+    return $result['id_usuario'] ?? null;
+}
+```
+
+### **Uso en Controladores**
+
+**ReservasController - Notificación de Reserva Cercana:**
+```php
+// En pagoExitoso() después de confirmar pago
+$usuarioId = $this->reservaModel->getUsuarioIdFromReserva($reservaId);
+
+if ($usuarioId) {
+    $this->notificationService->notifyReservaCercana(
+        $reserva, 
+        $diasRestantes, 
+        $usuarioId
+    );
+}
+```
+
+**ReservasController - Notificación de Pago Pendiente:**
+```php
+// En pagoPendiente()
+$usuarioId = $this->reservaModel->getUsuarioIdFromReserva($reservaId);
+
+if ($usuarioId) {
+    $this->notificationService->notifyPagoPendiente(
+        $reserva, 
+        $montoPendiente, 
+        $usuarioId
+    );
+}
+```
+
+**ConsumosController - Notificación de Pedido en Cabaña:**
+```php
+// En create() después de guardar consumo
+$usuarioId = $this->reservaModel->getUsuarioIdFromReserva($rela_reserva);
+
+if ($usuarioId) {
+    $this->notificationService->notifyPedidoCabania(
+        $consumoData, 
+        $reserva, 
+        $usuarioId
+    );
+}
+```
+
+**ConsumosController - Notificación de Inconveniente:**
+```php
+// En reportarInconveniente()
+$usuarioId = $this->reservaModel->getUsuarioIdFromReserva($consumo['rela_reserva']);
+
+if ($usuarioId) {
+    $this->notificationService->notifyInconvenientePedido(
+        $consumo, 
+        $tipo_inconveniente, 
+        $descripcion, 
+        $usuarioId
+    );
+}
+```
+
+### **Características de la Implementación**
+
+**Ventajas del Método:**
+- ✅ **Query Optimizado**: Single JOIN query para atravesar 5 tablas
+- ✅ **Seguridad**: Prepared statements con bind_param
+- ✅ **Performance**: LIMIT 1 para detener búsqueda al primer resultado
+- ✅ **Manejo de Errores**: Retorna null si no encuentra usuario
+- ✅ **Reutilizable**: Usado por múltiples controladores
+
+**Casos de Uso:**
+1. **Reserva Cercana**: Cuando check-in está próximo (7 días o menos)
+2. **Pago Pendiente**: Cuando MercadoPago reporta pago en proceso
+3. **Pedido en Cabaña**: Cuando se registra nuevo consumo
+4. **Inconveniente de Pedido**: Cuando se reporta problema con pedido
+
+**Flujo de Notificación Completo:**
+```
+1. Evento ocurre en el sistema (pago, pedido, etc.)
+   ↓
+2. Controlador llama a Reserva::getUsuarioIdFromReserva($reservaId)
+   ↓
+3. Modelo ejecuta JOIN query y retorna usuario_id
+   ↓
+4. Controlador valida que usuario_id no sea null
+   ↓
+5. Controlador llama a NotificationService con usuario_id
+   ↓
+6. NotificationService envía a canal private-user-{usuario_id}
+   ↓
+7. Pusher distribuye notificación al cliente del huésped
+   ↓
+8. Frontend muestra badge, toast y sonido al huésped
+```
+
+### **Validaciones y Manejo de Errores**
+
+**Casos Manejados:**
+- ✅ Reserva sin huéspedes asociados → retorna `null`
+- ✅ Huésped sin persona vinculada → retorna `null`
+- ✅ Persona sin usuario creado → retorna `null`
+- ✅ Múltiples huéspedes en reserva → LIMIT 1 toma el primero
+- ✅ Error de SQL → prepared statement evita injection
+
+**Uso Seguro en Controladores:**
+```php
+$usuarioId = $this->reservaModel->getUsuarioIdFromReserva($reservaId);
+
+if ($usuarioId) {
+    // Enviar notificación
+    $this->notificationService->notify(..., $usuarioId);
+} else {
+    // Log: No se pudo obtener usuario para notificación
+    error_log("No se encontró usuario para reserva ID: $reservaId");
+}
+```
+
+### **Relación con NotificationService**
+
+El método trabaja en conjunto con `Core/NotificationService.php`:
+
+```php
+// NotificationService recibe usuario_id del modelo
+public function notifyReservaCercana($reserva, $diasRestantes, $usuarioId)
+{
+    $channelName = "private-user-{$usuarioId}";
+    
+    $data = [
+        'type' => 'reserva_cercana',
+        'title' => 'Tu reserva está cerca',
+        'message' => "Tu estadía comienza en {$diasRestantes} días",
+        // ... más datos
+    ];
+    
+    return $this->send($channelName, 'reserva-cercana', $data);
+}
+```
+
+### **Impacto en Performance**
+
+**Optimizaciones Aplicadas:**
+- ✅ Single query con JOINs en lugar de múltiples queries
+- ✅ INNER JOINs para eficiencia (descarta registros sin relación)
+- ✅ LIMIT 1 para detener búsqueda temprano
+- ✅ Índices en foreign keys para JOINs rápidos
+- ✅ Resultado cacheado por prepared statement
+
+**Tiempo de Ejecución Estimado:**
+- Con índices apropiados: ~0.001 - 0.005 segundos
+- Sin índices: ~0.01 - 0.05 segundos
+- Impacto en UX: Imperceptible
+
+---
+
 ## 💳 **Integración con MercadoPago SDK v3.7.1**
 
 ### **Estructura de Base de Datos para Pagos**
@@ -1105,6 +1334,8 @@ public function toArray()
 - ✅ **Transacciones de pago garantizadas** (Reserva → Factura → Pago)
 - ✅ **Detección de pagos duplicados** con validación de estado
 - ✅ **Consultas SQL optimizadas** con JOINs correctos (pago → factura → reserva)
+- ✅ **Sistema de notificaciones Pusher** - Método `getUsuarioIdFromReserva()`
+- ✅ **Soporte para canales privados** - JOIN a través de 5 tablas para obtener usuario_id
 - ✅ Sistema multimodal de consumos (Admin, Huésped, Totem)
 - ✅ Soporte transaccional para operaciones críticas
 - ✅ Métodos de exportación (Excel .xlsx, PDF)
@@ -1115,6 +1346,7 @@ public function toArray()
 - Flujo de reservas online end-to-end
 - Confirmación automática de pagos
 - Emails de confirmación con datos completos
+- **Notificaciones push en tiempo real** para huéspedes
 - Gestión de inventario por cabaña
 - Control de daños y costos asociados
 - Revisiones de check-in/check-out

@@ -1,6 +1,6 @@
 # Sistema de Gestión de Cabañas - Casa de Palos
 
-**Sistema integral para la gestión de cabañas, reservas online con MercadoPago, huéspedes y servicios**
+**Sistema integral para la gestión de cabañas, reservas online con MercadoPago, notificaciones en tiempo real con Pusher, huéspedes y servicios**
 
 Desarrollado con PHP utilizando arquitectura MVC personalizada y paradigma de programación orientada a objetos.
 
@@ -21,6 +21,7 @@ Desarrollado con PHP utilizando arquitectura MVC personalizada y paradigma de pr
 - **🌐 Catálogo Público**: Exploración de cabañas con filtros avanzados
 - **📅 Sistema de Reservas Online**: Proceso completo de 6 pasos con validaciones
 - **💳 Pagos Reales con MercadoPago**: Integración completa con Checkout Pro y Wallet Brick
+- **🔔 Notificaciones en Tiempo Real**: Sistema Pusher con 4 tipos de notificaciones push
 - **✨ Servicios Adicionales**: Spa, restaurante, tours y actividades
 - **💬 Sistema de Comentarios**: Feedback y puntuación de estadías
 - **📧 Confirmaciones Automáticas**: Emails con detalles completos de pago y huéspedes
@@ -42,6 +43,7 @@ Desarrollado con PHP utilizando arquitectura MVC personalizada y paradigma de pr
 - **Base de Datos**: MySQL 8.0 con 28 tablas relacionales + numeración automática
 - **Frontend**: HTML5, CSS3, Bootstrap 5.3, JavaScript ES6+
 - **Pagos Online**: MercadoPago SDK v3.7.1 (Checkout Pro con Wallet Brick)
+- **Notificaciones en Tiempo Real**: Pusher SDK v7.2.7 (canales privados, WebSockets)
 - **Dependencias**: PHPMailer para emails, SweetAlert2 para UX, PhpSpreadsheet para Excel, TCPDF para PDF
 - **Seguridad**: Consultas preparadas, escape de datos, CSRF protection, validaciones
 - **Facturación**: Sistema automático de numeración correlativa por tipo de comprobante
@@ -458,7 +460,7 @@ proyecto_cabania/
 
 > **Arquitectura Base:** Patrón **Microkernel** con núcleo mínimo extensible
 
-#### **🎯 Core Framework - Microkernel** (12 componentes esenciales)
+#### **🎯 Core Framework - Microkernel** (13 componentes esenciales)
 - **Application**: Bootstrap y ciclo de vida con 68 rutas activas
 - **Router**: Enrutamiento dinámico con parámetros {id}
 - **Controller**: Clase base con render, permisos y validaciones
@@ -468,6 +470,7 @@ proyecto_cabania/
 - **Auth**: Autenticación multi-perfil con permisos granulares
 - **Validator**: Sistema completo de validaciones y sanitización
 - **EmailService**: Integración PHPMailer para confirmaciones
+- **NotificationService**: Sistema de notificaciones en tiempo real con Pusher (4 tipos)
 - **Autoloader**: PSR-4 compatible para clases
 - **Config**: Configuración centralizada (app, database, mail)
 - **Helpers**: Utilidades globales (url, dd, e, csrf_token, etc.)
@@ -479,12 +482,13 @@ proyecto_cabania/
 - **Configuración**: EstadoReserva, EstadoPersona, EstadoProducto, MetodoPago, Periodo, TipoContacto, TipoServicio
 - **Sistema**: Modulo, Menu, CondicionSalud, CostoDanio, NivelDanio, Contacto, Comentario, Reporte
 
-#### **🎮 Controladores** (32 controladores activos)
+#### **🎮 Controladores** (33 controladores activos)
 - **Públicos**: Home, Auth, EmailVerification, Catalogo, Reservas, Comentarios, HuespedConsumos, TotemConsumos (8)
 - **Configuración**: Categorías, Marcas, Estados (Personas/Productos/Reservas), Condiciones, Métodos, Períodos, Tipos, Niveles, Costos (13)
 - **Operaciones**: Cabañas, Productos, Servicios, Consumos, Huéspedes, Inventario, Revisiones (7)
 - **Administración**: Usuarios, Perfiles, PerfilesModulos, Módulos, Menús (5)
 - **Reportes**: Analytics y reportes (1)
+- **Notificaciones**: Pusher (autenticación de canales privados) (1)
 
 #### **🖼️ Sistema de Vistas - Screaming Architecture** (49 módulos)
 > **Organización:** Estructura que "grita" el propósito del sistema (gestión de cabañas)
@@ -926,6 +930,303 @@ WHERE hr.rela_reserva = ?
 4. Configurar HTTPS (obligatorio)
 5. Validar webhook con signature
 6. Testing exhaustivo con tarjetas reales
+
+---
+
+## 🔔 **Sistema de Notificaciones en Tiempo Real con Pusher**
+
+### **📡 Integración Pusher SDK v7.2.7**
+
+Sistema completo de notificaciones push para **huéspedes** que proporciona actualizaciones en tiempo real sobre eventos importantes de su estadía.
+
+#### **🎯 Tipos de Notificaciones Implementadas**
+
+**1. 🗓️ Reserva Cercana**
+- **Cuándo**: 24 horas antes del check-in
+- **Mensaje**: "¡Tu reserva es mañana! Tu estadía en [Cabaña] comienza el [Fecha]"
+- **Tipo**: Success (verde)
+- **Icono**: `fas fa-calendar-check`
+
+**2. 💳 Pago Pendiente**
+- **Cuándo**: Cuando hay saldo sin pagar en una reserva
+- **Mensaje**: "Tienes un saldo pendiente de $[Monto]"
+- **Tipo**: Warning (amarillo)
+- **Icono**: `fas fa-exclamation-triangle`
+
+**3. 🛒 Pedido en Cabaña**
+- **Cuándo**: Al crear consumo desde totem/menú
+- **Mensaje**: "Tu pedido de [Cantidad] [Item] fue registrado"
+- **Tipo**: Success (verde)
+- **Icono**: `fas fa-shopping-cart`
+
+**4. ⚠️ Inconveniente de Pedido**
+- **Cuándo**: Cuando hay problemas con un consumo (stock, cancelación)
+- **Mensaje**: [Motivo específico del inconveniente]
+- **Tipo**: Danger (rojo)
+- **Icono**: `fas fa-times-circle`
+
+### **🏗️ Arquitectura del Sistema**
+
+#### **Backend (PHP)**
+
+**Componente Principal: `Core/NotificationService.php`**
+```php
+use Pusher\Pusher;
+
+class NotificationService {
+    private $pusher;
+    
+    public function __construct() {
+        $this->pusher = new Pusher(
+            getenv('PUSHER_APP_KEY'),
+            getenv('PUSHER_APP_SECRET'),
+            getenv('PUSHER_APP_ID'),
+            ['cluster' => getenv('PUSHER_APP_CLUSTER')]
+        );
+    }
+    
+    // Métodos para cada tipo de notificación
+    public function reservaCercana($usuarioId, $reservaData) { }
+    public function pagoPendiente($usuarioId, $montoRestante) { }
+    public function pedidoCabania($usuarioId, $consumoData) { }
+    public function inconvenientePedido($usuarioId, $motivo) { }
+}
+```
+
+**Integración en Controladores:**
+```php
+// ReservasController::pagoExitoso()
+$usuarioId = $this->modelo->getUsuarioIdFromReserva($reservaId);
+$notificationService = new NotificationService();
+$notificationService->pedidoCabania($usuarioId, $consumoData);
+
+// ConsumosController::reportarInconveniente()
+$notificationService->inconvenientePedido($usuarioId, $motivo);
+```
+
+**Autenticación de Canales: `Controllers/PusherController.php`**
+```php
+public function auth() {
+    // 1. Validar que el usuario esté autenticado
+    if (!Auth::check()) {
+        http_response_code(403);
+        return;
+    }
+    
+    // 2. Validar que sea huésped
+    if ($_SESSION['perfil_nombre'] !== 'huesped') {
+        http_response_code(403);
+        return;
+    }
+    
+    // 3. Validar canal privado
+    $expectedChannel = "private-user-{$_SESSION['id_usuario']}";
+    if ($_POST['channel_name'] !== $expectedChannel) {
+        http_response_code(403);
+        return;
+    }
+    
+    // 4. Autorizar canal
+    echo $pusher->authorizeChannel($_POST['channel_name'], $_POST['socket_id']);
+}
+```
+
+#### **Frontend (JavaScript)**
+
+**Inicialización en `Views/shared/layouts/header.php`:**
+```html
+<!-- Solo para huéspedes -->
+<?php if (isset($_SESSION['perfil_nombre']) && $_SESSION['perfil_nombre'] === 'huesped'): ?>
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+    <script>
+        window.pusherConfig = {
+            key: '<?= getenv('PUSHER_APP_KEY') ?>',
+            cluster: '<?= getenv('PUSHER_APP_CLUSTER') ?>',
+            userId: '<?= $_SESSION['id_usuario'] ?>',
+            authEndpoint: '<?= url('/pusher/auth') ?>'
+        };
+    </script>
+    <script src="<?= asset('js/notifications.js') ?>"></script>
+<?php endif; ?>
+```
+
+**Sistema de Notificaciones `assets/js/notifications.js`:**
+```javascript
+const pusher = new Pusher(pusherConfig.key, {
+    cluster: pusherConfig.cluster,
+    authEndpoint: pusherConfig.authEndpoint
+});
+
+const channel = pusher.subscribe(`private-user-${pusherConfig.userId}`);
+
+channel.bind('notification', function(data) {
+    // 1. Mostrar toast visual
+    mostrarToast(data.titulo, data.mensaje, data.tipo);
+    
+    // 2. Agregar a dropdown de notificaciones
+    agregarNotificacion(data);
+    
+    // 3. Actualizar badge contador
+    actualizarContador();
+});
+```
+
+**Badge de Notificaciones en `Views/shared/components/menu.php`:**
+```html
+<li class="nav-item dropdown" id="notifications-dropdown">
+    <a class="nav-link position-relative" href="#" data-bs-toggle="dropdown">
+        <i class="fas fa-bell"></i>
+        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
+              id="notifications-count" style="display: none;">0</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" id="notifications-list">
+        <li class="dropdown-item text-center text-muted">No hay notificaciones</li>
+    </ul>
+</li>
+```
+
+### **🔐 Seguridad - Canales Privados**
+
+**Características de Seguridad:**
+- ✅ **Canal por Usuario**: `private-user-{userId}` - Cada huésped solo recibe SUS notificaciones
+- ✅ **Autenticación Obligatoria**: Endpoint `/pusher/auth` valida identidad antes de suscribir
+- ✅ **Validación de Perfil**: Solo usuarios con perfil "huésped" pueden suscribirse
+- ✅ **Validación de Canal**: Verifica que el canal solicitado corresponda al usuario autenticado
+- ✅ **Aislamiento Total**: Usuario A nunca ve notificaciones de Usuario B
+
+**Flujo de Autenticación:**
+```
+1. [FRONTEND] Pusher intenta suscribirse a "private-user-123"
+   ↓
+2. [PUSHER] Solicita autorización al backend
+   ↓
+3. [BACKEND] /pusher/auth valida:
+   - ¿Usuario autenticado? ✓
+   - ¿Es huésped? ✓
+   - ¿Canal correcto para este usuario? ✓
+   ↓
+4. [BACKEND] Genera firma de autorización
+   ↓
+5. [PUSHER] Aprueba suscripción
+   ↓
+6. [FRONTEND] Canal privado conectado y listo
+```
+
+### **⚙️ Configuración Requerida**
+
+**Variables de Entorno (`.env`):**
+```env
+# Pusher Configuration
+PUSHER_APP_ID=your_app_id
+PUSHER_APP_KEY=your_public_key
+PUSHER_APP_SECRET=your_secret_key
+PUSHER_APP_CLUSTER=us2
+```
+
+**Dependencias de Composer:**
+```json
+{
+    "require": {
+        "pusher/pusher-php-server": "^7.2"
+    }
+}
+```
+
+**Instalación:**
+```bash
+composer require pusher/pusher-php-server
+```
+
+**Archivos del Sistema:**
+- ✅ `Core/NotificationService.php` - Servicio de notificaciones backend
+- ✅ `Controllers/PusherController.php` - Autenticación de canales
+- ✅ `Models/Reserva.php` - Método `getUsuarioIdFromReserva()`
+- ✅ `assets/js/notifications.js` - Sistema frontend de notificaciones
+- ✅ `assets/css/notifications.css` - Estilos visuales
+- ✅ `Views/shared/components/menu.php` - Badge de notificaciones
+- ✅ `Views/shared/layouts/header.php` - Inicialización de Pusher
+
+### **🔄 Flujo Completo de Notificación**
+
+```
+1. [EVENTO] Ocurre acción (ej: nuevo consumo creado)
+   ↓
+2. [CONTROLLER] Obtiene usuarioId del huésped
+   - ConsumosController::create() → Reserva::getUsuarioIdFromReserva()
+   ↓
+3. [SERVICE] NotificationService::pedidoCabania($usuarioId, $data)
+   - Valida $usuarioId
+   - Construye payload de notificación
+   - Trigger a "private-user-{$usuarioId}"
+   ↓
+4. [PUSHER] Enruta notificación al canal privado
+   - Valida autenticación del canal
+   - Envía SOLO al usuario correcto
+   ↓
+5. [FRONTEND] notifications.js recibe evento
+   - Escucha evento 'notification'
+   - Muestra toast visual (Bootstrap)
+   - Agrega a dropdown de notificaciones
+   - Actualiza badge contador
+   ↓
+6. [USUARIO] Ve notificación en tiempo real
+   - Toast emergente con auto-cierre (5 seg)
+   - Badge rojo con número de notificaciones
+   - Dropdown con historial
+```
+
+### **📊 Estadísticas de Implementación**
+
+**Componentes Backend:**
+- ✅ 1 Servicio de notificaciones (`NotificationService.php`)
+- ✅ 1 Controlador de autenticación (`PusherController.php`)
+- ✅ 1 Método de obtención de usuario (`getUsuarioIdFromReserva()` en Reserva)
+- ✅ 4 Métodos de notificación (reservaCercana, pagoPendiente, pedidoCabania, inconvenientePedido)
+- ✅ 1 Endpoint de autenticación (`/pusher/auth`)
+
+**Componentes Frontend:**
+- ✅ 1 Archivo JavaScript (`notifications.js` - ~120 líneas)
+- ✅ 1 Archivo CSS (`notifications.css` - ~30 líneas)
+- ✅ 1 Badge de notificaciones en menú
+- ✅ 1 Script de inicialización en header
+- ✅ 4 Funciones principales (suscripción, mostrar toast, agregar notificación, actualizar contador)
+
+**Integración:**
+- ✅ 2 Controladores actualizados (ReservasController, ConsumosController)
+- ✅ 1 Modelo actualizado (Reserva con método getUsuarioIdFromReserva)
+- ✅ Canales privados por usuario para máxima seguridad
+- ✅ Autenticación obligatoria antes de suscripción
+
+### **🧪 Testing y Debugging**
+
+**Dashboard de Pusher:**
+- Monitoreo en tiempo real de eventos
+- Visualización de usuarios conectados
+- Historial de notificaciones enviadas
+- Debug Console para troubleshooting
+
+**Console del Navegador:**
+```javascript
+// Verificar conexión
+pusher.connection.bind('connected', () => {
+    console.log('✅ Pusher conectado');
+});
+
+// Verificar suscripción
+channel.bind('pusher:subscription_succeeded', () => {
+    console.log('✅ Suscrito a canal privado');
+});
+
+// Log de notificaciones
+channel.bind('notification', (data) => {
+    console.log('📩 Notificación recibida:', data);
+});
+```
+
+**Errores Comunes:**
+- ❌ 403 Forbidden → Verificar autenticación de canal en `/pusher/auth`
+- ❌ No se reciben notificaciones → Verificar `PUSHER_APP_KEY` y `PUSHER_APP_CLUSTER`
+- ❌ Badge no actualiza → Verificar que `notifications.js` esté cargado
 
 ---
 
@@ -1467,11 +1768,12 @@ if (password_verify($inputPassword, $storedHash)) {
 
 Para información detallada sobre cada componente, consultar:
 
-- **[Controllers/README.md](Controllers/README.md)** - Documentación completa de controladores
-- **[Core/README.md](Core/README.md)** - Framework y arquitectura interna con MercadoPago
-- **[Models/README.md](Models/README.md)** - Modelos de datos, relaciones y transacciones  
-- **[Views/README.md](Views/README.md)** - Sistema de vistas, flujos y pasarela de pago
+- **[Controllers/README.md](Controllers/README.md)** - Documentación completa de controladores (incluye PusherController)
+- **[Core/README.md](Core/README.md)** - Framework y arquitectura interna con MercadoPago y Pusher
+- **[Models/README.md](Models/README.md)** - Modelos de datos, relaciones y transacciones (incluye getUsuarioIdFromReserva)  
+- **[Views/README.md](Views/README.md)** - Sistema de vistas, flujos, pasarela de pago y notificaciones
 - **[INSTRUCTIVO_MERCADOPAGO.md](INSTRUCTIVO_MERCADOPAGO.md)** - Guía completa de integración MercadoPago
+- **[NOTIFICACIONES.md](NOTIFICACIONES.md)** - Documentación completa del sistema de notificaciones Pusher
 - **[ESTADOS_RESERVA_README.md](ESTADOS_RESERVA_README.md)** - Sistema de estados sin hardcode
 - **[SISTEMA_CONSUMOS.md](SISTEMA_CONSUMOS.md)** - Sistema de consumos multimodal (3 módulos)
 - **[GUIA_USO_CONSUMOS.md](GUIA_USO_CONSUMOS.md)** - Guía de usuario para sistema de consumos
@@ -1515,6 +1817,18 @@ Para información detallada sobre cada componente, consultar:
 
 ### **🆕 Últimas Actualizaciones**
 
+#### **Noviembre 2025 - Sistema de Notificaciones en Tiempo Real con Pusher SDK v7.2.7**
+- ✅ **Pusher PHP Server SDK**: Integración completa para notificaciones push
+- ✅ **Pusher JavaScript Client**: Pusher.js v8.2.0 para recepción de eventos
+- ✅ **4 Tipos de Notificaciones**: Reserva cercana, pago pendiente, pedido en cabaña, inconveniente
+- ✅ **Canales Privados**: Seguridad por usuario con `private-user-{userId}`
+- ✅ **Autenticación Obligatoria**: Endpoint `/pusher/auth` con PusherController
+- ✅ **UI Completa**: Badge de notificaciones, toasts, dropdown con historial
+- ✅ **Solo para Huéspedes**: Sistema exclusivo para perfil "huesped"
+- ✅ **NotificationService**: Servicio centralizado para disparar notificaciones
+- ✅ **Frontend Reactivo**: JavaScript listeners con actualización automática de UI
+- ✅ **Documentación Completa**: README actualizado en Core, Controllers, Models y Views
+
 #### **Noviembre 2025 - Integración MercadoPago SDK v3.7.1**
 - ✅ **SDK Moderno**: Migración completa a MercadoPagoConfig, PreferenceClient, PaymentClient
 - ✅ **Wallet Brick**: Interfaz optimizada de MercadoPago para mejor conversión
@@ -1548,5 +1862,6 @@ Para información detallada sobre cada componente, consultar:
 *Proyecto desarrollado como parte del programa de Desarrollo de Software - ISRMM*  
 *Casa de Palos Cabañas - Sistema Integral de Gestión de Turismo Rural*  
 *Documentación actualizada: 18 de Noviembre de 2025*  
-*Integración MercadoPago SDK v3.7.1 - Checkout Pro con Wallet Brick*
+*Integración MercadoPago SDK v3.7.1 - Checkout Pro con Wallet Brick*  
+*Integración Pusher SDK v7.2.7 - Notificaciones en Tiempo Real para Huéspedes*
 ```
