@@ -1279,13 +1279,13 @@ class ReservasController extends Controller
                         if ($resultado['success']) {
                             error_log("Webhook - Reserva $reservaId confirmada via webhook");
                             
-                            // Enviar email de confirmación
-                            try {
-                                $this->enviarNotificacionConfirmacion($reserva);
-                            } catch (\Exception $e) {
-                                error_log("Webhook - Error enviando email: " . $e->getMessage());
-                            }
+                            // NO enviar email aquí - el email ya se envió en pagoExitoso()
+                            // El webhook es solo para confirmaciones asíncronas en caso de que
+                            // el usuario cierre el navegador antes de la redirección
+                            error_log("Webhook - Email NO enviado (ya se envió en la redirección del usuario)");
                         }
+                    } else {
+                        error_log("Webhook - Reserva $reservaId ya fue confirmada previamente (estado: {$reserva['rela_estadoreserva']})");
                     }
                     break;
                     
@@ -1654,6 +1654,230 @@ class ReservasController extends Controller
     }
     
     /**
+     * Descargar comprobante de factura en PDF
+     */
+    public function descargarComprobante($reservaId) {
+        try {
+            $this->requireAuth();
+            
+            // Verificar que el usuario tiene acceso a esta reserva
+            $reserva = $this->reservaModel->find($reservaId);
+            if (!$reserva) {
+                $this->redirect('/reservas', 'Reserva no encontrada', 'error');
+                return;
+            }
+            
+            // Verificar que la reserva pertenece al usuario actual (excepto admin)
+            $userId = $_SESSION['user']['id_usuario'] ?? null;
+            $perfilId = $_SESSION['user']['id_perfil'] ?? null;
+            
+            // Admin puede ver cualquier comprobante
+            if ($perfilId != 1) { // Si no es admin
+                // Obtener el huésped de la reserva
+                $huesped = $this->obtenerHuespedReserva($reservaId);
+                $personaReserva = $huesped['id_persona'] ?? null;
+                $personaUsuario = $_SESSION['user']['rela_persona'] ?? null;
+                
+                if ($personaReserva != $personaUsuario) {
+                    $this->redirect('/reservas', 'No tienes permiso para ver este comprobante', 'error');
+                    return;
+                }
+            }
+            
+            // Generar el PDF
+            $pdfPath = $this->generarPDFFactura($reservaId);
+            
+            if (!$pdfPath || !file_exists($pdfPath)) {
+                throw new \Exception('Error generando el comprobante PDF');
+            }
+            
+            // Configurar headers para descarga
+            header('Content-Type: application/pdf');
+            header('Content-Disposition: attachment; filename="factura_reserva_' . $reservaId . '.pdf"');
+            header('Content-Length: ' . filesize($pdfPath));
+            header('Cache-Control: private, max-age=0, must-revalidate');
+            header('Pragma: public');
+            
+            // Enviar archivo
+            readfile($pdfPath);
+            
+            // Limpiar archivo temporal
+            if (file_exists($pdfPath)) {
+                unlink($pdfPath);
+            }
+            
+            exit;
+            
+        } catch (\Exception $e) {
+            error_log('Error descargando comprobante: ' . $e->getMessage());
+            $this->redirect('/reservas', 'Error al generar el comprobante: ' . $e->getMessage(), 'error');
+        }
+    }
+    
+    /**
+     * Generar PDF de factura para una reserva
+     */
+    private function generarPDFFactura($reservaId) {
+        try {
+            // Obtener datos completos de la reserva y factura
+            $reservaCompleta = $this->obtenerDatosCompletosReserva($reservaId);
+            if (!$reservaCompleta) {
+                throw new \Exception("No se pudieron obtener los datos de la reserva");
+            }
+
+            // Obtener factura
+            $facturaModel = new \App\Models\Factura();
+            $facturas = $facturaModel->getFacturasByReserva($reservaId);
+            if (empty($facturas)) {
+                throw new \Exception("No se encontró la factura para esta reserva");
+            }
+            $factura = $facturas[0]; // Tomar la primera factura
+
+            // Obtener detalles de la factura
+            $detalles = $facturaModel->getDetallesFactura($factura['id_factura']);
+
+            // Crear PDF
+            $pdf = new \TCPDF('P', PDF_UNIT, 'A4', true, 'UTF-8', false);
+            
+            $pdf->SetCreator('Casa de Palos Cabañas');
+            $pdf->SetAuthor('Casa de Palos');
+            $pdf->SetTitle('Comprobante de Factura - ' . $factura['factura_nro']);
+            
+            $pdf->setPrintHeader(false);
+            $pdf->setPrintFooter(false);
+            $pdf->SetMargins(15, 15, 15);
+            $pdf->AddPage();
+
+            // === HEADER DEL COMPROBANTE ===
+            $pdf->SetFont('helvetica', 'B', 18);
+            $pdf->SetTextColor(44, 85, 48); // Verde oscuro
+            $pdf->Cell(0, 10, 'CASA DE PALOS CABAÑAS', 0, 1, 'C');
+            
+            $pdf->SetFont('helvetica', '', 10);
+            $pdf->SetTextColor(80, 80, 80);
+            $pdf->Cell(0, 5, 'Sistema de Reservas Online', 0, 1, 'C');
+            $pdf->Ln(5);
+
+            // === TIPO DE COMPROBANTE ===
+            $pdf->SetFillColor(44, 85, 48);
+            $pdf->SetTextColor(255, 255, 255);
+            $pdf->SetFont('helvetica', 'B', 14);
+            $tipoComprobante = $factura['tipocomprobante_descripcion'] ?? 'FACTURA B';
+            $pdf->Cell(0, 10, $tipoComprobante, 0, 1, 'C', true);
+            $pdf->Ln(3);
+
+            // === NÚMERO DE COMPROBANTE Y FECHA ===
+            $pdf->SetTextColor(0, 0, 0);
+            $pdf->SetFont('helvetica', 'B', 11);
+            $pdf->Cell(95, 7, 'Nº Comprobante: ' . $factura['factura_nro'], 0, 0, 'L');
+            $pdf->SetFont('helvetica', '', 10);
+            $pdf->Cell(95, 7, 'Fecha: ' . date('d/m/Y H:i', strtotime($factura['factura_fechahora'])), 0, 1, 'R');
+            $pdf->Ln(5);
+
+            // === DATOS DEL CLIENTE ===
+            $pdf->SetFillColor(240, 240, 240);
+            $pdf->SetFont('helvetica', 'B', 11);
+            $pdf->Cell(0, 7, 'DATOS DEL CLIENTE', 0, 1, 'L', true);
+            $pdf->SetFont('helvetica', '', 10);
+            $pdf->Cell(0, 6, 'Nombre: ' . $reservaCompleta['huesped_nombre_completo'], 0, 1, 'L');
+            $pdf->Cell(0, 6, 'Email: ' . $reservaCompleta['huesped_email'], 0, 1, 'L');
+            $pdf->Ln(5);
+
+            // === DATOS DE LA RESERVA ===
+            $pdf->SetFillColor(240, 240, 240);
+            $pdf->SetFont('helvetica', 'B', 11);
+            $pdf->Cell(0, 7, 'DETALLE DE LA RESERVA', 0, 1, 'L', true);
+            $pdf->SetFont('helvetica', '', 10);
+            $pdf->Cell(0, 6, 'Cabaña: ' . $reservaCompleta['cabania_nombre'], 0, 1, 'L');
+            $pdf->Cell(95, 6, 'Check-in: ' . $reservaCompleta['fecha_llegada'], 0, 0, 'L');
+            $pdf->Cell(95, 6, 'Check-out: ' . $reservaCompleta['fecha_salida'], 0, 1, 'L');
+            $pdf->Cell(95, 6, 'Días de estadía: ' . $reservaCompleta['dias_estancia'], 0, 0, 'L');
+            $pdf->Cell(95, 6, 'Huéspedes: ' . $reservaCompleta['total_huespedes'], 0, 1, 'L');
+            $pdf->Ln(5);
+
+            // === DETALLES DE LA FACTURA ===
+            $pdf->SetFillColor(240, 240, 240);
+            $pdf->SetFont('helvetica', 'B', 11);
+            $pdf->Cell(0, 7, 'DETALLE DE LA FACTURA', 0, 1, 'L', true);
+            
+            // Tabla de detalles
+            $pdf->SetFont('helvetica', 'B', 9);
+            $pdf->SetFillColor(220, 220, 220);
+            $pdf->Cell(80, 7, 'Descripción', 1, 0, 'L', true);
+            $pdf->Cell(25, 7, 'Cantidad', 1, 0, 'C', true);
+            $pdf->Cell(40, 7, 'P. Unitario', 1, 0, 'R', true);
+            $pdf->Cell(35, 7, 'Total', 1, 1, 'R', true);
+
+            $pdf->SetFont('helvetica', '', 9);
+            $pdf->SetFillColor(255, 255, 255);
+            
+            if (!empty($detalles)) {
+                foreach ($detalles as $detalle) {
+                    $pdf->Cell(80, 6, substr($detalle['facturadetalle_descripcion'], 0, 40), 1, 0, 'L');
+                    $pdf->Cell(25, 6, $detalle['facturadetalle_cantidad'], 1, 0, 'C');
+                    $pdf->Cell(40, 6, '$' . number_format($detalle['facturadetalle_preciounitario'], 2), 1, 0, 'R');
+                    $pdf->Cell(35, 6, '$' . number_format($detalle['facturadetalle_total'], 2), 1, 1, 'R');
+                }
+            }
+
+            $pdf->Ln(3);
+
+            // === TOTALES ===
+            $pdf->SetFont('helvetica', 'B', 10);
+            
+            // Subtotal
+            $pdf->Cell(145, 7, 'Subtotal:', 0, 0, 'R');
+            $pdf->Cell(35, 7, '$' . number_format($factura['factura_subtotal'], 2), 1, 1, 'R');
+            
+            // IVA (si existe)
+            if ($factura['factura_iva'] > 0) {
+                $pdf->Cell(145, 7, 'IVA:', 0, 0, 'R');
+                $pdf->Cell(35, 7, '$' . number_format($factura['factura_iva'], 2), 1, 1, 'R');
+            }
+            
+            // Intereses (si existe)
+            if ($factura['factura_intereses'] > 0) {
+                $pdf->Cell(145, 7, 'Intereses:', 0, 0, 'R');
+                $pdf->Cell(35, 7, '$' . number_format($factura['factura_intereses'], 2), 1, 1, 'R');
+            }
+            
+            // Total
+            $pdf->SetFillColor(44, 85, 48);
+            $pdf->SetTextColor(255, 255, 255);
+            $pdf->SetFont('helvetica', 'B', 12);
+            $pdf->Cell(145, 10, 'TOTAL:', 0, 0, 'R', true);
+            $pdf->Cell(35, 10, '$' . number_format($factura['factura_total'], 2), 1, 1, 'R', true);
+
+            $pdf->Ln(5);
+
+            // === MÉTODO DE PAGO ===
+            $pdf->SetTextColor(0, 0, 0);
+            $pdf->SetFont('helvetica', 'B', 10);
+            $pdf->Cell(0, 6, 'Método de pago: ' . $reservaCompleta['metodo_pago'], 0, 1, 'L');
+            $pdf->Ln(5);
+
+            // === PIE DEL COMPROBANTE ===
+            $pdf->SetFont('helvetica', 'I', 8);
+            $pdf->SetTextColor(100, 100, 100);
+            $pdf->Cell(0, 5, 'Este comprobante fue generado electrónicamente', 0, 1, 'C');
+            $pdf->Cell(0, 5, 'Casa de Palos Cabañas - Sistema de Gestión Online', 0, 1, 'C');
+
+            // Guardar PDF en archivo temporal
+            $tempDir = sys_get_temp_dir();
+            $filename = 'factura_' . $factura['factura_nro'] . '_' . time() . '.pdf';
+            $filepath = $tempDir . DIRECTORY_SEPARATOR . $filename;
+            
+            $pdf->Output($filepath, 'F');
+            
+            return $filepath;
+            
+        } catch (\Exception $e) {
+            error_log('Error generando PDF de factura: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
      * Enviar email de confirmación de reserva con información completa
      */
     private function enviarNotificacionConfirmacion($reserva) {
@@ -1715,14 +1939,31 @@ class ReservasController extends Controller
             $htmlBody = $this->construirEmailConfirmacion($reservaCompleta);
             $textBody = $this->construirEmailConfirmacionTexto($reservaCompleta);
             
-            // Enviar email al huésped
-            $result = $emailService->sendEmail(
+            // Generar PDF de la factura
+            $pdfPath = null;
+            try {
+                $pdfPath = $this->generarPDFFactura($reserva['id_reserva']);
+                error_log("PDF de factura generado exitosamente: $pdfPath");
+            } catch (\Exception $e) {
+                error_log("ERROR generando PDF de factura: " . $e->getMessage());
+                // Continuar sin PDF si falla la generación
+            }
+            
+            // Enviar email al huésped con PDF adjunto
+            $result = $emailService->sendEmailWithAttachment(
                 $reservaCompleta['huesped_email'],
                 $reservaCompleta['huesped_nombre_completo'],
                 $subject,
                 $htmlBody,
-                $textBody
+                $textBody,
+                $pdfPath
             );
+            
+            // Eliminar archivo temporal del PDF
+            if ($pdfPath && file_exists($pdfPath)) {
+                unlink($pdfPath);
+                error_log("Archivo temporal PDF eliminado: $pdfPath");
+            }
             
             if ($result['success']) {
                 error_log("Email de confirmación enviado exitosamente a: " . $reservaCompleta['huesped_email']);
@@ -1768,7 +2009,20 @@ class ReservasController extends Controller
             $dias = $fechaInicio->diff($fechaFin)->days;
             
             // Contar huéspedes de la reserva
-            $cantidadHuespedes = $this->contarHuespedesReserva($reservaId);
+            // Para reservas online, usar datos de sesión si están disponibles
+            $cantidadHuespedes = ['adultos' => 0, 'menores' => 0, 'total' => 0];
+            
+            // Si es reserva online y hay datos en sesión, usar esos datos
+            if ($reserva['reserva_online'] == 1 && isset($_SESSION['reserva_temporal']['cantidad_personas'])) {
+                $cantidadHuespedes['total'] = (int)$_SESSION['reserva_temporal']['cantidad_personas'];
+                $cantidadHuespedes['adultos'] = $cantidadHuespedes['total']; // Asumimos todos adultos para reservas online
+                $cantidadHuespedes['menores'] = 0;
+                error_log("DEBUG: Usando cantidad de huéspedes de sesión: " . $cantidadHuespedes['total']);
+            } else {
+                // Para reservas manuales, contar desde huesped_reserva
+                $cantidadHuespedes = $this->contarHuespedesReserva($reservaId);
+            }
+            
             error_log("DEBUG: Cantidad de huéspedes para reserva $reservaId: " . json_encode($cantidadHuespedes));
             
             $resultado = [
@@ -1783,9 +2037,9 @@ class ReservasController extends Controller
                 'metodo_pago' => $metodoPago['descripcion'] ?? 'MercadoPago',
                 'monto_pagado' => $totalPagado ?? 0,
                 'fecha_confirmacion' => date('d/m/Y H:i:s'),
-                'adultos' => $cantidadHuespedes['adultos'] ?? 0,
-                'menores' => $cantidadHuespedes['menores'] ?? 0,
-                'total_huespedes' => $cantidadHuespedes['total'] ?? 0,
+                'adultos' => $cantidadHuespedes['adultos'],
+                'menores' => $cantidadHuespedes['menores'],
+                'total_huespedes' => $cantidadHuespedes['total'],
                 'estado_reserva' => 'Confirmada'
             ];
             

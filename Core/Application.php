@@ -169,6 +169,9 @@ class Application
         $this->router->get('/reservas/pago-pendiente', 'ReservasController@pagoPendiente');
         $this->router->post('/reservas/webhook', 'ReservasController@webhook');
         
+        // Descargar comprobante de factura
+        $this->router->get('/reservas/comprobante/{id}', 'ReservasController@descargarComprobante');
+        
         // Rutas legacy y utilidades
         $this->router->post('/reservas/confirmar-pago', 'ReservasController@confirmarPago');
         $this->router->get('/reservas/exito', 'ReservasController@exito');
