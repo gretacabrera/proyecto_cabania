@@ -2467,46 +2467,377 @@ class ReservasController extends Controller
             
             $database = \App\Core\Database::getInstance();
             $stmt = $database->prepare($sql);
-            $stmt->execute([$usuarioId]);
-            $persona = $stmt->fetch();
+            $stmt->bind_param("i", $usuarioId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $persona = $result->fetch_assoc();
+            $stmt->close();
             
             if (!$persona) {
                 $this->redirect('/', 'No se encontró información de perfil', 'error');
                 return;
             }
             
-            // Obtener reservas del usuario con detalles
-            $sqlReservas = "SELECT r.*, 
-                                   c.cabania_nombre, c.cabania_codigo,
+            // Obtener reservas del usuario con TODOS los detalles necesarios
+            $sqlReservas = "SELECT r.id_reserva,
+                                   r.reserva_fhinicio,
+                                   r.reserva_fhfin,
+                                   r.rela_estadoreserva,
+                                   r.reserva_online,
+                                   c.cabania_nombre, 
+                                   c.cabania_codigo,
                                    er.estadoreserva_descripcion,
-                                   p.persona_nombre, p.persona_apellido
+                                   MAX(p.persona_nombre) as persona_nombre,
+                                   MAX(p.persona_apellido) as persona_apellido,
+                                   f.factura_fechahora as fecha_confirmacion,
+                                   f.factura_total as importe_total,
+                                   COUNT(DISTINCT hr.rela_huesped) as total_huespedes
                             FROM reserva r
                             INNER JOIN cabania c ON r.rela_cabania = c.id_cabania
                             INNER JOIN estadoreserva er ON r.rela_estadoreserva = er.id_estadoreserva
                             INNER JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                             INNER JOIN huesped h ON hr.rela_huesped = h.id_huesped
                             INNER JOIN persona p ON h.rela_persona = p.id_persona
+                            LEFT JOIN factura f ON r.id_reserva = f.rela_reserva
                             WHERE p.id_persona = ?
+                            GROUP BY r.id_reserva, r.reserva_fhinicio, r.reserva_fhfin, r.rela_estadoreserva, 
+                                     r.reserva_online, c.cabania_nombre, c.cabania_codigo, 
+                                     er.estadoreserva_descripcion, f.factura_fechahora, f.factura_total
                             ORDER BY r.reserva_fhinicio DESC";
             
             $stmt = $database->prepare($sqlReservas);
-            $stmt->execute([$persona['id_persona']]);
+            $stmt->bind_param("i", $persona['id_persona']);
+            $stmt->execute();
+            $result = $stmt->get_result();
             
             $reservas = [];
-            while ($row = $stmt->fetch()) {
+            while ($row = $result->fetch_assoc()) {
                 $reservas[] = $row;
             }
+            $stmt->close();
             
             $data = [
                 'title' => 'Mis Reservas',
-                'reservas' => $reservas
+                'reservas' => $reservas,
+                'isAdminArea' => false
             ];
             
-            return $this->render('public/reservas/mis-reservas', $data);
+            return $this->render('public/reservas/mis-reservas', $data, 'main');
             
         } catch (\Exception $e) {
             error_log('Error obteniendo reservas del usuario: ' . $e->getMessage());
             $this->redirect('/', 'Error interno del servidor', 'error');
+        }
+    }
+    
+    /**
+     * Marcar ingreso de una reserva (cambiar estado a "En curso")
+     */
+    public function marcarIngreso($id)
+    {
+        $this->requireAuth();
+        
+        try {
+            // Verificar que la reserva existe y pertenece al usuario
+            $reserva = $this->reservaModel->find($id);
+            if (!$reserva) {
+                $this->redirect('/reservas', 'Reserva no encontrada', 'error');
+                return;
+            }
+            
+            // Verificar que es el propietario de la reserva
+            $usuarioId = $_SESSION['usuario_id'];
+            if (!$this->reservaModel->isReservaOwner($id, $usuarioId)) {
+                $this->redirect('/reservas', 'No tiene permisos para modificar esta reserva', 'error');
+                return;
+            }
+            
+            // Verificar que la reserva está en estado "Confirmada" (2)
+            if ($reserva['rela_estadoreserva'] != 2) {
+                $this->redirect('/reservas', 'Solo se puede marcar ingreso en reservas confirmadas', 'error');
+                return;
+            }
+            
+            // Cambiar estado de reserva a "En curso" (3) y cabaña a "Ocupada" (0)
+            $resultado = $this->reservaModel->update($id, [
+                'rela_estadoreserva' => 3 // EN CURSO
+            ]);
+            
+            if ($resultado) {
+                // Actualizar estado de la cabaña a "Ocupada" (0)
+                $this->cabaniaModel->update($reserva['rela_cabania'], [
+                    'cabania_estado' => 0 // OCUPADA
+                ]);
+                
+                $this->redirect('/reservas', 'Ingreso registrado correctamente. Cabaña marcada como ocupada.', 'exito');
+            } else {
+                $this->redirect('/reservas', 'Error al registrar el ingreso', 'error');
+            }
+            
+        } catch (\Exception $e) {
+            error_log('Error en marcarIngreso: ' . $e->getMessage());
+            $this->redirect('/reservas', 'Error: ' . $e->getMessage(), 'error');
+        }
+    }
+    
+    /**
+     * Marcar salida de una reserva (cambiar estado a "Finalizada")
+     */
+    public function marcarSalida($id)
+    {
+        $this->requireAuth();
+        
+        try {
+            // Verificar que la reserva existe y pertenece al usuario
+            $reserva = $this->reservaModel->find($id);
+            if (!$reserva) {
+                $this->redirect('/reservas', 'Reserva no encontrada', 'error');
+                return;
+            }
+            
+            // Verificar que es el propietario de la reserva
+            $usuarioId = $_SESSION['usuario_id'];
+            if (!$this->reservaModel->isReservaOwner($id, $usuarioId)) {
+                $this->redirect('/reservas', 'No tiene permisos para modificar esta reserva', 'error');
+                return;
+            }
+            
+            // Verificar que la reserva está en estado "En curso" (3)
+            if ($reserva['rela_estadoreserva'] != 3) {
+                $this->redirect('/reservas', 'Solo se puede marcar salida en reservas en curso', 'error');
+                return;
+            }
+            
+            // Cambiar estado a "Pendiente de Revisión" (8)
+            $resultado = $this->reservaModel->update($id, [
+                'rela_estadoreserva' => 8 // PENDIENTE DE REVISIÓN
+            ]);
+            
+            if ($resultado) {
+                $this->redirect('/reservas', 'Salida registrada correctamente. La reserva está pendiente de revisión.', 'exito');
+            } else {
+                $this->redirect('/reservas', 'Error al registrar la salida', 'error');
+            }
+            
+        } catch (\Exception $e) {
+            error_log('Error en marcarSalida: ' . $e->getMessage());
+            $this->redirect('/reservas', 'Error: ' . $e->getMessage(), 'error');
+        }
+    }
+    
+    /**
+     * Ver datos de huéspedes de una reserva
+     */
+    public function verHuespedes($id)
+    {
+        $this->requireAuth();
+        
+        try {
+            // Verificar que la reserva existe y pertenece al usuario
+            $reserva = $this->reservaModel->find($id);
+            if (!$reserva) {
+                $this->redirect('/reservas', 'Reserva no encontrada', 'error');
+                return;
+            }
+            
+            // Verificar que es el propietario de la reserva
+            $usuarioId = $_SESSION['usuario_id'];
+            if (!$this->reservaModel->isReservaOwner($id, $usuarioId)) {
+                $this->redirect('/reservas', 'No tiene permisos para ver esta información', 'error');
+                return;
+            }
+            
+            // Obtener huéspedes de la reserva
+            $database = \App\Core\Database::getInstance();
+            $sqlHuespedes = "SELECT p.*, h.*, 
+                                    GROUP_CONCAT(DISTINCT CONCAT(tc.tipocontacto_descripcion, ': ', c.contacto_descripcion) SEPARATOR '<br>') as contactos
+                             FROM huesped_reserva hr
+                             INNER JOIN huesped h ON hr.rela_huesped = h.id_huesped
+                             INNER JOIN persona p ON h.rela_persona = p.id_persona
+                             LEFT JOIN contacto c ON p.id_persona = c.rela_persona AND c.contacto_estado = 1
+                             LEFT JOIN tipocontacto tc ON c.rela_tipocontacto = tc.id_tipocontacto
+                             WHERE hr.rela_reserva = ?
+                             GROUP BY p.id_persona";
+            
+            $stmt = $database->prepare($sqlHuespedes);
+            $stmt->bind_param("i", $id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $huespedes = [];
+            while ($row = $result->fetch_assoc()) {
+                $huespedes[] = $row;
+            }
+            $stmt->close();
+            
+            $data = [
+                'title' => 'Huéspedes de la Reserva',
+                'reserva' => $reserva,
+                'huespedes' => $huespedes,
+                'isAdminArea' => false
+            ];
+            
+            return $this->render('public/reservas/huespedes', $data, 'main');
+            
+        } catch (\Exception $e) {
+            error_log('Error en verHuespedes: ' . $e->getMessage());
+            $this->redirect('/reservas', 'Error: ' . $e->getMessage(), 'error');
+        }
+    }
+    
+    /**
+     * Ver y registrar consumos de una reserva
+     */
+    public function gestionarConsumos($id)
+    {
+        $this->requireAuth();
+        
+        try {
+            // Verificar que la reserva existe y pertenece al usuario
+            $reserva = $this->reservaModel->find($id);
+            if (!$reserva) {
+                $this->redirect('/reservas', 'Reserva no encontrada', 'error');
+                return;
+            }
+            
+            // Verificar que es el propietario de la reserva
+            $usuarioId = $_SESSION['usuario_id'];
+            if (!$this->reservaModel->isReservaOwner($id, $usuarioId)) {
+                $this->redirect('/reservas', 'No tiene permisos para ver esta información', 'error');
+                return;
+            }
+            
+            // Obtener consumos de la reserva
+            $consumos = $this->reservaModel->getConsumptions($id);
+            
+            // Obtener productos y servicios disponibles para agregar nuevos consumos
+            $productos = $this->servicioModel->getServiciosParaReservas();
+            
+            $data = [
+                'title' => 'Consumos de la Reserva',
+                'reserva' => $reserva,
+                'consumos' => $consumos,
+                'productos_disponibles' => $productos,
+                'isAdminArea' => false
+            ];
+            
+            return $this->render('public/reservas/consumos', $data, 'main');
+            
+        } catch (\Exception $e) {
+            error_log('Error en gestionarConsumos: ' . $e->getMessage());
+            $this->redirect('/reservas', 'Error: ' . $e->getMessage(), 'error');
+        }
+    }
+    
+    /**
+     * Registrar un nuevo consumo (solo si no está confirmado ni abonado)
+     */
+    public function registrarConsumo($reservaId)
+    {
+        $this->requireAuth();
+        
+        if (!$this->isPost()) {
+            $this->redirect('/reservas/' . $reservaId . '/consumos', 'Método no permitido', 'error');
+            return;
+        }
+        
+        try {
+            // Verificar que la reserva existe y pertenece al usuario
+            $reserva = $this->reservaModel->find($reservaId);
+            if (!$reserva) {
+                $this->redirect('/reservas', 'Reserva no encontrada', 'error');
+                return;
+            }
+            
+            // Verificar que es el propietario de la reserva
+            $usuarioId = $_SESSION['usuario_id'];
+            if (!$this->reservaModel->isReservaOwner($reservaId, $usuarioId)) {
+                $this->redirect('/reservas', 'No tiene permisos para modificar esta reserva', 'error');
+                return;
+            }
+            
+            // Obtener datos del formulario
+            $servicioId = $this->post('servicio_id');
+            $cantidad = $this->post('cantidad', 1);
+            
+            if (!$servicioId || $cantidad < 1) {
+                $this->redirect('/reservas/' . $reservaId . '/consumos', 'Datos inválidos', 'error');
+                return;
+            }
+            
+            // Obtener información del servicio
+            $servicio = $this->servicioModel->find($servicioId);
+            if (!$servicio) {
+                $this->redirect('/reservas/' . $reservaId . '/consumos', 'Servicio no encontrado', 'error');
+                return;
+            }
+            
+            // Crear el consumo
+            $consumoData = [
+                'rela_reserva' => $reservaId,
+                'rela_servicio' => $servicioId,
+                'consumo_descripcion' => 'Servicio: ' . $servicio['servicio_nombre'],
+                'consumo_cantidad' => $cantidad,
+                'consumo_total' => $servicio['servicio_precio'] * $cantidad,
+                'consumo_estado' => 1 // PENDIENTE (no confirmado ni abonado)
+            ];
+            
+            $consumoId = $this->consumoModel->create($consumoData);
+            
+            if ($consumoId) {
+                $this->redirect('/reservas/' . $reservaId . '/consumos', 'Consumo registrado correctamente', 'exito');
+            } else {
+                $this->redirect('/reservas/' . $reservaId . '/consumos', 'Error al registrar el consumo', 'error');
+            }
+            
+        } catch (\Exception $e) {
+            error_log('Error en registrarConsumo: ' . $e->getMessage());
+            $this->redirect('/reservas/' . $reservaId . '/consumos', 'Error: ' . $e->getMessage(), 'error');
+        }
+    }
+    
+    /**
+     * Ver y gestionar comentarios de una reserva
+     */
+    public function gestionarComentarios($id)
+    {
+        $this->requireAuth();
+        
+        try {
+            // Verificar que la reserva existe y pertenece al usuario
+            $reserva = $this->reservaModel->find($id);
+            if (!$reserva) {
+                $this->redirect('/reservas', 'Reserva no encontrada', 'error');
+                return;
+            }
+            
+            // Verificar que es el propietario de la reserva
+            $usuarioId = $_SESSION['usuario_id'];
+            if (!$this->reservaModel->isReservaOwner($id, $usuarioId)) {
+                $this->redirect('/reservas', 'No tiene permisos para ver esta información', 'error');
+                return;
+            }
+            
+            // Obtener comentarios de la reserva
+            $comentarioModel = new \App\Models\Comentario();
+            $comentarios = $comentarioModel->getComentariosByReserva($id);
+            
+            // Verificar si ya existe un comentario para esta reserva
+            $yaComentado = !empty($comentarios);
+            
+            $data = [
+                'title' => 'Comentarios de la Reserva',
+                'reserva' => $reserva,
+                'comentarios' => $comentarios,
+                'ya_comentado' => $yaComentado,
+                'isAdminArea' => false
+            ];
+            
+            return $this->render('public/reservas/comentarios', $data, 'main');
+            
+        } catch (\Exception $e) {
+            error_log('Error en gestionarComentarios: ' . $e->getMessage());
+            $this->redirect('/reservas', 'Error: ' . $e->getMessage(), 'error');
         }
     }
     

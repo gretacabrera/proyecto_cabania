@@ -252,6 +252,30 @@ class Comentario extends Model
         $result = $this->db->query($sql);
         return $result ? $result->fetch_assoc() : null;
     }
+    
+    /**
+     * Obtener comentarios de una reserva específica
+     */
+    public function getComentariosByReserva($idReserva)
+    {
+        $sql = "SELECT c.*, p.persona_nombre, p.persona_apellido
+                FROM comentario c
+                LEFT JOIN persona p ON c.rela_persona = p.id_persona
+                WHERE c.rela_reserva = " . intval($idReserva) . "
+                ORDER BY c.comentario_fechahora DESC";
+        
+        $result = $this->db->query($sql);
+        $comentarios = [];
+        
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $comentarios[] = $row;
+            }
+            $result->free(); // Liberar resultado explícitamente
+        }
+        
+        return $comentarios;
+    }
 
     /**
      * Paginación personalizada para queries complejas

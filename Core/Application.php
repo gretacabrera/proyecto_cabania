@@ -179,6 +179,15 @@ class Application
         $this->router->get('/reservas/limpiar-expiradas', 'ReservasController@limpiarReservasExpiradas'); // Para cron job
         $this->router->post('/reservas/{id}/cancelar', 'ReservasController@cancelarReserva'); // Cancelar por huésped
         $this->router->post('/reservas/{id}/anular', 'ReservasController@anularReserva'); // Anular por admin
+        
+        // Rutas unificadas para huéspedes (marcar ingreso/salida, huéspedes, consumos)
+        $this->router->get('/reservas/{id}/marcar-ingreso', 'ReservasController@marcarIngreso');
+        $this->router->get('/reservas/{id}/marcar-salida', 'ReservasController@marcarSalida');
+        $this->router->get('/reservas/{id}/huespedes', 'ReservasController@verHuespedes');
+        $this->router->get('/reservas/{id}/consumos', 'ReservasController@gestionarConsumos');
+        $this->router->post('/reservas/{id}/consumos/registrar', 'ReservasController@registrarConsumo');
+        $this->router->get('/reservas/{id}/comentarios', 'ReservasController@gestionarComentarios');
+        
         $this->router->get('/reservas/{id}', 'ReservasController@show');
         $this->router->any('/reservas/{id}/edit', 'ReservasController@edit');
         $this->router->post('/reservas/{id}/change-status', 'ReservasController@changeStatus');
@@ -402,8 +411,10 @@ class Application
         $this->router->get('/comentarios', 'ComentariosController@index');
         $this->router->get('/comentarios/public', 'ComentariosController@public'); // Vista pública
         $this->router->any('/comentarios/create', 'ComentariosController@create');
+        $this->router->post('/comentarios/store', 'ComentariosController@store');
         $this->router->get('/comentarios/{id}', 'ComentariosController@show');
         $this->router->any('/comentarios/{id}/edit', 'ComentariosController@edit');
+        $this->router->post('/comentarios/{id}/update', 'ComentariosController@update');
         $this->router->post('/comentarios/{id}/moderate', 'ComentariosController@moderate');
         $this->router->get('/comentarios/{id}/delete', 'ComentariosController@delete');
         $this->router->get('/comentarios/{id}/restore', 'ComentariosController@restore');

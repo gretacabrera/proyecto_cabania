@@ -159,6 +159,117 @@ class ComentariosController extends Controller
     }
 
     /**
+     * Guardar nuevo comentario
+     */
+    public function store()
+    {
+        // Verificar autenticación
+        if (!isset($_SESSION["usuario_id"])) {
+            $this->redirect('/login', 'Debe iniciar sesión para crear comentarios', 'error');
+            return;
+        }
+
+        if (!$this->isPost()) {
+            $this->redirect('/comentarios', 'Método no permitido', 'error');
+            return;
+        }
+
+        $usuario_id = $_SESSION["usuario_id"];
+        $id_reserva = (int) $this->post('id_reserva');
+        $titulo = trim($this->post('comentario_titulo', ''));
+        $puntuacion = (int) $this->post('comentario_puntuacion', 5);
+        $texto = trim($this->post('comentario_texto', ''));
+
+        // Validaciones básicas
+        if (empty($id_reserva)) {
+            $this->redirect('/comentarios', 'Debe seleccionar una reserva', 'error');
+            return;
+        }
+
+        if (empty($texto)) {
+            $this->redirect('/reservas/' . $id_reserva . '/comentarios', 'Debe ingresar un comentario', 'error');
+            return;
+        }
+
+        if ($puntuacion < 1 || $puntuacion > 5) {
+            $this->redirect('/reservas/' . $id_reserva . '/comentarios', 'La puntuación debe ser entre 1 y 5', 'error');
+            return;
+        }
+
+        // Preparar datos
+        $data = [
+            'rela_reserva' => $id_reserva,
+            'rela_huesped' => $usuario_id,
+            'comentario_titulo' => $titulo,
+            'comentario_texto' => $texto,
+            'comentario_puntuacion' => $puntuacion,
+            'comentario_fechahora' => date('Y-m-d H:i:s'),
+            'comentario_estado' => 1 // Pendiente de moderación
+        ];
+
+        try {
+            $this->comentarioModel->create($data);
+            $this->redirect('/reservas', 'Comentario registrado correctamente. Será visible una vez aprobado.', 'success');
+        } catch (\Exception $e) {
+            $this->redirect('/reservas/' . $id_reserva . '/comentarios', 'Error al guardar el comentario: ' . $e->getMessage(), 'error');
+        }
+    }
+
+    /**
+     * Actualizar comentario existente
+     */
+    public function update($id)
+    {
+        // Verificar autenticación
+        if (!isset($_SESSION["usuario_id"])) {
+            $this->redirect('/login', 'Debe iniciar sesión para editar comentarios', 'error');
+            return;
+        }
+
+        if (!$this->isPost()) {
+            $this->redirect('/comentarios', 'Método no permitido', 'error');
+            return;
+        }
+
+        $usuario_id = $_SESSION["usuario_id"];
+        
+        // Verificar que el comentario pertenece al usuario
+        $comentario = $this->comentarioModel->find($id);
+        if (!$comentario || $comentario['rela_huesped'] != $usuario_id) {
+            $this->redirect('/comentarios', 'No tiene permisos para editar este comentario', 'error');
+            return;
+        }
+
+        $puntuacion = (int) $this->post('puntuacion', 5);
+        $texto = trim($this->post('comentario_texto', ''));
+
+        // Validaciones
+        if (empty($texto)) {
+            $this->redirect('/comentarios/' . $id . '/edit', 'Debe ingresar un comentario', 'error');
+            return;
+        }
+
+        if ($puntuacion < 1 || $puntuacion > 5) {
+            $this->redirect('/comentarios/' . $id . '/edit', 'La puntuación debe ser entre 1 y 5', 'error');
+            return;
+        }
+
+        // Preparar datos
+        $data = [
+            'comentario_texto' => $texto,
+            'comentario_puntuacion' => $puntuacion,
+            'comentario_estado' => 1 // Vuelve a estado pendiente tras edición
+        ];
+
+        try {
+            $this->comentarioModel->update($id, $data);
+            $this->redirect('/comentarios', 'Comentario actualizado correctamente', 'success');
+        } catch (\Exception $e) {
+            $this->redirect('/comentarios/' . $id . '/edit', 'Error al actualizar el comentario: ' . $e->getMessage(), 'error');
+        }
+    }
+
+    /**
      * Mostrar formulario de edición
      */
     public function edit($id)

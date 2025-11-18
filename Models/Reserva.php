@@ -814,6 +814,7 @@ class Reserva extends Model
             $stmt->execute();
             $result = $stmt->get_result();
             $row = $result->fetch_assoc();
+            $stmt->close(); // Cerrar statement explícitamente
             
             return $row['count'] > 0;
         } catch (\Exception $e) {

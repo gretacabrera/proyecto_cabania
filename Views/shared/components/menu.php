@@ -56,18 +56,6 @@ if (session_status() == PHP_SESSION_NONE) {
                         <li class="nav-item">
                             <a class="nav-link" href="<?= $this->url('/reservas') ?>">Reservas</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="<?= $this->url('/huesped/consumos') ?>">Consumos</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="<?= $this->url('/ingresos') ?>">Ingresos</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="<?= $this->url('/salidas') ?>">Salidas</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="<?= $this->url('/comentarios') ?>">Comentarios</a>
-                        </li>
                     <?php else: ?>
                     <?php 
                     $userModules = Auth::getUserModules();
