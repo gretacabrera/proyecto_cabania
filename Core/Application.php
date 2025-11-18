@@ -162,8 +162,14 @@ class Application
         $this->router->get('/reservas/resumen', 'ReservasController@resumen');
         $this->router->post('/reservas/proceder-pago', 'ReservasController@procederPago');
         $this->router->get('/reservas/pasarela', 'ReservasController@pasarela');
-        $this->router->post('/reservas/pasarela', 'ReservasController@pasarela');
-        $this->router->post('/reservas/procesar-pasarela', 'ReservasController@procesarPasarela');
+        
+        // Callbacks de MercadoPago
+        $this->router->get('/reservas/pago-exitoso', 'ReservasController@pagoExitoso');
+        $this->router->get('/reservas/pago-fallido', 'ReservasController@pagoFallido');
+        $this->router->get('/reservas/pago-pendiente', 'ReservasController@pagoPendiente');
+        $this->router->post('/reservas/webhook', 'ReservasController@webhook');
+        
+        // Rutas legacy y utilidades
         $this->router->post('/reservas/confirmar-pago', 'ReservasController@confirmarPago');
         $this->router->get('/reservas/exito', 'ReservasController@exito');
         $this->router->get('/reservas/exito/{id}', 'ReservasController@exito');

@@ -1,6 +1,6 @@
 # Models - Capa de Datos del Sistema
 
-Esta carpeta contiene todos los modelos de datos de la aplicación, representando las entidades del negocio y su lógica de acceso a datos siguiendo el patrón Active Record y las mejores prácticas de desarrollo.
+Esta carpeta contiene todos los modelos de datos de la aplicación, representando las entidades del negocio y su lógica de acceso a datos siguiendo el patrón Active Record y las mejores prácticas de desarrollo. Incluye integración completa con **MercadoPago SDK v3.7.1** para transacciones de pago seguras.
 
 ## 📁 **Arquitectura de Modelos**
 
@@ -18,7 +18,7 @@ Los modelos están organizados por entidades de negocio y siguen una nomenclatur
 Modelos para la gestión del negocio principal:
 
 - **`Cabania.php`** - Gestión de cabañas del complejo
-- **`Reserva.php`** - Reservas de huéspedes (online y presenciales)
+- **`Reserva.php`** - Reservas de huéspedes (online y presenciales) con integración MercadoPago
 - **`Huesped.php`** - Relación huésped-reserva con datos específicos
 - **`Ingreso.php`** - Registros de check-in de huéspedes
 - **`Salida.php`** - Registros de check-out de huéspedes
@@ -225,7 +225,7 @@ class Cabania extends Model
 }
 ```
 
-#### **`Reserva.php`**
+#### **`Reserva.php`** - ACTUALIZADO con MercadoPago
 ```php
 <?php
 
@@ -266,6 +266,103 @@ class Reserva extends Model
     public function consumos()
     {
         return $this->hasMany(Consumo::class, 'rela_reserva');
+    }
+
+    /**
+     * NUEVO - Confirmar pago de reserva con MercadoPago
+     * Ejecuta transacción completa: Factura → Pago → Estado CONFIRMADA
+     * 
+     * @param int $reservaId ID de la reserva
+     * @param array $paymentData Datos del pago de MercadoPago
+     * @return array Resultado de la confirmación
+     */
+    public function confirmPayment($reservaId, $paymentData)
+    {
+        $this->db->beginTransaction();
+        
+        try {
+            // Obtener reserva
+            $sql = "SELECT * FROM reserva WHERE id_reserva = ?";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$reservaId]);
+            $reserva = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$reserva) {
+                throw new Exception('Reserva no encontrada');
+            }
+            
+            // Verificar si ya está confirmada (evitar duplicados)
+            if ($reserva['rela_estadoreserva'] == 2) {
+                // Obtener datos del pago existente
+                $sql = "SELECT p.*, mp.metododepago_descripcion 
+                        FROM pago p
+                        INNER JOIN factura f ON p.rela_factura = f.id_factura
+                        INNER JOIN metododepago mp ON p.rela_metododepago = mp.id_metododepago
+                        WHERE f.rela_reserva = ? 
+                        LIMIT 1";
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute([$reservaId]);
+                $pagoExistente = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                $this->db->rollback();
+                return [
+                    'success' => true,
+                    'already_confirmed' => true,
+                    'pago_id' => $pagoExistente['id_pago'] ?? null,
+                    'mensaje' => 'Reserva ya confirmada previamente'
+                ];
+            }
+            
+            // 1. Generar factura
+            $sql = "INSERT INTO factura (rela_reserva, factura_total, factura_fecha) 
+                    VALUES (?, ?, NOW())";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$reservaId, $reserva['reserva_total']]);
+            $facturaId = $this->db->lastInsertId();
+            
+            // 2. Obtener ID de método de pago MercadoPago
+            $sql = "SELECT id_metododepago FROM metododepago 
+                    WHERE metododepago_descripcion = 'MercadoPago' LIMIT 1";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            $metodoPago = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$metodoPago) {
+                throw new Exception('Método de pago MercadoPago no configurado');
+            }
+            
+            // 3. Registrar pago
+            $sql = "INSERT INTO pago (rela_factura, rela_metododepago, pago_total, pago_fecha) 
+                    VALUES (?, ?, ?, NOW())";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                $facturaId, 
+                $metodoPago['id_metododepago'], 
+                $reserva['reserva_total']
+            ]);
+            $pagoId = $this->db->lastInsertId();
+            
+            // 4. Actualizar estado de reserva a CONFIRMADA (2)
+            $sql = "UPDATE reserva SET rela_estadoreserva = 2 WHERE id_reserva = ?";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$reservaId]);
+            
+            $this->db->commit();
+            
+            return [
+                'success' => true,
+                'already_confirmed' => false,
+                'reserva_id' => $reservaId,
+                'factura_id' => $facturaId,
+                'pago_id' => $pagoId,
+                'mensaje' => 'Pago confirmado exitosamente'
+            ];
+            
+        } catch (Exception $e) {
+            $this->db->rollback();
+            error_log("Error en confirmPayment: " . $e->getMessage());
+            throw $e;
+        }
     }
 
     /**
@@ -329,6 +426,14 @@ class Reserva extends Model
     }
 }
 ```
+
+**Nuevas Características del Modelo Reserva:**
+- ✅ **Integración MercadoPago**: Método `confirmPayment()` para procesamiento de pagos
+- ✅ **Transacciones Garantizadas**: Rollback automático en caso de error
+- ✅ **Detección de Duplicados**: Valida si la reserva ya fue confirmada previamente
+- ✅ **Estructura de Pago Completa**: Reserva → Factura → Pago → Estado CONFIRMADA
+- ✅ **Logging Detallado**: Error logs para troubleshooting
+- ✅ **Consultas SQL Optimizadas**: JOINs correctos (pago → factura → reserva)
 
 ### **👥 Modelos de Usuarios**
 
@@ -782,6 +887,161 @@ class MetodoPago extends Model
 
 ---
 
+## 💳 **Integración con MercadoPago SDK v3.7.1**
+
+### **Estructura de Base de Datos para Pagos**
+
+La integración con MercadoPago utiliza la siguiente estructura relacional:
+
+```
+reserva (id_reserva, reserva_total, rela_estadoreserva)
+    ↓
+factura (id_factura, rela_reserva, factura_total)
+    ↓
+pago (id_pago, rela_factura, rela_metododepago, pago_total)
+    ↓
+metododepago (id_metododepago, metododepago_descripcion: 'MercadoPago')
+```
+
+### **Flujo de Transacción de Pago**
+
+**1. Usuario completa reserva online:**
+- Selecciona cabaña y fechas (estado: PENDIENTE)
+- Agrega servicios opcionales
+- Visualiza resumen con total
+
+**2. Pasarela de pago (pasarela.php):**
+```php
+use MercadoPago\MercadoPagoConfig;
+use MercadoPago\Client\Preference\PreferenceClient;
+
+// Configurar SDK
+MercadoPagoConfig::setAccessToken($access_token);
+
+// Crear preferencia de pago
+$client = new PreferenceClient();
+$preference = $client->create([
+    'external_reference' => $reserva_id,
+    'items' => [[
+        'title' => "Reserva Cabaña {$nombre}",
+        'quantity' => 1,
+        'unit_price' => (float)$reserva['reserva_total']
+    ]],
+    'back_urls' => [
+        'success' => "{$base_url}/reservas/pago-exitoso",
+        'failure' => "{$base_url}/reservas/pago-fallido",
+        'pending' => "{$base_url}/reservas/pago-pendiente"
+    ]
+]);
+```
+
+**3. Usuario paga en MercadoPago:**
+- Redirigido a Checkout Pro de MercadoPago
+- Completa el pago con Wallet Brick
+- MercadoPago procesa la transacción
+
+**4. Callback exitoso (ReservasController::pagoExitoso):**
+```php
+// Obtener datos del pago
+$status = $_GET['status'] ?? '';
+$payment_id = $_GET['payment_id'] ?? '';
+$reservaId = $_GET['external_reference'] ?? '';
+
+// Confirmar pago y actualizar base de datos
+$reservaModel = new Reserva();
+$resultado = $reservaModel->confirmPayment($reservaId, [
+    'payment_id' => $payment_id,
+    'status' => $status
+]);
+```
+
+**5. Modelo Reserva ejecuta transacción SQL:**
+```php
+public function confirmPayment($reservaId, $paymentData)
+{
+    $this->db->beginTransaction();
+    try {
+        // Verificar si ya está confirmada (evitar duplicados)
+        if ($reserva['rela_estadoreserva'] == 2) {
+            return ['success' => true, 'already_confirmed' => true];
+        }
+        
+        // 1. Generar factura
+        INSERT INTO factura (rela_reserva, factura_total, factura_fecha)
+        
+        // 2. Registrar pago con método MercadoPago
+        INSERT INTO pago (rela_factura, rela_metododepago, pago_total, pago_fecha)
+        
+        // 3. Actualizar estado a CONFIRMADA (2)
+        UPDATE reserva SET rela_estadoreserva = 2
+        
+        $this->db->commit();
+    } catch (Exception $e) {
+        $this->db->rollback();
+        throw $e;
+    }
+}
+```
+
+**6. Email de confirmación:**
+```php
+// Obtener datos completos con JOINs correctos
+$metodo = obtenerMetodoPagoReserva($reservaId);
+$total = obtenerTotalPagadoReserva($reservaId);
+$huespedes = contarHuespedesReserva($reservaId);
+
+// Enviar email con EmailService
+enviarNotificacionConfirmacion($reservaId);
+```
+
+### **Consultas SQL Críticas**
+
+**Obtener método de pago:**
+```sql
+SELECT mp.metododepago_descripcion 
+FROM pago p
+INNER JOIN factura f ON p.rela_factura = f.id_factura
+INNER JOIN metododepago mp ON p.rela_metododepago = mp.id_metododepago
+WHERE f.rela_reserva = ?
+```
+
+**Obtener total pagado:**
+```sql
+SELECT SUM(p.pago_total) as total
+FROM pago p
+INNER JOIN factura f ON p.rela_factura = f.id_factura
+WHERE f.rela_reserva = ?
+```
+
+**Contar huéspedes por edad:**
+```sql
+SELECT 
+    COUNT(CASE WHEN h.huesped_edad >= 18 THEN 1 END) as adultos,
+    COUNT(CASE WHEN h.huesped_edad < 18 THEN 1 END) as menores
+FROM huesped_reserva hr
+INNER JOIN huesped h ON hr.rela_huesped = h.id_huesped
+WHERE hr.rela_reserva = ?
+```
+
+### **Manejo de Errores y Validaciones**
+
+**Detección de pagos duplicados:**
+- Verifica estado de reserva antes de procesar
+- Si `rela_estadoreserva = 2` (CONFIRMADA), retorna éxito sin reprocesar
+- Evita múltiples facturas/pagos por la misma reserva
+
+**Rollback automático:**
+- Si falla cualquier paso de la transacción, todo se revierte
+- Base de datos mantiene integridad referencial
+- Logs detallados para debugging
+
+**Validación de datos:**
+- Verifica existencia de reserva
+- Valida método de pago configurado
+- Confirma integridad de montos
+
+---
+
 ## 🔐 **Seguridad y Validaciones**
 
 ### **Validaciones Implementadas**
@@ -836,18 +1096,25 @@ public function toArray()
 
 ### ✅ **Completado**
 - ✅ **28 modelos** implementados y funcionales
-- ✅ Relaciones entre modelos establecidas (35+ relaciones)
+- ✅ Relaciones entre modelos establecidas (47 relaciones)
 - ✅ Operaciones CRUD básicas en todos los modelos
 - ✅ Validaciones de datos por modelo
 - ✅ Métodos específicos y consultas optimizadas
 - ✅ Integración completa con base de datos
+- ✅ **Integración MercadoPago SDK v3.7.1** (Checkout Pro con Wallet Brick)
+- ✅ **Transacciones de pago garantizadas** (Reserva → Factura → Pago)
+- ✅ **Detección de pagos duplicados** con validación de estado
+- ✅ **Consultas SQL optimizadas** con JOINs correctos (pago → factura → reserva)
 - ✅ Sistema multimodal de consumos (Admin, Huésped, Totem)
 - ✅ Soporte transaccional para operaciones críticas
-- ✅ Métodos de exportación (Excel, PDF)
+- ✅ Métodos de exportación (Excel .xlsx, PDF)
 - ✅ Paginación optimizada con filtros
 
 ### 🎯 **En Producción**
-- Sistema de facturación completo
+- Sistema de facturación completo con MercadoPago
+- Flujo de reservas online end-to-end
+- Confirmación automática de pagos
+- Emails de confirmación con datos completos
 - Gestión de inventario por cabaña
 - Control de daños y costos asociados
 - Revisiones de check-in/check-out
@@ -859,6 +1126,7 @@ public function toArray()
 - **Caching**: Cache inteligente de consultas complejas
 - **Events**: Observadores para auditoría automática
 - **Testing**: Pruebas unitarias de modelos críticos
+- **MercadoPago**: Migración a credenciales de producción
 
 ---
 
@@ -955,5 +1223,6 @@ $reservaCompleta = $reserva->crearReservaCompleta($datosReserva, $servicios);
 
 ---
 
-*Modelos documentados el 14/11/2025 - Casa de Palos Cabañas*  
-*28 modelos implementados con Active Record y 47 relaciones establecidas*
+*Modelos documentados el 18/11/2025 - Casa de Palos Cabañas*  
+*28 modelos implementados con Active Record y 47 relaciones establecidas*  
+*Integración completa con MercadoPago SDK v3.7.1 - Transacciones de pago garantizadas*

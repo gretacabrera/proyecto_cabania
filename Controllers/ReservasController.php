@@ -9,6 +9,10 @@ use App\Models\Persona;
 use App\Models\Servicio;
 use App\Models\Consumo;
 use App\Models\EstadoReserva;
+use MercadoPago\MercadoPagoConfig;
+use MercadoPago\Client\Preference\PreferenceClient;
+use MercadoPago\Client\Payment\PaymentClient;
+use MercadoPago\Exceptions\MPApiException;
 
 class ReservasController extends Controller
 {
@@ -775,15 +779,11 @@ class ReservasController extends Controller
     }
 
     /**
-     * Vista de pasarela de pago simulada
+     * Pasarela de pago con Checkout Pro de MercadoPago
      */
     public function pasarela()
     {
         $this->requireAuth();
-        
-        // Permitir tanto GET como POST para mostrar la pasarela
-        // GET: Mostrar formulario de pasarela
-        // POST: Procesar datos del formulario de pago y mostrar pasarela
         
         // Verificar que existan datos temporales de la reserva
         if (!isset($_SESSION['reserva_temporal']) && !isset($_SESSION['reserva_temporal_basica'])) {
@@ -794,7 +794,6 @@ class ReservasController extends Controller
         // Usar datos completos si están disponibles, sino usar datos básicos
         if (isset($_SESSION['reserva_temporal'])) {
             $reservaTemporal = $_SESSION['reserva_temporal'];
-            // Si los datos temporales no tienen reserva_id, crear la reserva
             if (!isset($reservaTemporal['reserva_id'])) {
                 try {
                     $reservaId = $this->crearReservaTemporal($reservaTemporal);
@@ -821,169 +820,505 @@ class ReservasController extends Controller
             }
         }
         
-        // Obtener método de pago seleccionado
-        $metodoPago = null;
-        $numeroTarjeta = '';
-        
-        if ($this->isPost()) {
-            // Datos del formulario de pago
-            $metodoPago = $this->post('metodo_pago');
-            $numeroTarjeta = $this->post('numero_tarjeta', '');
+        try {
+            // Configurar SDK
+            $config = require __DIR__ . '/../Core/config.php';
+            $accessToken = $config['mercadopago']['access_token'];
             
-            // Guardar datos del método de pago en sesión
-            $_SESSION['pago_datos'] = [
-                'metodo_pago' => $metodoPago,
-                'numero_tarjeta' => $numeroTarjeta,
-                'titular_tarjeta' => $this->post('titular_tarjeta', ''),
-                'vencimiento' => $this->post('vencimiento', ''),
-                'codigo_seguridad' => $this->post('codigo_seguridad', '')
-            ];
-        } else {
-            // Acceso directo por GET - verificar si hay datos previos en sesión
-            if (isset($_SESSION['pago_datos'])) {
-                $pagoData = $_SESSION['pago_datos'];
-                $metodoPago = $pagoData['metodo_pago'] ?? null;
-                $numeroTarjeta = $pagoData['numero_tarjeta'] ?? '';
-            } else {
-                // Si no hay datos de pago previos, inicializar con valores por defecto
-                // Esto permite acceso directo desde el resumen
-                $_SESSION['pago_datos'] = [
-                    'metodo_pago' => 'Pendiente',
-                    'numero_tarjeta' => '',
-                    'titular_tarjeta' => '',
-                    'vencimiento' => '',
-                    'codigo_seguridad' => ''
-                ];
-                $metodoPago = 'Pendiente selección';
-                $numeroTarjeta = '';
+            // Configurar MercadoPago con la API moderna
+            MercadoPagoConfig::setAccessToken($accessToken);
+            
+            // Obtener información de la reserva
+            $reserva = $this->reservaModel->find($reservaTemporal['reserva_id']);
+            if (!$reserva) {
+                throw new \Exception('Reserva no encontrada');
             }
+            
+            // Obtener cabaña desde la sesión temporal o desde la reserva en BD
+            $cabaniaId = $reservaTemporal['cabania_id'] ?? $reserva['rela_cabania'];
+            $cabania = $this->cabaniaModel->find($cabaniaId);
+            if (!$cabania) {
+                throw new \Exception('Cabaña no encontrada');
+            }
+            
+            // Obtener datos de la persona - priorizar datos de sesión
+            $personaId = $reservaTemporal['id_persona'] ?? $reserva['rela_persona'];
+            $persona = $this->personaModel->getWithContacts($personaId);
+            
+            if (!$persona) {
+                throw new \Exception('Datos de la persona no encontrados');
+            }
+            
+            // Calcular total
+            $totalAmount = $reservaTemporal['total_general'] ?? $reservaTemporal['subtotal_alojamiento'];
+            
+            // Obtener email del contacto
+            $email = '';
+            if (isset($persona['contactos']) && is_array($persona['contactos'])) {
+                foreach ($persona['contactos'] as $contacto) {
+                    if ($contacto['rela_tipocontacto'] == 1) { // Email
+                        $email = $contacto['contacto_descripcion'];
+                        break;
+                    }
+                }
+            }
+            
+            // Forzar email de TEST si estamos en modo TEST
+            if (strpos($accessToken, 'TEST-') === 0 && !in_array($email, [
+                'test_user_1316051943@testuser.com',
+                'test_user_1853702@testuser.com'
+            ])) {
+                $email = 'test_user_1316051943@testuser.com';
+                error_log("Modo TEST detectado - Usando email de prueba: $email");
+            }
+            
+            // Construir URLs absolutas para callbacks
+            // Usar base_url de ngrok para que MercadoPago pueda redirigir
+            $baseUrl = rtrim($config['mercadopago']['base_url'], '/');
+            $successUrl = $baseUrl . '/reservas/pago-exitoso';
+            $failureUrl = $baseUrl . '/reservas/pago-fallido';
+            $pendingUrl = $baseUrl . '/reservas/pago-pendiente';
+            $webhookUrl = $baseUrl . '/reservas/webhook';
+            
+            error_log("MercadoPago URLs - Success: $successUrl, Failure: $failureUrl, Pending: $pendingUrl");
+            
+            // Crear request de preferencia
+            $request = [
+                'items' => [
+                    [
+                        'title' => 'Reserva Cabaña: ' . $cabania['cabania_nombre'],
+                        'quantity' => 1,
+                        'unit_price' => (float) $totalAmount,
+                        'currency_id' => 'ARS'
+                    ]
+                ],
+                'payer' => [
+                    'name' => $persona['persona_nombre'],
+                    'surname' => $persona['persona_apellido'],
+                    'email' => $email
+                ],
+                'back_urls' => [
+                    'success' => $successUrl,
+                    'failure' => $failureUrl,
+                    'pending' => $pendingUrl
+                ],
+                'auto_return' => 'approved',
+                'external_reference' => strval($reserva['id_reserva']),
+                'notification_url' => $webhookUrl,
+                'statement_descriptor' => 'Casa de Palos'
+            ];
+            
+            // Crear cliente de preferencias y crear la preferencia
+            $client = new PreferenceClient();
+            $preference = $client->create($request);
+            
+            if (!$preference->id) {
+                throw new \Exception('Error al crear la preferencia de pago');
+            }
+            
+            error_log("Preference creada - ID: {$preference->id}, Reserva: {$reserva['id_reserva']}");
+            
+            // Asegurar que la reserva tenga los datos necesarios para la vista
+            // Priorizar datos de sesión temporal sobre datos de BD (que pueden estar incompletos)
+            $reserva['reserva_ingreso'] = $reservaTemporal['fecha_ingreso'] ?? $reserva['reserva_ingreso'] ?? date('Y-m-d');
+            $reserva['reserva_salida'] = $reservaTemporal['fecha_salida'] ?? $reserva['reserva_salida'] ?? date('Y-m-d', strtotime('+1 day'));
+            $reserva['reserva_nro'] = $reserva['reserva_nro'] ?? ('R-' . str_pad($reserva['id_reserva'], 6, '0', STR_PAD_LEFT));
+            
+            // Renderizar vista con botón de MercadoPago
+            $data = [
+                'title' => 'Procesar Pago',
+                'reserva' => $reserva,
+                'cabania' => $cabania,
+                'persona' => $persona,
+                'total_amount' => $totalAmount,
+                'preference_id' => $preference->id,
+                'public_key' => $config['mercadopago']['public_key'],
+                'isAdminArea' => false
+            ];
+            
+            return $this->render('public/reservas/pasarela', $data, 'main');
+            
+        } catch (MPApiException $e) {
+            error_log('Error MercadoPago API: Status ' . $e->getStatusCode() . ' - ' . json_encode($e->getApiResponse()));
+            $errorMsg = 'Error al crear la preferencia de pago. Por favor, intente nuevamente.';
+            $this->redirect('/reservas/resumen', $errorMsg, 'error');
+            return;
+        } catch (\Exception $e) {
+            error_log('Error en pasarela: ' . $e->getMessage());
+            $this->redirect('/reservas/resumen', 'Error al procesar el pago: ' . $e->getMessage(), 'error');
+            return;
         }
-        
-        $data = [
-            'title' => 'Pasarela de Pago - Simulación',
-            'reserva' => $reservaTemporal,
-            'metodo_pago' => $metodoPago,
-            'numero_tarjeta' => $numeroTarjeta,
-            'isAdminArea' => false
-        ];
-        
-        return $this->render('public/reservas/pasarela', $data, 'main');
     }
 
     /**
-     * Procesar resultado de pasarela simulada
+     * Callback de pago exitoso desde MercadoPago
+     */
+    public function pagoExitoso()
+    {
+        // NO requireAuth() - viene desde redirección de MercadoPago
+        // El usuario ya tiene sesión activa del flujo anterior
+        
+        // Log de entrada
+        error_log("=== INICIO pagoExitoso - Host: " . ($_SERVER['HTTP_HOST'] ?? 'unknown') . " ===");
+        error_log("Query String: " . ($_SERVER['QUERY_STRING'] ?? 'none'));
+        
+        // Si viene desde ngrok, redirigir a localhost manteniendo parámetros
+        if (strpos($_SERVER['HTTP_HOST'] ?? '', 'ngrok') !== false) {
+            $localUrl = ($_ENV['APP_URL'] ?? 'http://localhost/proyecto_cabania') . '/reservas/pago-exitoso';
+            $queryString = $_SERVER['QUERY_STRING'] ?? '';
+            if ($queryString) {
+                $localUrl .= '?' . $queryString;
+            }
+            error_log("Redirigiendo desde ngrok a localhost: $localUrl");
+            header('Location: ' . $localUrl);
+            exit;
+        }
+        
+        error_log("Procesando pago en localhost...");
+        
+        try {
+            // Obtener parámetros de MercadoPago
+            $collectionId = $this->get('collection_id');
+            $collectionStatus = $this->get('collection_status');
+            $paymentId = $this->get('payment_id');
+            $status = $this->get('status');
+            $externalReference = $this->get('external_reference');
+            $preferenceId = $this->get('preference_id');
+            $merchantOrderId = $this->get('merchant_order_id');
+            
+            error_log("Pago exitoso - Params: collection_id=$collectionId, payment_id=$paymentId, status=$status, external_ref=$externalReference");
+            
+            // Verificar que tengamos el external_reference (reserva_id)
+            if (!$externalReference) {
+                error_log("ERROR: No se recibió external_reference");
+                throw new \Exception('No se recibió la referencia de la reserva');
+            }
+            
+            $reservaId = intval($externalReference);
+            error_log("DEBUG: Reserva ID a procesar: $reservaId");
+            
+            // Verificar que la reserva existe
+            $reserva = $this->reservaModel->find($reservaId);
+            if (!$reserva) {
+                error_log("ERROR: Reserva $reservaId no encontrada");
+                throw new \Exception('Reserva no encontrada');
+            }
+            
+            error_log("DEBUG: Reserva encontrada - Estado actual: " . $reserva['rela_estadoreserva']);
+            
+            // Preparar datos de pago con método MercadoPago (id_metododepago=5 según tu BD)
+            $paymentData = [
+                'metodo_pago_id' => 5 // ID de MercadoPago en tu tabla metododepago
+            ];
+            
+            // Guardar información adicional del pago en sesión para referencia
+            $_SESSION['pago_mercadopago'] = [
+                'payment_id' => $paymentId,
+                'collection_id' => $collectionId,
+                'status' => $status,
+                'merchant_order_id' => $merchantOrderId
+            ];
+            
+            error_log("DEBUG: Llamando a confirmPayment para reserva $reservaId");
+            
+            // Confirmar el pago en el sistema
+            $resultado = $this->reservaModel->confirmPayment($reservaId, $paymentData);
+            
+            error_log("DEBUG: Resultado de confirmPayment: " . json_encode($resultado));
+            
+            if (!$resultado['success']) {
+                error_log("ERROR: confirmPayment falló - Mensaje: " . ($resultado['message'] ?? 'Sin mensaje'));
+                throw new \Exception($resultado['message'] ?? 'Error procesando el pago');
+            }
+            
+            error_log("Pago confirmado exitosamente para reserva $reservaId");
+            
+            // Obtener datos temporales para el total
+            $reservaTemporal = $_SESSION['reserva_temporal'] ?? $_SESSION['reserva_temporal_basica'] ?? null;
+            $totalGeneral = $resultado['total_pagado'] ?? ($reservaTemporal['total_general'] ?? $reservaTemporal['subtotal_alojamiento'] ?? 0);
+            
+            // Enviar email de confirmación
+            try {
+                $this->enviarNotificacionConfirmacion($reserva);
+                error_log("Email de confirmación enviado para reserva $reservaId");
+            } catch (\Exception $emailError) {
+                error_log('WARNING: Error enviando email (pago ya procesado): ' . $emailError->getMessage());
+            }
+            
+            // Guardar datos para página de éxito
+            $_SESSION['reserva_exitosa'] = [
+                'reserva_id' => $reservaId,
+                'total_pagado' => $totalGeneral,
+                'fecha_confirmacion' => $resultado['fecha_confirmacion'],
+                'metodo_pago_id' => 5,
+                'pago_id' => $resultado['pago_id'],
+                'factura_id' => $resultado['factura_id'],
+                'payment_id_mp' => $paymentId
+            ];
+            
+            error_log("DEBUG: Datos guardados en sesión: " . json_encode($_SESSION['reserva_exitosa']));
+            error_log("DEBUG: session_id actual: " . session_id());
+            
+            // Limpiar datos de sesión
+            unset($_SESSION['reserva_temporal']);
+            unset($_SESSION['reserva_temporal_basica']);
+            unset($_SESSION['servicios_seleccionados']);
+            unset($_SESSION['datos_pago']);
+            unset($_SESSION['pago_datos']);
+            unset($_SESSION['mercadopago_preference_id']);
+            
+            error_log("Redirigiendo a página de éxito: /reservas/exito");
+            
+            // Forzar que se guarde la sesión antes de redirigir
+            session_write_close();
+            
+            // Limpiar cualquier salida previa
+            if (ob_get_level()) {
+                ob_end_clean();
+            }
+            
+            // Redirigir a página de éxito
+            $exitoUrl = url('/reservas/exito');
+            error_log("URL completa de redirección: $exitoUrl");
+            
+            // Usar header directo con exit inmediato
+            header('Location: ' . $exitoUrl, true, 302);
+            exit();
+            
+        } catch (\Exception $e) {
+            error_log('========================');
+            error_log('ERROR CRÍTICO en pagoExitoso');
+            error_log('Mensaje: ' . $e->getMessage());
+            error_log('Archivo: ' . $e->getFile() . ' línea ' . $e->getLine());
+            error_log('Stack trace: ' . $e->getTraceAsString());
+            error_log('========================');
+            
+            // Guardar error en sesión para mostrarlo
+            $_SESSION['error_message'] = 'Error procesando el pago: ' . $e->getMessage();
+            $_SESSION['error_details'] = [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ];
+            
+            // DEBUG: Mostrar página de debug en lugar de redirigir
+            $appDebug = getenv('APP_DEBUG') ?: ($_ENV['APP_DEBUG'] ?? 'false');
+            if ($appDebug === 'true' || $appDebug === true) {
+                // Limpiar buffer
+                if (ob_get_level()) {
+                    ob_end_clean();
+                }
+                include __DIR__ . '/../Views/public/debug_pago.php';
+                exit;
+            }
+            
+            // Producción: redirigir a resumen
+            if (ob_get_level()) {
+                ob_end_clean();
+            }
+            
+            header('Location: ' . url('/reservas/resumen'));
+            exit;
+        }
+    }
+    
+    /**
+     * Callback de pago fallido desde MercadoPago
+     */
+    public function pagoFallido()
+    {
+        // NO requireAuth() - viene desde redirección de MercadoPago
+        
+        // Si viene desde ngrok, redirigir a localhost manteniendo parámetros
+        if (strpos($_SERVER['HTTP_HOST'] ?? '', 'ngrok') !== false) {
+            $localUrl = ($_ENV['APP_URL'] ?? 'http://localhost/proyecto_cabania') . '/reservas/pago-fallido';
+            $queryString = $_SERVER['QUERY_STRING'] ?? '';
+            if ($queryString) {
+                $localUrl .= '?' . $queryString;
+            }
+            header('Location: ' . $localUrl);
+            exit;
+        }
+        
+        // Obtener parámetros de MercadoPago
+        $collectionId = $this->get('collection_id');
+        $collectionStatus = $this->get('collection_status');
+        $paymentId = $this->get('payment_id');
+        $status = $this->get('status');
+        $externalReference = $this->get('external_reference');
+        
+        error_log("Pago fallido - Params: collection_id=$collectionId, payment_id=$paymentId, status=$status, external_ref=$externalReference");
+        
+        // Mensaje de error para el usuario
+        $_SESSION['error_message'] = 'El pago fue rechazado. Por favor, verifique sus datos e intente nuevamente.';
+        
+        // Si hay external_reference, podríamos registrar el intento fallido
+        if ($externalReference) {
+            error_log("Intento de pago fallido para reserva ID: $externalReference");
+        }
+        
+        // Redirigir al resumen para reintentar
+        $this->redirect('/reservas/resumen');
+    }
+    
+    /**
+     * Callback de pago pendiente desde MercadoPago
+     */
+    public function pagoPendiente()
+    {
+        // NO requireAuth() - viene desde redirección de MercadoPago
+        
+        // Si viene desde ngrok, redirigir a localhost manteniendo parámetros
+        if (strpos($_SERVER['HTTP_HOST'] ?? '', 'ngrok') !== false) {
+            $localUrl = ($_ENV['APP_URL'] ?? 'http://localhost/proyecto_cabania') . '/reservas/pago-pendiente';
+            $queryString = $_SERVER['QUERY_STRING'] ?? '';
+            if ($queryString) {
+                $localUrl .= '?' . $queryString;
+            }
+            header('Location: ' . $localUrl);
+            exit;
+        }
+        
+        // Obtener parámetros de MercadoPago
+        $collectionId = $this->get('collection_id');
+        $collectionStatus = $this->get('collection_status');
+        $paymentId = $this->get('payment_id');
+        $status = $this->get('status');
+        $externalReference = $this->get('external_reference');
+        
+        error_log("Pago pendiente - Params: collection_id=$collectionId, payment_id=$paymentId, status=$status, external_ref=$externalReference");
+        
+        // Mensaje informativo para el usuario
+        $_SESSION['info_message'] = 'Su pago está pendiente de confirmación. Le notificaremos cuando se complete.';
+        
+        // Si hay external_reference, podríamos actualizar el estado de la reserva
+        if ($externalReference) {
+            error_log("Pago pendiente para reserva ID: $externalReference");
+            // Aquí podrías actualizar el estado de la reserva a "Pago Pendiente" si tu sistema lo soporta
+        }
+        
+        // Redirigir a mis reservas o catálogo
+        $this->redirect('/catalogo');
+    }
+    
+    /**
+     * Webhook de MercadoPago para notificaciones IPN
+     */
+    public function webhook()
+    {
+        // No requiere autenticación - viene de MercadoPago
+        
+        try {
+            // Leer el body raw de la petición
+            $body = file_get_contents('php://input');
+            $data = json_decode($body, true);
+            
+            // Log de la notificación recibida
+            error_log("Webhook MercadoPago recibido: " . json_encode($data));
+            
+            // Verificar que sea una notificación de payment
+            if (!isset($data['type']) || $data['type'] !== 'payment') {
+                error_log("Webhook ignorado - tipo no es payment: " . ($data['type'] ?? 'null'));
+                http_response_code(200);
+                echo json_encode(['status' => 'ignored']);
+                return;
+            }
+            
+            // Obtener ID del pago
+            $paymentId = $data['data']['id'] ?? null;
+            if (!$paymentId) {
+                error_log("Webhook error - no payment ID");
+                http_response_code(400);
+                echo json_encode(['error' => 'no payment id']);
+                return;
+            }
+            
+            // Configurar SDK y obtener detalles del pago
+            $config = require __DIR__ . '/../Core/config.php';
+            $accessToken = $config['mercadopago']['access_token'];
+            MercadoPagoConfig::setAccessToken($accessToken);
+            
+            $paymentClient = new PaymentClient();
+            $payment = $paymentClient->get($paymentId);
+            
+            if (!$payment) {
+                error_log("Webhook error - payment not found: $paymentId");
+                http_response_code(404);
+                echo json_encode(['error' => 'payment not found']);
+                return;
+            }
+            
+            error_log("Webhook - Payment status: " . $payment->status . ", External ref: " . $payment->external_reference);
+            
+            // Obtener reserva_id desde external_reference
+            $reservaId = intval($payment->external_reference);
+            if (!$reservaId) {
+                error_log("Webhook error - no external reference");
+                http_response_code(400);
+                echo json_encode(['error' => 'no external reference']);
+                return;
+            }
+            
+            // Verificar que la reserva existe
+            $reserva = $this->reservaModel->find($reservaId);
+            if (!$reserva) {
+                error_log("Webhook error - reserva not found: $reservaId");
+                http_response_code(404);
+                echo json_encode(['error' => 'reserva not found']);
+                return;
+            }
+            
+            // Procesar según el estado del pago
+            switch ($payment->status) {
+                case 'approved':
+                    // Pago aprobado - confirmar si aún no está confirmado
+                    if ($reserva['rela_estadoreserva'] == 1) { // Estado PENDIENTE
+                        $paymentData = ['metodo_pago_id' => 5];
+                        $resultado = $this->reservaModel->confirmPayment($reservaId, $paymentData);
+                        
+                        if ($resultado['success']) {
+                            error_log("Webhook - Reserva $reservaId confirmada via webhook");
+                            
+                            // Enviar email de confirmación
+                            try {
+                                $this->enviarNotificacionConfirmacion($reserva);
+                            } catch (\Exception $e) {
+                                error_log("Webhook - Error enviando email: " . $e->getMessage());
+                            }
+                        }
+                    }
+                    break;
+                    
+                case 'rejected':
+                case 'cancelled':
+                    error_log("Webhook - Pago rechazado/cancelado para reserva $reservaId");
+                    // Aquí podrías actualizar el estado de la reserva si lo deseas
+                    break;
+                    
+                case 'pending':
+                case 'in_process':
+                    error_log("Webhook - Pago pendiente/en proceso para reserva $reservaId");
+                    break;
+            }
+            
+            // Responder OK a MercadoPago
+            http_response_code(200);
+            echo json_encode(['status' => 'processed']);
+            
+        } catch (\Exception $e) {
+            error_log('Error en webhook: ' . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * @deprecated Método eliminado - Los callbacks son manejados por pagoExitoso(), pagoFallido(), pagoPendiente()
      */
     public function procesarPasarela()
     {
-        $this->requireAuth();
-        
-        if (!$this->isPost()) {
-            $this->redirect('/catalogo', 'Acceso no válido', 'error');
-            return;
-        }
-        
-        // Buscar el parámetro de estado en cualquier formato
-        $estado = $this->post('estado') ?? $this->post('accion');
-        
-        // Debug: Ver qué parámetros llegan
-        error_log("procesarPasarela - Estado recibido: " . ($estado ?? 'null'));
-        error_log("procesarPasarela - Todos los POST: " . print_r($_POST, true));
-        
-        if ($estado === 'rechazar' || $estado === 'rechazado') {
-            // Simular pago rechazado - redirigir al resumen con mensaje de error
-            $_SESSION['error_message'] = 'Pago rechazado por la pasarela de pago. Verifique sus datos e intente nuevamente.';
-            $this->redirect('/reservas/resumen');
-        } elseif ($estado === 'aprobar' || $estado === 'aprobado') {
-            try {
-                // Obtener datos de la reserva para verificaciones
-                $reservaTemporal = $_SESSION['reserva_temporal'] ?? $_SESSION['reserva_temporal_basica'] ?? null;
-                
-                if (!$reservaTemporal || !isset($reservaTemporal['reserva_id'])) {
-                    throw new \Exception('Datos de reserva no encontrados');
-                }
-                
-                $reservaId = $reservaTemporal['reserva_id'];
-                
-                // 1. Verificar que la reserva no haya expirado
-                if ($this->reservaExpirada($reservaId)) {
-                    throw new \Exception('Su reserva ha expirado. Por favor, inicie el proceso nuevamente desde el catálogo.');
-                }
-                
-                // 2. Verificar disponibilidad real de la cabaña al momento del pago
-                if (!$this->cabaniaDisponible(
-                    $reservaTemporal['cabania_id'],
-                    $reservaTemporal['fecha_ingreso'],
-                    $reservaTemporal['fecha_salida'],
-                    $reservaId
-                )) {
-                    throw new \Exception('La cabaña ya no está disponible para las fechas seleccionadas. Por favor, seleccione otras fechas.');
-                }
-                
-                // 3. Determinar tipo de procesamiento según perfil del usuario
-                $userModel = new \App\Models\Usuario();
-                $esHuesped = $userModel->esPerfilHuesped();
-                
-                if ($esHuesped) {
-                    // ESCENARIO 1: Usuario huésped - Pago automático desde pasarela externa
-                    
-                    // El pago ya fue validado en procesarPasarela(), aquí solo procesamos
-                    // Debug: Ver qué datos llegan desde la pasarela
-                    error_log("Datos POST recibidos en pago(): " . print_r($_POST, true));
-                    
-                    $metodoPasarela = $_POST['metodo_pasarela'] ?? 'credito';
-                    $metodoInterno = $this->mapearMetodoPasarelaAInterno($metodoPasarela);
-                    
-                    // Actualizar datos de pago en sesión
-                    if (!isset($_SESSION['pago_datos'])) {
-                        $_SESSION['pago_datos'] = [];
-                    }
-                    
-                    $_SESSION['pago_datos']['metodo_pago_id'] = $metodoInterno['id'];
-                    $_SESSION['pago_datos']['metodo_pago_nombre'] = $metodoInterno['nombre'];
-                    $_SESSION['pago_datos']['metodo_pasarela'] = $metodoPasarela;
-                    $_SESSION['pago_datos']['procesado_por_pasarela'] = true;
-                    
-                } else {
-                    // ESCENARIO 2: Usuario cajero - Selección manual del método de pago
-                    
-                    // Validar que se haya seleccionado un método de pago manualmente
-                    $metodoPagoId = $_POST['metodo_pago_id'] ?? $_SESSION['pago_datos']['metodo_pago_id'] ?? null;
-                    
-                    if (!$metodoPagoId) {
-                        throw new \Exception('Debe seleccionar un método de pago.');
-                    }
-                    
-                    // Obtener información del método seleccionado
-                    $metodoPagoModel = new \App\Models\MetodoPago();
-                    $metodoPago = $metodoPagoModel->find($metodoPagoId);
-                    
-                    if (!$metodoPago) {
-                        throw new \Exception('Método de pago no válido.');
-                    }
-                    
-                    // Actualizar datos de pago en sesión
-                    if (!isset($_SESSION['pago_datos'])) {
-                        $_SESSION['pago_datos'] = [];
-                    }
-                    
-                    $_SESSION['pago_datos']['metodo_pago_id'] = $metodoPago['id_metododepago'];
-                    $_SESSION['pago_datos']['metodo_pago_nombre'] = $metodoPago['metododepago_descripcion'];
-                    $_SESSION['pago_datos']['procesado_por_pasarela'] = false;
-                }
-                
-                // 4. Preparar datos y confirmar pago
-                $this->prepararDatosPagoYConfirmar();
-                
-            } catch (\Exception $e) {
-                // En caso de error durante el procesamiento, redirigir al resumen con el mensaje de error
-                error_log('Error procesando pago aprobado: ' . $e->getMessage());
-                $_SESSION['error_message'] = $e->getMessage();
-                $this->redirect('/reservas/resumen');
-            }
-        } else {
-            $_SESSION['error_message'] = 'Acción no válida en la pasarela de pago.';
-            $this->redirect('/reservas/resumen');
-        }
+        // Método deprecado - redirigir al catálogo
+        $this->redirect('/catalogo', 'Flujo de pago actualizado', 'info');
     }
     
     /**
@@ -1166,16 +1501,43 @@ class ReservasController extends Controller
                     throw new \Exception('Método de pago no válido.');
                 }
                 
-                // Registrar el pago
+                // Verificar si la reserva ya tiene factura
+                $facturaModel = new \App\Models\Factura();
+                $facturasExistentes = $facturaModel->getFacturasByReserva($reservaId);
+                
+                $facturaId = null;
+                
+                if (!empty($facturasExistentes)) {
+                    // Usar la primera factura existente
+                    $facturaId = $facturasExistentes[0]['id_factura'];
+                    error_log("Pago manual: usando factura existente ID: $facturaId");
+                } else {
+                    // Crear nueva factura usando confirmPayment
+                    error_log("Pago manual: no hay factura, usando confirmPayment para crear factura y pago");
+                    $resultado = $this->reservaModel->confirmPayment($reservaId, [
+                        'metodo_pago_id' => $metodoPagoId
+                    ]);
+                    
+                    if ($resultado['success']) {
+                        $this->redirect("/admin/operaciones/reservas/detalle/{$reservaId}", 
+                                      'Pago registrado y factura generada correctamente.', 'exito');
+                        return;
+                    } else {
+                        throw new \Exception('Error al procesar el pago: ' . $resultado['message']);
+                    }
+                }
+                
+                // Si llegamos aquí, ya existe factura - registrar solo el pago
                 $pagoModel = new \App\Models\Pago();
                 $pagoId = $pagoModel->createPago($reservaId, [
                     'total' => $montoPago,
-                    'metodo_pago_id' => $metodoPagoId
+                    'metodo_pago_id' => $metodoPagoId,
+                    'factura_id' => $facturaId
                 ]);
                 
                 if ($pagoId) {
                     $this->redirect("/admin/operaciones/reservas/detalle/{$reservaId}", 
-                                  'Pago registrado correctamente.', 'exito');
+                                  'Pago adicional registrado correctamente.', 'exito');
                 } else {
                     throw new \Exception('Error al registrar el pago.');
                 }
@@ -1405,10 +1767,9 @@ class ReservasController extends Controller
             $fechaFin = new \DateTime($reserva['reserva_fhfin']);
             $dias = $fechaInicio->diff($fechaFin)->days;
             
-            // Debug: Log de datos de huéspedes
-            $adultos = $reserva['reserva_adultos'] ?? 0;
-            $menores = $reserva['reserva_ninos'] ?? 0;
-            error_log("DEBUG: Datos de huéspedes en reserva - Adultos: '$adultos', Menores: '$menores'");
+            // Contar huéspedes de la reserva
+            $cantidadHuespedes = $this->contarHuespedesReserva($reservaId);
+            error_log("DEBUG: Cantidad de huéspedes para reserva $reservaId: " . json_encode($cantidadHuespedes));
             
             $resultado = [
                 'reserva_id' => $reserva['id_reserva'],
@@ -1419,22 +1780,58 @@ class ReservasController extends Controller
                 'cabania_codigo' => $cabania['cabania_codigo'] ?? '',
                 'huesped_nombre_completo' => $huesped['nombre_completo'] ?? 'Usuario',
                 'huesped_email' => $huesped['email'] ?? '',
-                'metodo_pago' => $metodoPago['descripcion'] ?? 'No especificado',
+                'metodo_pago' => $metodoPago['descripcion'] ?? 'MercadoPago',
                 'monto_pagado' => $totalPagado ?? 0,
                 'fecha_confirmacion' => date('d/m/Y H:i:s'),
-                'adultos' => intval($adultos),
-                'menores' => intval($menores),
+                'adultos' => $cantidadHuespedes['adultos'] ?? 0,
+                'menores' => $cantidadHuespedes['menores'] ?? 0,
+                'total_huespedes' => $cantidadHuespedes['total'] ?? 0,
                 'estado_reserva' => 'Confirmada'
             ];
             
             // Log final para debug
-            error_log("DEBUG: Datos finales para email - Email: '" . $resultado['huesped_email'] . "', Nombre: '" . $resultado['huesped_nombre_completo'] . "', Adultos: " . $resultado['adultos'] . ", Menores: " . $resultado['menores']);
+            error_log("DEBUG: Datos finales para email - Email: '" . $resultado['huesped_email'] . "', Nombre: '" . $resultado['huesped_nombre_completo'] . "', Adultos: " . $resultado['adultos'] . ", Menores: " . $resultado['menores'] . ", Monto: " . $resultado['monto_pagado'] . ", M\u00e9todo: " . $resultado['metodo_pago']);
             
             return $resultado;
             
         } catch (\Exception $e) {
             error_log('Error obteniendo datos completos de reserva: ' . $e->getMessage());
             return null;
+        }
+    }
+
+    /**
+     * Contar huéspedes de una reserva (adultos y menores)
+     */
+    private function contarHuespedesReserva($reservaId) {
+        try {
+            $database = \App\Core\Database::getInstance()->getConnection();
+            
+            // Contar adultos y menores basado en la edad en la tabla huesped
+            $sql = "SELECT 
+                        COUNT(CASE WHEN h.huesped_edad >= 18 THEN 1 END) as adultos,
+                        COUNT(CASE WHEN h.huesped_edad < 18 THEN 1 END) as menores,
+                        COUNT(*) as total
+                    FROM huesped_reserva hr
+                    INNER JOIN huesped h ON hr.rela_huesped = h.id_huesped
+                    WHERE hr.rela_reserva = ?";
+            
+            $stmt = $database->prepare($sql);
+            $stmt->bind_param("i", $reservaId);
+            $stmt->execute();
+            $result = $stmt->get_result()->fetch_assoc();
+            
+            error_log("DEBUG contarHuespedesReserva: Resultado para reserva $reservaId: " . json_encode($result));
+            
+            return [
+                'adultos' => intval($result['adultos'] ?? 0),
+                'menores' => intval($result['menores'] ?? 0),
+                'total' => intval($result['total'] ?? 0)
+            ];
+            
+        } catch (\Exception $e) {
+            error_log('Error contando huéspedes: ' . $e->getMessage());
+            return ['adultos' => 0, 'menores' => 0, 'total' => 0];
         }
     }
 
@@ -1487,8 +1884,9 @@ class ReservasController extends Controller
             $database = \App\Core\Database::getInstance()->getConnection();
             $sql = "SELECT mp.metododepago_descripcion as descripcion
                     FROM pago p
+                    INNER JOIN factura f ON p.rela_factura = f.id_factura
                     INNER JOIN metododepago mp ON p.rela_metododepago = mp.id_metododepago
-                    WHERE p.rela_reserva = ?
+                    WHERE f.rela_reserva = ?
                     ORDER BY p.id_pago DESC
                     LIMIT 1";
 
@@ -1496,11 +1894,14 @@ class ReservasController extends Controller
             $stmt->bind_param("i", $reservaId);
             $stmt->execute();
             $result = $stmt->get_result()->fetch_assoc();
-            return $result ?: ['descripcion' => 'Tarjeta de Crédito/Débito'];
+            
+            error_log("DEBUG obtenerMetodoPagoReserva: Resultado para reserva $reservaId: " . json_encode($result));
+            
+            return $result ?: ['descripcion' => 'MercadoPago'];
             
         } catch (\Exception $e) {
             error_log('Error obteniendo método de pago: ' . $e->getMessage());
-            return ['descripcion' => 'Tarjeta de Crédito/Débito'];
+            return ['descripcion' => 'MercadoPago'];
         }
     }
 
@@ -1512,13 +1913,18 @@ class ReservasController extends Controller
             $database = \App\Core\Database::getInstance()->getConnection();
             $sql = "SELECT SUM(p.pago_total) as total
                     FROM pago p
-                    WHERE p.rela_reserva = ?";
+                    INNER JOIN factura f ON p.rela_factura = f.id_factura
+                    WHERE f.rela_reserva = ?";
 
             $stmt = $database->prepare($sql);
             $stmt->bind_param("i", $reservaId);
             $stmt->execute();
             $row = $stmt->get_result()->fetch_assoc();
-            return $row['total'] ?? 0;
+            
+            $total = $row['total'] ?? 0;
+            error_log("DEBUG obtenerTotalPagadoReserva: Total para reserva $reservaId: $total");
+            
+            return $total;
             
         } catch (\Exception $e) {
             error_log('Error obteniendo total pagado: ' . $e->getMessage());
@@ -1588,16 +1994,20 @@ class ReservasController extends Controller
 
     public function exito()
     {
-        $this->requireAuth();
+        // NO requireAuth() - el usuario ya viene autenticado del flujo de pago
+        // La sesión se mantiene del proceso anterior
         
         // Debug: Verificar contenido de la sesión
-        error_log("DEBUG: Contenido completo de sesión en exito(): " . print_r($_SESSION, true));
+        error_log("=== INICIO método exito() ===");
+        error_log("DEBUG: Contenido de \$_SESSION['reserva_exitosa']: " . json_encode($_SESSION['reserva_exitosa'] ?? null));
+        error_log("DEBUG: ID por URL: " . ($this->get('id') ?? 'no hay'));
         
         // Verificar que existan datos de reserva exitosa (por sesión o por parámetro)
         $reservaId = $this->get('id');
         
         if (!isset($_SESSION['reserva_exitosa']) && !$reservaId) {
-            error_log("DEBUG: No se encontró reserva_exitosa en sesión ni ID en URL, redirigiendo al catálogo");
+            error_log("ERROR: No se encontró reserva_exitosa en sesión ni ID en URL");
+            error_log("DEBUG: Contenido completo de sesión: " . print_r($_SESSION, true));
             $this->redirect('/catalogo', 'No hay información de reserva disponible', 'error');
             return;
         }

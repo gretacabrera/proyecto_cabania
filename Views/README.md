@@ -1,8 +1,8 @@
 # Organización de Vistas - Casa de Palos Cabañas
 
-Esta estructura organiza las vistas de manera lógica y escalable, siguiendo patrones de desarrollo modernos para aplicaciones web.
+Esta estructura organiza las vistas de manera lógica y escalable, siguiendo patrones de desarrollo modernos para aplicaciones web. Incluye integración completa con **MercadoPago Checkout Pro** para pagos online.
 
-## 📁 Estructura Actual (Actualizada - 14/11/2025)
+## 📁 Estructura Actual (Actualizada - 18/11/2025)
 
 ### `/public/` - Vistas Públicas
 Vistas accesibles para huéspedes y usuarios públicos:
@@ -16,12 +16,13 @@ Vistas accesibles para huéspedes y usuarios públicos:
   - `editar.php` - Editar cantidad de consumo
   - `detalle.php` - Vista detallada de consumo
 - `ingresos/` - Check-in, registro de llegadas de huéspedes
-- `reservas/` - **Sistema completo de reservas online** (5 vistas):
+- `reservas/` - **Sistema completo de reservas online con MercadoPago** (6 vistas):
   - `confirmar.php` - Paso 1: Confirmación de datos básicos de reserva
   - `servicios.php` - Paso 2: Selección de servicios adicionales
   - `resumen.php` - Paso 3: Vista previa de facturación y términos
-  - `pago.php` - Paso 4: Simulación de pasarela de pago con validaciones
-  - `exito.php` - Confirmación final y detalles de reserva exitosa
+  - `pasarela.php` - Paso 4: **Pasarela de pago real con MercadoPago Wallet Brick**
+  - `exito.php` - Confirmación final con datos completos de pago
+  - `debug_pago.php` - Vista de depuración para errores de pago (solo desarrollo)
 - `salidas/` - Check-out, proceso de salida de huéspedes
 
 ### `/admin/` - Panel Administrativo
@@ -87,11 +88,11 @@ Elementos reutilizables en toda la aplicación:
 - `components/` - Componentes reutilizables (menu.php, messages.php, etc.)
 - `errors/` - Páginas de error (403.php, 404.php, 500.php)
 
-## 🚀 **Sistema de Reservas Online - Flujo Completo**
+## 🚀 **Sistema de Reservas Online - Flujo Completo con MercadoPago**
 
 ### 📋 **Proceso de Reserva Paso a Paso**
 
-El sistema de reservas online implementado en `/public/reservas/` incluye un flujo completo de 5 pasos:
+El sistema de reservas online implementado en `/public/reservas/` incluye un flujo completo de 6 pasos con integración real de MercadoPago:
 
 #### **Paso 1: Confirmación de Reserva (`confirmar.php`)**
 - **Función**: Validar datos básicos después de seleccionar cabaña y fechas
@@ -123,41 +124,91 @@ El sistema de reservas online implementado en `/public/reservas/` incluye un flu
   - Aceptación obligatoria de términos y condiciones
   - Opciones de "Modificar" o "Cancelar"
 
-#### **Paso 4: Procesamiento de Pago (`pago.php`)**
-- **Función**: Simulación de pasarela de pago con validaciones
-- **Métodos Soportados**:
-  - **Tarjeta de Crédito**: Con validación hardcodeada (rechazo para números con "1234")
-  - **Transferencia Bancaria**: Con datos completos para transferencia
-  - **Efectivo**: Pago diferido al check-in
+#### **Paso 4: Pasarela de Pago MercadoPago (`pasarela.php`)**
+- **Función**: Procesamiento real de pagos con MercadoPago Checkout Pro
+- **Integración**: MercadoPago SDK v3.7.1
 - **Características**:
-  - Formularios dinámicos según método seleccionado
-  - Validación de campos específicos por método
-  - Ejemplo de rechazo de pago implementado
-  - Confirmación con SweetAlert2
-  - Procesamiento transaccional completo
+  - **Wallet Brick**: Interfaz optimizada de MercadoPago
+  - **Diseño Sobrio**: Profesional con colores corporativos (blanco, gris, bordes)
+  - **Card Único**: Layout limpio con header, resumen y sección de pago
+  - **Métodos de Pago**: Todos los disponibles en MercadoPago (tarjetas, efectivo, transferencias)
+  - **Loading Spinner**: Indicador visual durante procesamiento
+  - **Error Handling**: Manejo robusto de errores con página de debug
+  - **Security Badges**: Indicadores de seguridad SSL/PCI
+  - **Responsive**: Optimizado para móviles y tablets
 
-#### **Paso 5: Confirmación Exitosa (`exito.php`)**
-- **Función**: Confirmación final y envío de detalles
+**Flujo de procesamiento:**
+```javascript
+// 1. Inicializar MercadoPago SDK
+const mp = new MercadoPago('PUBLIC_KEY', { locale: 'es-AR' });
+
+// 2. Renderizar Wallet Brick
+const bricksBuilder = mp.bricks();
+await bricksBuilder.create('wallet', 'wallet_container', {
+  initialization: {
+    preferenceId: preference_id // Generado por el servidor
+  }
+});
+
+// 3. Redirigir a MercadoPago para completar pago
+// 4. Callback a /reservas/pago-exitoso con payment_id
+```
+
+#### **Paso 5: Callbacks de MercadoPago**
+- **`pagoExitoso()`**: Procesa pago aprobado
+  - Detecta redirección desde ngrok → localhost
+  - Valida payment_id y external_reference
+  - Ejecuta transacción SQL completa (Factura → Pago → Estado CONFIRMADA)
+  - Envía email de confirmación con datos completos
+  - Guarda sesión de reserva exitosa
+  - Redirige a página de éxito
+- **`pagoFallido()`**: Maneja pago rechazado
+- **`pagoPendiente()`**: Maneja pago pendiente
+- **`webhook()`**: Webhook IPN para notificaciones asíncronas
+
+#### **Paso 6: Confirmación Exitosa (`exito.php`)**
+- **Función**: Confirmación final con datos completos de pago
 - **Características**:
   - Mensaje de éxito con efecto confetti
   - Número de reserva generado
   - Resumen completo de la reserva confirmada
+  - **Información de pago**:
+    - Método de pago: MercadoPago
+    - Monto total abonado
+    - Cantidad de huéspedes (adultos y menores)
   - Información práctica para la estadía
-  - Opciones para descargar comprobante
+  - Email de confirmación enviado automáticamente
   - Sugerencias de servicios adicionales
 
-### 🔄 **Flujo de Datos y Estados**
+#### **Vista de Debug (`debug_pago.php`)**
+- **Función**: Página de depuración para errores de pago
+- **Activación**: Solo cuando `APP_DEBUG=true` y ocurre un error
+- **Características**:
+  - Muestra parámetros GET completos
+  - Información de sesión actual
+  - Detalles del error con stack trace
+  - Diseño claro para troubleshooting
+  - Botón para volver a intentar
+
+### 🔄 **Flujo de Datos y Estados con MercadoPago**
 
 1. **Inicio**: Desde catálogo → seleccionar cabaña y fechas
-2. **Estado "Pendiente"**: Al confirmar paso 1 (rela_perfil = 1)
+2. **Estado "Pendiente"**: Al confirmar paso 1 (rela_estadoreserva = 1)
 3. **Servicios**: Registro como consumos si se seleccionan
-4. **Pago**: Procesamiento transaccional completo:
-   - ✅ Insertar consumos de servicios
-   - ✅ Registrar pago de reserva
-   - ✅ Cambiar estado a "confirmada"
-   - ✅ Cambiar estado cabaña a "ocupada"
-   - ✅ Enviar email con PHPMailer
+4. **Pasarela MercadoPago**: 
+   - ✅ Crear preferencia de pago con SDK v3.7.1
+   - ✅ Renderizar Wallet Brick en navegador
+   - ✅ Redirigir a Checkout Pro de MercadoPago
+   - ✅ Usuario completa pago en plataforma MercadoPago
+5. **Callback de Pago Exitoso**: Procesamiento transaccional completo:
+   - ✅ Validar payment_id y external_reference
+   - ✅ Verificar si reserva ya fue confirmada (evitar duplicados)
+   - ✅ Generar factura (INSERT INTO factura)
+   - ✅ Registrar pago vinculado a factura (INSERT INTO pago)
+   - ✅ Cambiar estado a "CONFIRMADA" (UPDATE reserva SET rela_estadoreserva = 2)
+   - ✅ Enviar email con PHPMailer (datos completos: huéspedes, método, monto)
    - ❌ Rollback completo si hay errores
+6. **Confirmación**: Página de éxito con todos los detalles
 
 ### 🛡️ **Validaciones y Seguridad**
 
@@ -165,17 +216,177 @@ El sistema de reservas online implementado en `/public/reservas/` incluye un flu
 - **Validación de Fechas**: Prevenir reservas en el pasado
 - **Capacidad**: Verificar límites de huéspedes por cabaña
 - **Disponibilidad**: Validar que la cabaña esté libre
-- **Pago Simulado**: Ejemplo de rechazo para testing
-- **Transaccional**: Rollback automático en errores
+- **MercadoPago Integration**:
+  - ✅ SDK oficial v3.7.1 con certificación PCI
+  - ✅ Public Key y Access Token segregados
+  - ✅ HTTPS obligatorio para producción
+  - ✅ Webhook signature validation
+  - ✅ Payment ID verification
+- **Detección de Duplicados**: Verifica si reserva ya fue confirmada
+- **Transaccional**: Rollback automático en errores con PDO
+- **Session Management**: `session_write_close()` antes de redirects
+- **Error Logging**: Logs detallados para troubleshooting
 
 ### 🎯 **Navegación y UX**
 
-- **Barra de Progreso**: Visual en cada paso (25%, 50%, 75%, 100%)
+- **Barra de Progreso**: Visual en cada paso (20%, 40%, 60%, 80%, 100%)
 - **Botones "Volver"**: En cada vista para retroceder
 - **Validación en Tiempo Real**: JavaScript para mejor UX
-- **Responsive Design**: Optimizado para móviles
-- **Loading States**: Indicadores durante procesamiento
+- **Responsive Design**: Optimizado para móviles y tablets
+- **Loading States**: 
+  - Spinner durante carga de Wallet Brick
+  - Indicador de procesamiento de pago
+  - Animación de confirmación exitosa
 - **Confirmaciones**: SweetAlert2 para acciones críticas
+- **Diseño Profesional**: Colores corporativos (blanco, gris claro, bordes sutiles)
+- **Error Handling**: Mensajes claros y página de debug
+- **Ngrok Detection**: Redirección automática localhost para desarrollo
+
+---
+
+## 💳 **Integración Técnica de MercadoPago**
+
+### **Vista: `pasarela.php`**
+
+**Ubicación**: `Views/public/reservas/pasarela.php`
+
+**Tecnologías utilizadas:**
+- MercadoPago SDK v3.7.1 (PHP)
+- MercadoPago.js (JavaScript SDK)
+- Wallet Brick UI Component
+- Bootstrap 5 para layout
+
+**Estructura de la vista:**
+```php
+<?php
+// 1. Obtener datos de reserva desde sesión
+$reserva = $_SESSION['reserva_pendiente'];
+
+// 2. Generar preferencia de pago
+use MercadoPago\MercadoPagoConfig;
+use MercadoPago\Client\Preference\PreferenceClient;
+
+MercadoPagoConfig::setAccessToken($access_token);
+$client = new PreferenceClient();
+$preference = $client->create([
+    'external_reference' => $reserva_id,
+    'items' => [[
+        'title' => "Reserva Cabaña {$nombre}",
+        'quantity' => 1,
+        'unit_price' => (float)$total
+    ]],
+    'back_urls' => [
+        'success' => "{$base_url}/reservas/pago-exitoso",
+        'failure' => "{$base_url}/reservas/pago-fallido",
+        'pending' => "{$base_url}/reservas/pago-pendiente"
+    ],
+    'notification_url' => "{$base_url}/reservas/webhook"
+]);
+?>
+
+<!-- 3. Renderizar interfaz -->
+<div class="card">
+    <div class="card-header">Completar Pago</div>
+    <div class="card-body">
+        <!-- Resumen de reserva -->
+        <div class="resumen-reserva">
+            <!-- Datos de cabaña, fechas, total -->
+        </div>
+        
+        <!-- Wallet Brick de MercadoPago -->
+        <div id="wallet_container"></div>
+    </div>
+</div>
+
+<!-- 4. Inicializar SDK JavaScript -->
+<script src="https://sdk.mercadopago.com/js/v2"></script>
+<script>
+const mp = new MercadoPago('<?= MERCADOPAGO_PUBLIC_KEY ?>', {
+    locale: 'es-AR'
+});
+
+const bricksBuilder = mp.bricks();
+await bricksBuilder.create('wallet', 'wallet_container', {
+    initialization: {
+        preferenceId: '<?= $preference->id ?>'
+    },
+    customization: {
+        texts: {
+            action: 'pay',
+            valueProp: 'security_safety'
+        }
+    }
+});
+</script>
+```
+
+**Características de diseño:**
+- **Color scheme**: Blanco (#FFFFFF), gris claro (#F8F9FA), bordes (#DEE2E6)
+- **Card único**: Sin gradientes ni colores llamativos
+- **Tipografía**: Roboto, sans-serif
+- **Espaciado**: Padding consistente (1.5rem)
+- **Bordes**: 0.5rem border-radius
+- **Sombras**: Sutiles box-shadow para profundidad
+
+**Flujo de usuario:**
+1. Usuario ve resumen de reserva
+2. Click en botón de Wallet Brick
+3. Redirección a Checkout Pro de MercadoPago
+4. Completa pago con método preferido
+5. MercadoPago procesa transacción
+6. Callback a URL de éxito/fallo/pendiente
+
+### **Vista: `exito.php`**
+
+**Características actualizadas:**
+```php
+// Obtener datos desde sesión guardada
+$reserva = $_SESSION['reserva_exitosa'];
+
+// Mostrar información completa
+- Número de reserva: <?= $reserva['id_reserva'] ?>
+- Método de pago: MercadoPago
+- Total abonado: $<?= number_format($reserva['total'], 2) ?>
+- Huéspedes: <?= $reserva['adultos'] ?> adultos, <?= $reserva['menores'] ?> menores
+- Cabaña: <?= $reserva['cabania_nombre'] ?>
+- Fechas: <?= $reserva['check_in'] ?> - <?= $reserva['check_out'] ?>
+
+// Email de confirmación enviado automáticamente
+✅ Email enviado a: <?= $reserva['email'] ?>
+```
+
+### **Consultas SQL Implementadas**
+
+**En ReservasController para emails:**
+
+```php
+// Obtener método de pago
+private function obtenerMetodoPagoReserva($reservaId) {
+    $sql = "SELECT mp.metododepago_descripcion 
+            FROM pago p
+            INNER JOIN factura f ON p.rela_factura = f.id_factura
+            INNER JOIN metododepago mp ON p.rela_metododepago = mp.id_metododepago
+            WHERE f.rela_reserva = ?";
+}
+
+// Obtener total pagado
+private function obtenerTotalPagadoReserva($reservaId) {
+    $sql = "SELECT SUM(p.pago_total) as total
+            FROM pago p
+            INNER JOIN factura f ON p.rela_factura = f.id_factura
+            WHERE f.rela_reserva = ?";
+}
+
+// Contar huéspedes por edad
+private function contarHuespedesReserva($reservaId) {
+    $sql = "SELECT 
+            COUNT(CASE WHEN h.huesped_edad >= 18 THEN 1 END) as adultos,
+            COUNT(CASE WHEN h.huesped_edad < 18 THEN 1 END) as menores
+            FROM huesped_reserva hr
+            INNER JOIN huesped h ON hr.rela_huesped = h.id_huesped
+            WHERE hr.rela_reserva = ?";
+}
+```
 
 ---
 
@@ -188,12 +399,13 @@ El sistema de reservas online implementado en `/public/reservas/` incluye un flu
 ### 2. **Lógica de Acceso Diferenciada**
 - **`/public/`**: Sin autenticación o con autenticación de huésped
   - `catalogo/`: Catálogo público para consultar cabañas disponibles
-  - `reservas/`: **Sistema completo de reservas online** con proceso paso a paso:
+  - `reservas/`: **Sistema completo de reservas online con MercadoPago** con proceso paso a paso:
     1. **Confirmación** → Validar datos de cabaña, fechas y huésped
     2. **Servicios** → Seleccionar servicios adicionales (opcional)
     3. **Resumen** → Vista previa de facturación y términos
-    4. **Pago** → Simulación de pasarela con validación de métodos
-    5. **Éxito** → Confirmación final con envío de email
+    4. **Pasarela** → Pago real con MercadoPago Wallet Brick
+    5. **Callbacks** → Procesamiento de respuesta de MercadoPago
+    6. **Éxito** → Confirmación final con datos completos de pago
   - `comentarios/`: Huéspedes pueden dejar feedback
   - `ingresos/salidas/`: Proceso de check-in/check-out para huéspedes
 - **`/admin/`**: Requiere autenticación administrativa
@@ -388,7 +600,12 @@ $this->view('admin/operaciones/cabanias/index', $data);
 ## 🎯 **Objetivos Alcanzados**
 
 ### **✅ Funcionalidad Completada**
-- **Sistema de Reservas Online**: 5 pasos completamente funcionales
+- **Sistema de Reservas Online con MercadoPago**: 6 pasos completamente funcionales
+  - Integración real con SDK v3.7.1
+  - Wallet Brick para experiencia optimizada
+  - Callbacks y webhooks implementados
+  - Transacciones garantizadas con rollback
+  - Emails con datos completos de pago
 - **Panel Administrativo**: 24 módulos organizados y operativos
 - **Catálogo Público**: Sistema completo con filtros avanzados
 - **Autenticación Multi-Perfil**: 3 tipos de usuarios implementados
@@ -406,13 +623,18 @@ $this->view('admin/operaciones/cabanias/index', $data);
 - **SweetAlert2**: Notificaciones y confirmaciones elegantes  
 - **Font Awesome**: Iconografía consistente
 - **PHPMailer**: Integración de emails transaccionales
+- **MercadoPago SDK v3.7.1**: Procesamiento real de pagos
+  - PHP SDK: MercadoPagoConfig, PreferenceClient, PaymentClient
+  - JavaScript SDK: MercadoPago.js con Wallet Brick
+  - Checkout Pro: Interfaz optimizada de pago
+  - Webhook IPN: Notificaciones asíncronas
 
 ---
 
 ## 📊 **Estadísticas Finales**
 
 ### **Distribución de Vistas Implementadas**
-- **Públicas**: 8 módulos (home, auth, catalogo, comentarios, consumos, ingresos, reservas, salidas)
+- **Públicas**: 8 módulos (home, auth, catalogo, comentarios, consumos, ingresos, reservas con 6 vistas, salidas)
 - **Totem**: 1 módulo especial con 3 vistas + layout personalizado
 - **Administrativas**: 37 módulos distribuidos en:
   - Configuración: 13 módulos
@@ -421,7 +643,8 @@ $this->view('admin/operaciones/cabanias/index', $data);
   - Seguridad: 2 módulos
   - Reportes: 7 reportes con analytics
 - **Compartidas**: 3 categorías (components, errors, layouts con 6 plantillas)
-- **Total General**: **49 módulos/vistas** implementados y funcionales
+- **MercadoPago**: 1 vista de pasarela + 1 vista de debug + 3 callbacks
+- **Total General**: **50 módulos/vistas** implementados y funcionales
 
 ### **Cobertura por Funcionalidad**
 - **🌐 Experiencia Huésped**: 100% completada
@@ -441,7 +664,8 @@ $this->view('admin/operaciones/cabanias/index', $data);
 
 ---
 
-*Estructura actualizada el 14/11/2025 - Casa de Palos Cabañas*
+*Estructura actualizada el 18/11/2025 - Casa de Palos Cabañas*
 *✅ MIGRACIÓN COMPLETADA - 32 controladores actualizados*
 *✅ ARQUITECTURA OPTIMIZADA - Sistema modular completo*
-*✅ SISTEMA INTEGRAL - 49 módulos/vistas implementados y funcionales*
+*✅ SISTEMA INTEGRAL - 50 módulos/vistas implementados y funcionales*
+*✅ MERCADOPAGO INTEGRADO - SDK v3.7.1 con Checkout Pro y Wallet Brick*

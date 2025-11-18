@@ -1,6 +1,6 @@
 # Controllers - Sistema de Gestión de Cabañas
 
-Esta carpeta contiene todos los controladores de la aplicación, organizados siguiendo el patrón MVC y las mejores prácticas de desarrollo.
+Esta carpeta contiene todos los controladores de la aplicación, organizados siguiendo el patrón MVC y las mejores prácticas de desarrollo. Incluye integración completa con **MercadoPago Checkout Pro** para pagos online.
 
 ## 📁 Arquitectura de Controladores
 
@@ -15,13 +15,21 @@ Los controladores están organizados por funcionalidad y siguen una nomenclatura
 
 ✅ **MIGRACIÓN COMPLETADA**: Todos los controladores han sido actualizados para usar las nuevas rutas de vistas organizadas.
 
-#### **🏠 Controladores Públicos (8 controladores)**
+#### **🏠 Controladores Públicos (9 controladores)**
 Controladores accesibles para usuarios públicos y huéspedes:
 
 - **`HomeController.php`** - Página principal del sitio con dashboards contextuales
 - **`AuthController.php`** - Autenticación (login, logout, registro, recuperación de contraseña)
 - **`EmailVerificationController.php`** - Verificación de correo electrónico
-- **`CatalogoController.php`** - Catálogo público de cabañas con disponibilidad
+- **`CatalogoController.php`** - Catálogo público de cabañas con disponibilidad en tiempo real
+- **`ReservasController.php`** - **Flujo completo de reservas online con MercadoPago**
+  - Confirmación de reserva
+  - Selección de servicios opcionales
+  - Resumen pre-pago
+  - Pasarela de pago con Wallet Brick
+  - Callbacks de MercadoPago (success, failure, pending)
+  - Webhook IPN para notificaciones
+  - Página de confirmación final
 - **`ComentariosController.php`** - Sistema de comentarios y feedback
 - **`IngresosController.php`** - Proceso de check-in para huéspedes
 - **`SalidasController.php`** - Proceso de check-out para huéspedes
@@ -189,7 +197,169 @@ protected function error($message, $code = 400)
 
 ---
 
-## 🛒 **Sistema de Consumos Multimodal - 3 Controladores**
+## 💳 **ReservasController - Sistema de Reservas con MercadoPago**
+
+### **Ubicación**: `Controllers/ReservasController.php`
+
+### **Doble Funcionalidad**
+
+#### **1. Modo Administrativo** (Con autenticación y permisos)
+- Gestión completa de reservas del sistema
+- Dashboards específicos por perfil (Admin, Cajero, Recepcionista)
+- CRUD completo de reservas
+- Exportación a Excel y PDF
+
+#### **2. Modo Online/Público** (Sin autenticación requerida)
+Flujo completo de reserva online con integración de MercadoPago:
+
+**Métodos Implementados:**
+
+**Flujo de Reserva:**
+- `confirmar()` - Procesar datos de cabaña desde catálogo (POST)
+- `servicios()` - Seleccionar servicios opcionales (GET/POST)
+- `resumen()` - Mostrar resumen pre-pago con desglose completo (GET)
+- `pasarela()` - Pasarela de pago con MercadoPago Wallet Brick (GET)
+
+**Callbacks de MercadoPago:**
+- `pagoExitoso()` - Procesar pago exitoso y confirmar reserva (GET)
+  - Detecta redirección desde ngrok y redirige a localhost
+  - Valida estado de reserva
+  - Ejecuta transacción SQL: Factura → Pago → Estado CONFIRMADA
+  - Envía email de confirmación con datos completos
+  - Redirige a página de éxito
+- `pagoFallido()` - Manejar pago rechazado (GET)
+- `pagoPendiente()` - Manejar pago pendiente (GET)
+- `webhook()` - Webhook IPN para notificaciones asíncronas de MercadoPago (POST)
+
+**Confirmación:**
+- `exito()` - Página de confirmación final con datos de reserva (GET)
+
+### **Integración con MercadoPago SDK v3.7.1**
+
+**Clases utilizadas:**
+```php
+use MercadoPago\MercadoPagoConfig;
+use MercadoPago\Client\Preference\PreferenceClient;
+use MercadoPago\Client\Payment\PaymentClient;
+use MercadoPago\Exceptions\MPApiException;
+```
+
+**Proceso de Creación de Preferencia:**
+```php
+// Configurar SDK
+MercadoPagoConfig::setAccessToken($access_token);
+
+// Crear preferencia
+$client = new PreferenceClient();
+$preference = $client->create([
+    'external_reference' => $reserva_id,
+    'items' => [[
+        'title' => "Reserva Cabaña {$nombre}",
+        'quantity' => 1,
+        'unit_price' => $total_amount
+    ]],
+    'back_urls' => [
+        'success' => "{$base_url}/reservas/pago-exitoso",
+        'failure' => "{$base_url}/reservas/pago-fallido",
+        'pending' => "{$base_url}/reservas/pago-pendiente"
+    ],
+    'notification_url' => "{$base_url}/reservas/webhook"
+]);
+```
+
+### **Transacción de Pago Garantizada**
+
+Cuando el pago es exitoso, se ejecuta una transacción SQL completa:
+
+```php
+$this->db->beginTransaction();
+try {
+    // 1. Validar reserva en estado PENDIENTE
+    // 2. Generar factura
+    // 3. Registrar pago vinculado a factura
+    // 4. Actualizar estado a CONFIRMADA
+    $this->db->commit();
+} catch (Exception $e) {
+    $this->db->rollback();
+    throw $e;
+}
+```
+
+### **Sistema de Emails de Confirmación**
+
+**Métodos privados para emails:**
+- `enviarNotificacionConfirmacion()` - Envía email al huésped
+- `obtenerDatosCompletosReserva()` - Recopila todos los datos necesarios
+- `obtenerHuespedReserva()` - Obtiene email del huésped
+- `obtenerMetodoPagoReserva()` - Obtiene método de pago usado
+- `obtenerTotalPagadoReserva()` - Calcula total pagado
+- `contarHuespedesReserva()` - Cuenta adultos y menores por edad
+- `construirEmailConfirmacion()` - Genera HTML del email
+
+**Datos incluidos en el email:**
+- ✅ Nombre completo del huésped
+- ✅ Cabaña reservada
+- ✅ Fechas de check-in/check-out
+- ✅ Cantidad de huéspedes (adultos y menores)
+- ✅ Método de pago (MercadoPago)
+- ✅ Monto total abonado
+- ✅ Número de reserva
+- ✅ Información del complejo
+
+### **Consultas SQL Optimizadas**
+
+**Método de pago:**
+```sql
+SELECT mp.metododepago_descripcion 
+FROM pago p
+INNER JOIN factura f ON p.rela_factura = f.id_factura
+INNER JOIN metododepago mp ON p.rela_metododepago = mp.id_metododepago
+WHERE f.rela_reserva = ?
+```
+
+**Total pagado:**
+```sql
+SELECT SUM(p.pago_total) as total
+FROM pago p
+INNER JOIN factura f ON p.rela_factura = f.id_factura
+WHERE f.rela_reserva = ?
+```
+
+**Cantidad de huéspedes:**
+```sql
+SELECT 
+    COUNT(CASE WHEN h.huesped_edad >= 18 THEN 1 END) as adultos,
+    COUNT(CASE WHEN h.huesped_edad < 18 THEN 1 END) as menores
+FROM huesped_reserva hr
+INNER JOIN huesped h ON hr.rela_huesped = h.id_huesped
+WHERE hr.rela_reserva = ?
+```
+
+### **Manejo de Errores y Duplicados**
+
+**Detección de reservas ya confirmadas:**
+```php
+if ($reserva['rela_estadoreserva'] == 2) {
+    // Obtener datos del pago existente
+    // Retornar éxito sin procesar nuevamente
+    return [
+        'success' => true,
+        'already_confirmed' => true
+    ];
+}
+```
+
+**Logging detallado:**
+```php
+error_log("=== INICIO pagoExitoso ===");
+error_log("Params: status=$status, external_ref=$reservaId");
+error_log("DEBUG: Llamando a confirmPayment");
+error_log("DEBUG: Resultado: " . json_encode($resultado));
+```
+
+---
+
+## 🛍️ **Sistema de Consumos Multimodal - 3 Controladores**
 
 ### **1. ConsumosController.php (Módulo Admin)**
 **Ubicación**: `Controllers/ConsumosController.php`  
@@ -417,12 +587,17 @@ GET  /reportes                 → ReportesController@index
 - ✅ Integración completa con el sistema de autenticación
 - ✅ Patrones MVC implementados consistentemente
 - ✅ Controladores para todas las entidades del sistema
-- ✅ Sistema de reservas online completo con flujo de pago
+- ✅ **Sistema de reservas online completo con MercadoPago Checkout Pro**
+- ✅ **Integración con SDK v3.7.1** (MercadoPagoConfig, PreferenceClient, PaymentClient)
+- ✅ **Wallet Brick** para experiencia de pago optimizada
+- ✅ **Callbacks y webhooks** para procesamiento asíncrono
+- ✅ **Transacciones SQL garantizadas** (Reserva → Factura → Pago)
+- ✅ **Sistema de emails** con datos completos de pago y huéspedes
 - ✅ Sistema multimodal de consumos (Admin, Huésped, Totem)
 - ✅ Sistema de reportes con 6 reportes ejecutivos
 - ✅ Gestión de perfiles y permisos
 - ✅ Control de acceso por roles (Público, Huésped, Admin)
-- ✅ Exportación a Excel y PDF en módulos principales
+- ✅ Exportación a Excel (.xlsx) y PDF en módulos principales
 
 ### 🎯 **En Producción**
 - Sistema de verificación de email
@@ -430,6 +605,9 @@ GET  /reportes                 → ReportesController@index
 - Proceso completo de check-in/check-out
 - Gestión de inventario y revisiones
 - Sistema de comentarios con moderación
+- **Pasarela de pago MercadoPago** completamente funcional
+- **Flujo de reserva online** de principio a fin
+- **Emails de confirmación** con datos de pago y huéspedes
 
 ### 🔄 **Optimizaciones Continuas**
 - Optimización de consultas en listados grandes
@@ -437,6 +615,7 @@ GET  /reportes                 → ReportesController@index
 - Mejoras en validaciones de negocio
 - Refactorización de código duplicado
 - Tests unitarios para controladores críticos
+- **Migración a credenciales de producción** de MercadoPago
 
 ---
 
@@ -451,5 +630,6 @@ GET  /reportes                 → ReportesController@index
 
 ---
 
-*Documentación actualizada el 14/11/2025 - Casa de Palos Cabañas*
-*Sistema de Gestión Integral de Cabañas - SIRCA*
+*Documentación actualizada el 18/11/2025 - Casa de Palos Cabañas*  
+*Sistema de Gestión Integral de Cabañas - SIRCA*  
+*Integración completa con MercadoPago SDK v3.7.1 - Checkout Pro con Wallet Brick*

@@ -1,6 +1,6 @@
 # Core - Framework Base del Sistema
 
-Este directorio contiene el núcleo del framework MVC personalizado para el Sistema de Gestión de Cabañas. Aquí se encuentran las clases fundamentales que proporcionan la base para toda la aplicación.
+Este directorio contiene el núcleo del framework MVC personalizado para el Sistema de Gestión de Cabañas. Aquí se encuentran las clases fundamentales que proporcionan la base para toda la aplicación, incluyendo integración completa con **MercadoPago Checkout Pro** para pagos online.
 
 ## 🏗️ **Arquitectura del Core Framework**
 
@@ -12,11 +12,13 @@ Este directorio contiene el núcleo del framework MVC personalizado para el Sist
    - Bootstrap del sistema
    - Inicialización de servicios
    - Manejo del ciclo de vida de la aplicación
+   - **Definición de 180+ rutas** del sistema
 
 2. **`Router.php`** - Sistema de enrutamiento
    - Manejo de URLs amigables
    - Mapeo de rutas a controladores
    - Soporte para parámetros dinámicos
+   - Métodos HTTP (GET, POST, ANY)
 
 3. **`Controller.php`** - Clase base para controladores
    - Funcionalidades comunes para todos los controladores
@@ -48,8 +50,9 @@ Este directorio contiene el núcleo del framework MVC personalizado para el Sist
 8. **`EmailService.php`** - Servicio de envío de emails
    - Integración con PHPMailer
    - Envío de emails transaccionales
+   - **Confirmación de reservas con MercadoPago**
    - Verificación de cuentas y recuperación de contraseñas
-   - Templates HTML personalizables
+   - Templates HTML personalizables con información completa de pagos
 
 9. **`Validator.php`** - Sistema de validación
    - Validación de formularios
@@ -641,25 +644,31 @@ function array_get($array, $key, $default = null)
 
 ### ✅ **Completado y Funcional**
 - ✅ Arquitectura MVC completa con 12 componentes core
-- ✅ Sistema de enrutamiento con soporte para parámetros dinámicos
-- ✅ Autenticación y autorización por perfiles
+- ✅ Sistema de enrutamiento con soporte para parámetros dinámicos (180+ rutas)
+- ✅ Autenticación y autorización por perfiles (Admin, Cajero, Recepcionista, Huésped)
 - ✅ Conexión a base de datos con patrón Singleton
-- ✅ Sistema de vistas con layouts organizados
+- ✅ Sistema de vistas con layouts organizados (admin, public, totem)
 - ✅ Validación de datos en formularios
 - ✅ Manejo de errores y excepciones
 - ✅ Carga automática de clases (PSR-4)
+- ✅ **Integración completa con MercadoPago SDK v3.7.1**
+- ✅ **Checkout Pro con Wallet Brick** para pagos online
+- ✅ **Webhooks IPN** para notificaciones de pago
 - ✅ Servicio de email con PHPMailer integrado
 - ✅ Sistema de verificación de email
+- ✅ **Emails de confirmación de reserva** con datos de pago completos
 - ✅ Helpers globales para desarrollo
-- ✅ Configuración centralizada por ambiente
+- ✅ Configuración centralizada por ambiente (.env)
 
 ### 🎯 **En Producción**
-- Sistema de reservas online completo
+- Sistema de reservas online completo con pasarela de pago
+- **Flujo de pago MercadoPago**: Catálogo → Confirmar → Servicios → Resumen → Pasarela → Pago → Éxito
 - Dashboards contextuales por perfil de usuario
-- Exportación a Excel y PDF
+- Exportación a Excel (.xlsx) y PDF
 - Sistema multimodal de consumos (Admin, Huésped, Totem)
 - Gestión integral de cabañas, huéspedes y productos
 - Sistema de reportes ejecutivos
+- **Transacciones con integridad referencial** (Reserva → Factura → Pago)
 
 ### 🔄 **Optimizaciones Continuas**
 - **Performance**: Sistema de caché para consultas frecuentes
@@ -668,6 +677,7 @@ function array_get($array, $key, $default = null)
 - **Events**: Sistema de eventos y listeners
 - **Middleware**: Pipeline de middleware para requests
 - **API REST**: Endpoints para integración con apps móviles
+- **Seguridad**: Validación de transacciones duplicadas en MercadoPago
 
 ---
 
@@ -739,9 +749,57 @@ class YourModel extends Model
 
 ## 🌐 **Sistema de Enrutamiento - Rutas del Proyecto**
 
-### **Rutas del Sistema de Consumos (3 Módulos)**
+### **Total de Rutas Configuradas: 180+**
 
-El sistema implementa **17 rutas** para los 3 módulos de consumos:
+El sistema implementa una arquitectura de rutas completa y organizada por módulos funcionales.
+
+### **🏠 Rutas Principales y Autenticación (8 rutas)**
+
+```php
+GET  /                           → HomeController@index (landing pública)
+GET  /catalogo                   → CatalogoController@index (catálogo de cabañas)
+GET  /login                      → AuthController@login (formulario login)
+POST /login                      → AuthController@login (procesar login)
+GET  /logout                     → AuthController@logout
+GET  /registro                   → AuthController@registro
+POST /registro                   → AuthController@registro
+GET  /verificar-email/{token}    → EmailVerificationController@verify
+```
+
+### **🏨 Rutas de Reservas y Pagos (18 rutas)**
+
+#### **Flujo de Reserva Online (7 rutas)**
+```php
+POST /reservas/confirmar         → ReservasController@confirmar (desde catálogo)
+GET  /reservas/servicios         → ReservasController@servicios (seleccionar extras)
+POST /reservas/servicios         → ReservasController@servicios (guardar servicios)
+GET  /reservas/resumen           → ReservasController@resumen (resumen pre-pago)
+GET  /reservas/pasarela          → ReservasController@pasarela (MercadoPago Wallet Brick)
+```
+
+#### **Callbacks de MercadoPago (4 rutas)**
+```php
+GET  /reservas/pago-exitoso      → ReservasController@pagoExitoso (success_url)
+GET  /reservas/pago-fallido      → ReservasController@pagoFallido (failure_url)
+GET  /reservas/pago-pendiente    → ReservasController@pagoPendiente (pending_url)
+POST /reservas/webhook           → ReservasController@webhook (IPN notifications)
+```
+
+#### **Vista de Confirmación (2 rutas)**
+```php
+GET  /reservas/exito             → ReservasController@exito (confirmación final)
+GET  /reservas/exito/{id}        → ReservasController@exito (con ID específico)
+```
+
+#### **Gestión Administrativa (5 rutas)**
+```php
+GET  /reservas                   → ReservasController@index (listado por perfil)
+GET  /reservas/create            → ReservasController@create
+POST /reservas/create            → ReservasController@create
+GET  /reservas/{id}              → ReservasController@show
+GET  /reservas/{id}/edit         → ReservasController@edit
+POST /reservas/{id}/edit         → ReservasController@update
+```
 
 #### **Módulo Admin (Operaciones)**
 ```php
@@ -780,11 +838,198 @@ GET  /totem/producto/{id}/precio  → TotemConsumosController@getPrecioProducto 
 ```
 
 ### **Características del Sistema de Rutas**
-- ✅ **Separación de módulos** por prefijo de URL
+- ✅ **Separación de módulos** por prefijo de URL (/admin, /huesped, /totem, /reservas)
 - ✅ **RESTful conventions** para operaciones CRUD
 - ✅ **APIs AJAX** para operaciones dinámicas
-- ✅ **Parámetros dinámicos** en URLs con `{id}`
-- ✅ **Métodos HTTP** apropiados (GET/POST)
+- ✅ **Parámetros dinámicos** en URLs con `{id}`, `{token}`
+- ✅ **Métodos HTTP** apropiados (GET/POST/ANY)
+- ✅ **Callbacks externos** sin autenticación (MercadoPago webhooks)
+- ✅ **Redirecciones seguras** desde ngrok a localhost para callbacks
+- ✅ **Rutas públicas** para catálogo y totem (sin requireAuth)
+
+---
+
+## 💳 **Integración con MercadoPago**
+
+### **SDK Utilizado**
+- **Biblioteca**: `mercadopago/dx-php` v3.7.1
+- **API**: Modern API (MercadoPagoConfig, PreferenceClient, PaymentClient)
+- **Tipo de integración**: Checkout Pro con Wallet Brick
+
+### **Flujo de Pago Implementado**
+
+```
+1. Usuario selecciona cabaña (Catálogo)
+   ↓
+2. Confirma fechas y datos (/reservas/confirmar)
+   ↓
+3. Selecciona servicios opcionales (/reservas/servicios)
+   ↓
+4. Revisa resumen de reserva (/reservas/resumen)
+   ↓
+5. Procede a pasarela de pago (/reservas/pasarela)
+   → Se crea Preference en MercadoPago
+   → Se muestra Wallet Brick (botón de pago)
+   ↓
+6. Usuario redirigido a MercadoPago (checkout)
+   ↓
+7. Completa pago en plataforma MercadoPago
+   ↓
+8. MercadoPago redirige a callback según resultado:
+   → Éxito: /reservas/pago-exitoso
+   → Fallo: /reservas/pago-fallido
+   → Pendiente: /reservas/pago-pendiente
+   ↓
+9. Sistema procesa transacción:
+   → Valida estado de reserva
+   → Genera factura
+   → Registra pago
+   → Actualiza estado a CONFIRMADA
+   → Envía email de confirmación
+   ↓
+10. Redirección a vista de éxito (/reservas/exito)
+    → Muestra datos de confirmación
+    → Número de reserva
+    → Detalles de pago
+```
+
+### **Configuración de Credenciales**
+
+Archivo `.env`:
+```env
+# MercadoPago Checkout Pro (Credenciales de PRUEBA)
+MERCADOPAGO_PUBLIC_KEY=APP_USR-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+MERCADOPAGO_ACCESS_TOKEN=APP_USR-XXXXXXXXXXXXX-XXXXXX-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX-XXXXXXXXXX
+MERCADOPAGO_BASE_URL=https://tu-ngrok-url.ngrok-free.dev/proyecto_cabania/
+```
+
+### **Estructura de Datos de Pago**
+
+**Preferencia creada:**
+```php
+[
+    'external_reference' => $reservaId,
+    'items' => [[
+        'title' => "Reserva Cabaña {$cabania_nombre}",
+        'quantity' => 1,
+        'unit_price' => $total_amount
+    ]],
+    'back_urls' => [
+        'success' => "{$base_url}/reservas/pago-exitoso",
+        'failure' => "{$base_url}/reservas/pago-fallido",
+        'pending' => "{$base_url}/reservas/pago-pendiente"
+    ],
+    'notification_url' => "{$base_url}/reservas/webhook"
+]
+```
+
+**Datos almacenados en sesión:**
+```php
+$_SESSION['reserva_exitosa'] = [
+    'reserva_id' => 645,
+    'total_pagado' => 53100.00,
+    'fecha_confirmacion' => '2025-11-18 00:48:12',
+    'metodo_pago_id' => 5, // MercadoPago
+    'pago_id' => 561,
+    'factura_id' => 234,
+    'payment_id_mp' => '134276848982'
+];
+```
+
+### **Manejo de Transacciones**
+
+El sistema utiliza **transacciones SQL** para garantizar integridad:
+
+```php
+// En Reserva::confirmPayment()
+$this->db->beginTransaction();
+
+try {
+    // 1. Validar reserva en estado PENDIENTE
+    // 2. Obtener datos completos con consumos
+    // 3. Generar factura
+    // 4. Registrar pago vinculado a factura
+    // 5. Actualizar estado reserva a CONFIRMADA
+    
+    $this->db->commit();
+} catch (Exception $e) {
+    $this->db->rollback();
+    throw $e;
+}
+```
+
+### **Emails de Confirmación**
+
+**Datos incluidos en el email:**
+- ✅ Nombre del huésped
+- ✅ Cabaña reservada
+- ✅ Fechas de check-in y check-out
+- ✅ Cantidad de huéspedes (adultos y menores)
+- ✅ Método de pago (MercadoPago)
+- ✅ Monto total abonado
+- ✅ Número de reserva
+- ✅ Información del complejo
+
+**Consultas SQL optimizadas:**
+```php
+// Método de pago: pago → factura → metododepago
+SELECT mp.metododepago_descripcion 
+FROM pago p
+INNER JOIN factura f ON p.rela_factura = f.id_factura
+INNER JOIN metododepago mp ON p.rela_metododepago = mp.id_metododepago
+WHERE f.rela_reserva = ?
+
+// Total pagado: suma de pagos de la reserva
+SELECT SUM(p.pago_total) as total
+FROM pago p
+INNER JOIN factura f ON p.rela_factura = f.id_factura
+WHERE f.rela_reserva = ?
+
+// Cantidad de huéspedes: conteo por edad
+SELECT 
+    COUNT(CASE WHEN h.huesped_edad >= 18 THEN 1 END) as adultos,
+    COUNT(CASE WHEN h.huesped_edad < 18 THEN 1 END) as menores
+FROM huesped_reserva hr
+INNER JOIN huesped h ON hr.rela_huesped = h.id_huesped
+WHERE hr.rela_reserva = ?
+```
+
+---
+
+## 🛡️ **Manejo de Errores en Pagos**
+
+### **Detección de Reservas Duplicadas**
+
+```php
+// Si la reserva ya está CONFIRMADA
+if ($reserva['rela_estadoreserva'] == 2) {
+    // Obtener datos del pago existente
+    // Retornar éxito sin procesar nuevamente
+    return [
+        'success' => true,
+        'message' => 'La reserva ya estaba confirmada previamente',
+        'already_confirmed' => true
+    ];
+}
+```
+
+### **Logging Detallado**
+
+```php
+error_log("=== INICIO pagoExitoso ===");
+error_log("Params: collection_id=$collectionId, status=$status");
+error_log("DEBUG: Reserva ID a procesar: $reservaId");
+error_log("DEBUG: Llamando a confirmPayment");
+error_log("DEBUG: Resultado de confirmPayment: " . json_encode($resultado));
+```
+
+### **Página de Debug (Modo desarrollo)**
+
+Cuando `APP_DEBUG=true`, los errores muestran información completa:
+- Parámetros GET recibidos de MercadoPago
+- Contenido de sesión
+- Stack trace del error
+- Archivo y línea del error
 
 ---
 
@@ -811,5 +1056,7 @@ GET  /totem/producto/{id}/precio  → TotemConsumosController@getPrecioProducto 
 
 ---
 
-*Framework Core documentado el 14/11/2025 - Casa de Palos Cabañas*
-*Arquitectura MVC personalizada con 12 componentes core integrados*
+*Framework Core documentado y actualizado el 18/11/2025 - Casa de Palos Cabañas*  
+*Arquitectura MVC personalizada con 12 componentes core integrados*  
+*Integración completa con MercadoPago SDK v3.7.1 - Checkout Pro con Wallet Brick*  
+*Sistema de pagos online funcional con transacciones garantizadas*

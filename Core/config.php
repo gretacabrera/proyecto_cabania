@@ -65,4 +65,13 @@ return [
             'check_out' => getenv('COMPLEJO_CHECKOUT')
         ]
     ],
+    
+    'mercadopago' => [
+        // Credenciales de PRUEBA (pestaña "Credenciales" > "Prueba" en MercadoPago)
+        // Formato APP_USR-xxx cuando provienen de una aplicación en modo PRUEBA
+        // Solo usar credenciales de PRODUCCIÓN cuando el sistema esté en producción
+        'access_token' => getenv('MERCADOPAGO_ACCESS_TOKEN'),
+        'public_key' => getenv('MERCADOPAGO_PUBLIC_KEY'),
+        'base_url' => getenv('MERCADOPAGO_BASE_URL'),
+    ],
 ];

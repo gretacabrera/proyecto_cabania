@@ -1,6 +1,6 @@
 # Sistema de Gestión de Cabañas - Casa de Palos
 
-**Sistema integral para la gestión de cabañas, reservas online, huéspedes y servicios**
+**Sistema integral para la gestión de cabañas, reservas online con MercadoPago, huéspedes y servicios**
 
 Desarrollado con PHP utilizando arquitectura MVC personalizada y paradigma de programación orientada a objetos.
 
@@ -19,11 +19,11 @@ Desarrollado con PHP utilizando arquitectura MVC personalizada y paradigma de pr
 
 #### **Para Huéspedes (Sistema Público)**
 - **🌐 Catálogo Público**: Exploración de cabañas con filtros avanzados
-- **📅 Sistema de Reservas Online**: Proceso completo de 5 pasos con validaciones
-- **💳 Simulación de Pagos**: Tarjeta, transferencia bancaria, efectivo
+- **📅 Sistema de Reservas Online**: Proceso completo de 6 pasos con validaciones
+- **💳 Pagos Reales con MercadoPago**: Integración completa con Checkout Pro y Wallet Brick
 - **✨ Servicios Adicionales**: Spa, restaurante, tours y actividades
 - **💬 Sistema de Comentarios**: Feedback y puntuación de estadías
-- **📧 Confirmaciones Automáticas**: Emails con detalles de reserva
+- **📧 Confirmaciones Automáticas**: Emails con detalles completos de pago y huéspedes
 
 #### **Para Administración (Panel Interno)**
 - **🏠 Gestión de Cabañas**: CRUD completo con estados, fotos y disponibilidad
@@ -39,9 +39,10 @@ Desarrollado con PHP utilizando arquitectura MVC personalizada y paradigma de pr
 - **Backend**: PHP 8.0+ con Programación Orientada a Objetos
 - **Arquitectura**: MVC personalizado con patrón **Microkernel** (Core) y **Screaming Architecture** (Views)
 - **Patrón de Datos**: Active Record para persistencia
-- **Base de Datos**: MySQL 8.0 con 24 tablas relacionales + numeración automática
+- **Base de Datos**: MySQL 8.0 con 28 tablas relacionales + numeración automática
 - **Frontend**: HTML5, CSS3, Bootstrap 5.3, JavaScript ES6+
-- **Dependencias**: PHPMailer para emails, SweetAlert2 para UX
+- **Pagos Online**: MercadoPago SDK v3.7.1 (Checkout Pro con Wallet Brick)
+- **Dependencias**: PHPMailer para emails, SweetAlert2 para UX, PhpSpreadsheet para Excel, TCPDF para PDF
 - **Seguridad**: Consultas preparadas, escape de datos, CSRF protection, validaciones
 - **Facturación**: Sistema automático de numeración correlativa por tipo de comprobante
 
@@ -88,6 +89,7 @@ La base de datos incluye **28 tablas principales** organizadas en módulos:
 - `comentario` - Feedback y puntuaciones
 - `factura` - Facturas con numeración automática correlativa
 - `facturadetalle` - Detalles de items facturados
+- `pago` - Registro de transacciones con MercadoPago
 - `ingreso` - Check-in de huéspedes
 - `salida` - Check-out de huéspedes
 
@@ -695,19 +697,31 @@ El sistema de reservas es el **corazón del proyecto**, implementando un flujo t
 - ☑️ Aceptación obligatoria de términos y condiciones
 - � Botones "Modificar Reserva" y "Cancelar"
 
-**Paso 4: Procesamiento de Pago** (`/reservas/pago`)
-- 💳 **Tarjeta de Crédito**: Con validación real (rechazo simulado para testing)
-- 🏦 **Transferencia Bancaria**: Datos completos de cuenta
-- 💵 **Efectivo**: Pago diferido al momento del check-in
-- 🔐 Validaciones por método específico
-- ⚡ Procesamiento transaccional con rollback automático
+**Paso 4: Pasarela de Pago MercadoPago** (`/reservas/pasarela`)
+- 💳 **Wallet Brick**: Interfaz optimizada de MercadoPago
+- 🏦 **Métodos de pago**: Tarjetas, efectivo, transferencias
+- 🔐 **SDK v3.7.1**: Integración certificada con API moderna
+- 💼 **Diseño Profesional**: Colores corporativos sobrios (blanco, gris, bordes)
+- ⚡ **Procesamiento Real**: Transacción completa con MercadoPago
+- 🛡️ **Seguridad**: Certificación PCI-DSS, HTTPS obligatorio
 
-**Paso 5: Confirmación Exitosa** (`/reservas/exito`)
+**Paso 5: Callbacks de MercadoPago**
+- ✅ **Pago Exitoso**: Confirma reserva, genera factura, envía email
+- ❌ **Pago Rechazado**: Permite reintentar con otro método
+- ⏳ **Pago Pendiente**: Notifica al usuario del estado
+- 🔔 **Webhook IPN**: Notificaciones asíncronas de MercadoPago
+
+**Paso 6: Confirmación Exitosa** (`/reservas/exito`)
 - 🎉 Mensaje de éxito con animación
 - 🎫 Número de reserva único generado
-- 📧 Email de confirmación automático (PHPMailer)
+- 📧 Email de confirmación automático con datos completos:
+  - Método de pago: MercadoPago
+  - Monto total abonado
+  - Cantidad de huéspedes (adultos y menores por edad)
+  - Fechas de check-in/check-out
+  - Información de contacto del complejo
 - 📱 Información práctica para la estadía
-- 💾 Opción de descargar/imprimir comprobante
+- 💾 Comprobante digital de reserva
 
 #### **⚙️ Estados Dinámicos (Sin Hardcode)**
 El sistema maneja **8 estados** de reserva completamente dinámicos:
@@ -743,31 +757,177 @@ $this->db->transaction(function() {
 - ✅ **Verificación de disponibilidad** antes de crear la reserva
 - ✅ **Rollback automático** si falla cualquier paso del proceso
 
-#### **💳 Transacción 2: Confirmación de Pago Completa**
+#### **💳 Transacción 2: Confirmación de Pago MercadoPago**
 **Ubicación:** `Models/Reserva.php` → `confirmPayment()`
 
 ```php
 $this->db->transaction(function() {
-    // 1. Verificar reserva en estado PENDIENTE
-    // 2. Registrar pago con método seleccionado
-    // 3. Cambiar estado reserva a CONFIRMADA
-    // 4. Cambiar estado cabaña a OCUPADA
-    // 5. Generar factura completa con detalles
-    // 6. Rollback automático si hay errores
+    // 1. Validar payment_id de MercadoPago
+    // 2. Verificar si reserva ya fue confirmada (evitar duplicados)
+    // 3. Generar factura con número automático
+    // 4. Registrar pago vinculado a factura (método: MercadoPago)
+    // 5. Cambiar estado reserva a CONFIRMADA (2)
+    // 6. Enviar email con datos completos (huéspedes, monto, método)
+    // 7. Rollback automático si hay errores
 });
 ```
 
 **Características:**
-- ✅ **Transacción completa** que procesa pago, factura y cambios de estado
-- ✅ **Generación de factura** con número automático y detalles
-- ✅ **Actualización de estados** de reserva y cabaña
-- ✅ **Manejo robusto de errores** con logging detallado
+- ✅ **Integración MercadoPago**: Valida payment_id y external_reference
+- ✅ **Detección de Duplicados**: Evita procesar dos veces la misma reserva
+- ✅ **Transacción Completa**: Factura → Pago → Estado → Email
+- ✅ **Consultas SQL Optimizadas**: JOINs correctos (pago → factura → reserva)
+- ✅ **Email con Datos Completos**: Huéspedes por edad, monto, método de pago
+- ✅ **Manejo Robusto de Errores**: Logging detallado y rollback
 
 #### **🛡️ Beneficios de la Implementación ACID**
 - **Atomicidad:** Las operaciones se completan totalmente o no se ejecutan
 - **Consistencia:** Estados siempre coherentes entre todas las tablas
 - **Aislamiento:** Transacciones concurrentes no interfieren entre sí
 - **Durabilidad:** Una vez confirmada, la transacción es permanente
+
+---
+
+## 💳 **Integración con MercadoPago**
+
+### **SDK v3.7.1 - Checkout Pro con Wallet Brick**
+
+El sistema implementa la integración más moderna de MercadoPago para procesamiento de pagos online.
+
+#### **Características de la Integración**
+
+**Tecnología:**
+- **SDK PHP**: `mercadopago/dx-php` v3.7.1
+- **API Moderna**: MercadoPagoConfig, PreferenceClient, PaymentClient
+- **JavaScript SDK**: MercadoPago.js para Wallet Brick
+- **Modo**: PRUEBA (credenciales de test incluidas)
+
+**Flujo de Pago:**
+```php
+// 1. Crear preferencia de pago
+use MercadoPago\MercadoPagoConfig;
+use MercadoPago\Client\Preference\PreferenceClient;
+
+MercadoPagoConfig::setAccessToken($access_token);
+$client = new PreferenceClient();
+$preference = $client->create([
+    'external_reference' => $reserva_id,
+    'items' => [[
+        'title' => "Reserva Cabaña {$nombre}",
+        'quantity' => 1,
+        'unit_price' => (float)$total
+    ]],
+    'back_urls' => [
+        'success' => "{$base_url}/reservas/pago-exitoso",
+        'failure' => "{$base_url}/reservas/pago-fallido",
+        'pending' => "{$base_url}/reservas/pago-pendiente"
+    ],
+    'notification_url' => "{$base_url}/reservas/webhook"
+]);
+
+// 2. Renderizar Wallet Brick
+const mp = new MercadoPago('PUBLIC_KEY', { locale: 'es-AR' });
+await mp.bricks().create('wallet', 'wallet_container', {
+    initialization: { preferenceId: preference.id }
+});
+
+// 3. Usuario completa pago en MercadoPago
+// 4. Callback procesa resultado
+```
+
+**Métodos de Pago Soportados:**
+- 💳 Tarjetas de crédito y débito
+- 💵 Efectivo (PagoFácil, Rapipago)
+- 🏦 Transferencias bancarias
+- 📱 Dinero en cuenta de MercadoPago
+
+**Seguridad:**
+- ✅ Certificación PCI-DSS nivel 1
+- ✅ Tokenización de tarjetas
+- ✅ Protección contra fraude
+- ✅ HTTPS obligatorio en producción
+- ✅ Webhook signature validation
+
+**Configuración en `.env`:**
+```env
+# Credenciales de PRUEBA
+MERCADOPAGO_PUBLIC_KEY=APP_USR-7075d473-4e10-4d89-a27d-d79955b3a175
+MERCADOPAGO_ACCESS_TOKEN=APP_USR-374665803802227-111721-...
+MERCADOPAGO_BASE_URL=https://tu-dominio.com/proyecto_cabania/
+
+# Usuarios de prueba incluidos
+MERCADOPAGO_VENDEDOR_USER_ID=2997053882
+MERCADOPAGO_COMPRADOR_EMAIL=test_user_1316051943@testuser.com
+
+# Tarjetas de prueba (5 tarjetas configuradas)
+# Mastercard, Visa, American Express, Débito Mastercard, Débito Visa
+```
+
+**Testing:**
+```bash
+# Escenarios de prueba implementados
+- Pago aprobado: Nombre "APRO"
+- Pago rechazado: Nombre "OTHE"
+- Pago pendiente: Nombre "CONT"
+# + 13 escenarios más para testing exhaustivo
+```
+
+**Callbacks Implementados:**
+- `/reservas/pago-exitoso` - Procesa pago aprobado
+- `/reservas/pago-fallido` - Maneja rechazo
+- `/reservas/pago-pendiente` - Estado pendiente
+- `/reservas/webhook` - Notificaciones IPN
+
+**Transacción de Pago:**
+```sql
+-- Estructura de datos
+reserva (id_reserva, reserva_total, rela_estadoreserva)
+    ↓
+factura (id_factura, rela_reserva, factura_total, factura_numero)
+    ↓
+pago (id_pago, rela_factura, rela_metododepago, pago_total)
+    ↓
+metododepago (id_metododepago, metododepago_descripcion: 'MercadoPago')
+```
+
+**Consultas SQL para Emails:**
+```sql
+-- Método de pago
+SELECT mp.metododepago_descripcion 
+FROM pago p
+INNER JOIN factura f ON p.rela_factura = f.id_factura
+INNER JOIN metododepago mp ON p.rela_metododepago = mp.id_metododepago
+WHERE f.rela_reserva = ?
+
+-- Total pagado
+SELECT SUM(p.pago_total) as total
+FROM pago p
+INNER JOIN factura f ON p.rela_factura = f.id_factura
+WHERE f.rela_reserva = ?
+
+-- Huéspedes por edad
+SELECT 
+    COUNT(CASE WHEN h.huesped_edad >= 18 THEN 1 END) as adultos,
+    COUNT(CASE WHEN h.huesped_edad < 18 THEN 1 END) as menores
+FROM huesped_reserva hr
+INNER JOIN huesped h ON hr.rela_huesped = h.id_huesped
+WHERE hr.rela_reserva = ?
+```
+
+**Migración a Producción:**
+1. Crear cuenta de vendedor en MercadoPago
+2. Obtener credenciales de PRODUCCIÓN
+3. Actualizar `.env`:
+   ```env
+   MERCADOPAGO_PUBLIC_KEY=APP_USR-[tu-public-key]
+   MERCADOPAGO_ACCESS_TOKEN=APP_USR-[tu-access-token]
+   MERCADOPAGO_BASE_URL=https://[tu-dominio-produccion]/
+   ```
+4. Configurar HTTPS (obligatorio)
+5. Validar webhook con signature
+6. Testing exhaustivo con tarjetas reales
+
+---
 
 ### **🧾 Sistema de Facturación Automática**
 
@@ -1308,9 +1468,10 @@ if (password_verify($inputPassword, $storedHash)) {
 Para información detallada sobre cada componente, consultar:
 
 - **[Controllers/README.md](Controllers/README.md)** - Documentación completa de controladores
-- **[Core/README.md](Core/README.md)** - Framework y arquitectura interna
-- **[Models/README.md](Models/README.md)** - Modelos de datos y relaciones  
-- **[Views/README.md](Views/README.md)** - Sistema de vistas y flujos
+- **[Core/README.md](Core/README.md)** - Framework y arquitectura interna con MercadoPago
+- **[Models/README.md](Models/README.md)** - Modelos de datos, relaciones y transacciones  
+- **[Views/README.md](Views/README.md)** - Sistema de vistas, flujos y pasarela de pago
+- **[INSTRUCTIVO_MERCADOPAGO.md](INSTRUCTIVO_MERCADOPAGO.md)** - Guía completa de integración MercadoPago
 - **[ESTADOS_RESERVA_README.md](ESTADOS_RESERVA_README.md)** - Sistema de estados sin hardcode
 - **[SISTEMA_CONSUMOS.md](SISTEMA_CONSUMOS.md)** - Sistema de consumos multimodal (3 módulos)
 - **[GUIA_USO_CONSUMOS.md](GUIA_USO_CONSUMOS.md)** - Guía de usuario para sistema de consumos
@@ -1354,6 +1515,18 @@ Para información detallada sobre cada componente, consultar:
 
 ### **🆕 Últimas Actualizaciones**
 
+#### **Noviembre 2025 - Integración MercadoPago SDK v3.7.1**
+- ✅ **SDK Moderno**: Migración completa a MercadoPagoConfig, PreferenceClient, PaymentClient
+- ✅ **Wallet Brick**: Interfaz optimizada de MercadoPago para mejor conversión
+- ✅ **Callbacks Completos**: Manejo de success, failure, pending y webhook IPN
+- ✅ **Diseño Profesional**: Pasarela con colores corporativos sobrios
+- ✅ **Transacciones Garantizadas**: Rollback automático y detección de duplicados
+- ✅ **Emails Completos**: Datos de huéspedes por edad, monto y método de pago
+- ✅ **Session Management**: `session_write_close()` antes de redirects
+- ✅ **Error Handling**: Página de debug para desarrollo y logging detallado
+- ✅ **Consultas SQL Optimizadas**: JOINs correctos (pago → factura → reserva)
+- ✅ **Credenciales de Prueba**: 5 tarjetas de test + 2 usuarios + 14 escenarios
+
 #### **Noviembre 2025 - Sistema de Transacciones Atómicas**
 - ✅ **Transacciones ACID**: Implementadas dos transacciones críticas para reservas online
 - ✅ **Reserva + Servicios**: Operación atómica que incluye reserva temporal y servicios seleccionados
@@ -1374,5 +1547,6 @@ Para información detallada sobre cada componente, consultar:
 
 *Proyecto desarrollado como parte del programa de Desarrollo de Software - ISRMM*  
 *Casa de Palos Cabañas - Sistema Integral de Gestión de Turismo Rural*  
-*Documentación actualizada: 14 de Noviembre de 2025*
+*Documentación actualizada: 18 de Noviembre de 2025*  
+*Integración MercadoPago SDK v3.7.1 - Checkout Pro con Wallet Brick*
 ```

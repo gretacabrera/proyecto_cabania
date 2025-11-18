@@ -98,8 +98,14 @@ class Reserva extends Model
             // Extraer persona_id para manejo separado
             $personaId = $data['rela_persona'] ?? null;
             
+            // Generar reserva_nro (número correlativo)
+            $result = $this->db->query("SELECT MAX(reserva_nro) as max_nro FROM reserva");
+            $row = $result->fetch_assoc();
+            $nextNro = ($row['max_nro'] ?? 0) + 1;
+            
             // Preparar datos para tabla reserva (solo campos que existen)
             $reservaData = [
+                'reserva_nro' => $nextNro,
                 'reserva_fhinicio' => $data['reserva_fechainicio'] ?? $data['reserva_fhinicio'],
                 'reserva_fhfin' => $data['reserva_fechafin'] ?? $data['reserva_fhfin'],
                 'rela_cabania' => $data['rela_cabania'],
@@ -420,26 +426,32 @@ class Reserva extends Model
                     throw new \Exception("La cabaña no está disponible para las fechas seleccionadas");
                 }
                 
-                // 2. Extraer rela_persona antes de crear la reserva
+                // 2. Generar reserva_nro (número correlativo)
+                $result = $this->db->query("SELECT MAX(reserva_nro) as max_nro FROM reserva");
+                $row = $result->fetch_assoc();
+                $nextNro = ($row['max_nro'] ?? 0) + 1;
+                $reservaData['reserva_nro'] = $nextNro;
+                
+                // 3. Extraer rela_persona antes de crear la reserva
                 $personaId = null;
                 if (isset($reservaData['rela_persona'])) {
                     $personaId = $reservaData['rela_persona'];
                     unset($reservaData['rela_persona']); // Remover porque no es campo de la tabla reserva
                 }
                 
-                // 3. Crear la reserva (sin rela_persona)
+                // 4. Crear la reserva (con reserva_nro, sin rela_persona)
                 $reservaId = $this->create($reservaData);
                 
                 if (!$reservaId) {
                     throw new \Exception("Error al crear la reserva");
                 }
                 
-                // 4. Crear relación con huésped si existe persona
+                // 5. Crear relación con huésped si existe persona
                 if ($personaId) {
                     $this->createHuespedReservation($reservaId, $personaId);
                 }
                 
-                // 5. Crear servicios como consumos
+                // 6. Crear servicios como consumos
                 if (!empty($servicios)) {
                     $this->createServicesForReservation($reservaId, $servicios, $fechaInicio);
                 }
@@ -498,6 +510,35 @@ class Reserva extends Model
             
             error_log("DEBUG confirmPayment: Reserva encontrada - Estado: " . $reserva['rela_estadoreserva'] . ", Cabañía: " . $reserva['rela_cabania']);
             
+            // Si la reserva ya está confirmada, no procesar nuevamente pero retornar éxito
+            if ($reserva['rela_estadoreserva'] == 2) { // Estado CONFIRMADA
+                error_log("WARNING: La reserva ya está CONFIRMADA, retornando datos existentes");
+                
+                // Buscar el pago existente a través de factura
+                $pagos = $this->db->query("
+                    SELECT p.*, f.rela_reserva 
+                    FROM pago p 
+                    INNER JOIN factura f ON p.rela_factura = f.id_factura 
+                    WHERE f.rela_reserva = {$reservaId} 
+                    ORDER BY p.id_pago DESC 
+                    LIMIT 1
+                ");
+                $pago = $pagos ? $pagos->fetch_assoc() : null;
+                
+                $this->db->commit();
+                
+                return [
+                    'success' => true,
+                    'message' => 'La reserva ya estaba confirmada previamente',
+                    'pago_id' => $pago['id_pago'] ?? null,
+                    'factura_id' => $pago['rela_factura'] ?? null,
+                    'reserva_id' => $reservaId,
+                    'total_pagado' => $pago['pago_total'] ?? $reserva['reserva_monto'] ?? 0,
+                    'fecha_confirmacion' => $pago['pago_fechahora'] ?? date('Y-m-d H:i:s'),
+                    'already_confirmed' => true
+                ];
+            }
+            
             if ($reserva['rela_estadoreserva'] != 1) { // Estado PENDIENTE
                 throw new \Exception("La reserva no está en estado pendiente para procesar el pago. Estado actual: " . $reserva['rela_estadoreserva']);
             }
@@ -514,20 +555,31 @@ class Reserva extends Model
 
             error_log("INFO: Datos completos obtenidos - Total: " . $reservaCompleta['total_general']);
 
-            // 3. Registrar el pago
+            // 3. Generar factura primero (DEBE existir antes del pago)
+            error_log("DEBUG: Iniciando generación de factura para reserva ID: $reservaId");
+            $facturaId = $this->generateFactura($reservaId, $reservaCompleta);
+
+            if (!$facturaId) {
+                throw new \Exception("Error al generar la factura");
+            }
+
+            error_log("INFO: Factura generada exitosamente - ID: $facturaId");
+
+            // 4. Registrar el pago con ID de factura
             $pagoModel = new \App\Models\Pago();
             $pagoId = $pagoModel->createPago($reservaId, [
                 'total' => $reservaCompleta['total_general'],
-                'metodo_pago_id' => $paymentData['metodo_pago_id'] ?? 1
+                'metodo_pago_id' => $paymentData['metodo_pago_id'] ?? 1,
+                'factura_id' => $facturaId // CRÍTICO: Pasar ID de factura
             ]);
 
             if (!$pagoId) {
                 throw new \Exception("Error al registrar el pago");
             }
 
-            error_log("INFO: Pago registrado exitosamente - ID: $pagoId");
+            error_log("INFO: Pago registrado exitosamente - ID: $pagoId, vinculado a Factura ID: $facturaId");
 
-            // 4. Actualizar estado de la reserva a CONFIRMADA (estado 2)
+            // 5. Actualizar estado de la reserva a CONFIRMADA (estado 2)
             $updateResult = $this->update($reservaId, [
                 'rela_estadoreserva' => 2 // CONFIRMADA
             ]);
@@ -537,16 +589,6 @@ class Reserva extends Model
             }
 
             error_log("INFO: Estado de reserva actualizado a CONFIRMADA");
-
-            // 6. Generar factura completa con detalles y número de factura
-            error_log("DEBUG: Iniciando generación de factura para reserva ID: $reservaId");
-            $facturaId = $this->generateFactura($reservaId, $reservaCompleta);
-
-            if (!$facturaId) {
-                throw new \Exception("Error al generar la factura");
-            }
-
-            error_log("INFO: Factura generada exitosamente - ID: $facturaId");
 
             // 7. COMMIT de la transacción
             $this->db->commit();
