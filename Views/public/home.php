@@ -508,7 +508,7 @@
             
             <div class="cabanias-detalle-grid">
                 <?php foreach ($cabanias_estado['total'] as $cabania): ?>
-                    <div class="cabania-card <?= $cabania['cabania_estado'] == 1 ? 'disponible' : 'ocupada' ?>">
+                    <div class="cabania-card <?= $cabania['rela_estadocabania'] == 1 ? 'disponible' : 'ocupada' ?>">
                         <div class="cabania-header">
                             <h4><?= $this->escape($cabania['cabania_nombre']) ?></h4>
                             <span class="cabania-codigo"><?= $this->escape($cabania['cabania_codigo']) ?></span>
@@ -518,7 +518,7 @@
                             <p><i class="fas fa-dollar-sign"></i> $<?= number_format($cabania['cabania_precio'], 0, ',', '.') ?>/noche</p>
                         </div>
                         <div class="cabania-estado">
-                            <?php if ($cabania['cabania_estado'] == 1): ?>
+                            <?php if ($cabania['rela_estadocabania'] == 1): ?>
                                 <span class="estado-disponible">
                                     <i class="fas fa-check-circle"></i> Disponible
                                 </span>

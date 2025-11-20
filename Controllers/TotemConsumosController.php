@@ -3,7 +3,9 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Core\NotificationService;
 use App\Models\Consumo;
+use App\Models\Reserva;
 
 /**
  * Controlador para el módulo Tótem de consumos
@@ -13,11 +15,15 @@ use App\Models\Consumo;
 class TotemConsumosController extends Controller
 {
     protected $consumoModel;
+    protected $reservaModel;
+    protected $notificationService;
 
     public function __construct()
     {
         parent::__construct();
         $this->consumoModel = new Consumo();
+        $this->reservaModel = new Reserva();
+        $this->notificationService = new NotificationService();
     }
 
     /**
@@ -220,6 +226,34 @@ class TotemConsumosController extends Controller
         
         // Crear consumos en transacción
         $result = $this->consumoModel->createMultiple($consumosData);
+        
+        // Enviar notificación Pusher al huésped
+        if ($result['success']) {
+            try {
+                // Obtener información de la reserva completa
+                $reserva = $this->reservaModel->find($reservaId);
+                
+                if ($reserva) {
+                    // Obtener usuario ID del huésped
+                    $usuarioId = $this->reservaModel->getUsuarioIdFromReserva($reservaId);
+                    
+                    // Preparar datos del consumo para la notificación
+                    $consumoData = [
+                        'consumo_monto_total' => $result['total'] ?? 0,
+                        'items' => $consumosData
+                    ];
+                    
+                    // Agregar nombre de cabaña a los datos de la reserva
+                    $reserva['cabania_nombre'] = $_SESSION['totem_cabania_nombre'] ?? 'N/A';
+                    
+                    // Enviar notificación
+                    $this->notificationService->notifyPedidoCabania($consumoData, $reserva, $usuarioId);
+                }
+            } catch (\Exception $e) {
+                error_log("Error enviando notificación Pusher: " . $e->getMessage());
+                // No fallar la operación si falla la notificación
+            }
+        }
         
         return $this->json($result);
     }

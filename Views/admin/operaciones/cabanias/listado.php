@@ -48,9 +48,9 @@
                         <label class="form-label small mb-1">Estado</label>
                         <select name="cabania_estado" class="form-select form-select-sm" style="width: 120px;">
                             <option value="">Todos</option>
-                            <option value="1" <?= ($_GET['cabania_estado'] ?? '') == '1' ? 'selected' : '' ?>>Activa</option>
+                            <option value="1" <?= ($_GET['cabania_estado'] ?? '') == '1' ? 'selected' : '' ?>>Disponible</option>
                             <option value="2" <?= ($_GET['cabania_estado'] ?? '') == '2' ? 'selected' : '' ?>>Ocupada</option>
-                            <option value="0" <?= ($_GET['cabania_estado'] ?? '') == '0' ? 'selected' : '' ?>>Inactiva</option>
+                            <option value="3" <?= ($_GET['cabania_estado'] ?? '') == '3' ? 'selected' : '' ?>>Inactiva</option>
                         </select>
                     </div>
                     <div class="col-auto">
@@ -240,9 +240,9 @@
                                         <small class="text-muted d-block">p/Noche</small>
                                     </td>                                    
                                     <td class="border-0 py-3">
-                                        <?php if ($cabania['cabania_estado'] == 1): ?>
-                                            <span class="badge bg-success text-white px-2 py-1 rounded-pill">Activa</span>
-                                        <?php elseif ($cabania['cabania_estado'] == 2): ?>
+                                        <?php if ($cabania['rela_estadocabania'] == 1): ?>
+                                            <span class="badge bg-success text-white px-2 py-1 rounded-pill">Disponible</span>
+                                        <?php elseif ($cabania['rela_estadocabania'] == 2): ?>
                                             <span class="badge bg-warning text-dark px-2 py-1 rounded-pill">Ocupada</span>
                                         <?php else: ?>
                                             <span class="badge bg-danger text-white px-2 py-1 rounded-pill">Inactiva</span>
@@ -260,7 +260,7 @@
                                                title="Editar">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <?php if ($cabania['cabania_estado'] == 1): ?>
+                                            <?php if ($cabania['rela_estadocabania'] == 1): ?>
                                                 <!-- Cabaña activa: puede marcar como ocupada o desactivar -->
                                                 <button class="btn btn-outline-warning btn-sm"
                                                         onclick="cambiarEstadoCabania(<?= $cabania['id_cabania'] ?>, 2, '<?= addslashes($cabania['cabania_nombre']) ?>')"
@@ -272,7 +272,7 @@
                                                         title="Desactivar">
                                                     <i class="fas fa-ban"></i>
                                                 </button>
-                                            <?php elseif ($cabania['cabania_estado'] == 2): ?>
+                                            <?php elseif ($cabania['rela_estadocabania'] == 2): ?>
                                                 <!-- Cabaña ocupada: puede liberar (activar) o desactivar -->
                                                 <button class="btn btn-outline-success btn-sm"
                                                         onclick="cambiarEstadoCabania(<?= $cabania['id_cabania'] ?>, 1, '<?= addslashes($cabania['cabania_nombre']) ?>')"

@@ -44,7 +44,7 @@ class Consumo extends Model
         }
         
         if (isset($filters['estado']) && $filters['estado'] !== '') {
-            $where .= " AND c.consumo_estado = ?";
+            $where .= " AND c.rela_estadoconsumo = ?";
             $params[] = (int) $filters['estado'];
         }
         
@@ -54,6 +54,7 @@ class Consumo extends Model
                     LEFT JOIN producto prod ON c.rela_producto = prod.id_producto
                     LEFT JOIN servicio serv ON c.rela_servicio = serv.id_servicio
                     LEFT JOIN categoria cat ON prod.rela_categoria = cat.id_categoria
+                    LEFT JOIN estadoconsumo ec ON c.rela_estadoconsumo = ec.id_estadoconsumo
                     LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                     LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                     LEFT JOIN persona p ON h.rela_persona = p.id_persona
@@ -82,10 +83,11 @@ class Consumo extends Model
                            prod.producto_nombre,
                            serv.servicio_nombre,
                            cat.categoria_descripcion,
+                           ec.estadoconsumo_descripcion,
                            p.persona_nombre as huesped_nombre, 
                            p.persona_apellido as huesped_apellido
                     " . $baseSql . "
-                    ORDER BY c.id_consumo DESC
+                    ORDER BY c.consumo_fechahora DESC, c.id_consumo DESC
                     LIMIT $limit OFFSET $offset";
         
         $dataResult = $this->query($dataSql, $params);
@@ -140,7 +142,7 @@ class Consumo extends Model
         }
         
         if (isset($filters['estado']) && $filters['estado'] !== '') {
-            $where .= " AND c.consumo_estado = ?";
+            $where .= " AND c.rela_estadoconsumo = ?";
             $params[] = (int) $filters['estado'];
         }
         
@@ -149,6 +151,7 @@ class Consumo extends Model
                        prod.producto_nombre,
                        serv.servicio_nombre,
                        cat.categoria_descripcion,
+                       ec.estadoconsumo_descripcion,
                        p.persona_nombre as huesped_nombre, 
                        p.persona_apellido as huesped_apellido
                 FROM {$this->table} c
@@ -156,11 +159,12 @@ class Consumo extends Model
                 LEFT JOIN producto prod ON c.rela_producto = prod.id_producto
                 LEFT JOIN servicio serv ON c.rela_servicio = serv.id_servicio
                 LEFT JOIN categoria cat ON prod.rela_categoria = cat.id_categoria
+                LEFT JOIN estadoconsumo ec ON c.rela_estadoconsumo = ec.id_estadoconsumo
                 LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                 LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                 LEFT JOIN persona p ON h.rela_persona = p.id_persona
                 WHERE {$where}
-                ORDER BY c.id_consumo DESC";
+                ORDER BY c.consumo_fechahora DESC, c.id_consumo DESC";
         
         $result = $this->query($sql, $params);
         
@@ -183,7 +187,7 @@ class Consumo extends Model
     public function search($filters, $page = 1, $perPage = 10)
     {
         $offset = ($page - 1) * $perPage;
-        $where = "c.consumo_estado = 1";
+        $where = "c.rela_estadoconsumo = 3"; // 3 = Entregado
         
         if (!empty($filters['reserva'])) {
             $where .= " AND c.rela_reserva = " . intval($filters['reserva']);
@@ -218,7 +222,7 @@ class Consumo extends Model
      */
     public function getTotalPages($filters = [], $perPage = 10)
     {
-        $where = "consumo_estado = 1";
+        $where = "rela_estadoconsumo = 3"; // 3 = Entregado
         
         if (!empty($filters['reserva'])) {
             $where .= " AND rela_reserva = " . intval($filters['reserva']);
@@ -325,8 +329,8 @@ class Consumo extends Model
         $sql = "SELECT c.*, p.producto_nombre
                 FROM {$this->table} c
                 LEFT JOIN producto p ON c.rela_producto = p.id_producto
-                WHERE c.rela_reserva = {$reservaId} AND c.consumo_estado = 1
-                ORDER BY c.id_consumo DESC
+                WHERE c.rela_reserva = {$reservaId} AND c.rela_estadoconsumo IN (1,2,3)
+                ORDER BY c.consumo_fechahora DESC, c.id_consumo DESC
                 LIMIT {$perPage} OFFSET {$offset}";
         
         $result = $this->db->query($sql);
@@ -364,9 +368,9 @@ class Consumo extends Model
                 FROM {$this->table} c
                 LEFT JOIN producto p ON c.rela_producto = p.id_producto
                 WHERE c.rela_reserva = {$reservaId} 
-                AND c.consumo_estado = 1 
+                AND c.rela_estadoconsumo = 3
                 AND (c.consumo_facturado IS NULL OR c.consumo_facturado = 0)
-                ORDER BY c.id_consumo DESC";
+                ORDER BY c.consumo_fechahora DESC, c.id_consumo DESC";
         
         $result = $this->db->query($sql);
         $consumos = [];
@@ -413,7 +417,7 @@ class Consumo extends Model
                     SUM(consumo_total) as total_monto,
                     AVG(consumo_total) as promedio_consumo
                 FROM {$this->table}
-                WHERE consumo_estado = 1";
+                WHERE rela_estadoconsumo = 3"; // 3 = Entregado
         
         $result = $this->db->query($sql);
         return $result->fetch_assoc();
@@ -428,8 +432,8 @@ class Consumo extends Model
                 FROM {$this->table} c
                 LEFT JOIN producto p ON c.rela_producto = p.id_producto
                 LEFT JOIN reserva r ON c.rela_reserva = r.id_reserva
-                WHERE c.consumo_estado = 1
-                ORDER BY c.id_consumo DESC";
+                WHERE c.rela_estadoconsumo = 3
+                ORDER BY c.consumo_fechahora DESC, c.id_consumo DESC";
         
         $result = $this->db->query($sql);
         $consumos = [];
@@ -451,7 +455,7 @@ class Consumo extends Model
                        COUNT(c.id_consumo) as veces_pedido
                 FROM {$this->table} c
                 LEFT JOIN producto p ON c.rela_producto = p.id_producto
-                WHERE c.consumo_estado = 1
+                WHERE c.rela_estadoconsumo = 3
                 GROUP BY c.rela_producto
                 ORDER BY monto_total DESC";
         
@@ -492,7 +496,8 @@ class Consumo extends Model
                     'consumo_descripcion' => $consumo['consumo_descripcion'] ?? '',
                     'consumo_cantidad' => $cantidad,
                     'consumo_total' => $subtotal,
-                    'consumo_estado' => 1
+                    'consumo_fechahora' => date('Y-m-d H:i:s'),
+                    'rela_estadoconsumo' => 1 // 1 = Solicitud pendiente
                 ];
                 
                 // Añadir producto o servicio según corresponda
@@ -544,8 +549,8 @@ class Consumo extends Model
                 LEFT JOIN producto p ON c.rela_producto = p.id_producto
                 LEFT JOIN servicio s ON c.rela_servicio = s.id_servicio
                 WHERE c.rela_reserva = ?
-                AND c.consumo_estado = 1
-                ORDER BY c.id_consumo DESC";
+                AND c.rela_estadoconsumo IN (1,2,3)
+                ORDER BY c.consumo_fechahora DESC, c.id_consumo DESC";
         
         $result = $this->query($sql, [$reservaId]);
         
@@ -571,9 +576,8 @@ class Consumo extends Model
                 LEFT JOIN persona p ON h.rela_persona = p.id_persona
                 WHERE r.rela_cabania = ?
                 AND r.rela_estadoreserva IN (2, 3)
-                AND r.reserva_fhinicio <= NOW()
                 AND r.reserva_fhfin >= NOW()
-                ORDER BY r.reserva_fhinicio DESC
+                ORDER BY r.reserva_fhinicio ASC
                 LIMIT 1";
         
         $result = $this->query($sql, [$cabaniaId]);
@@ -833,7 +837,7 @@ class Consumo extends Model
      */
     public function deleteConsumo($consumoId)
     {
-        return $this->update($consumoId, ['consumo_estado' => 0]);
+        return $this->update($consumoId, ['rela_estadoconsumo' => 4]); // 4 = Anulado por falta de stock
     }
 
     /**
@@ -841,7 +845,9 @@ class Consumo extends Model
      */
     public function getCabaniaByCodigo($codigo)
     {
-        $sql = "SELECT * FROM cabania WHERE cabania_codigo = ? AND cabania_estado = 1 LIMIT 1";
+        // No filtrar por cabania_estado ya que ese campo indica disponibilidad (libre/ocupada)
+        // no si la cabaña está activa o inactiva en el sistema
+        $sql = "SELECT * FROM cabania WHERE cabania_codigo = ? LIMIT 1";
         $result = $this->query($sql, [$codigo]);
         return $result->fetch_assoc();
     }
@@ -863,6 +869,246 @@ class Consumo extends Model
     {
         $sql = "SELECT * FROM servicio WHERE id_servicio = " . intval($servicioId) . " LIMIT 1";
         $result = $this->db->query($sql);
+        return $result->fetch_assoc();
+    }
+
+    /**
+     * Verificar si un consumo tiene devoluciones asociadas
+     * 
+     * @param int $consumoId ID del consumo
+     * @return bool True si tiene devoluciones activas, false en caso contrario
+     */
+    public function hasDevolucion($consumoId)
+    {
+        $sql = "SELECT COUNT(*) as tiene_devolucion
+                FROM devoluciondetalle dd
+                WHERE dd.rela_consumo = ?
+                AND dd.devoluciondetalle_estado = 1
+                LIMIT 1";
+        
+        $result = $this->query($sql, [(int)$consumoId]);
+        $row = $result->fetch_assoc();
+        
+        return (int)$row['tiene_devolucion'] > 0;
+    }
+
+    /**
+     * Obtener todas las devoluciones relacionadas a un consumo
+     * 
+     * @param int $consumoId ID del consumo
+     * @return array Array de devoluciones con detalles completos
+     */
+    public function getDevolucionesRelacionadas($consumoId)
+    {
+        $sql = "SELECT dd.*,
+                       d.id_devolucion,
+                       d.devolucion_fechahora,
+                       d.devolucion_total,
+                       d.devolucion_cantidadproductos,
+                       d.devolucion_estado,
+                       c.consumo_cantidad as cantidad_original,
+                       c.consumo_total as total_original,
+                       COALESCE(p.producto_nombre, s.servicio_descripcion) as item_nombre
+                FROM devoluciondetalle dd
+                INNER JOIN devolucion d ON dd.rela_devolucion = d.id_devolucion
+                INNER JOIN consumo c ON dd.rela_consumo = c.id_consumo
+                LEFT JOIN producto p ON c.rela_producto = p.id_producto
+                LEFT JOIN servicio s ON c.rela_servicio = s.id_servicio
+                WHERE dd.rela_consumo = ?
+                AND dd.devoluciondetalle_estado = 1
+                ORDER BY d.devolucion_fechahora DESC";
+        
+        $result = $this->query($sql, [(int)$consumoId]);
+        
+        $devoluciones = [];
+        while ($row = $result->fetch_assoc()) {
+            $devoluciones[] = $row;
+        }
+        
+        return $devoluciones;
+    }
+
+    /**
+     * Obtener cantidad total devuelta de un consumo
+     * 
+     * @param int $consumoId ID del consumo
+     * @return int Cantidad total devuelta (suma de todas las devoluciones)
+     */
+    public function getCantidadDevuelta($consumoId)
+    {
+        $sql = "SELECT COALESCE(SUM(dd.devoluciondetalle_cantidad), 0) as cantidad_devuelta
+                FROM devoluciondetalle dd
+                INNER JOIN devolucion d ON dd.rela_devolucion = d.id_devolucion
+                WHERE dd.rela_consumo = ?
+                AND dd.devoluciondetalle_estado = 1
+                AND d.devolucion_estado = 1";
+        
+        $result = $this->query($sql, [(int)$consumoId]);
+        $row = $result->fetch_assoc();
+        
+        return (int)($row['cantidad_devuelta'] ?? 0);
+    }
+
+    /**
+     * Obtener cantidad disponible para devolución
+     * 
+     * @param int $consumoId ID del consumo
+     * @return int Cantidad que aún se puede devolver
+     */
+    public function getCantidadDisponibleParaDevolucion($consumoId)
+    {
+        $consumo = $this->find($consumoId);
+        
+        if (!$consumo) {
+            return 0;
+        }
+        
+        $cantidadOriginal = (int)$consumo['consumo_cantidad'];
+        $cantidadDevuelta = $this->getCantidadDevuelta($consumoId);
+        
+        return max(0, $cantidadOriginal - $cantidadDevuelta);
+    }
+
+    /**
+     * Validar si se puede realizar una devolución para un consumo
+     * 
+     * @param int $consumoId ID del consumo
+     * @param int $cantidadDevolver Cantidad que se desea devolver
+     * @return array ['valido' => bool, 'mensaje' => string, 'detalles' => array]
+     */
+    public function canDevolver($consumoId, $cantidadDevolver)
+    {
+        // Validar que el consumo exista
+        $consumo = $this->find($consumoId);
+        
+        if (!$consumo) {
+            return [
+                'valido' => false,
+                'mensaje' => 'El consumo no existe',
+                'detalles' => []
+            ];
+        }
+        
+        // Validar que el consumo esté entregado (estado 3)
+        if ($consumo['rela_estadoconsumo'] != 3) {
+            return [
+                'valido' => false,
+                'mensaje' => 'Solo se pueden devolver consumos entregados',
+                'detalles' => ['consumo' => $consumo]
+            ];
+        }
+        
+        // Validar cantidad
+        if ($cantidadDevolver <= 0) {
+            return [
+                'valido' => false,
+                'mensaje' => 'La cantidad a devolver debe ser mayor a cero',
+                'detalles' => ['cantidad_solicitada' => $cantidadDevolver]
+            ];
+        }
+        
+        // Obtener cantidades
+        $cantidadOriginal = (int)$consumo['consumo_cantidad'];
+        $cantidadDevuelta = $this->getCantidadDevuelta($consumoId);
+        $cantidadDisponible = $cantidadOriginal - $cantidadDevuelta;
+        
+        // Validar que no exceda la cantidad disponible
+        if ($cantidadDevolver > $cantidadDisponible) {
+            return [
+                'valido' => false,
+                'mensaje' => "No se puede devolver {$cantidadDevolver} unidades. Solo hay {$cantidadDisponible} disponibles para devolución",
+                'detalles' => [
+                    'cantidad_original' => $cantidadOriginal,
+                    'cantidad_devuelta' => $cantidadDevuelta,
+                    'cantidad_disponible' => $cantidadDisponible,
+                    'cantidad_solicitada' => $cantidadDevolver
+                ]
+            ];
+        }
+        
+        // Todas las validaciones pasaron
+        return [
+            'valido' => true,
+            'mensaje' => 'Se puede realizar la devolución',
+            'detalles' => [
+                'cantidad_original' => $cantidadOriginal,
+                'cantidad_devuelta' => $cantidadDevuelta,
+                'cantidad_disponible' => $cantidadDisponible,
+                'cantidad_solicitada' => $cantidadDevolver,
+                'consumo' => $consumo
+            ]
+        ];
+    }
+
+    /**
+     * Obtener información completa del consumo con estado de devolución
+     * 
+     * @param int $consumoId ID del consumo
+     * @return array|null Datos del consumo con información de devolución
+     */
+    public function getConsumoConInfoDevolucion($consumoId)
+    {
+        $consumo = $this->findWithRelations($consumoId);
+        
+        if (!$consumo) {
+            return null;
+        }
+        
+        // Agregar información de devolución
+        $consumo['tiene_devolucion'] = $this->hasDevolucion($consumoId);
+        $consumo['cantidad_devuelta'] = $this->getCantidadDevuelta($consumoId);
+        $consumo['cantidad_disponible_devolucion'] = $this->getCantidadDisponibleParaDevolucion($consumoId);
+        $consumo['devoluciones'] = $this->getDevolucionesRelacionadas($consumoId);
+        
+        return $consumo;
+    }
+
+    /**
+     * Obtener estadísticas de devoluciones de consumos
+     * 
+     * @param array $filters Filtros opcionales (reserva, producto, fechas)
+     * @return array Estadísticas agregadas
+     */
+    public function getEstadisticasDevoluciones($filters = [])
+    {
+        $where = "1=1";
+        $params = [];
+        
+        if (!empty($filters['reserva'])) {
+            $where .= " AND c.rela_reserva = ?";
+            $params[] = (int)$filters['reserva'];
+        }
+        
+        if (!empty($filters['producto'])) {
+            $where .= " AND c.rela_producto = ?";
+            $params[] = (int)$filters['producto'];
+        }
+        
+        if (!empty($filters['fecha_desde'])) {
+            $where .= " AND d.devolucion_fechahora >= ?";
+            $params[] = $filters['fecha_desde'];
+        }
+        
+        if (!empty($filters['fecha_hasta'])) {
+            $where .= " AND d.devolucion_fechahora <= ?";
+            $params[] = $filters['fecha_hasta'];
+        }
+        
+        $sql = "SELECT 
+                    COUNT(DISTINCT dd.rela_consumo) as total_consumos_con_devolucion,
+                    COUNT(DISTINCT dd.rela_devolucion) as total_devoluciones,
+                    SUM(dd.devoluciondetalle_cantidad) as total_unidades_devueltas,
+                    SUM(dd.devoluciondetalle_total) as total_monto_devuelto,
+                    AVG(dd.devoluciondetalle_cantidad) as promedio_unidades_por_devolucion,
+                    AVG(dd.devoluciondetalle_total) as promedio_monto_por_devolucion
+                FROM devoluciondetalle dd
+                INNER JOIN devolucion d ON dd.rela_devolucion = d.id_devolucion
+                INNER JOIN consumo c ON dd.rela_consumo = c.id_consumo
+                WHERE {$where}
+                AND dd.devoluciondetalle_estado = 1
+                AND d.devolucion_estado = 1";
+        
+        $result = $this->query($sql, $params);
         return $result->fetch_assoc();
     }
 }

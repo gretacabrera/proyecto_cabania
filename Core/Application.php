@@ -104,6 +104,9 @@ class Application
         $this->router->get('/about', 'HomeController@about');
         $this->router->any('/contact', 'HomeController@contact');
         
+        // API de notificaciones
+        $this->router->get('/api/notificaciones/pendientes', 'HomeController@getNotificacionesPendientes');
+        
         // Rutas del catálogo público
         $this->router->get('/catalogo', 'CatalogoController@index');
         $this->router->post('/catalogo/checkAvailability', 'CatalogoController@checkAvailability');

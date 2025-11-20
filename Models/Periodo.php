@@ -233,7 +233,7 @@ class Periodo extends Model
         }
         
         // Total de cabañas disponibles
-        $sqlCabanias = "SELECT COUNT(*) as total FROM cabania WHERE cabania_estado IN (1, 2)";
+        $sqlCabanias = "SELECT COUNT(*) as total FROM cabania WHERE rela_estadocabania IN (1, 2)";
         $resultCabanias = $this->db->query($sqlCabanias);
         $totalCabanias = (int)$resultCabanias->fetch_assoc()['total'];
         

@@ -182,7 +182,7 @@ class Inventario extends Model
                 INNER JOIN cabania c ON ic.rela_cabania = c.id_cabania
                 WHERE ic.rela_inventario = ? 
                 AND ic.inventariocabania_estado = 1
-                AND c.cabania_estado IN (1, 2)";
+                AND c.rela_estadocabania IN (1, 2)";
         
         $stmt = $this->db->prepare($sql);
         $stmt->bind_param('i', $inventarioId);

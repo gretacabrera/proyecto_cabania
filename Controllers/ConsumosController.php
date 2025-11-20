@@ -334,6 +334,10 @@ class ConsumosController extends Controller
     /**
      * Cambiar estado del consumo (AJAX)
      */
+    /**
+     * Cambiar estado de un consumo
+     * POST con parámetro 'nuevo_estado' (ID de estadoconsumo)
+     */
     public function cambiarEstado($id)
     {
         if (!$this->hasPermission('consumos')) {
@@ -342,19 +346,77 @@ class ConsumosController extends Controller
             return;
         }
 
-        $consumo = $this->consumoModel->find($id);
+        $consumo = $this->consumoModel->findWithRelations($id);
         if (!$consumo) {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'message' => 'Consumo no encontrado']);
             return;
         }
 
-        $nuevoEstado = $consumo['consumo_estado'] == 1 ? 0 : 1;
+        // Obtener nuevo estado desde POST o alternar estado simple (para compatibilidad)
+        $nuevoEstadoId = $this->post('nuevo_estado');
         
-        if ($this->consumoModel->update($id, ['consumo_estado' => $nuevoEstado])) {
-            $mensaje = $nuevoEstado == 1 ? 'Consumo activado' : 'Consumo desactivado';
+        if (!$nuevoEstadoId) {
+            // Comportamiento legacy: si no se especifica, alternar entre pendiente(1) y entregado(3)
+            $nuevoEstadoId = $consumo['rela_estadoconsumo'] == 1 ? 3 : 1;
+        }
+        
+        $estadoAnterior = $consumo['rela_estadoconsumo'];
+        
+        if ($this->consumoModel->update($id, ['rela_estadoconsumo' => $nuevoEstadoId])) {
+            // Detectar cambios a estados de anulación y enviar notificación
+            // Estado 4: anulado por falta de stock
+            // Estado 5: anulado por inconveniente
+            if (($nuevoEstadoId == 4 || $nuevoEstadoId == 5) && $estadoAnterior != $nuevoEstadoId) {
+                try {
+                    $reservaId = $consumo['rela_reserva'] ?? null;
+                    $usuarioId = null;
+                    
+                    if ($reservaId) {
+                        $reservaModel = new \App\Models\Reserva();
+                        $usuarioId = $reservaModel->getUsuarioIdFromReserva($reservaId);
+                    }
+                    
+                    if ($usuarioId) {
+                        $tipoInconveniente = $nuevoEstadoId == 4 
+                            ? 'Producto sin stock' 
+                            : 'Inconveniente con el pedido';
+                        
+                        $descripcion = $nuevoEstadoId == 4
+                            ? 'Lo sentimos, el producto solicitado no está disponible en este momento'
+                            : 'Ha surgido un inconveniente con tu pedido. Por favor contacta con recepción';
+                        
+                        $this->notificationService->notifyInconvenientePedido(
+                            $consumo,
+                            $tipoInconveniente,
+                            $descripcion,
+                            $usuarioId
+                        );
+                        error_log("Notificación de inconveniente enviada - Consumo: $id, Estado: $nuevoEstadoId, Usuario: $usuarioId");
+                    }
+                } catch (\Exception $e) {
+                    error_log("Error enviando notificación de inconveniente: " . $e->getMessage());
+                }
+            }
+            
+            // Mensajes según el estado
+            $mensajes = [
+                1 => 'Consumo marcado como pendiente',
+                2 => 'Consumo en proceso',
+                3 => 'Consumo entregado',
+                4 => 'Consumo anulado por falta de stock',
+                5 => 'Consumo anulado por inconveniente',
+                6 => 'Consumo cancelado'
+            ];
+            
+            $mensaje = $mensajes[$nuevoEstadoId] ?? 'Estado actualizado';
+            
             header('Content-Type: application/json');
-            echo json_encode(['success' => true, 'message' => $mensaje, 'nuevoEstado' => $nuevoEstado]);
+            echo json_encode([
+                'success' => true, 
+                'message' => $mensaje, 
+                'nuevoEstado' => $nuevoEstadoId
+            ]);
         } else {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'message' => 'Error al cambiar estado']);

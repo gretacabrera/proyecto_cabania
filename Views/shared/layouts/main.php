@@ -44,11 +44,47 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
     <script src="<?= asset('assets/js/main.js?v=' . time()) ?>"></script>
     <script src="<?= asset('assets/js/components.js?v=' . time()) ?>"></script>
     <script src="<?= asset('assets/js/forms.js') ?>"></script>
-    <script src="<?= asset('assets/js/public.js') ?>"></script><?php if (isset($isAdminArea) && $isAdminArea): ?>
+    <script src="<?= asset('assets/js/public.js') ?>"></script>
+    <script src="<?= asset('assets/js/notifications.js?v=3.0.2') ?>"></script><?php if (isset($isAdminArea) && $isAdminArea): ?>
     <script src="<?= asset('assets/js/admin.js') ?>"></script><?php endif; ?>
+    
+    <!-- Configuración de notificaciones Pusher -->
+    <?php 
+    // Inicializar Pusher solo para usuarios huéspedes autenticados
+    $userProfile = isset($_SESSION['perfil_nombre']) ? strtolower($_SESSION['perfil_nombre']) : '';
+    $isHuesped = ($userProfile === 'huesped' || $userProfile === 'huésped');
+    $userId = $_SESSION['usuario_id'] ?? null;
+    
+    // Debug: mostrar información en consola
+    echo "<!-- Debug Pusher -->\n";
+    echo "<!-- Usuario ID: " . ($userId ?? 'NO DEFINIDO') . " -->\n";
+    echo "<!-- Perfil: " . ($userProfile ?: 'NO DEFINIDO') . " -->\n";
+    echo "<!-- Es Huésped: " . ($isHuesped ? 'SÍ' : 'NO') . " -->\n";
+    echo "<!-- Sesión activa: " . (isset($_SESSION['usuario_id']) ? 'SÍ' : 'NO') . " -->\n";
+    ?>
+    <?php if (isset($_SESSION['usuario_id']) && $isHuesped): ?>
+    <script>
+        // Inicializar Pusher para usuarios huéspedes
+        document.addEventListener('DOMContentLoaded', function() {
+            <?php
+            $config = require __DIR__ . '/../../../Core/config.php';
+            $pusherKey = $config['pusher']['app_key'] ?? '';
+            $pusherCluster = $config['pusher']['app_cluster'] ?? 'us2';
+            ?>
+            
+            <?php if (!empty($pusherKey) && $userId): ?>
+                if (typeof NotificationService !== 'undefined') {
+                    NotificationService.init('<?= $pusherKey ?>', '<?= $pusherCluster ?>', <?= $userId ?>);
+                }
+            <?php endif; ?>
+        });
+    </script>
+    <?php endif; ?>
 
 </body>
 </html>

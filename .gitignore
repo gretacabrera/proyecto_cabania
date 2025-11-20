@@ -2,3 +2,4 @@
 scripts_ayuda/
 vendor/
 *.bak
+*.log

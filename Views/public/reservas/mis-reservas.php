@@ -1,9 +1,3 @@
-<?php
-$pageTitle = 'Mis Reservas';
-$pageStyles = ['public.css'];
-require_once __DIR__ . '/../../shared/layouts/header.php';
-?>
-
 <div class="container my-5">
     <div class="row justify-content-center">
         <div class="col-12 col-xl-10">
@@ -174,7 +168,6 @@ require_once __DIR__ . '/../../shared/layouts/header.php';
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Marcar Ingreso
@@ -226,6 +219,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-
-<?php require_once __DIR__ . '/../../shared/layouts/footer.php'; ?>
 ```

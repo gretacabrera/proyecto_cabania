@@ -44,9 +44,6 @@ class ReservasController extends Controller
         // Obtener perfil del usuario
         $userProfile = \App\Core\Auth::getUserProfile();
         
-        // Debug: Log para verificar qué perfil se está detectando
-        error_log("DEBUG ReservasController@index: Perfil detectado = '$userProfile'");
-        
         // Preparar datos base
         $page = (int) $this->get('page', 1);
         $filters = [
@@ -60,19 +57,14 @@ class ReservasController extends Controller
         // Datos específicos según el perfil
         switch ($userProfile) {
             case 'administrador':
-                error_log('DEBUG: Redirigiendo a indexAdministrador');
                 return $this->indexAdministrador($page, $filters);
             case 'cajero':
-                error_log('DEBUG: Redirigiendo a indexCajero');
                 return $this->indexCajero($page, $filters);
             case 'recepcionista':
-                error_log('DEBUG: Redirigiendo a indexRecepcionista');
                 return $this->indexRecepcionista($page, $filters);
             case 'huesped':
-                error_log('DEBUG: Redirigiendo a indexHuesped');
                 return $this->indexHuesped();
             default:
-                error_log("DEBUG: Perfil no autorizado: '$userProfile'");
                 $this->redirect('/', 'Perfil no autorizado para gestionar reservas', 'error');
         }
     }
@@ -170,19 +162,17 @@ class ReservasController extends Controller
      */
     private function indexHuesped($page = 1, $filters = [])
     {
-        // Debug: Log para verificar que se está llamando este método
-        error_log('DEBUG indexHuesped: Método llamado para usuario huésped');
-        
         // Obtener persona asociada al usuario
         $persona = $this->personaModel->findByUsuario(\App\Core\Auth::user());
         
         if (!$persona) {
-            error_log('DEBUG indexHuesped: No se encontró persona para el usuario');
             $this->redirect('/', 'No se encontraron datos de huésped', 'error');
             return;
         }
         
-        error_log('DEBUG indexHuesped: Persona encontrada, llamando a misReservas()');
+        // Verificar y notificar reservas con pago pendiente
+        $this->checkAndNotifyPagosPendientes(\App\Core\Auth::id());
+        
         // Para huéspedes, usar el método específico existente
         return $this->misReservas();
     }
@@ -242,19 +232,62 @@ class ReservasController extends Controller
 
     public function show($id)
     {
-        $this->requirePermission('reservas');
+        // Obtener reserva
         $result = $this->reservaModel->getWithDetails(1, 1, ['id' => $id]);
         if (empty($result['data'])) {
             return $this->view->error(404);
         }
         $reserva = $result['data'][0];
-        $consumos = $this->reservaModel->getConsumptions($id);
-        $data = [
-            'title' => 'Detalle de Reserva',
-            'reserva' => $reserva,
-            'consumos' => $consumos
-        ];
-        return $this->render('admin/operaciones/reservas/detalle', $data);
+        
+        // Verificar permisos según perfil
+        $perfil = \App\Core\Auth::getUserProfile();
+        
+        if ($perfil === 'huesped') {
+            // Huéspedes solo pueden ver sus propias reservas
+            $usuarioId = \App\Core\Auth::id();
+            $persona = $this->personaModel->findByUsuario(\App\Core\Auth::user());
+            
+            if (!$persona) {
+                return $this->view->error(403); // Acceso denegado
+            }
+            
+            // Verificar que el huésped pertenece a esta reserva
+            $sql = "SELECT COUNT(*) as count 
+                    FROM huesped_reserva hr
+                    INNER JOIN huesped h ON hr.rela_huesped = h.id_huesped
+                    WHERE hr.rela_reserva = ? AND h.rela_persona = ?";
+            $db = \App\Core\Database::getInstance();
+            $stmt = $db->prepare($sql);
+            $stmt->bind_param('ii', $id, $persona['id_persona']);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $row = $result->fetch_assoc();
+            
+            if ($row['count'] == 0) {
+                return $this->view->error(403); // No es su reserva
+            }
+            
+            // Renderizar vista para huésped
+            $consumos = $this->reservaModel->getConsumptions($id);
+            $data = [
+                'title' => 'Detalle de Reserva',
+                'reserva' => $reserva,
+                'consumos' => $consumos,
+                'isHuesped' => true
+            ];
+            return $this->render('admin/operaciones/reservas/detalle', $data);
+        } else {
+            // Administradores y recepcionistas requieren permiso
+            $this->requirePermission('reservas');
+            $consumos = $this->reservaModel->getConsumptions($id);
+            $data = [
+                'title' => 'Detalle de Reserva',
+                'reserva' => $reserva,
+                'consumos' => $consumos,
+                'isHuesped' => false
+            ];
+            return $this->render('admin/operaciones/reservas/detalle', $data);
+        }
     }
 
     public function edit($id)
@@ -286,14 +319,45 @@ class ReservasController extends Controller
         if (!$reserva) {
             return $this->view->error(404);
         }
+        
+        // Guardar estado anterior para detectar cambios
+        $estadoAnterior = $reserva['rela_estadoreserva'];
+        
         $data = [
             'reserva_fechainicio' => $this->post('reserva_fechainicio'),
             'reserva_fechafin' => $this->post('reserva_fechafin'),
             'reserva_cantidadpersonas' => $this->post('reserva_cantidadpersonas'),
             'reserva_observaciones' => $this->post('reserva_observaciones', '')
         ];
+        
+        // Si se envía un nuevo estado, agregarlo
+        if ($this->post('rela_estadoreserva')) {
+            $data['rela_estadoreserva'] = $this->post('rela_estadoreserva');
+        }
+        
         try {
             if ($this->reservaModel->update($id, $data)) {
+                // Detectar cambio a estado "Pendiente de Pago" (id=4)
+                if (isset($data['rela_estadoreserva']) && 
+                    $data['rela_estadoreserva'] == 4 && 
+                    $estadoAnterior != 4) {
+                    
+                    // Obtener usuario de la reserva y enviar notificación
+                    $usuarioId = $this->reservaModel->getUsuarioIdFromReserva($id);
+                    if ($usuarioId) {
+                        $reservaCompleta = $this->reservaModel->find($id);
+                        $montoPendiente = $reservaCompleta['reserva_montototal'] ?? 0;
+                        
+                        $this->notificationService->notifyPagoPendiente(
+                            $reservaCompleta,
+                            $montoPendiente,
+                            $usuarioId
+                        );
+                        
+                        error_log("Notificación de pago pendiente enviada por cambio de estado - Reserva: $id, Usuario: $usuarioId");
+                    }
+                }
+                
                 $this->redirect('/reservas', 'Reserva actualizada correctamente', 'exito');
             } else {
                 $this->redirect('/admin/operaciones/reservas/editar/' . $id, 'Error al actualizar la reserva', 'error');
@@ -340,7 +404,7 @@ class ReservasController extends Controller
         
         // Obtener información de la cabaña
         $cabania = $this->cabaniaModel->find($cabaniaId);
-        if (!$cabania || $cabania['cabania_estado'] != 1) {
+        if (!$cabania || $cabania['rela_estadocabania'] != 1) {
             $this->redirect('/catalogo', 'Error: cabaña no disponible', 'error');
             return;
         }
@@ -633,16 +697,12 @@ class ReservasController extends Controller
         $this->requireAuth();
         
         if (!$this->isPost()) {
-            error_log('DEBUG procederPago: Acceso no es POST, redirigiendo a catálogo');
             $this->redirect('/catalogo', 'Acceso no válido', 'error');
             return;
         }
         
-        error_log('DEBUG procederPago: Iniciando proceso de pago');
-        
         // Verificar que existan datos temporales de la reserva
         if (!isset($_SESSION['reserva_temporal']) && !isset($_SESSION['reserva_temporal_basica'])) {
-            error_log('DEBUG procederPago: No hay datos de reserva en sesión');
             $this->redirect('/catalogo', 'No hay datos de reserva disponibles', 'error');
             return;
         }
@@ -650,43 +710,33 @@ class ReservasController extends Controller
         // Usar datos completos si están disponibles, sino usar datos básicos
         if (isset($_SESSION['reserva_temporal'])) {
             $reservaTemporal = $_SESSION['reserva_temporal'];
-            error_log('DEBUG procederPago: Usando reserva_temporal completa');
             
             // Si los datos temporales no tienen reserva_id, crear la reserva
             if (!isset($reservaTemporal['reserva_id'])) {
-                error_log('DEBUG procederPago: No existe reserva_id, creando reserva temporal');
                 try {
                     $reservaId = $this->crearReservaTemporal($reservaTemporal);
                     $_SESSION['reserva_temporal']['reserva_id'] = $reservaId;
                     $reservaTemporal['reserva_id'] = $reservaId;
-                    error_log("DEBUG procederPago: Reserva temporal creada exitosamente con ID: $reservaId");
                 } catch (\Exception $e) {
                     error_log('ERROR procederPago creando reserva temporal: ' . $e->getMessage());
                     $this->redirect('/catalogo', 'Error al procesar la reserva: ' . $e->getMessage(), 'error');
                     return;
                 }
-            } else {
-                error_log('DEBUG procederPago: Reserva_id ya existe: ' . $reservaTemporal['reserva_id']);
             }
         } else {
             // Usar datos básicos como fallback
             $reservaTemporal = $_SESSION['reserva_temporal_basica'];
-            error_log('DEBUG procederPago: Usando reserva_temporal_basica');
             
             if (!isset($reservaTemporal['reserva_id'])) {
-                error_log('DEBUG procederPago: No existe reserva_id en datos básicos, creando reserva temporal');
                 try {
                     $reservaId = $this->crearReservaTemporal($reservaTemporal);
                     $_SESSION['reserva_temporal_basica']['reserva_id'] = $reservaId;
                     $reservaTemporal['reserva_id'] = $reservaId;
-                    error_log("DEBUG procederPago: Reserva temporal básica creada exitosamente con ID: $reservaId");
                 } catch (\Exception $e) {
                     error_log('ERROR procederPago creando reserva temporal básica: ' . $e->getMessage());
                     $this->redirect('/catalogo', 'Error al procesar la reserva: ' . $e->getMessage(), 'error');
                     return;
                 }
-            } else {
-                error_log('DEBUG procederPago: Reserva_id ya existe en datos básicos: ' . $reservaTemporal['reserva_id']);
             }
         }
         
@@ -698,8 +748,6 @@ class ReservasController extends Controller
             if (!isset($reservaTemporal['reserva_id'])) {
                 throw new \Exception('No se encontró el ID de la reserva después del proceso');
             }
-            
-            error_log('DEBUG procederPago: Redirigiendo a pasarela con reserva_id: ' . $reservaTemporal['reserva_id']);
             
             // Redirigir directamente a la pasarela de pago
             $this->redirect('/reservas/pasarela', '', 'info');
@@ -998,7 +1046,6 @@ class ReservasController extends Controller
             }
             
             $reservaId = intval($externalReference);
-            error_log("DEBUG: Reserva ID a procesar: $reservaId");
             
             // Verificar que la reserva existe
             $reserva = $this->reservaModel->find($reservaId);
@@ -1006,8 +1053,6 @@ class ReservasController extends Controller
                 error_log("ERROR: Reserva $reservaId no encontrada");
                 throw new \Exception('Reserva no encontrada');
             }
-            
-            error_log("DEBUG: Reserva encontrada - Estado actual: " . $reserva['rela_estadoreserva']);
             
             // Preparar datos de pago con método MercadoPago (id_metododepago=5 según tu BD)
             $paymentData = [
@@ -1022,12 +1067,8 @@ class ReservasController extends Controller
                 'merchant_order_id' => $merchantOrderId
             ];
             
-            error_log("DEBUG: Llamando a confirmPayment para reserva $reservaId");
-            
             // Confirmar el pago en el sistema
             $resultado = $this->reservaModel->confirmPayment($reservaId, $paymentData);
-            
-            error_log("DEBUG: Resultado de confirmPayment: " . json_encode($resultado));
             
             if (!$resultado['success']) {
                 error_log("ERROR: confirmPayment falló - Mensaje: " . ($resultado['message'] ?? 'Sin mensaje'));
@@ -1076,9 +1117,6 @@ class ReservasController extends Controller
                 'factura_id' => $resultado['factura_id'],
                 'payment_id_mp' => $paymentId
             ];
-            
-            error_log("DEBUG: Datos guardados en sesión: " . json_encode($_SESSION['reserva_exitosa']));
-            error_log("DEBUG: session_id actual: " . session_id());
             
             // Limpiar datos de sesión
             unset($_SESSION['reserva_temporal']);
@@ -1640,8 +1678,6 @@ class ReservasController extends Controller
             // TRANSACCIÓN CRÍTICA: Confirmar pago + Generar factura + Cambiar estados
             // Esta transacción incluye: insertar pago, generar factura, cambiar estado reserva y cabaña
             error_log("INFO: Iniciando transacción de confirmación de pago para reserva ID: $reservaId");
-            error_log("DEBUG: Datos de pago para transacción: " . json_encode($paymentData));
-            error_log("DEBUG: Datos temporales disponibles: " . json_encode($reservaTemporal));
             
             $resultado = $this->reservaModel->confirmPayment($reservaId, $paymentData);
             
@@ -1927,11 +1963,6 @@ class ReservasController extends Controller
                 throw new \Exception("No se pudieron obtener los datos completos de la reserva");
             }
             
-            // Debug: verificar que tenemos email válido
-            error_log("DEBUG: Datos de reserva para email - ID: " . $reservaCompleta['reserva_id'] . 
-                     ", Email: '" . ($reservaCompleta['huesped_email'] ?? 'VACÍO') . 
-                     "', Nombre: '" . ($reservaCompleta['huesped_nombre_completo'] ?? 'VACÍO') . "'");
-            
             // Si no hay email, intentar obtenerlo directamente de la BD como último recurso
             if (empty($reservaCompleta['huesped_email'])) {
                 error_log("WARNING: Intentando obtener email como último recurso para reserva " . $reserva['id_reserva']);
@@ -2033,7 +2064,6 @@ class ReservasController extends Controller
             
             // Obtener información del huésped con contactos
             $huesped = $this->obtenerHuespedReserva($reservaId);
-            error_log("DEBUG: Datos de huésped obtenidos: " . json_encode($huesped));
             
             // Obtener método de pago
             $metodoPago = $this->obtenerMetodoPagoReserva($reservaId);
@@ -2055,13 +2085,10 @@ class ReservasController extends Controller
                 $cantidadHuespedes['total'] = (int)$_SESSION['reserva_temporal']['cantidad_personas'];
                 $cantidadHuespedes['adultos'] = $cantidadHuespedes['total']; // Asumimos todos adultos para reservas online
                 $cantidadHuespedes['menores'] = 0;
-                error_log("DEBUG: Usando cantidad de huéspedes de sesión: " . $cantidadHuespedes['total']);
             } else {
                 // Para reservas manuales, contar desde huesped_reserva
                 $cantidadHuespedes = $this->contarHuespedesReserva($reservaId);
             }
-            
-            error_log("DEBUG: Cantidad de huéspedes para reserva $reservaId: " . json_encode($cantidadHuespedes));
             
             $resultado = [
                 'reserva_id' => $reserva['id_reserva'],
@@ -2080,9 +2107,6 @@ class ReservasController extends Controller
                 'total_huespedes' => $cantidadHuespedes['total'],
                 'estado_reserva' => 'Confirmada'
             ];
-            
-            // Log final para debug
-            error_log("DEBUG: Datos finales para email - Email: '" . $resultado['huesped_email'] . "', Nombre: '" . $resultado['huesped_nombre_completo'] . "', Adultos: " . $resultado['adultos'] . ", Menores: " . $resultado['menores'] . ", Monto: " . $resultado['monto_pagado'] . ", M\u00e9todo: " . $resultado['metodo_pago']);
             
             return $resultado;
             
@@ -2112,8 +2136,6 @@ class ReservasController extends Controller
             $stmt->bind_param("i", $reservaId);
             $stmt->execute();
             $result = $stmt->get_result()->fetch_assoc();
-            
-            error_log("DEBUG contarHuespedesReserva: Resultado para reserva $reservaId: " . json_encode($result));
             
             return [
                 'adultos' => intval($result['adultos'] ?? 0),
@@ -2152,8 +2174,6 @@ class ReservasController extends Controller
             $stmt->execute();
             $result = $stmt->get_result()->fetch_assoc();
             
-            error_log("DEBUG obtenerHuespedReserva: Resultado consulta: " . json_encode($result));
-            
             if ($result && !empty($result['email'])) {
                 error_log("INFO: Email encontrado para reserva $reservaId: " . $result['email']);
                 return $result;
@@ -2187,8 +2207,6 @@ class ReservasController extends Controller
             $stmt->execute();
             $result = $stmt->get_result()->fetch_assoc();
             
-            error_log("DEBUG obtenerMetodoPagoReserva: Resultado para reserva $reservaId: " . json_encode($result));
-            
             return $result ?: ['descripcion' => 'MercadoPago'];
             
         } catch (\Exception $e) {
@@ -2214,7 +2232,6 @@ class ReservasController extends Controller
             $row = $stmt->get_result()->fetch_assoc();
             
             $total = $row['total'] ?? 0;
-            error_log("DEBUG obtenerTotalPagadoReserva: Total para reserva $reservaId: $total");
             
             return $total;
             
@@ -2289,17 +2306,11 @@ class ReservasController extends Controller
         // NO requireAuth() - el usuario ya viene autenticado del flujo de pago
         // La sesión se mantiene del proceso anterior
         
-        // Debug: Verificar contenido de la sesión
-        error_log("=== INICIO método exito() ===");
-        error_log("DEBUG: Contenido de \$_SESSION['reserva_exitosa']: " . json_encode($_SESSION['reserva_exitosa'] ?? null));
-        error_log("DEBUG: ID por URL: " . ($this->get('id') ?? 'no hay'));
-        
         // Verificar que existan datos de reserva exitosa (por sesión o por parámetro)
         $reservaId = $this->get('id');
         
         if (!isset($_SESSION['reserva_exitosa']) && !$reservaId) {
             error_log("ERROR: No se encontró reserva_exitosa en sesión ni ID en URL");
-            error_log("DEBUG: Contenido completo de sesión: " . print_r($_SESSION, true));
             $this->redirect('/catalogo', 'No hay información de reserva disponible', 'error');
             return;
         }
@@ -2339,19 +2350,12 @@ class ReservasController extends Controller
             
             // Obtener email del huésped usando nuestros métodos mejorados
             try {
-                error_log("DEBUG EXITO: Intentando obtener datos completos para reserva " . $reservaExitosa['reserva_id']);
-                
                 $datosCompletos = $this->obtenerDatosCompletosReserva($reservaExitosa['reserva_id']);
-                
-                error_log("DEBUG EXITO: Datos completos obtenidos: " . json_encode($datosCompletos));
                 
                 if ($datosCompletos && !empty($datosCompletos['huesped_email'])) {
                     $reserva['huesped_email'] = $datosCompletos['huesped_email'];
                     $reserva['huesped_nombre_completo'] = $datosCompletos['huesped_nombre_completo'];
-                    error_log("DEBUG EXITO: Email asignado a reserva: " . $datosCompletos['huesped_email']);
                 } else {
-                    error_log("DEBUG EXITO: Datos completos vacíos, probando fallback");
-                    
                     // Fallback: usar método del modelo si existe
                     $reflection = new \ReflectionClass($this->reservaModel);
                     $method = $reflection->getMethod('getReservaCompleteData');
@@ -2359,17 +2363,10 @@ class ReservasController extends Controller
                     
                     $reservaCompleta = $method->invoke($this->reservaModel, $reservaExitosa['reserva_id']);
                     
-                    error_log("DEBUG EXITO: Fallback resultado: " . json_encode($reservaCompleta));
-                    
                     if ($reservaCompleta && isset($reservaCompleta['email_persona'])) {
                         $reserva['huesped_email'] = $reservaCompleta['email_persona'];
-                        error_log("DEBUG EXITO: Email obtenido via fallback: " . $reservaCompleta['email_persona']);
-                    } else {
-                        error_log("DEBUG EXITO: Fallback también falló");
                     }
                 }
-                
-                error_log("DEBUG EXITO: Estado final - reserva[huesped_email]: '" . ($reserva['huesped_email'] ?? 'NO DEFINIDO') . "'");
                 
             } catch (\Exception $e) {
                 error_log("ERROR EXITO: " . $e->getMessage() . " en línea " . $e->getLine());
@@ -2525,8 +2522,8 @@ class ReservasController extends Controller
                                    c.cabania_nombre, 
                                    c.cabania_codigo,
                                    er.estadoreserva_descripcion,
-                                   MAX(p.persona_nombre) as persona_nombre,
-                                   MAX(p.persona_apellido) as persona_apellido,
+                                   MAX(pf.personafisica_nombre) as persona_nombre,
+                                   MAX(pf.personafisica_apellido) as persona_apellido,
                                    f.factura_fechahora as fecha_confirmacion,
                                    f.factura_total as importe_total,
                                    COUNT(DISTINCT hr.rela_huesped) as total_huespedes
@@ -2536,6 +2533,7 @@ class ReservasController extends Controller
                             INNER JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                             INNER JOIN huesped h ON hr.rela_huesped = h.id_huesped
                             INNER JOIN persona p ON h.rela_persona = p.id_persona
+                            LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
                             LEFT JOIN factura f ON r.id_reserva = f.rela_reserva
                             WHERE p.id_persona = ?
                             GROUP BY r.id_reserva, r.reserva_fhinicio, r.reserva_fhfin, r.rela_estadoreserva, 
@@ -2995,8 +2993,6 @@ class ReservasController extends Controller
     private function crearReservaTemporal($datosReserva)
     {
         try {
-            error_log("DEBUG crearReservaTemporal: Iniciando con datos: " . json_encode($datosReserva));
-            
             // 0. Limpiar reservas pendientes expiradas antes de verificar disponibilidad
             $this->limpiarReservasExpiradas();
             
@@ -3014,29 +3010,20 @@ class ReservasController extends Controller
                 'reserva_fhexpiracion' => $fechaExpiracion,
                 'rela_persona' => $datosReserva['id_persona']
             ];
-            
-            error_log("DEBUG crearReservaTemporal: Datos de reserva preparados: " . json_encode($reservaData));
 
             // 2. Obtener servicios seleccionados de la sesión si existen
             $servicios = [];
             if (isset($datosReserva['servicios']) && !empty($datosReserva['servicios'])) {
                 $servicios = $datosReserva['servicios'];
-                error_log("DEBUG crearReservaTemporal: Servicios encontrados: " . count($servicios) . " servicios");
-                error_log("DEBUG crearReservaTemporal: Servicios detalle: " . json_encode($servicios));
-            } else {
-                error_log("DEBUG crearReservaTemporal: No hay servicios seleccionados");
             }
             
             // 3. Crear reserva con servicios en una sola transacción atómica
             // TRANSACCIÓN CRÍTICA: Reserva + Servicios como consumos en una sola operación
-            error_log("DEBUG crearReservaTemporal: Iniciando transacción para crear reserva con servicios");
             $reservaId = $this->reservaModel->createReservationWithServices($reservaData, $servicios);
             
             if (!$reservaId) {
                 throw new \Exception("Error al crear la reserva con servicios - ID nulo");
             }
-            
-            error_log("DEBUG crearReservaTemporal: Reserva creada exitosamente con ID: $reservaId");
             
             return $reservaId;
             
@@ -3077,8 +3064,8 @@ class ReservasController extends Controller
     private function getOcupacionPromedio()
     {
         $db = \App\Core\Database::getInstance();
-        $totalCabanias = $db->query("SELECT COUNT(*) as total FROM cabania WHERE cabania_estado IN (1, 2)")->fetch_assoc()['total'];
-        $ocupadas = $db->query("SELECT COUNT(*) as ocupadas FROM cabania WHERE cabania_estado = 2")->fetch_assoc()['ocupadas'];
+        $totalCabanias = $db->query("SELECT COUNT(*) as total FROM cabania WHERE rela_estadocabania IN (1, 2)")->fetch_assoc()['total'];
+        $ocupadas = $db->query("SELECT COUNT(*) as ocupadas FROM cabania WHERE rela_estadocabania = 2")->fetch_assoc()['ocupadas'];
         return $totalCabanias > 0 ? round(($ocupadas / $totalCabanias) * 100, 1) : 0;
     }
     
@@ -3582,6 +3569,29 @@ class ReservasController extends Controller
         ];
 
         return $this->render('admin/operaciones/reservas/detalle', $data);
+    }
+
+    /**
+     * Verificar y notificar pagos pendientes al usuario
+     */
+    private function checkAndNotifyPagosPendientes($usuarioId)
+    {
+        try {
+            $reservasPendientes = $this->reservaModel->getReservasPagoPendienteUsuario($usuarioId);
+            
+            if (!empty($reservasPendientes)) {
+                foreach ($reservasPendientes as $reserva) {
+                    $this->notificationService->notifyPagoPendiente(
+                        $reserva,
+                        $reserva['monto_pendiente'],
+                        $usuarioId
+                    );
+                    error_log("Notificación de pago pendiente enviada - Usuario: $usuarioId, Reserva: {$reserva['id_reserva']}, Monto: {$reserva['monto_pendiente']}");
+                }
+            }
+        } catch (\Exception $e) {
+            error_log("Error verificando pagos pendientes: " . $e->getMessage());
+        }
     }
 
 }

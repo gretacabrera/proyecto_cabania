@@ -77,7 +77,7 @@ class Ingreso extends Model
             // Cambiar estado de cabaña a ocupada (estado 2)
             $query2 = "UPDATE cabania 
                       LEFT JOIN reserva ON rela_cabania = id_cabania
-                      SET cabania_estado = 2
+                      SET rela_estadocabania = 2
                       WHERE id_reserva = " . (int)$id_reserva;
 
             $resultado2 = $this->db->query($query2);
@@ -321,7 +321,7 @@ class Ingreso extends Model
                                  FROM consumo co
                                  LEFT JOIN producto pr ON co.rela_producto = pr.id_producto
                                  WHERE co.rela_reserva = " . (int)$id_reserva . "
-                                 AND co.consumo_estado = 1
+                                 AND co.rela_estadoconsumo IN (1, 2, 3)
                                  ORDER BY co.id_consumo DESC";
 
                 $result_consumos = $this->db->query($query_consumos);

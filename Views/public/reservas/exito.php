@@ -29,10 +29,6 @@
                             <?php 
                             $emailMostrar = '';
                             
-                            // Debug temporal - remover en producción
-                            error_log("DEBUG Vista Éxito - Email en reserva: '" . ($reserva['huesped_email'] ?? 'VACÍO') . "'");
-                            error_log("DEBUG Vista Éxito - Email en sesión: '" . ($_SESSION['user']['usuario_email'] ?? 'VACÍO') . "'");
-                            
                             // Priorizar email del huésped de la reserva
                             if (!empty($reserva['huesped_email'])) {
                                 $emailMostrar = $reserva['huesped_email'];

@@ -33,7 +33,7 @@ class NotificationService
                     ]
                 );
             } catch (\Exception $e) {
-                error_log("Error inicializando Pusher: " . $e->getMessage());
+                error_log("ERROR inicializando Pusher: " . $e->getMessage());
                 $this->enabled = false;
             }
         }
@@ -59,8 +59,8 @@ class NotificationService
             'data' => [
                 'reserva_id' => $reserva['id_reserva'],
                 'cabania' => $reserva['cabania_nombre'] ?? 'N/A',
-                'fecha_inicio' => $reserva['reserva_fecha_inicio'],
-                'fecha_fin' => $reserva['reserva_fecha_fin'] ?? '',
+                'fecha_inicio' => $reserva['reserva_fhinicio'],
+                'fecha_fin' => $reserva['reserva_fhfin'] ?? '',
                 'dias_restantes' => $diasRestantes
             ],
             'url' => '/reservas',
@@ -69,6 +69,7 @@ class NotificationService
 
         // Enviar al canal privado del usuario
         $channel = $usuarioId ? "private-user-{$usuarioId}" : 'guest-notifications';
+        
         return $this->send($channel, 'reserva-cercana', $data);
     }
 
@@ -93,8 +94,7 @@ class NotificationService
                 'reserva_id' => $reserva['id_reserva'],
                 'cabania' => $reserva['cabania_nombre'] ?? 'N/A',
                 'monto_pendiente' => $montoPendiente,
-                'monto_total' => $reserva['reserva_monto_total'] ?? 0,
-                'fecha_inicio' => $reserva['reserva_fecha_inicio']
+                'fecha_inicio' => $reserva['reserva_fhinicio']
             ],
             'url' => '/reservas',
             'timestamp' => date('Y-m-d H:i:s'),
@@ -191,16 +191,15 @@ class NotificationService
     private function send($channel, $event, $data)
     {
         if (!$this->enabled) {
-            error_log("Pusher deshabilitado - No se envió notificación: {$event}");
             return false;
         }
 
         try {
             $result = $this->pusher->trigger($channel, $event, $data);
-            error_log("Notificación Pusher enviada: {$event} - " . json_encode($data));
             return $result;
         } catch (\Exception $e) {
-            error_log("Error enviando notificación Pusher: " . $e->getMessage());
+            error_log("❌ Error enviando notificación Pusher: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
             return false;
         }
     }

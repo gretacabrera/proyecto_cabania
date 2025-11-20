@@ -73,10 +73,19 @@ class PusherController extends Controller
 
             // Generar firma de autenticación
             $auth = $pusher->authorizeChannel($channelName, $socketId);
-
-            // Devolver respuesta de autenticación
+            
+            // authorizeChannel() devuelve una CADENA JSON, no un array
+            // No debemos hacer json_encode() de nuevo
             header('Content-Type: application/json');
-            echo json_encode($auth);
+            
+            if (is_string($auth)) {
+                // Ya es JSON, enviarlo directamente
+                echo $auth;
+            } else {
+                // Si por alguna razón no es string, convertir a JSON
+                $authJson = json_encode($auth);
+                echo $authJson;
+            }
 
         } catch (Exception $e) {
             error_log("Error autenticando canal Pusher: " . $e->getMessage());

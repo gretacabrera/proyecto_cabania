@@ -172,65 +172,79 @@ if (session_status() == PHP_SESSION_NONE) {
 <div style="height: 20px;"></div>
 
 <script>
-$(document).ready(function() {
-    const menuToggle = $('#menuToggle');
-    const navbarCollapse = $('#navbarNav');
+document.addEventListener('DOMContentLoaded', function() {
+    const menuToggle = document.getElementById('menuToggle');
+    const navbarCollapse = document.getElementById('navbarNav');
     let isMenuOpen = false;
     
+    if (!menuToggle || !navbarCollapse) return;
+    
     // Manejar click en el botón hamburguesa
-    menuToggle.on('click', function(e) {
+    menuToggle.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
         
         if (isMenuOpen) {
             // Cerrar menú
-            navbarCollapse.removeClass('show');
-            menuToggle.removeClass('active');
-            menuToggle.attr('aria-expanded', 'false');
+            navbarCollapse.classList.remove('show');
+            menuToggle.classList.remove('active');
+            menuToggle.setAttribute('aria-expanded', 'false');
             isMenuOpen = false;
         } else {
             // Abrir menú
-            navbarCollapse.addClass('show');
-            menuToggle.addClass('active');
-            menuToggle.attr('aria-expanded', 'true');
+            navbarCollapse.classList.add('show');
+            menuToggle.classList.add('active');
+            menuToggle.setAttribute('aria-expanded', 'true');
             isMenuOpen = true;
         }
     });
     
     // Cerrar menú móvil al hacer clic en un enlace
-    navbarCollapse.find('.nav-link:not(.dropdown-toggle)').on('click', function() {
-        if ($(window).width() <= 991) {
-            navbarCollapse.removeClass('show');
-            menuToggle.removeClass('active');
-            menuToggle.attr('aria-expanded', 'false');
-            isMenuOpen = false;
-        }
+    navbarCollapse.querySelectorAll('.nav-link:not(.dropdown-toggle)').forEach(link => {
+        link.addEventListener('click', function() {
+            if (window.innerWidth <= 991) {
+                navbarCollapse.classList.remove('show');
+                menuToggle.classList.remove('active');
+                menuToggle.setAttribute('aria-expanded', 'false');
+                isMenuOpen = false;
+            }
+        });
     });
     
     // Manejar dropdowns personalizados
-    $('.dropdown-toggle').on('click', function(e) {
-        const currentDropdown = $(this).next('.dropdown-menu');
-        const isCurrentlyOpen = currentDropdown.hasClass('show');
-        
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // Cerrar TODOS los dropdowns primero
-        $('.dropdown-menu.show').removeClass('show')
-            .prev('.dropdown-toggle').attr('aria-expanded', 'false');
-        
-        // Si el dropdown actual no estaba abierto, abrirlo
-        if (!isCurrentlyOpen) {
-            currentDropdown.addClass('show');
-            $(this).attr('aria-expanded', 'true');
-        }
+    document.querySelectorAll('.dropdown-toggle').forEach(toggle => {
+        toggle.addEventListener('click', function(e) {
+            const currentDropdown = this.nextElementSibling;
+            if (!currentDropdown || !currentDropdown.classList.contains('dropdown-menu')) return;
+            
+            const isCurrentlyOpen = currentDropdown.classList.contains('show');
+            
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Cerrar TODOS los dropdowns primero
+            document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+                menu.classList.remove('show');
+                const toggle = menu.previousElementSibling;
+                if (toggle) toggle.setAttribute('aria-expanded', 'false');
+            });
+            
+            // Si el dropdown actual no estaba abierto, abrirlo
+            if (!isCurrentlyOpen) {
+                currentDropdown.classList.add('show');
+                this.setAttribute('aria-expanded', 'true');
+            }
+        });
     });
     
     // Cerrar dropdowns al hacer clic fuera
-    $(document).on('click', function(e) {
-        if (!$(e.target).closest('.dropdown').length) {
-            $('.dropdown-menu.show').removeClass('show')
-                .prev('.dropdown-toggle').attr('aria-expanded', 'false');
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.dropdown')) {
+            document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+                menu.classList.remove('show');
+                const toggle = menu.previousElementSibling;
+                if (toggle) toggle.setAttribute('aria-expanded', 'false');
+            });
         }
     });
 });

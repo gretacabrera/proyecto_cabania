@@ -341,7 +341,7 @@ class Producto extends Model
                        SUM(consumo_cantidad) as cantidad_vendida,
                        SUM(consumo_total) as ingresos_total
                 FROM consumo 
-                WHERE rela_producto = ? AND consumo_estado = 1";
+                WHERE rela_producto = ? AND rela_estadoconsumo IN (1, 2, 3)";
         
         $result = $this->query($sql, [$productId]);
         $consumos = $result->fetch_assoc();

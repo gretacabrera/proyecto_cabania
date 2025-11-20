@@ -56,7 +56,8 @@ class HomeController extends Controller
         $personaModel = new Persona();
         
         // Buscar datos de la persona por usuario
-        $persona = $personaModel->findByUsuario(Auth::user());
+        $nombreUsuario = Auth::user();
+        $persona = $personaModel->findByUsuario($nombreUsuario);
         
         $data = [
             'showReservaButton' => true,
@@ -69,6 +70,9 @@ class HomeController extends Controller
             // Obtener reservas próximas del huésped
             $data['reservas_proximas'] = $this->getReservasProximasHuesped($persona['id_persona']);
             $data['reservas_historial'] = $this->getHistorialReservasHuesped($persona['id_persona']);
+            
+            // Verificar y notificar reservas cercanas
+            $this->checkAndNotifyReservasCercanas(Auth::id());
         }
         
         return $data;
@@ -192,14 +196,14 @@ class HomeController extends Controller
     private function getTotalCabanias()
     {
         $db = \App\Core\Database::getInstance();
-        $result = $db->query("SELECT COUNT(*) as total FROM cabania WHERE cabania_estado IN (1, 2)");
+        $result = $db->query("SELECT COUNT(*) as total FROM cabania WHERE rela_estadocabania IN (1, 2)");
         return $result->fetch_assoc()['total'];
     }
     
     private function getOcupacionActual()
     {
         $db = \App\Core\Database::getInstance();
-        $result = $db->query("SELECT COUNT(*) as ocupadas FROM cabania WHERE cabania_estado = 2");
+        $result = $db->query("SELECT COUNT(*) as ocupadas FROM cabania WHERE rela_estadocabania = 2");
         $ocupadas = $result->fetch_assoc()['ocupadas'];
         $total = $this->getTotalCabanias();
         return $total > 0 ? round(($ocupadas / $total) * 100, 1) : 0;
@@ -534,5 +538,111 @@ class HomeController extends Controller
         ];
 
         return $this->render('public/home/contact', $data, 'main');
+    }
+
+    /**
+     * Verificar y notificar reservas cercanas al usuario
+     */
+    private function checkAndNotifyReservasCercanas($usuarioId)
+    {
+        try {
+            // Inicializar array de notificaciones enviadas en la sesión si no existe
+            if (!isset($_SESSION['notificaciones_enviadas_hoy'])) {
+                $_SESSION['notificaciones_enviadas_hoy'] = [];
+                $_SESSION['notificaciones_fecha'] = date('Y-m-d');
+            }
+            
+            // Resetear si cambió el día
+            if ($_SESSION['notificaciones_fecha'] !== date('Y-m-d')) {
+                $_SESSION['notificaciones_enviadas_hoy'] = [];
+                $_SESSION['notificaciones_fecha'] = date('Y-m-d');
+            }
+            
+            $reservaModel = new \App\Models\Reserva();
+            $notificationService = new \App\Core\NotificationService();
+            
+            // Obtener reservas próximas del usuario (próximos 7 días)
+            $reservasCercanas = $reservaModel->getReservasCercanasUsuario($usuarioId, 7);
+            
+            if (!empty($reservasCercanas)) {
+                foreach ($reservasCercanas as $reserva) {
+                    $diasRestantes = (int)$reserva['dias_hasta_checkin'];
+                    $reservaId = $reserva['id_reserva'];
+                    
+                    // Crear clave única para esta notificación
+                    $notificationKey = "reserva_cercana_{$reservaId}_{$diasRestantes}";
+                    
+                    // Solo enviar si no se ha enviado hoy
+                    if (!in_array($notificationKey, $_SESSION['notificaciones_enviadas_hoy'])) {
+                        // Enviar notificación
+                        $notificationService->notifyReservaCercana($reserva, $diasRestantes, $usuarioId);
+                        
+                        // Marcar como enviada
+                        $_SESSION['notificaciones_enviadas_hoy'][] = $notificationKey;
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            error_log("ERROR HomeController - checkAndNotifyReservasCercanas: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Endpoint para obtener notificaciones pendientes del día
+     */
+    public function getNotificacionesPendientes()
+    {
+        header('Content-Type: application/json');
+        
+        if (!Auth::check()) {
+            echo json_encode(['success' => false, 'message' => 'No autenticado']);
+            return;
+        }
+        
+        try {
+            $usuarioId = Auth::id();
+            $reservaModel = new \App\Models\Reserva();
+            
+            // Obtener reservas cercanas (próximos 7 días)
+            $reservasCercanas = $reservaModel->getReservasCercanasUsuario($usuarioId, 7);
+            
+            $notificaciones = [];
+            
+            foreach ($reservasCercanas as $reserva) {
+                $diasRestantes = (int)$reserva['dias_hasta_checkin'];
+                
+                $notificaciones[] = [
+                    'tipo' => 'reserva-cercana',
+                    'title' => 'Reserva próxima',
+                    'message' => "Tu reserva en {$reserva['cabania_nombre']} es " . 
+                                 ($diasRestantes == 0 ? 'hoy' : ($diasRestantes == 1 ? 'mañana' : "en {$diasRestantes} días")),
+                    'icon' => 'fa-calendar-check',
+                    'color' => 'info',
+                    'url' => '/proyecto_cabania/reservas/' . $reserva['id_reserva'],
+                    'timestamp' => time() * 1000, // JavaScript usa milisegundos
+                    'data' => [
+                        'reserva_id' => $reserva['id_reserva'],
+                        'cabania_nombre' => $reserva['cabania_nombre'],
+                        'dias_restantes' => $diasRestantes,
+                        'fecha_inicio' => $reserva['reserva_fhinicio']
+                    ]
+                ];
+            }
+            
+            echo json_encode([
+                'success' => true,
+                'notificaciones' => $notificaciones,
+                'total' => count($notificaciones)
+            ]);
+            
+        } catch (\Exception $e) {
+            error_log("ERROR HomeController - getNotificacionesPendientes: " . $e->getMessage());
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error al cargar notificaciones',
+                'notificaciones' => [],
+                'total' => 0
+            ]);
+        }
     }
 }

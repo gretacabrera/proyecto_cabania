@@ -316,7 +316,7 @@ class Revision extends Model
         error_log("Filas afectadas reserva: " . $stmt->affected_rows);
         
         // Cambiar estado de la cabaña a "Libre" (1)
-        $sqlUpdateCabania = "UPDATE cabania SET cabania_estado = 1 WHERE id_cabania = ?";
+        $sqlUpdateCabania = "UPDATE cabania SET rela_estadocabania = 1 WHERE id_cabania = ?";
         $stmt = $db->prepare($sqlUpdateCabania);
         $stmt->bind_param('i', $idCabania);
         $stmt->execute();

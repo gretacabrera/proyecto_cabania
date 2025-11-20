@@ -29,7 +29,7 @@ if (!isset($cabania) || empty($cabania)) {
                     <i class="fas fa-edit"></i> Editar Cabaña
                 </a>
                 
-                <?php if ($cabania['cabania_estado'] == 1): ?>
+                <?php if ($cabania['rela_estadocabania'] == 1): ?>
                     <!-- Cabaña activa: puede marcar como ocupada o desactivar -->
                     <button class="btn btn-info ms-2"
                         onclick="cambiarEstadoCabania(<?= $cabania['id_cabania'] ?>, 2, '<?= addslashes($cabania['cabania_nombre']) ?>')">
@@ -39,7 +39,7 @@ if (!isset($cabania) || empty($cabania)) {
                         onclick="cambiarEstadoCabania(<?= $cabania['id_cabania'] ?>, 0, '<?= addslashes($cabania['cabania_nombre']) ?>')">
                         <i class="fas fa-ban"></i> Desactivar
                     </button>
-                <?php elseif ($cabania['cabania_estado'] == 2): ?>
+                <?php elseif ($cabania['rela_estadocabania'] == 2): ?>
                     <!-- Cabaña ocupada: puede liberar o desactivar -->
                     <button class="btn btn-success ms-2"
                         onclick="cambiarEstadoCabania(<?= $cabania['id_cabania'] ?>, 1, '<?= addslashes($cabania['cabania_nombre']) ?>')">
@@ -87,12 +87,12 @@ if (!isset($cabania) || empty($cabania)) {
                         <div class="col-md-3">
                             <div class="info-group">
                                 <label class="info-label">
-                                    <?php if ($cabania['cabania_estado'] == 1): ?>
+                                    <?php if ($cabania['rela_estadocabania'] == 1): ?>
                                         <i class="fas fa-toggle-on text-success"></i> Estado: 
                                         <span class="badge bg-success badge-lg">
-                                            <i class="fas fa-check"></i> Activa
+                                            <i class="fas fa-check"></i> Disponible
                                         </span>
-                                    <?php elseif ($cabania['cabania_estado'] == 2): ?>
+                                    <?php elseif ($cabania['rela_estadocabania'] == 2): ?>
                                         <i class="fas fa-home text-warning"></i> Estado: 
                                         <span class="badge bg-warning badge-lg">
                                             <i class="fas fa-home"></i> Ocupada

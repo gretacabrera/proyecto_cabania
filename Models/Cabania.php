@@ -17,7 +17,7 @@ class Cabania extends Model
      */
     public function getActive()
     {
-        return $this->findAll("cabania_estado IN (1, 2)", "cabania_nombre");
+        return $this->findAll("rela_estadocabania IN (1, 2)", "cabania_nombre");
     }
 
     /**
@@ -25,7 +25,7 @@ class Cabania extends Model
      */
     public function getAvailable()
     {
-        return $this->findAll("cabania_estado = 1", "cabania_nombre");
+        return $this->findAll("rela_estadocabania = 1", "cabania_nombre");
     }
 
     /**
@@ -33,7 +33,7 @@ class Cabania extends Model
      */
     public function getOccupied()
     {
-        return $this->findAll("cabania_estado = 2", "cabania_nombre");
+        return $this->findAll("rela_estadocabania = 2", "cabania_nombre");
     }
 
     /**
@@ -41,7 +41,7 @@ class Cabania extends Model
      */
     public function findByCapacity($capacity)
     {
-        return $this->findAll("cabania_capacidad >= $capacity AND cabania_estado = 1", "cabania_precio");
+        return $this->findAll("cabania_capacidad >= $capacity AND rela_estadocabania = 1", "cabania_precio");
     }
 
     /**
@@ -49,7 +49,7 @@ class Cabania extends Model
      */
     public function findByPriceRange($minPrice, $maxPrice)
     {
-        return $this->findAll("cabania_precio BETWEEN $minPrice AND $maxPrice AND cabania_estado = 1", "cabania_precio");
+        return $this->findAll("cabania_precio BETWEEN $minPrice AND $maxPrice AND rela_estadocabania = 1", "cabania_precio");
     }
 
     /**
@@ -92,7 +92,7 @@ class Cabania extends Model
         }
         
         if (isset($filters['cabania_estado']) && $filters['cabania_estado'] !== '') {
-            $where .= " AND cabania_estado = ?";
+            $where .= " AND rela_estadocabania = ?";
             $params[] = (int) $filters['cabania_estado'];
         }
         
@@ -139,7 +139,7 @@ class Cabania extends Model
         }
         
         if (isset($filters['cabania_estado']) && $filters['cabania_estado'] !== '') {
-            $where .= " AND cabania_estado = ?";
+            $where .= " AND rela_estadocabania = ?";
             $params[] = (int) $filters['cabania_estado'];
         }
         
@@ -265,7 +265,7 @@ class Cabania extends Model
     {
         // Validar que la cabaña existe y está activa
         $cabania = $this->find($cabaniaId);
-        if (!$cabania || $cabania['cabania_estado'] != 1) {
+        if (!$cabania || $cabania['rela_estadocabania'] != 1) {
             throw new \Exception('Cabaña no encontrada o inactiva');
         }
 
@@ -328,7 +328,7 @@ class Cabania extends Model
      */
     public function getPaginated($page = 1, $perPage = 10, $filters = [])
     {
-        $whereConditions = ['cabania_estado = 1']; // Solo cabañas activas
+        $whereConditions = ['rela_estadocabania = 1']; // Solo cabañas activas
         
         if (!empty($filters['capacidad'])) {
             $whereConditions[] = "cabania_capacidad >= " . (int)$filters['capacidad'];
@@ -354,7 +354,7 @@ class Cabania extends Model
     public function isCabinActive($cabaniaId)
     {
         $cabania = $this->find($cabaniaId);
-        return $cabania && $cabania['cabania_estado'] == 1;
+        return $cabania && $cabania['rela_estadocabania'] == 1;
     }
 
     /**

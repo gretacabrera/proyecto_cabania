@@ -47,6 +47,23 @@ class Auth
         $_SESSION["usuario_nombre"] = $username;
         if ($userId) {
             $_SESSION["usuario_id"] = $userId;
+            
+            // Guardar también el perfil en sesión para notificaciones Pusher
+            $db = Database::getInstance();
+            $stmt = $db->prepare("SELECT p.perfil_descripcion, p.id_perfil
+                                 FROM perfil p
+                                 LEFT JOIN usuario u ON u.rela_perfil = p.id_perfil
+                                 WHERE u.id_usuario = ?");
+            
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            if ($row = $result->fetch_assoc()) {
+                $_SESSION["perfil_nombre"] = $row["perfil_descripcion"];
+                $_SESSION["perfil_id"] = $row["id_perfil"];
+                error_log("Sesión iniciada - Usuario: $username, Perfil: " . $row["perfil_descripcion"]);
+            }
         }
     }
 
@@ -142,11 +159,8 @@ class Auth
     public static function getUserProfile()
     {
         if (!self::check()) {
-            error_log('DEBUG Auth::getUserProfile: Usuario no autenticado');
             return null;
         }
-
-        error_log('DEBUG Auth::getUserProfile: Usuario autenticado: ' . $_SESSION["usuario_nombre"]);
 
         $db = Database::getInstance();
         $stmt = $db->prepare("SELECT p.perfil_descripcion
@@ -159,10 +173,7 @@ class Auth
         $result = $stmt->get_result();
         $row = $result->fetch_assoc();
         
-        $profile = $row ? $row["perfil_descripcion"] : null;
-        error_log('DEBUG Auth::getUserProfile: Perfil detectado: ' . ($profile ?? 'NULL'));
-        
-        return $profile;
+        return $row ? $row["perfil_descripcion"] : null;
     }
 
     /**

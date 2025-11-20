@@ -10,34 +10,62 @@ let notificationsEnabled = false;
 // Inicializar Pusher
 function initPusher(appKey, cluster, userId) {
     if (!appKey || !cluster || !userId) {
-        console.log('Pusher no configurado - Notificaciones deshabilitadas');
         return;
     }
 
     try {
+        // PRIMERO: Cargar notificaciones pendientes del servidor
+        loadPendingNotifications();
+        
+        // Construir authEndpoint con la ruta completa
+        const baseUrl = window.location.origin + window.location.pathname.split('/').slice(0, -1).join('/');
+        const authEndpoint = window.location.origin + '/proyecto_cabania/pusher/auth';
+        
         pusher = new Pusher(appKey, {
             cluster: cluster,
             encrypted: true,
-            authEndpoint: '/pusher/auth',
-            auth: {
-                headers: {
-                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
-                }
+            authorizer: function(channel, options) {
+                return {
+                    authorize: function(socketId, callback) {
+                        // Usar fetch con credentials: 'include' para enviar cookies
+                        fetch(authEndpoint, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            credentials: 'include', // CRÍTICO: incluir cookies de sesión
+                            body: 'socket_id=' + encodeURIComponent(socketId) + '&channel_name=' + encodeURIComponent(channel.name)
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('HTTP ' + response.status);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            callback(null, data); // null = sin error, data = {auth: "..."}
+                        })
+                        .catch(error => {
+                            // NO llamar callback con error para evitar mostrar alert al usuario
+                            // El canal simplemente no se suscribirá, pero la app seguirá funcionando
+                        });
+                    }
+                };
             }
         });
-
+        
         // Suscribirse al canal privado del usuario
         const channelName = `private-user-${userId}`;
         channel = pusher.subscribe(channelName);
         
         // Manejar errores de suscripción
         channel.bind('pusher:subscription_error', function(status) {
-            console.error('Error suscripción Pusher:', status);
             notificationsEnabled = false;
+            // NO mostrar alert al usuario, solo loguear
         });
         
         channel.bind('pusher:subscription_succeeded', function() {
-            console.log('Suscrito correctamente a canal privado:', channelName);
             notificationsEnabled = true;
         });
 
@@ -47,7 +75,6 @@ function initPusher(appKey, cluster, userId) {
         channel.bind('pedido-cabania', handlePedidoCabania);
         channel.bind('inconveniente-pedido', handleInconvenientePedido);
 
-        console.log('Pusher inicializado correctamente para usuario:', userId);
     } catch (error) {
         console.error('Error inicializando Pusher:', error);
         notificationsEnabled = false;
@@ -57,85 +84,102 @@ function initPusher(appKey, cluster, userId) {
 // Manejadores de eventos específicos
 
 function handleReservaCercana(data) {
-    console.log('Notificación: Reserva cercana', data);
-    
-    // Mostrar notificación visual
-    showNotification(data);
-    
-    // Agregar a la lista de notificaciones
-    addNotificationToList(data);
-    
-    // Reproducir sonido suave (opcional)
-    playNotificationSound('info');
+    try {
+        // Mostrar notificación visual
+        showNotification(data);
+        
+        // Agregar a la lista de notificaciones
+        addNotificationToList(data);
+        
+        // Reproducir sonido suave (opcional)
+        playNotificationSound('info');
+    } catch (error) {
+        console.error('⚠️ Error mostrando notificación:', error);
+    }
 }
 
 function handlePagoPendiente(data) {
-    console.log('Notificación: Pago pendiente', data);
-    
-    showNotification(data);
-    addNotificationToList(data);
-    
-    // Sonido de advertencia
-    playNotificationSound('warning');
+    try {
+        showNotification(data);
+        addNotificationToList(data);
+        
+        // Sonido de advertencia
+        playNotificationSound('warning');
+    } catch (error) {
+        console.error('⚠️ Error mostrando notificación:', error);
+    }
 }
 
 function handlePedidoCabania(data) {
-    console.log('Notificación: Pedido en cabaña', data);
-    
-    showNotification(data);
-    addNotificationToList(data);
-    
-    // Sonido más llamativo para pedidos urgentes
-    if (data.sound) {
-        playNotificationSound('success');
+    try {
+        showNotification(data);
+        addNotificationToList(data);
+        
+        // Sonido más llamativo para pedidos urgentes
+        if (data.sound) {
+            playNotificationSound('success');
+        }
+    } catch (error) {
+        console.error('⚠️ Error mostrando notificación:', error);
     }
 }
 
 function handleInconvenientePedido(data) {
-    console.log('Notificación: Inconveniente con pedido', data);
-    
-    showNotification(data);
-    addNotificationToList(data);
-    
-    // Sonido urgente
-    if (data.sound) {
-        playNotificationSound('error');
+    try {
+        showNotification(data);
+        addNotificationToList(data);
+        
+        // Sonido urgente
+        if (data.sound) {
+            playNotificationSound('error');
+        }
+    } catch (error) {
+        console.error('⚠️ Error mostrando notificación:', error);
     }
 }
 
 // Mostrar notificación tipo toast
 function showNotification(data) {
-    const iconClass = data.icon || 'fa-bell';
-    const colorClass = data.color || 'info';
-    
-    // Crear elemento de notificación
-    const notification = $(`
-        <div class="alert alert-${colorClass} alert-dismissible fade show notification-toast" 
-             role="alert" 
-             style="position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 350px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-            <div class="d-flex align-items-center">
-                <i class="fas ${iconClass} fa-2x mr-3"></i>
-                <div class="flex-grow-1">
-                    <strong class="d-block">${data.title}</strong>
-                    <small>${data.message}</small>
+    try {
+        const iconClass = data.icon || 'fa-bell';
+        const colorClass = data.color || 'info';
+        
+        // Validar que tenemos los datos necesarios
+        if (!data.title || !data.message) {
+            return;
+        }
+        
+        // Crear elemento de notificación
+        const notification = $(`
+            <div class="alert alert-${colorClass} alert-dismissible fade show notification-toast" 
+                 role="alert" 
+                 style="position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 350px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                <div class="d-flex align-items-center">
+                    <i class="fas ${iconClass} fa-2x mr-3"></i>
+                    <div class="flex-grow-1">
+                        <strong class="d-block">${data.title}</strong>
+                        <small>${data.message}</small>
+                    </div>
+                    <button type="button" class="close ml-2" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
                 </div>
-                <button type="button" class="close ml-2" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                ${data.url ? `<hr><a href="${data.url}" class="alert-link">Ver detalle <i class="fas fa-arrow-right"></i></a>` : ''}
             </div>
-            ${data.url ? `<hr><a href="${data.url}" class="alert-link">Ver detalle <i class="fas fa-arrow-right"></i></a>` : ''}
-        </div>
-    `);
-    
-    // Agregar al DOM
-    $('body').append(notification);
-    
-    // Auto-cerrar después de 8 segundos
-    setTimeout(() => {
-        notification.fadeOut(500, function() {
-            $(this).remove();
-        });
-    }, 8000);
+        `);
+        
+        // Agregar al DOM
+        $('body').append(notification);
+        
+        // Auto-cerrar después de 8 segundos
+        setTimeout(() => {
+            notification.fadeOut(500, function() {
+                $(this).remove();
+            });
+        }, 8000);
+    } catch (error) {
+        console.error('❌ Error en showNotification:', error);
+    }
 }
 
 // Agregar notificación a la lista del dropdown
@@ -143,12 +187,10 @@ function addNotificationToList(data) {
     const badge = $('#notifications-badge');
     const list = $('#notifications-list');
     
-    if (!list.length) return;
-    
-    // Incrementar contador
-    let count = parseInt(badge.text()) || 0;
-    count++;
-    badge.text(count).removeClass('d-none');
+    if (!list.length) {
+        console.warn('Lista de notificaciones no encontrada en el DOM');
+        return;
+    }
     
     // Crear item de notificación
     const iconClass = data.icon || 'fa-bell';
@@ -171,17 +213,28 @@ function addNotificationToList(data) {
         </a>
     `);
     
-    // Agregar al inicio de la lista
+    // Si la lista tiene el mensaje "Sin notificaciones", eliminarlo
     if (list.children('.dropdown-item').first().hasClass('text-center')) {
-        // Reemplazar mensaje "Sin notificaciones"
         list.empty();
     }
     
+    // Agregar al inicio de la lista
     list.prepend(item);
+    
+    // Actualizar contador después de agregar a la lista
+    const count = list.children('.notification-item').length;
+    if (count > 0) {
+        badge.text(count).removeClass('d-none');
+    } else {
+        badge.addClass('d-none').text('0');
+    }
     
     // Limitar a 10 notificaciones
     if (list.children().length > 10) {
         list.children().last().remove();
+        // Recalcular contador después de limitar
+        const newCount = list.children('.notification-item').length;
+        badge.text(newCount);
     }
 }
 
@@ -275,6 +328,38 @@ function markNotificationAsRead(notificationId) {
 function clearAllNotifications() {
     $('#notifications-list').html('<div class="dropdown-item text-center text-muted">Sin notificaciones</div>');
     $('#notifications-badge').addClass('d-none').text('0');
+}
+
+/**
+ * Cargar notificaciones pendientes del servidor
+ */
+function loadPendingNotifications() {
+    const endpoint = window.location.origin + '/proyecto_cabania/api/notificaciones/pendientes';
+    
+    fetch(endpoint, {
+        method: 'GET',
+        credentials: 'include', // Incluir cookies de sesión
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('HTTP ' + response.status);
+        }
+        return response.json();
+    })
+    .then(result => {
+        if (result.success && result.notificaciones && result.notificaciones.length > 0) {
+            // Agregar cada notificación a la lista
+            result.notificaciones.forEach(notif => {
+                addNotificationToList(notif);
+            });
+        }
+    })
+    .catch(error => {
+        // No mostrar error al usuario, simplemente no cargar notificaciones
+    });
 }
 
 // Exportar funciones globales

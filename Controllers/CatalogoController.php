@@ -103,7 +103,7 @@ class CatalogoController extends Controller
             
             // Verificar si la cabaña existe y está activa usando el modelo
             $cabania = $cabaniaModel->find($cabaniaId);
-            if (!$cabania || $cabania['cabania_estado'] != 1) {
+            if (!$cabania || $cabania['rela_estadocabania'] != 1) {
                 $this->json(['error' => 'Cabaña no encontrada'], 404);
                 return;
             }
