@@ -376,38 +376,60 @@ class ConsumosController extends Controller
         $estadoAnterior = $consumo['rela_estadoconsumo'];
         
         if ($this->consumoModel->update($id, ['rela_estadoconsumo' => $nuevoEstadoId])) {
-            // Detectar cambios a estados de anulación y enviar notificación
-            // Estado 4: anulado por falta de stock
-            // Estado 5: anulado por inconveniente
-            if (($nuevoEstadoId == 4 || $nuevoEstadoId == 5) && $estadoAnterior != $nuevoEstadoId) {
+            // Enviar notificaciones según el cambio de estado
+            if ($estadoAnterior != $nuevoEstadoId) {
                 try {
                     $reservaId = $consumo['rela_reserva'] ?? null;
                     $usuarioId = null;
+                    $reserva = null;
                     
                     if ($reservaId) {
                         $reservaModel = new \App\Models\Reserva();
                         $usuarioId = $reservaModel->getUsuarioIdFromReserva($reservaId);
+                        $reserva = $reservaModel->find($reservaId);
                     }
                     
-                    if ($usuarioId) {
-                        $tipoInconveniente = $nuevoEstadoId == 4 
-                            ? 'Producto sin stock' 
-                            : 'Inconveniente con el pedido';
-                        
-                        $descripcion = $nuevoEstadoId == 4
-                            ? 'Lo sentimos, el producto solicitado no está disponible en este momento'
-                            : 'Ha surgido un inconveniente con tu pedido. Por favor contacta con recepción';
-                        
-                        $this->notificationService->notifyInconvenientePedido(
-                            $consumo,
-                            $tipoInconveniente,
-                            $descripcion,
-                            $usuarioId
-                        );
-                        error_log("Notificación de inconveniente enviada - Consumo: $id, Estado: $nuevoEstadoId, Usuario: $usuarioId");
+                    if ($usuarioId && $reserva) {
+                        // Estado 2: Confirmado (en proceso)
+                        if ($nuevoEstadoId == 2) {
+                            $this->notificationService->notifyPedidoConfirmado(
+                                $consumo,
+                                $reserva,
+                                $usuarioId
+                            );
+                            error_log("Notificación de pedido confirmado enviada - Consumo: $id, Usuario: $usuarioId");
+                        }
+                        // Estado 3: Entregado
+                        elseif ($nuevoEstadoId == 3) {
+                            $this->notificationService->notifyPedidoEntregado(
+                                $consumo,
+                                $reserva,
+                                $usuarioId
+                            );
+                            error_log("Notificación de pedido entregado enviada - Consumo: $id, Usuario: $usuarioId");
+                        }
+                        // Estado 4: Anulado por falta de stock
+                        // Estado 5: Anulado por inconveniente
+                        elseif ($nuevoEstadoId == 4 || $nuevoEstadoId == 5) {
+                            $tipoInconveniente = $nuevoEstadoId == 4 
+                                ? 'Producto sin stock' 
+                                : 'Inconveniente con el pedido';
+                            
+                            $descripcion = $nuevoEstadoId == 4
+                                ? 'Lo sentimos, el producto solicitado no está disponible en este momento'
+                                : 'Ha surgido un inconveniente con tu pedido. Por favor contacta con recepción';
+                            
+                            $this->notificationService->notifyInconvenientePedido(
+                                $consumo,
+                                $tipoInconveniente,
+                                $descripcion,
+                                $usuarioId
+                            );
+                            error_log("Notificación de inconveniente enviada - Consumo: $id, Estado: $nuevoEstadoId, Usuario: $usuarioId");
+                        }
                     }
                 } catch (\Exception $e) {
-                    error_log("Error enviando notificación de inconveniente: " . $e->getMessage());
+                    error_log("Error enviando notificación de estado: " . $e->getMessage());
                 }
             }
             

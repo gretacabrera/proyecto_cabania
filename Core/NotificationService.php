@@ -158,6 +158,84 @@ class NotificationService
     }
 
     /**
+     * Enviar notificación de pedido confirmado (en proceso) al huésped
+     * 
+     * @param array $consumo Datos del consumo
+     * @param array $reserva Datos de la reserva
+     * @param int $usuarioId ID del usuario huésped
+     */
+    public function notifyPedidoConfirmado($consumo, $reserva, $usuarioId = null)
+    {
+        if (!$this->enabled) return;
+
+        $productoServicio = $consumo['producto_nombre'] ?? $consumo['servicio_nombre'] ?? 'tu pedido';
+        $cantidad = floatval($consumo['consumo_cantidad'] ?? 1);
+
+        $data = [
+            'type' => 'pedido_confirmado',
+            'title' => '✅ Pedido Confirmado',
+            'message' => "Tu pedido de {$productoServicio} está en proceso de preparación",
+            'icon' => 'fa-check-circle',
+            'color' => 'success',
+            'data' => [
+                'consumo_id' => $consumo['id_consumo'],
+                'reserva_id' => $reserva['id_reserva'],
+                'cabania' => $reserva['cabania_nombre'] ?? 'N/A',
+                'producto_servicio' => $productoServicio,
+                'cantidad' => $cantidad,
+                'fecha_confirmacion' => date('Y-m-d H:i:s')
+            ],
+            'url' => '/reservas/' . $reserva['id_reserva'] . '/consumos',
+            'timestamp' => date('Y-m-d H:i:s'),
+            'priority' => 'normal',
+            'sound' => true
+        ];
+
+        // Enviar al canal privado del usuario
+        $channel = $usuarioId ? "private-user-{$usuarioId}" : 'guest-notifications';
+        return $this->send($channel, 'pedido-confirmado', $data);
+    }
+
+    /**
+     * Enviar notificación de pedido entregado al huésped
+     * 
+     * @param array $consumo Datos del consumo
+     * @param array $reserva Datos de la reserva
+     * @param int $usuarioId ID del usuario huésped
+     */
+    public function notifyPedidoEntregado($consumo, $reserva, $usuarioId = null)
+    {
+        if (!$this->enabled) return;
+
+        $productoServicio = $consumo['producto_nombre'] ?? $consumo['servicio_nombre'] ?? 'tu pedido';
+        $cantidad = floatval($consumo['consumo_cantidad'] ?? 1);
+
+        $data = [
+            'type' => 'pedido_entregado',
+            'title' => '🎉 ¡Pedido Entregado!',
+            'message' => "Tu pedido de {$productoServicio} ha sido entregado. ¡Disfrútalo!",
+            'icon' => 'fa-check-double',
+            'color' => 'success',
+            'data' => [
+                'consumo_id' => $consumo['id_consumo'],
+                'reserva_id' => $reserva['id_reserva'],
+                'cabania' => $reserva['cabania_nombre'] ?? 'N/A',
+                'producto_servicio' => $productoServicio,
+                'cantidad' => $cantidad,
+                'fecha_entrega' => date('Y-m-d H:i:s')
+            ],
+            'url' => '/reservas/' . $reserva['id_reserva'] . '/consumos',
+            'timestamp' => date('Y-m-d H:i:s'),
+            'priority' => 'normal',
+            'sound' => true
+        ];
+
+        // Enviar al canal privado del usuario
+        $channel = $usuarioId ? "private-user-{$usuarioId}" : 'guest-notifications';
+        return $this->send($channel, 'pedido-entregado', $data);
+    }
+
+    /**
      * Enviar notificación de inconveniente con pedido al huésped
      * 
      * @param array $consumo Datos del consumo

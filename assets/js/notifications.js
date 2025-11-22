@@ -89,6 +89,8 @@ function initPusher(appKey, cluster, userId) {
         channel.bind('reserva-cercana', handleReservaCercana);
         channel.bind('pago-pendiente', handlePagoPendiente);
         channel.bind('pedido-cabania', handlePedidoCabania);
+        channel.bind('pedido-confirmado', handlePedidoConfirmado);
+        channel.bind('pedido-entregado', handlePedidoEntregado);
         channel.bind('inconveniente-pedido', handleInconvenientePedido);
         console.log('✅ Eventos vinculados correctamente');
 
@@ -142,6 +144,38 @@ function handlePedidoCabania(data) {
         addNotificationToList(data);
         
         // Sonido más llamativo para pedidos urgentes
+        if (data.sound) {
+            playNotificationSound('success');
+        }
+    } catch (error) {
+        console.error('⚠️ Error mostrando notificación:', error);
+    }
+}
+
+function handlePedidoConfirmado(data) {
+    try {
+        console.log('✅ NOTIFICACIÓN PEDIDO CONFIRMADO RECIBIDA:', data);
+        
+        showNotification(data);
+        addNotificationToList(data);
+        
+        // Sonido de confirmación
+        if (data.sound) {
+            playNotificationSound('success');
+        }
+    } catch (error) {
+        console.error('⚠️ Error mostrando notificación:', error);
+    }
+}
+
+function handlePedidoEntregado(data) {
+    try {
+        console.log('🎉 NOTIFICACIÓN PEDIDO ENTREGADO RECIBIDA:', data);
+        
+        showNotification(data);
+        addNotificationToList(data);
+        
+        // Sonido de celebración
         if (data.sound) {
             playNotificationSound('success');
         }
