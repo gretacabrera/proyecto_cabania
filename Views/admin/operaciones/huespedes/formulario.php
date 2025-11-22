@@ -288,22 +288,24 @@ $isEdit = isset($huesped) && !empty($huesped);
                             <hr class="my-4">
                         <?php endif; ?>
 
-                        <!-- Ubicación (solo en edición) -->
-                        <?php if ($isEdit): ?>
+                        <!-- Ubicación -->
                         <div class="form-group">
-                            <label for="huesped_ubicacion">
-                                <i class="fas fa-map-marker-alt"></i> Ubicación Actual
+                            <label for="rela_ubicacion">
+                                <i class="fas fa-map-marker-alt"></i> Ubicación
                             </label>
-                            <input type="text" class="form-control form-control-sm" id="huesped_ubicacion" 
-                                   name="huesped_ubicacion" 
-                                   value="<?= htmlspecialchars($huesped['huesped_ubicacion'] ?? '') ?>"
-                                   maxlength="100" 
-                                   placeholder="Ej: Habitación 205, Cabaña Norte">
+                            <select class="form-select form-select-sm" id="rela_ubicacion" name="rela_ubicacion" required>
+                                <option value="">-- Seleccionar Ubicación --</option>
+                                <?php foreach ($ubicaciones as $ubicacion): ?>
+                                    <option value="<?= $ubicacion['id_ubicacion'] ?>" 
+                                        <?= (isset($huesped['rela_ubicacion']) && $huesped['rela_ubicacion'] == $ubicacion['id_ubicacion']) ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($ubicacion['ubicacion_descripcion']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
                             <small class="form-text text-muted">
-                                Ubicación opcional donde se encuentra alojado actualmente el huésped
+                                Seleccione el país de origen del huésped
                             </small>
                         </div>
-                        <?php endif; ?>
 
                         <!-- Botones de acción -->
                         <div class="form-group mt-4">

@@ -56,14 +56,14 @@ class Huesped extends Model
             $params[] = '%' . $filters['persona_nombre'] . '%';
         }
         
-        if (!empty($filters['persona_apellido'])) {
-            $where .= " AND p.persona_apellido LIKE ?";
-            $params[] = '%' . $filters['persona_apellido'] . '%';
+        if (!empty($filters['persona_dni'])) {
+            $where .= " AND p.persona_dni LIKE ?";
+            $params[] = '%' . $filters['persona_dni'] . '%';
         }
         
-        if (!empty($filters['huesped_ubicacion'])) {
-            $where .= " AND h.huesped_ubicacion LIKE ?";
-            $params[] = '%' . $filters['huesped_ubicacion'] . '%';
+        if (!empty($filters['rela_ubicacion'])) {
+            $where .= " AND h.rela_ubicacion = ?";
+            $params[] = (int) $filters['rela_ubicacion'];
         }
         
         if (isset($filters['huesped_estado']) && $filters['huesped_estado'] !== '') {
@@ -113,10 +113,11 @@ class Huesped extends Model
         $total = (int) $totalRow['total'];
         
         // Query para obtener TODOS los registros (sin LIMIT)
-        $dataSql = "SELECT h.*, p.persona_nombre, p.persona_apellido, p.persona_fechanac, p.persona_direccion
+        $dataSql = "SELECT h.*, p.persona_nombre, p.persona_apellido, p.persona_fechanac, p.persona_direccion, u.ubicacion_descripcion
                     FROM {$this->table} h
                     INNER JOIN persona p ON h.rela_persona = p.id_persona
-                    WHERE $where 
+                    LEFT JOIN ubicacion u ON h.rela_ubicacion = u.id_ubicacion
+                    WHERE $where
                     ORDER BY p.persona_apellido ASC, p.persona_nombre ASC";
         $dataResult = $this->queryWithParams($dataSql, $params);
         
@@ -150,9 +151,10 @@ class Huesped extends Model
         
         // Query para obtener registros
         $orderClause = $orderBy ? "ORDER BY $orderBy" : '';
-        $dataSql = "SELECT h.*, p.persona_nombre, p.persona_apellido, p.persona_fechanac, p.persona_direccion
+        $dataSql = "SELECT h.*, p.persona_nombre, p.persona_apellido, p.persona_fechanac, p.persona_direccion, u.ubicacion_descripcion
                     FROM {$this->table} h
                     INNER JOIN persona p ON h.rela_persona = p.id_persona
+                    LEFT JOIN ubicacion u ON h.rela_ubicacion = u.id_ubicacion
                     WHERE $where $orderClause LIMIT $limit OFFSET $offset";
         $dataResult = $this->queryWithParams($dataSql, $params);
         

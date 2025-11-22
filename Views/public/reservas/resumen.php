@@ -92,7 +92,7 @@
                                     <div class="row g-3">
                                         <div class="col-md-12">
                                             <small class="text-muted d-block">Nombre Completo</small>
-                                            <strong><?= htmlspecialchars($persona['persona_nombre'] . ' ' . $persona['persona_apellido']) ?></strong>
+                                            <strong><?= htmlspecialchars($huesped['nombre'] . ' ' . $huesped['apellido']) ?></strong>
                                         </div>
                                         <div class="col-md-6">
                                             <small class="text-muted d-block"><i class="fas fa-phone me-1"></i>Teléfono</small>

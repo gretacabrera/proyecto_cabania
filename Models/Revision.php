@@ -283,9 +283,11 @@ class Revision extends Model
         // Obtener total de costos de revisión
         $totalRevision = $this->getTotalCostoByReserva($idReserva);
 
-        // Obtener total pagado
-        $sqlPagado = "SELECT COALESCE(SUM(pago_total), 0) as total_pagado
-                      FROM pago WHERE rela_reserva = ?";
+        // Obtener total pagado (pago está vinculado a factura, no directamente a reserva)
+        $sqlPagado = "SELECT COALESCE(SUM(p.pago_total), 0) as total_pagado
+                      FROM pago p
+                      INNER JOIN factura f ON p.rela_factura = f.id_factura
+                      WHERE f.rela_reserva = ?";
         $stmt = $db->prepare($sqlPagado);
         $stmt->bind_param('i', $idReserva);
         $stmt->execute();

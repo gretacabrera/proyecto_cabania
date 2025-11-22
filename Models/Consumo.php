@@ -568,12 +568,14 @@ class Consumo extends Model
     public function getReservaActivaByCabania($cabaniaId)
     {
         $sql = "SELECT r.*, c.cabania_nombre, c.cabania_codigo,
-                       p.persona_nombre, p.persona_apellido
+                       pf.personafisica_nombre AS persona_nombre, 
+                       pf.personafisica_apellido AS persona_apellido
                 FROM reserva r
                 LEFT JOIN cabania c ON r.rela_cabania = c.id_cabania
                 LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                 LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                 LEFT JOIN persona p ON h.rela_persona = p.id_persona
+                LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
                 WHERE r.rela_cabania = ?
                 AND r.rela_estadoreserva IN (2, 3)
                 AND r.reserva_fhfin >= NOW()

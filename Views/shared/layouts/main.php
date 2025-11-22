@@ -50,7 +50,7 @@
     <script src="<?= asset('assets/js/components.js?v=' . time()) ?>"></script>
     <script src="<?= asset('assets/js/forms.js') ?>"></script>
     <script src="<?= asset('assets/js/public.js') ?>"></script>
-    <script src="<?= asset('assets/js/notifications.js?v=3.0.2') ?>"></script><?php if (isset($isAdminArea) && $isAdminArea): ?>
+    <script src="<?= asset('assets/js/notifications.js?v=3.0.7') ?>"></script><?php if (isset($isAdminArea) && $isAdminArea): ?>
     <script src="<?= asset('assets/js/admin.js') ?>"></script><?php endif; ?>
     
     <!-- Configuración de notificaciones Pusher -->
@@ -79,6 +79,31 @@
             
             <?php if (!empty($pusherKey) && $userId): ?>
                 if (typeof NotificationService !== 'undefined') {
+                    console.log('🔔 Iniciando Pusher...');
+                    
+                    // Registrar callback para cuando la suscripción esté lista
+                    NotificationService.onSubscriptionReady(function() {
+                        console.log('📡 Suscripción confirmada. Verificando pagos pendientes...');
+                        
+                        // Llamar al endpoint que verifica pagos pendientes
+                        fetch('<?= url('/api/verificar-pagos-pendientes') ?>', {
+                            method: 'POST',
+                            credentials: 'include',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        }).then(response => response.json())
+                          .then(data => {
+                              if (data.success) {
+                                  console.log('✅ Verificación de pagos pendientes completada');
+                              } else {
+                                  console.warn('⚠️ Error en verificación:', data.message);
+                              }
+                          })
+                          .catch(error => console.error('❌ Error verificando pagos:', error));
+                    });
+                    
+                    // Inicializar Pusher (el callback se ejecutará cuando esté listo)
                     NotificationService.init('<?= $pusherKey ?>', '<?= $pusherCluster ?>', <?= $userId ?>);
                 }
             <?php endif; ?>

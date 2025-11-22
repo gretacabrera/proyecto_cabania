@@ -50,16 +50,18 @@ class NotificationService
     {
         if (!$this->enabled) return;
 
+        $cabaniaNombre = $reserva['cabania_nombre'] ?? 'la cabaña';
+        
         $data = [
             'type' => 'reserva_cercana',
             'title' => '¡Tu Reserva se Acerca!',
-            'message' => "Tu check-in en {$reserva['cabania_nombre']} es en {$diasRestantes} día(s)",
+            'message' => "Tu check-in en {$cabaniaNombre} es en {$diasRestantes} día(s)",
             'icon' => 'fa-calendar-check',
             'color' => 'info',
             'data' => [
                 'reserva_id' => $reserva['id_reserva'],
-                'cabania' => $reserva['cabania_nombre'] ?? 'N/A',
-                'fecha_inicio' => $reserva['reserva_fhinicio'],
+                'cabania' => $cabaniaNombre,
+                'fecha_inicio' => $reserva['reserva_fhinicio'] ?? '',
                 'fecha_fin' => $reserva['reserva_fhfin'] ?? '',
                 'dias_restantes' => $diasRestantes
             ],
@@ -86,10 +88,10 @@ class NotificationService
 
         $data = [
             'type' => 'pago_pendiente',
-            'title' => 'Pago Pendiente de Confirmación',
-            'message' => "Tu pago de $" . number_format($montoPendiente, 2) . " está siendo procesado",
-            'icon' => 'fa-clock',
-            'color' => 'warning',
+            'title' => '⚠️ PAGO URGENTE REQUERIDO',
+            'message' => "¡Completa tu pago de $" . number_format($montoPendiente, 2) . " para confirmar tu reserva!",
+            'icon' => 'fa-exclamation-triangle',
+            'color' => 'danger',
             'data' => [
                 'reserva_id' => $reserva['id_reserva'],
                 'cabania' => $reserva['cabania_nombre'] ?? 'N/A',
@@ -98,7 +100,8 @@ class NotificationService
             ],
             'url' => '/reservas',
             'timestamp' => date('Y-m-d H:i:s'),
-            'priority' => 'high'
+            'priority' => 'urgent',
+            'sound' => true
         ];
 
         // Enviar al canal privado del usuario
@@ -117,20 +120,29 @@ class NotificationService
     {
         if (!$this->enabled) return;
 
-        $items = isset($consumo['items']) ? count($consumo['items']) : 1;
+        // Calcular cantidad total sumando todas las cantidades de items
+        $cantidadTotal = 0;
+        if (isset($consumo['items']) && is_array($consumo['items'])) {
+            foreach ($consumo['items'] as $item) {
+                $cantidadTotal += floatval($item['consumo_cantidad'] ?? 1);
+            }
+        } else {
+            $cantidadTotal = 1;
+        }
+        
         $total = $consumo['consumo_monto_total'] ?? 0;
 
         $data = [
             'type' => 'pedido_cabania',
-            'title' => '¡Pedido Confirmado!',
-            'message' => "Tu pedido de {$items} producto(s)/servicio(s) fue registrado - $" . number_format($total, 2),
-            'icon' => 'fa-check-circle',
-            'color' => 'success',
+            'title' => '¡Pedido Registrado!',
+            'message' => "Tu pedido de {$cantidadTotal} producto(s)/servicio(s) fue registrado - $" . number_format($total, 2),
+            'icon' => 'fa-receipt',
+            'color' => 'info',
             'data' => [
                 'consumo_id' => $consumo['id_consumo'] ?? null,
                 'reserva_id' => $reserva['id_reserva'],
                 'cabania' => $reserva['cabania_nombre'] ?? 'N/A',
-                'items_count' => $items,
+                'items_count' => $cantidadTotal,
                 'monto_total' => $total,
                 'fecha_pedido' => $consumo['consumo_fecha'] ?? date('Y-m-d H:i:s')
             ],
@@ -191,11 +203,14 @@ class NotificationService
     private function send($channel, $event, $data)
     {
         if (!$this->enabled) {
+            error_log("⚠️ NotificationService deshabilitado - No se envió notificación");
             return false;
         }
 
         try {
+            error_log("📤 Enviando notificación Pusher - Canal: $channel, Evento: $event");
             $result = $this->pusher->trigger($channel, $event, $data);
+            error_log("✅ Notificación Pusher enviada exitosamente - Resultado: " . json_encode($result));
             return $result;
         } catch (\Exception $e) {
             error_log("❌ Error enviando notificación Pusher: " . $e->getMessage());

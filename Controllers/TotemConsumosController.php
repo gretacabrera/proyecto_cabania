@@ -200,7 +200,8 @@ class TotemConsumosController extends Controller
                     'rela_servicio' => null,
                     'consumo_descripcion' => 'Producto: ' . $producto['producto_nombre'],
                     'consumo_cantidad' => $cantidad,
-                    'consumo_precio_unitario' => $producto['producto_precio']
+                    'consumo_precio_unitario' => $producto['producto_precio'],
+                    'consumo_total' => $producto['producto_precio'] * $cantidad
                 ];
             } elseif ($tipo === 'servicio') {
                 $servicio = $this->consumoModel->getServicio($itemId);
@@ -212,7 +213,8 @@ class TotemConsumosController extends Controller
                     'rela_servicio' => $itemId,
                     'consumo_descripcion' => 'Servicio: ' . $servicio['servicio_descripcion'],
                     'consumo_cantidad' => $cantidad,
-                    'consumo_precio_unitario' => $servicio['servicio_precio']
+                    'consumo_precio_unitario' => $servicio['servicio_precio'],
+                    'consumo_total' => $servicio['servicio_precio'] * $cantidad
                 ];
             }
         }
@@ -222,6 +224,12 @@ class TotemConsumosController extends Controller
                 'success' => false,
                 'message' => 'No hay items válidos en el pedido'
             ]);
+        }
+        
+        // Calcular total antes de crear consumos
+        $montoTotal = 0;
+        foreach ($consumosData as $consumo) {
+            $montoTotal += floatval($consumo['consumo_total']);
         }
         
         // Crear consumos en transacción
@@ -239,7 +247,7 @@ class TotemConsumosController extends Controller
                     
                     // Preparar datos del consumo para la notificación
                     $consumoData = [
-                        'consumo_monto_total' => $result['total'] ?? 0,
+                        'consumo_monto_total' => $montoTotal,
                         'items' => $consumosData
                     ];
                     

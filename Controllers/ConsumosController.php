@@ -150,25 +150,37 @@ class ConsumosController extends Controller
                         $reservaModel = new \App\Models\Reserva();
                         $reserva = $reservaModel->find($rela_reserva);
                         if ($reserva) {
+                            // Calcular monto total correctamente
+                            $montoTotal = 0;
+                            
+                            foreach ($items as $index => $item) {
+                                if (empty($item)) continue;
+                                $itemParts = explode('_', $item);
+                                if (count($itemParts) != 2) continue;
+                                $tipo = $itemParts[0];
+                                $itemId = $itemParts[1];
+                                $cantidad = floatval($cantidades[$index] ?? 1);
+                                
+                                if ($tipo == 'p') {
+                                    $itemData = $this->consumoModel->getProductoById($itemId);
+                                    if ($itemData) {
+                                        $precio = (float)$itemData['producto_precio'];
+                                        $subtotal = $precio * $cantidad;
+                                        $montoTotal += $subtotal;
+                                    }
+                                } else if ($tipo == 's') {
+                                    $itemData = $this->consumoModel->getServicioById($itemId);
+                                    if ($itemData) {
+                                        $precio = (float)$itemData['servicio_precio'];
+                                        $subtotal = $precio * $cantidad;
+                                        $montoTotal += $subtotal;
+                                    }
+                                }
+                            }
+                            
                             $consumoData = [
                                 'items' => $items,
-                                'consumo_monto_total' => array_sum(array_map(function($i) use ($items, $cantidades) {
-                                    if (empty($items[$i])) return 0;
-                                    $itemParts = explode('_', $items[$i]);
-                                    if (count($itemParts) != 2) return 0;
-                                    $tipo = $itemParts[0];
-                                    $itemId = $itemParts[1];
-                                    $cantidad = floatval($cantidades[$i] ?? 1);
-                                    
-                                    if ($tipo == 'p') {
-                                        $item = $this->consumoModel->getProductoById($itemId);
-                                        return $item ? floatval($item['producto_precio']) * $cantidad : 0;
-                                    } else if ($tipo == 's') {
-                                        $item = $this->consumoModel->getServicioById($itemId);
-                                        return $item ? floatval($item['servicio_precio']) * $cantidad : 0;
-                                    }
-                                    return 0;
-                                }, array_keys($items))),
+                                'consumo_monto_total' => $montoTotal,
                                 'consumo_fecha' => date('Y-m-d H:i:s')
                             ];
                             

@@ -128,7 +128,7 @@ if (!isset($cabania) || empty($cabania)) {
                                     <i class="fas fa-map-marker-alt text-muted"></i> Ubicación:
                                 </label>
                                 <div class="info-value">
-                                    <?= htmlspecialchars($cabania['cabania_ubicacion']) ?>
+                                    <?= htmlspecialchars($cabania['ubicacion_descripcion'] ?? 'No especificada') ?>
                                 </div>
                             </div>
                         </div>

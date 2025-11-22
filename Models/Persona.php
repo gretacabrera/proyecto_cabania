@@ -92,8 +92,14 @@ class Persona extends Model
      */
     public function getWithContacts($id)
     {
-        $sql = "SELECT p.*, ep.estadopersona_descripcion
+        $sql = "SELECT p.*, 
+                       pf.personafisica_nombre AS persona_nombre,
+                       pf.personafisica_apellido AS persona_apellido,
+                       pf.personafisica_fechanac AS persona_fechanac,
+                       pf.personafisica_dni AS persona_dni,
+                       ep.estadopersona_descripcion
                 FROM persona p
+                LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
                 LEFT JOIN estadopersona ep ON p.rela_estadopersona = ep.id_estadopersona
                 WHERE p.id_persona = ?";
         

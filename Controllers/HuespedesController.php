@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\Controller;
 use App\Models\Huesped;
 use App\Models\Persona;
+use App\Models\Ubicacion;
 
 /**
  * Controlador para el manejo de huéspedes
@@ -13,12 +14,14 @@ class HuespedesController extends Controller
 {
     protected $huespedModel;
     protected $personaModel;
+    protected $ubicacionModel;
 
     public function __construct()
     {
         parent::__construct();
         $this->huespedModel = new Huesped();
         $this->personaModel = new Persona();
+        $this->ubicacionModel = new Ubicacion();
     }
 
     /**
@@ -39,8 +42,8 @@ class HuespedesController extends Controller
         
         $filters = [
             'persona_nombre' => $this->get('persona_nombre'),
-            'persona_apellido' => $this->get('persona_apellido'),
-            'huesped_ubicacion' => $this->get('huesped_ubicacion'),
+            'persona_dni' => $this->get('persona_dni'),
+            'rela_ubicacion' => $this->get('rela_ubicacion'),
             'huesped_estado' => $this->get('huesped_estado')
         ];
 
@@ -51,6 +54,7 @@ class HuespedesController extends Controller
             'huespedes' => $result['data'],
             'pagination' => $result,
             'filters' => $filters,
+            'ubicaciones' => $this->ubicacionModel->getAllActive(),
             'isAdminArea' => true
         ];
 
@@ -80,6 +84,9 @@ class HuespedesController extends Controller
             'title' => 'Nuevo Huésped',
             'condicionesSalud' => $condicionesSalud,
             'reservas' => $reservas,
+            'ubicaciones' => $this->ubicacionModel->getAllActive(),
+            'huesped' => [],
+            'isEdit' => false,
             'isAdminArea' => true
         ];
 
@@ -138,8 +145,8 @@ class HuespedesController extends Controller
 
             // 2. Crear huésped (sin ubicación en creación)
             $huespedData = [
-                'rela_persona' => $idPersona,
-                'huesped_ubicacion' => null,
+                'rela_persona' => $personaId,
+                'rela_ubicacion' => (int) $this->post('rela_ubicacion'),
                 'huesped_estado' => 1
             ];
             $idHuesped = $this->huespedModel->create($huespedData);
@@ -258,6 +265,8 @@ class HuespedesController extends Controller
             'condicionesHuesped' => $condicionesHuesped,
             'reservas' => $reservas,
             'reservaActualId' => $reservaActualId,
+            'ubicaciones' => $this->ubicacionModel->getAllActive(),
+            'isEdit' => true,
             'isAdminArea' => true
         ];
 
@@ -286,7 +295,7 @@ class HuespedesController extends Controller
 
         // Datos del huésped (solo ubicación es editable)
         $huespedData = [
-            'huesped_ubicacion' => $this->post('huesped_ubicacion')
+            'rela_ubicacion' => (int) $this->post('rela_ubicacion')
         ];
 
         // Condiciones de salud seleccionadas
@@ -450,8 +459,8 @@ class HuespedesController extends Controller
             // Obtener todos los filtros de la URL
             $filters = [
                 'persona_nombre' => $this->get('persona_nombre'),
-                'persona_apellido' => $this->get('persona_apellido'),
-                'huesped_ubicacion' => $this->get('huesped_ubicacion'),
+                'persona_dni' => $this->get('persona_dni'),
+                'rela_ubicacion' => $this->get('rela_ubicacion'),
                 'huesped_estado' => $this->get('huesped_estado')
             ];
 
@@ -499,7 +508,7 @@ class HuespedesController extends Controller
                 $worksheet->setCellValue('B' . $row, $huesped['persona_apellido']);
                 $worksheet->setCellValue('C' . $row, $huesped['persona_fechanac']);
                 $worksheet->setCellValue('D' . $row, $huesped['persona_direccion']);
-                $worksheet->setCellValue('E' . $row, $huesped['huesped_ubicacion'] ?? '');
+                $worksheet->setCellValue('E' . $row, $huesped['ubicacion_descripcion'] ?? '');
                 $worksheet->setCellValue('F' . $row, $estadoTexto);
 
                 $row++;
@@ -606,8 +615,9 @@ class HuespedesController extends Controller
             if (!empty($filters['persona_apellido'])) {
                 $filtrosTexto[] = 'Apellido: ' . $filters['persona_apellido'];
             }
-            if (!empty($filters['huesped_ubicacion'])) {
-                $filtrosTexto[] = 'Ubicación: ' . $filters['huesped_ubicacion'];
+            if (!empty($filters['rela_ubicacion'])) {
+                $ubicacion = $this->ubicacionModel->find($filters['rela_ubicacion']);
+                $filtrosTexto[] = 'Ubicación: ' . ($ubicacion['ubicacion_descripcion'] ?? 'N/A');
             }
             if (isset($filters['huesped_estado']) && $filters['huesped_estado'] !== '') {
                 $estadosTexto = ['Inactivo', 'Activo'];
@@ -684,7 +694,7 @@ class HuespedesController extends Controller
                     <td class="nombre">' . $nombreCompleto . '</td>
                     <td class="fecha">' . date('d/m/Y', strtotime($huesped['persona_fechanac'])) . '</td>
                     <td class="direccion">' . htmlspecialchars($huesped['persona_direccion']) . '</td>
-                    <td class="ubicacion">' . htmlspecialchars($huesped['huesped_ubicacion'] ?? '-') . '</td>
+                    <td class="ubicacion">' . htmlspecialchars($huesped['ubicacion_descripcion'] ?? '-') . '</td>
                     <td class="estado ' . $estadoClase . '">' . $estadoTexto . '</td>
                 </tr>';
             }

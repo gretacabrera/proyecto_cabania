@@ -106,6 +106,7 @@ class Application
         
         // API de notificaciones
         $this->router->get('/api/notificaciones/pendientes', 'HomeController@getNotificacionesPendientes');
+        $this->router->post('/api/verificar-pagos-pendientes', 'HomeController@verificarPagosPendientes');
         
         // Rutas del catálogo público
         $this->router->get('/catalogo', 'CatalogoController@index');
@@ -193,6 +194,7 @@ class Application
         $this->router->get('/reservas/{id}/consumos', 'ReservasController@gestionarConsumos');
         $this->router->post('/reservas/{id}/consumos/registrar', 'ReservasController@registrarConsumo');
         $this->router->get('/reservas/{id}/comentarios', 'ReservasController@gestionarComentarios');
+        $this->router->get('/reservas/{id}/pagar', 'ReservasController@pagarReserva');
         
         $this->router->get('/reservas/{id}', 'ReservasController@show');
         $this->router->any('/reservas/{id}/edit', 'ReservasController@edit');

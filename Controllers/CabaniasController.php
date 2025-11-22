@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\Cabania;
+use App\Models\Ubicacion;
 
 /**
  * Controlador para el manejo de cabañas
@@ -11,11 +12,13 @@ use App\Models\Cabania;
 class CabaniasController extends Controller
 {
     protected $cabaniaModel;
+    protected $ubicacionModel;
 
     public function __construct()
     {
         parent::__construct();
         $this->cabaniaModel = new Cabania();
+        $this->ubicacionModel = new Ubicacion();
     }
 
     /**
@@ -51,6 +54,7 @@ class CabaniasController extends Controller
             'cabanias' => $result['data'],
             'pagination' => $result,
             'filters' => $filters,
+            'ubicaciones' => $this->ubicacionModel->getAllActive(),
             'isAdminArea' => true
         ];
 
@@ -75,6 +79,9 @@ class CabaniasController extends Controller
         $data = [
             'title' => 'Nueva Cabaña',
             'inventarios' => $inventarios,
+            'ubicaciones' => $this->ubicacionModel->getAllActive(),
+            'cabania' => [],
+            'isEdit' => false,
             'isAdminArea' => true
         ];
 
@@ -109,9 +116,9 @@ class CabaniasController extends Controller
             'cabania_codigo' => $this->post('cabania_codigo'),
             'cabania_nombre' => $this->post('cabania_nombre'),
             'cabania_descripcion' => $this->post('cabania_descripcion'),
+            'rela_ubicacion' => (int) $this->post('rela_ubicacion'),
             'cabania_capacidad' => $this->post('cabania_capacidad'),
             'cabania_precio' => $this->post('cabania_precio'),
-            'cabania_ubicacion' => $this->post('cabania_ubicacion'),
             'cabania_cantidadbanios' => $this->post('cabania_cantidadbanios'),
             'cabania_cantidadhabitaciones' => $this->post('cabania_cantidadhabitaciones'),
             'cabania_foto' => $cabania_foto,
@@ -225,6 +232,8 @@ class CabaniasController extends Controller
             'estadisticas' => $estadisticas,
             'inventarios' => $inventarios,
             'inventarioCabania' => $inventarioCabania,
+            'ubicaciones' => $this->ubicacionModel->getAllActive(),
+            'isEdit' => true,
             'isAdminArea' => true
         ];
 
@@ -268,9 +277,9 @@ class CabaniasController extends Controller
             'cabania_codigo' => $this->post('cabania_codigo'),
             'cabania_nombre' => $this->post('cabania_nombre'),
             'cabania_descripcion' => $this->post('cabania_descripcion'),
+            'rela_ubicacion' => (int) $this->post('rela_ubicacion'),
             'cabania_capacidad' => $this->post('cabania_capacidad'),
             'cabania_precio' => $this->post('cabania_precio'),
-            'cabania_ubicacion' => $this->post('cabania_ubicacion'),
             'cabania_cantidadbanios' => $this->post('cabania_cantidadbanios'),
             'cabania_cantidadhabitaciones' => $this->post('cabania_cantidadhabitaciones'),
             'cabania_foto' => $cabania_foto
@@ -516,7 +525,7 @@ class CabaniasController extends Controller
                 $worksheet->setCellValue('E' . $row, $cabania['cabania_cantidadhabitaciones']);
                 $worksheet->setCellValue('F' . $row, $cabania['cabania_cantidadbanios']);
                 $worksheet->setCellValue('G' . $row, number_format($cabania['cabania_precio'], 2));
-                $worksheet->setCellValue('H' . $row, $cabania['cabania_ubicacion'] ?? '');
+                $worksheet->setCellValue('H' . $row, $cabania['ubicacion_descripcion'] ?? '');
                 $worksheet->setCellValue('I' . $row, $estadoTexto);
 
                 $row++;

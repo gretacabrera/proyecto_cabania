@@ -18,9 +18,11 @@
                                 </small>
                             <?php endif; ?>
                         </div>
-                        <a href="<?= url('/catalogo') ?>" class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-plus me-1"></i>Nueva Reserva
-                        </a>
+                        <div class="d-flex gap-2 mt-2 mt-md-0">
+                            <a href="<?= url('/catalogo') ?>" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-plus me-1"></i>Nueva Reserva
+                            </a>
+                        </div>
                     </div>
                 </div>
 
@@ -63,12 +65,24 @@
                                                     Estado: <strong class="text-<?= $badgeClass ?>"><?= ucfirst($reserva['estadoreserva_descripcion']) ?></strong>
                                                 </small>
                                             </div>
-                                            <?php if (!empty($reserva['importe_total'])): ?>
-                                                <div class="text-end">
+                                            <div class="text-end">
+                                                <div class="mb-1">
                                                     <small class="text-muted d-block">Importe Total</small>
-                                                    <h4 class="text-success mb-0">$<?= number_format($reserva['importe_total'], 2) ?></h4>
+                                                    <h5 class="text-dark mb-0">$<?= number_format($reserva['importe_total'], 2) ?></h5>
                                                 </div>
-                                            <?php endif; ?>
+                                                <div class="mb-1">
+                                                    <small class="text-muted">Abonado: <span class="text-success fw-bold">$<?= number_format($reserva['total_abonado'], 2) ?></span></small>
+                                                </div>
+                                                <?php if ($reserva['saldo_pendiente'] > 0): ?>
+                                                    <div>
+                                                        <small class="text-muted">Pendiente: <span class="text-warning fw-bold">$<?= number_format($reserva['saldo_pendiente'], 2) ?></span></small>
+                                                    </div>
+                                                <?php else: ?>
+                                                    <div>
+                                                        <small class="text-success"><i class="fas fa-check-circle me-1"></i>Pagado completo</small>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
                                         </div>
 
                                         <!-- Información de Fechas -->
@@ -110,6 +124,15 @@
 
                                         <!-- Acciones -->
                                         <div class="d-flex flex-wrap gap-2">
+                                            <!-- Completar Pago (para reservas pendientes) -->
+                                            <?php if ($reserva['rela_estadoreserva'] == 1): ?>
+                                                <a href="<?= url('/reservas/' . $reserva['id_reserva'] . '/pagar') ?>" 
+                                                   class="btn btn-warning btn-sm">
+                                                    <i class="fas fa-credit-card me-1"></i>
+                                                    <span class="d-none d-sm-inline">Completar </span>Pago
+                                                </a>
+                                            <?php endif; ?>
+                                            
                                             <!-- Marcar Ingreso -->
                                             <?php if ($reserva['rela_estadoreserva'] == 2): ?>
                                                 <button type="button"

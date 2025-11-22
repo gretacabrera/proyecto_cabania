@@ -83,10 +83,11 @@ class Factura extends Model
         $sql = "SELECT f.*, tc.tipocomprobante_descripcion,
                        r.id_reserva, r.reserva_fhinicio, r.reserva_fhfin,
                        c.cabania_nombre, c.cabania_codigo,
-                       p.persona_nombre, p.persona_apellido,
+                       pf.personafisica_nombre as persona_nombre, 
+                       pf.personafisica_apellido as persona_apellido,
                        (SELECT ct.contacto_descripcion FROM contacto ct 
                         LEFT JOIN tipocontacto tc ON ct.rela_tipocontacto = tc.id_tipocontacto 
-                        WHERE tc.tipocontacto_descripcion = 'email' AND ct.rela_persona = p.id_persona 
+                        WHERE tc.tipocontacto_descripcion = 'email' AND ct.rela_persona = per.id_persona 
                         LIMIT 1) as persona_email
                 FROM factura f
                 LEFT JOIN tipocomprobante tc ON f.rela_tipocomprobante = tc.idtipocomprobante
@@ -94,7 +95,8 @@ class Factura extends Model
                 LEFT JOIN cabania c ON r.rela_cabania = c.id_cabania
                 LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                 LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
-                LEFT JOIN persona p ON h.rela_persona = p.id_persona
+                LEFT JOIN persona per ON h.rela_persona = per.id_persona
+                LEFT JOIN personafisica pf ON per.id_persona = pf.rela_persona
                 WHERE f.id_factura = ?";
 
         $result = $this->query($sql, [$facturaId]);
@@ -206,5 +208,39 @@ class Factura extends Model
         $year = date('Y');
         $month = date('m');
         return sprintf("FAC-%s%s-%04d", $year, $month, $facturaId);
+    }
+    
+    /**
+     * Regenerar detalles de una factura existente
+     * Útil cuando se necesita corregir detalles faltantes
+     */
+    public function regenerarDetalles($facturaId, $nuevosDetalles)
+    {
+        return $this->db->transaction(function() use ($facturaId, $nuevosDetalles) {
+            try {
+                // 1. Eliminar detalles actuales
+                $this->db->query("DELETE FROM facturadetalle WHERE rela_factura = $facturaId");
+                
+                // 2. Crear nuevos detalles
+                if (!empty($nuevosDetalles)) {
+                    $this->createFacturaDetalles($facturaId, $nuevosDetalles);
+                }
+                
+                // 3. Recalcular totales de la factura
+                $subtotal = 0;
+                foreach ($nuevosDetalles as $detalle) {
+                    $subtotal += floatval($detalle['total']);
+                }
+                
+                $updateSql = "UPDATE factura SET factura_subtotal = $subtotal, factura_total = $subtotal WHERE id_factura = $facturaId";
+                $this->db->query($updateSql);
+                
+                return true;
+                
+            } catch (\Exception $e) {
+                error_log("ERROR regenerando detalles de factura: " . $e->getMessage());
+                throw $e;
+            }
+        });
     }
 }

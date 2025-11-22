@@ -691,7 +691,7 @@ class Reserva extends Model
                 foreach ($consumos as $consumo) {
                     $totalServicios += floatval($consumo['consumo_total'] ?? 0);
                 }
-
+            } else {
                 $consumos = [];
             }
 
@@ -743,11 +743,28 @@ class Reserva extends Model
             // 2. Detalles de servicios adicionales
             if (!empty($reservaData['consumos'])) {
                 foreach ($reservaData['consumos'] as $consumo) {
+                    // Usar item_nombre si existe, sino consumo_descripcion
+                    $descripcion = !empty($consumo['item_nombre']) 
+                        ? $consumo['item_nombre'] 
+                        : $consumo['consumo_descripcion'];
+                    
+                    // Agregar tipo de item (Producto o Servicio)
+                    if (!empty($consumo['rela_producto'])) {
+                        $descripcion = "Producto: " . $descripcion;
+                    } elseif (!empty($consumo['rela_servicio'])) {
+                        $descripcion = "Servicio: " . $descripcion;
+                    }
+                    
+                    $cantidad = floatval($consumo['consumo_cantidad']);
+                    $precioUnitario = $cantidad > 0 
+                        ? floatval($consumo['consumo_total']) / $cantidad 
+                        : floatval($consumo['consumo_total']);
+                    
                     $detalles[] = [
-                        'descripcion' => $consumo['consumo_descripcion'],
-                        'precio_unitario' => $consumo['consumo_total'] / $consumo['consumo_cantidad'],
-                        'cantidad' => $consumo['consumo_cantidad'],
-                        'total' => $consumo['consumo_total']
+                        'descripcion' => $descripcion,
+                        'precio_unitario' => $precioUnitario,
+                        'cantidad' => $cantidad,
+                        'total' => floatval($consumo['consumo_total'])
                     ];
                 }
             }
@@ -883,7 +900,10 @@ class Reserva extends Model
         try {
             $sql = "SELECT r.id_reserva, r.reserva_fhinicio, r.reserva_fhfin,
                            c.cabania_nombre, c.cabania_codigo, c.cabania_precio,
-                           COALESCE(SUM(pag.pago_total), 0) as monto_pagado
+                           COALESCE(f.factura_total, 0) as factura_total,
+                           COALESCE(SUM(DISTINCT pag.pago_total), 0) as monto_pagado,
+                           COALESCE(SUM(DISTINCT con.consumo_total), 0) as total_consumos,
+                           (COALESCE(f.factura_total, 0) + COALESCE(SUM(DISTINCT con.consumo_total), 0) - COALESCE(SUM(DISTINCT pag.pago_total), 0)) as monto_pendiente
                     FROM reserva r
                     INNER JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                     INNER JOIN huesped h ON hr.rela_huesped = h.id_huesped
@@ -892,9 +912,14 @@ class Reserva extends Model
                     INNER JOIN cabania c ON r.rela_cabania = c.id_cabania
                     LEFT JOIN factura f ON r.id_reserva = f.rela_reserva
                     LEFT JOIN pago pag ON f.id_factura = pag.rela_factura
+                    LEFT JOIN consumo con ON r.id_reserva = con.rela_reserva 
+                                          AND con.rela_estadoconsumo IN (1, 2, 3)
                     WHERE u.id_usuario = ?
                       AND r.rela_estadoreserva = 4 -- Estado 'pendiente de pago'
-                    GROUP BY r.id_reserva
+                    GROUP BY r.id_reserva, r.reserva_fhinicio, r.reserva_fhfin,
+                             c.cabania_nombre, c.cabania_codigo, c.cabania_precio,
+                             f.factura_total
+                    HAVING monto_pendiente > 0
                     ORDER BY r.reserva_fhinicio ASC";
             
             $stmt = $this->db->prepare($sql);
@@ -911,6 +936,88 @@ class Reserva extends Model
             return $reservas;
         } catch (\Exception $e) {
             error_log('Error obteniendo reservas con pago pendiente: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Obtener reservas con pago pendiente (datos completos para notificaciones)
+     * Se usa para enviar notificaciones en cada carga de página
+     * 
+     * @param int $usuarioId ID del usuario
+     * @return array Reservas con pago pendiente y todos los datos necesarios
+     */
+    public function getReservasConPagoPendiente($usuarioId)
+    {
+        try {
+            $sql = "SELECT r.id_reserva, 
+                           r.reserva_fechahora,
+                           r.reserva_fhinicio, 
+                           r.reserva_fhfin,
+                           r.reserva_online,
+                           r.rela_estadoreserva,
+                           c.cabania_nombre, c.cabania_codigo, c.cabania_precio,
+                           er.estadoreserva_descripcion,
+                           COALESCE(f.factura_total, 0) as reserva_montototal,
+                           COALESCE(f.factura_subtotal, 0) as reserva_montosenia,
+                           COALESCE(SUM(DISTINCT pag.pago_total), 0) as monto_pagado,
+                           -- Para reservas online (reserva_online=1), NO incluir consumos cargados posteriormente
+                           -- Solo incluir consumos para reservas presenciales (reserva_online=0)
+                           CASE 
+                               WHEN r.reserva_online = 0 THEN COALESCE(SUM(DISTINCT con.consumo_total), 0)
+                               ELSE 0
+                           END as total_consumos,
+                           -- Saldo pendiente: (Factura + Consumos según tipo) - Pagos
+                           (COALESCE(f.factura_total, 0) + 
+                            CASE 
+                                WHEN r.reserva_online = 0 THEN COALESCE(SUM(DISTINCT con.consumo_total), 0)
+                                ELSE 0
+                            END - 
+                            COALESCE(SUM(DISTINCT pag.pago_total), 0)) as saldo_pendiente
+                    FROM reserva r
+                    INNER JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
+                    INNER JOIN huesped h ON hr.rela_huesped = h.id_huesped
+                    INNER JOIN persona p ON h.rela_persona = p.id_persona
+                    INNER JOIN usuario u ON p.id_persona = u.rela_persona
+                    INNER JOIN cabania c ON r.rela_cabania = c.id_cabania
+                    LEFT JOIN estadoreserva er ON r.rela_estadoreserva = er.id_estadoreserva
+                    LEFT JOIN factura f ON r.id_reserva = f.rela_reserva
+                    LEFT JOIN pago pag ON f.id_factura = pag.rela_factura
+                    LEFT JOIN consumo con ON r.id_reserva = con.rela_reserva 
+                                          AND con.rela_estadoconsumo IN (1, 2, 3)
+                    WHERE u.id_usuario = ?
+                      AND r.rela_estadoreserva = 4 -- Estado 'pendiente de pago'
+                    GROUP BY r.id_reserva, r.reserva_fechahora, r.reserva_fhinicio, r.reserva_fhfin, 
+                             r.reserva_online, r.rela_estadoreserva,
+                             c.cabania_nombre, c.cabania_codigo, c.cabania_precio,
+                             er.estadoreserva_descripcion, f.factura_total, f.factura_subtotal
+                    HAVING saldo_pendiente > 0
+                    ORDER BY r.reserva_fhinicio ASC";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param("i", $usuarioId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $reservas = [];
+            while ($row = $result->fetch_assoc()) {
+                // Calcular el saldo_pendiente manualmente
+                $factura = floatval($row['reserva_montototal']);
+                $consumos = floatval($row['total_consumos']);
+                $pagado = floatval($row['monto_pagado']);
+                $saldo = $factura + $consumos - $pagado;
+                
+                // Guardar el saldo calculado
+                $row['saldo_pendiente'] = $saldo;
+                $row['monto_pendiente'] = $saldo; // Alias para compatibilidad
+                
+                $reservas[] = $row;
+            }
+            
+            $stmt->close();
+            return $reservas;
+        } catch (\Exception $e) {
+            error_log('ERROR getReservasConPagoPendiente: ' . $e->getMessage());
             return [];
         }
     }

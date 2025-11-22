@@ -6,6 +6,7 @@
 let pusher = null;
 let channel = null;
 let notificationsEnabled = false;
+let subscriptionReadyCallback = null;
 
 // Inicializar Pusher
 function initPusher(appKey, cluster, userId) {
@@ -57,28 +58,49 @@ function initPusher(appKey, cluster, userId) {
         
         // Suscribirse al canal privado del usuario
         const channelName = `private-user-${userId}`;
+        console.log('📡 Suscribiéndose al canal:', channelName);
         channel = pusher.subscribe(channelName);
         
         // Manejar errores de suscripción
         channel.bind('pusher:subscription_error', function(status) {
+            console.error('❌ Error de suscripción Pusher:', status);
             notificationsEnabled = false;
-            // NO mostrar alert al usuario, solo loguear
         });
         
         channel.bind('pusher:subscription_succeeded', function() {
+            console.log('✅ Suscripción a Pusher exitosa - Canal:', channelName);
             notificationsEnabled = true;
+            
+            // Ejecutar callback si existe (para enviar notificaciones DESPUÉS de la suscripción)
+            if (subscriptionReadyCallback) {
+                subscriptionReadyCallback();
+                subscriptionReadyCallback = null; // Ejecutar solo una vez
+            }
         });
 
         // Suscribirse a eventos de notificaciones
+        console.log('🔔 Vinculando eventos de notificación...');
+        
+        // Listener genérico para TODOS los eventos (debug)
+        channel.bind_global(function(eventName, data) {
+            console.log('📨 Evento Pusher recibido:', eventName, data);
+        });
+        
         channel.bind('reserva-cercana', handleReservaCercana);
         channel.bind('pago-pendiente', handlePagoPendiente);
         channel.bind('pedido-cabania', handlePedidoCabania);
         channel.bind('inconveniente-pedido', handleInconvenientePedido);
+        console.log('✅ Eventos vinculados correctamente');
 
     } catch (error) {
         console.error('Error inicializando Pusher:', error);
         notificationsEnabled = false;
     }
+}
+
+// Registrar callback para cuando la suscripción esté lista
+function onSubscriptionReady(callback) {
+    subscriptionReadyCallback = callback;
 }
 
 // Manejadores de eventos específicos
@@ -100,6 +122,10 @@ function handleReservaCercana(data) {
 
 function handlePagoPendiente(data) {
     try {
+        console.log('💰 NOTIFICACIÓN PAGO PENDIENTE RECIBIDA:', data);
+        console.log('Priority:', data.priority);
+        console.log('Type:', data.type);
+        
         showNotification(data);
         addNotificationToList(data);
         
@@ -171,12 +197,19 @@ function showNotification(data) {
         // Agregar al DOM
         $('body').append(notification);
         
-        // Auto-cerrar después de 8 segundos
-        setTimeout(() => {
-            notification.fadeOut(500, function() {
-                $(this).remove();
-            });
-        }, 8000);
+        // Auto-cerrar después de 8 segundos SOLO si NO es urgente Y NO es de pago pendiente
+        const isUrgent = data.priority === 'urgent' || data.type === 'pago_pendiente';
+        
+        if (!isUrgent) {
+            setTimeout(() => {
+                notification.fadeOut(500, function() {
+                    $(this).remove();
+                });
+            }, 8000);
+        } else {
+            // Notificaciones urgentes permanecen indefinidamente hasta cierre manual
+            console.log('⚠️ Notificación URGENTE - No se auto-cerrará:', data.type);
+        }
     } catch (error) {
         console.error('❌ Error en showNotification:', error);
     }
@@ -365,6 +398,7 @@ function loadPendingNotifications() {
 // Exportar funciones globales
 window.NotificationService = {
     init: initPusher,
+    onSubscriptionReady: onSubscriptionReady,
     markAsRead: markNotificationAsRead,
     clearAll: clearAllNotifications
 };

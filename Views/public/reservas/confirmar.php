@@ -178,8 +178,11 @@
                                                 <label class="form-label small">Fecha de Nacimiento</label>
                                                 <input type="date" name="huesped_fecha_nacimiento" 
                                                        class="form-control" 
-                                                       value="<?= htmlspecialchars($huesped['fecha_nacimiento'] ?? '') ?>" 
+                                                       value="<?= !empty($huesped['fecha_nacimiento']) ? date('Y-m-d', strtotime($huesped['fecha_nacimiento'])) : '' ?>" 
                                                        readonly>
+                                                <?php if (empty($huesped['fecha_nacimiento'])): ?>
+                                                    <small class="text-warning">No hay fecha de nacimiento registrada</small>
+                                                <?php endif; ?>
                                             </div>
                                             <div class="col-md-6">
                                                 <label class="form-label small">Correo Electrónico</label>

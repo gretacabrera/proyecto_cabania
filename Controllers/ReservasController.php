@@ -635,7 +635,7 @@ class ReservasController extends Controller
         
         // Verificar que existan datos temporales de la reserva
         if (!isset($_SESSION['reserva_temporal']) && !isset($_SESSION['reserva_temporal_basica'])) {
-            $this->redirect('/catalogo', 'No hay datos de reserva disponibles', 'error');
+            $this->redirect('/reservas', 'No hay datos de reserva disponibles', 'error');
             return;
         }
         
@@ -661,10 +661,10 @@ class ReservasController extends Controller
         
         // Datos del huésped con contactos (igual que en confirmar)
         $huesped = [
-            'id_persona' => $persona['id_persona'],
-            'nombre' => $persona['persona_nombre'],
-            'apellido' => $persona['persona_apellido'],
-            'fecha_nacimiento' => $persona['persona_fechanac'],
+            'id_persona' => $personaConContactos['id_persona'],
+            'nombre' => $personaConContactos['persona_nombre'],
+            'apellido' => $personaConContactos['persona_apellido'],
+            'fecha_nacimiento' => $personaConContactos['persona_fechanac'],
             'email' => $personaConContactos['contacto_email'] ?? '',
             'telefono' => $personaConContactos['contacto_telefono'] ?? ''
         ];
@@ -755,6 +755,89 @@ class ReservasController extends Controller
         } catch (\Exception $e) {
             error_log('ERROR final en procederPago: ' . $e->getMessage());
             $this->redirect('/reservas/resumen', 'Error al proceder al pago: ' . $e->getMessage(), 'error');
+        }
+    }
+
+    /**
+     * Retomar pago de una reserva pendiente existente
+     */
+    public function pagarReserva($id)
+    {
+        $this->requireAuth();
+        
+        try {
+            $userId = \App\Core\Auth::id();
+            
+            // Verificar que la reserva existe
+            $reserva = $this->reservaModel->find($id);
+            if (!$reserva) {
+                $this->redirect('/reservas', 'Reserva no encontrada', 'error');
+                return;
+            }
+            
+            // Verificar que la reserva pertenece al usuario
+            if (!$this->reservaModel->isReservaOwner($id, $userId)) {
+                $this->redirect('/reservas', 'No tiene permisos para acceder a esta reserva', 'error');
+                return;
+            }
+            
+            // Verificar que la reserva esté en estado pendiente (estado 1)
+            if ($reserva['rela_estadoreserva'] != 1) {
+                $this->redirect('/reservas', 'Esta reserva no está pendiente de pago', 'error');
+                return;
+            }
+            
+            // Obtener datos del usuario para obtener id_persona
+            $userModel = new \App\Models\Usuario();
+            $usuario = $userModel->findWithProfile($userId);
+            
+            if (!$usuario || !$usuario['rela_persona']) {
+                $this->redirect('/reservas', 'Error: datos de usuario incompletos', 'error');
+                return;
+            }
+            
+            // Obtener datos de la cabaña
+            $cabania = $this->cabaniaModel->find($reserva['rela_cabania']);
+            if (!$cabania) {
+                $this->redirect('/reservas', 'Cabaña no encontrada', 'error');
+                return;
+            }
+            
+            // Obtener consumos de la reserva
+            $consumos = $this->reservaModel->getConsumptions($id);
+            $totalConsumos = $this->reservaModel->getConsumptionsTotal($id);
+            
+            // Calcular totales (usar precio de cabaña * días)
+            $fechaInicio = new \DateTime($reserva['reserva_fhinicio']);
+            $fechaFin = new \DateTime($reserva['reserva_fhfin']);
+            $dias = $fechaFin->diff($fechaInicio)->days;
+            
+            $subtotalAlojamiento = $cabania['cabania_precio'] * $dias;
+            $totalGeneral = $subtotalAlojamiento + $totalConsumos;
+            
+            // Preparar datos para la sesión (formato compatible con el flujo existente)
+            $_SESSION['reserva_temporal'] = [
+                'reserva_id' => $id,
+                'cabania_id' => $reserva['rela_cabania'],
+                'cabania_nombre' => $cabania['cabania_nombre'],
+                'cabania_precio' => $cabania['cabania_precio'],
+                'fecha_ingreso' => $reserva['reserva_fhinicio'],
+                'fecha_salida' => $reserva['reserva_fhfin'],
+                'cantidad_personas' => 1,
+                'id_persona' => $usuario['rela_persona'],
+                'subtotal_alojamiento' => $subtotalAlojamiento,
+                'servicios' => $consumos,
+                'total_servicios' => $totalConsumos,
+                'total_general' => $totalGeneral,
+                'es_retomar_pago' => true // Flag para identificar que es retomar pago
+            ];
+            
+            // Redirigir a la pasarela de pago
+            $this->redirect('/reservas/pasarela', '', 'info');
+            
+        } catch (\Exception $e) {
+            error_log('Error en pagarReserva: ' . $e->getMessage());
+            $this->redirect('/reservas', 'Error al procesar el pago: ' . $e->getMessage(), 'error');
         }
     }
 
@@ -892,8 +975,12 @@ class ReservasController extends Controller
                 throw new \Exception('Cabaña no encontrada');
             }
             
-            // Obtener datos de la persona - priorizar datos de sesión
-            $personaId = $reservaTemporal['id_persona'] ?? $reserva['rela_persona'];
+            // Obtener datos de la persona - debe estar siempre en la sesión temporal
+            if (!isset($reservaTemporal['id_persona'])) {
+                throw new \Exception('Datos de la persona no encontrados en la sesión');
+            }
+            
+            $personaId = $reservaTemporal['id_persona'];
             $persona = $this->personaModel->getWithContacts($personaId);
             
             if (!$persona) {
@@ -1091,7 +1178,7 @@ class ReservasController extends Controller
             
             // Notificar reserva cercana si el check-in es pronto
             try {
-                $fechaInicio = new \DateTime($reserva['reserva_fecha_inicio']);
+                $fechaInicio = new \DateTime($reserva['reserva_fhinicio']);
                 $hoy = new \DateTime();
                 $diasRestantes = $hoy->diff($fechaInicio)->days;
                 
@@ -2123,11 +2210,11 @@ class ReservasController extends Controller
         try {
             $database = \App\Core\Database::getInstance()->getConnection();
             
-            // Contar adultos y menores basado en la edad en la tabla huesped
+            // Contar huéspedes (sin distinción por edad ya que huesped_edad no existe)
             $sql = "SELECT 
-                        COUNT(CASE WHEN h.huesped_edad >= 18 THEN 1 END) as adultos,
-                        COUNT(CASE WHEN h.huesped_edad < 18 THEN 1 END) as menores,
-                        COUNT(*) as total
+                        COUNT(*) as total,
+                        0 as adultos,
+                        0 as menores
                     FROM huesped_reserva hr
                     INNER JOIN huesped h ON hr.rela_huesped = h.id_huesped
                     WHERE hr.rela_reserva = ?";
@@ -2156,13 +2243,14 @@ class ReservasController extends Controller
         try {
             $database = \App\Core\Database::getInstance();
             
-            // Usar la consulta que YA CONFIRMAMOS que funciona
-            $sql = "SELECT CONCAT(p.persona_nombre, ' ', p.persona_apellido) as nombre_completo,
+            // Usar la consulta con personafisica JOIN
+            $sql = "SELECT CONCAT(pf.personafisica_nombre, ' ', pf.personafisica_apellido) as nombre_completo,
                            c.contacto_descripcion as email
                     FROM reserva r
                     INNER JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                     INNER JOIN huesped h ON hr.rela_huesped = h.id_huesped
                     INNER JOIN persona p ON h.rela_persona = p.id_persona
+                    LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
                     LEFT JOIN contacto c ON p.id_persona = c.rela_persona 
                         AND c.rela_tipocontacto = 1 AND c.contacto_estado = 1
                     WHERE r.id_reserva = ?
@@ -2515,6 +2603,7 @@ class ReservasController extends Controller
             
             // Obtener reservas del usuario con TODOS los detalles necesarios
             $sqlReservas = "SELECT r.id_reserva,
+                                   r.reserva_fechahora as fecha_confirmacion,
                                    r.reserva_fhinicio,
                                    r.reserva_fhfin,
                                    r.rela_estadoreserva,
@@ -2524,8 +2613,26 @@ class ReservasController extends Controller
                                    er.estadoreserva_descripcion,
                                    MAX(pf.personafisica_nombre) as persona_nombre,
                                    MAX(pf.personafisica_apellido) as persona_apellido,
-                                   f.factura_fechahora as fecha_confirmacion,
-                                   f.factura_total as importe_total,
+                                   COALESCE(f.factura_total, 0) as factura_original,
+                                   (SELECT COALESCE(SUM(consumo_total), 0) 
+                                    FROM consumo 
+                                    WHERE rela_reserva = r.id_reserva 
+                                    AND rela_estadoconsumo IN (1,2,3)) as total_consumos,
+                                   (SELECT COALESCE(SUM(revision_costo), 0) 
+                                    FROM revision 
+                                    WHERE rela_reserva = r.id_reserva) as total_danios,
+                                   (SELECT COALESCE(SUM(p.pago_total), 0) 
+                                    FROM pago p
+                                    INNER JOIN factura f2 ON p.rela_factura = f2.id_factura
+                                    WHERE f2.rela_reserva = r.id_reserva) as total_abonado,
+                                   COALESCE(f.factura_total, 0) + 
+                                   (SELECT COALESCE(SUM(consumo_total), 0) 
+                                    FROM consumo 
+                                    WHERE rela_reserva = r.id_reserva 
+                                    AND rela_estadoconsumo IN (1,2,3)) +
+                                   (SELECT COALESCE(SUM(revision_costo), 0) 
+                                    FROM revision 
+                                    WHERE rela_reserva = r.id_reserva) as importe_total,
                                    COUNT(DISTINCT hr.rela_huesped) as total_huespedes
                             FROM reserva r
                             INNER JOIN cabania c ON r.rela_cabania = c.id_cabania
@@ -2536,9 +2643,9 @@ class ReservasController extends Controller
                             LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
                             LEFT JOIN factura f ON r.id_reserva = f.rela_reserva
                             WHERE p.id_persona = ?
-                            GROUP BY r.id_reserva, r.reserva_fhinicio, r.reserva_fhfin, r.rela_estadoreserva, 
-                                     r.reserva_online, c.cabania_nombre, c.cabania_codigo, 
-                                     er.estadoreserva_descripcion, f.factura_fechahora, f.factura_total
+                            GROUP BY r.id_reserva, r.reserva_fechahora, r.reserva_fhinicio, r.reserva_fhfin, 
+                                     r.rela_estadoreserva, r.reserva_online, c.cabania_nombre, c.cabania_codigo, 
+                                     er.estadoreserva_descripcion, f.factura_total
                             ORDER BY r.reserva_fhinicio DESC";
             
             $stmt = $database->prepare($sqlReservas);
@@ -2548,6 +2655,8 @@ class ReservasController extends Controller
             
             $reservas = [];
             while ($row = $result->fetch_assoc()) {
+                // Calcular saldo pendiente
+                $row['saldo_pendiente'] = $row['importe_total'] - $row['total_abonado'];
                 $reservas[] = $row;
             }
             $stmt->close();
@@ -2600,12 +2709,10 @@ class ReservasController extends Controller
             ]);
             
             if ($resultado) {
-                // Actualizar estado de la cabaña a "Ocupada" (0)
-                $this->cabaniaModel->update($reserva['rela_cabania'], [
-                    'cabania_estado' => 0 // OCUPADA
-                ]);
+                // Nota: El estado de cabaña se gestiona automáticamente por las reservas activas
+                // No existe cabania_estado en la tabla cabania
                 
-                $this->redirect('/reservas', 'Ingreso registrado correctamente. Cabaña marcada como ocupada.', 'exito');
+                $this->redirect('/reservas', 'Ingreso registrado correctamente.', 'exito');
             } else {
                 $this->redirect('/reservas', 'Error al registrar el ingreso', 'error');
             }

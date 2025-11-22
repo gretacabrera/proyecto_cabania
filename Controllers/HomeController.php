@@ -282,13 +282,17 @@ class HomeController extends Controller
     private function getReservasRecientes($limite)
     {
         $db = \App\Core\Database::getInstance();
-        $stmt = $db->prepare("SELECT r.*, c.cabania_nombre, p.persona_nombre, p.persona_apellido, er.estadoreserva_descripcion
+        $stmt = $db->prepare("SELECT r.*, c.cabania_nombre, 
+                               pf.personafisica_nombre as persona_nombre, 
+                               pf.personafisica_apellido as persona_apellido, 
+                               er.estadoreserva_descripcion
                                FROM reserva r
                                LEFT JOIN cabania c ON r.rela_cabania = c.id_cabania
                                LEFT JOIN estadoreserva er ON r.rela_estadoreserva = er.id_estadoreserva
                                LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                                LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                                LEFT JOIN persona p ON h.rela_persona = p.id_persona
+                               LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
                                ORDER BY r.id_reserva DESC
                                LIMIT ?");
         $stmt->bind_param("i", $limite);
@@ -370,14 +374,17 @@ class HomeController extends Controller
     private function getFacturasRecientes($limite)
     {
         $db = \App\Core\Database::getInstance();
-        $stmt = $db->prepare("SELECT f.*, r.id_reserva, c.cabania_nombre, p.persona_nombre, p.persona_apellido
+        $stmt = $db->prepare("SELECT f.*, r.id_reserva, c.cabania_nombre, 
+                               pf.personafisica_nombre as persona_nombre, 
+                               pf.personafisica_apellido as persona_apellido
                                FROM factura f
                                LEFT JOIN reserva r ON f.rela_reserva = r.id_reserva
                                LEFT JOIN cabania c ON r.rela_cabania = c.id_cabania
                                LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                                LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                                LEFT JOIN persona p ON h.rela_persona = p.id_persona
-                               ORDER BY f.factura_fechahora DESC
+                               LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                               ORDER BY f.id_factura DESC
                                LIMIT ?");
         $stmt->bind_param("i", $limite);
         $stmt->execute();
@@ -393,12 +400,15 @@ class HomeController extends Controller
     private function getReservasPendientesPago()
     {
         $db = \App\Core\Database::getInstance();
-        $result = $db->query("SELECT r.*, c.cabania_nombre, p.persona_nombre, p.persona_apellido, c.cabania_precio
+        $result = $db->query("SELECT r.*, c.cabania_nombre, 
+                               pf.personafisica_nombre as persona_nombre, 
+                               pf.personafisica_apellido as persona_apellido
                                FROM reserva r
                                LEFT JOIN cabania c ON r.rela_cabania = c.id_cabania
                                LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                                LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                                LEFT JOIN persona p ON h.rela_persona = p.id_persona
+                               LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
                                WHERE r.rela_estadoreserva = 1
                                ORDER BY r.reserva_fhinicio ASC");
         
@@ -413,13 +423,17 @@ class HomeController extends Controller
     {
         $db = \App\Core\Database::getInstance();
         $hoy = date('Y-m-d');
-        $stmt = $db->prepare("SELECT r.*, c.cabania_nombre, p.persona_nombre, p.persona_apellido, er.estadoreserva_descripcion
+        $stmt = $db->prepare("SELECT r.*, c.cabania_nombre, 
+                               pf.personafisica_nombre as persona_nombre, 
+                               pf.personafisica_apellido as persona_apellido, 
+                               er.estadoreserva_descripcion
                                FROM reserva r
                                LEFT JOIN cabania c ON r.rela_cabania = c.id_cabania
                                LEFT JOIN estadoreserva er ON r.rela_estadoreserva = er.id_estadoreserva
                                LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                                LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                                LEFT JOIN persona p ON h.rela_persona = p.id_persona
+                               LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
                                WHERE DATE(r.reserva_fhinicio) = ?
                                ORDER BY r.reserva_fhinicio ASC");
         $stmt->bind_param("s", $hoy);
@@ -437,12 +451,15 @@ class HomeController extends Controller
     {
         $db = \App\Core\Database::getInstance();
         $hoy = date('Y-m-d');
-        $stmt = $db->prepare("SELECT r.*, c.cabania_nombre, p.persona_nombre, p.persona_apellido
+        $stmt = $db->prepare("SELECT r.*, c.cabania_nombre, 
+                               pf.personafisica_nombre as persona_nombre, 
+                               pf.personafisica_apellido as persona_apellido
                                FROM reserva r
                                LEFT JOIN cabania c ON r.rela_cabania = c.id_cabania
                                LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                                LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                                LEFT JOIN persona p ON h.rela_persona = p.id_persona
+                               LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
                                WHERE DATE(r.reserva_fhinicio) = ? AND r.rela_estadoreserva = 2
                                ORDER BY r.reserva_fhinicio ASC");
         $stmt->bind_param("s", $hoy);
@@ -460,12 +477,15 @@ class HomeController extends Controller
     {
         $db = \App\Core\Database::getInstance();
         $hoy = date('Y-m-d');
-        $stmt = $db->prepare("SELECT r.*, c.cabania_nombre, p.persona_nombre, p.persona_apellido
+        $stmt = $db->prepare("SELECT r.*, c.cabania_nombre, 
+                               pf.personafisica_nombre as persona_nombre, 
+                               pf.personafisica_apellido as persona_apellido
                                FROM reserva r
                                LEFT JOIN cabania c ON r.rela_cabania = c.id_cabania
                                LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                                LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                                LEFT JOIN persona p ON h.rela_persona = p.id_persona
+                               LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
                                WHERE DATE(r.reserva_fhfin) = ? AND r.rela_estadoreserva IN (2, 3)
                                ORDER BY r.reserva_fhfin ASC");
         $stmt->bind_param("s", $hoy);
@@ -483,13 +503,17 @@ class HomeController extends Controller
     {
         $db = \App\Core\Database::getInstance();
         $fechaLimite = date('Y-m-d', strtotime("+$dias days"));
-        $stmt = $db->prepare("SELECT r.*, c.cabania_nombre, p.persona_nombre, p.persona_apellido, er.estadoreserva_descripcion
+        $stmt = $db->prepare("SELECT r.*, c.cabania_nombre, 
+                               pf.personafisica_nombre as persona_nombre, 
+                               pf.personafisica_apellido as persona_apellido, 
+                               er.estadoreserva_descripcion
                                FROM reserva r
                                LEFT JOIN cabania c ON r.rela_cabania = c.id_cabania
                                LEFT JOIN estadoreserva er ON r.rela_estadoreserva = er.id_estadoreserva
                                LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                                LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                                LEFT JOIN persona p ON h.rela_persona = p.id_persona
+                               LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
                                WHERE DATE(r.reserva_fhinicio) BETWEEN CURDATE() AND ? 
                                AND r.rela_estadoreserva IN (1, 2)
                                ORDER BY r.reserva_fhinicio ASC");
@@ -587,6 +611,87 @@ class HomeController extends Controller
         }
     }
     
+    /**
+     * Verificar y notificar pagos pendientes
+     * Se ejecuta VÍA AJAX desde JavaScript después de que Pusher esté suscrito
+     */
+    public static function checkAndNotifyPagosPendientes($usuarioId)
+    {
+        try {
+            error_log("🔔 checkAndNotifyPagosPendientes iniciado - Usuario ID: $usuarioId");
+            
+            $reservaModel = new \App\Models\Reserva();
+            $notificationService = new \App\Core\NotificationService();
+            
+            // Obtener reservas con pagos pendientes del usuario
+            $reservasPendientes = $reservaModel->getReservasConPagoPendiente($usuarioId);
+            
+            error_log("📋 Reservas pendientes encontradas: " . count($reservasPendientes));
+            
+            if (!empty($reservasPendientes)) {
+                foreach ($reservasPendientes as $reserva) {
+                    // Usar el saldo pendiente calculado en la consulta
+                    $montoPendiente = $reserva['saldo_pendiente'] ?? $reserva['reserva_montototal'] ?? 0;
+                    
+                    error_log("💰 Procesando reserva {$reserva['id_reserva']} - Monto pendiente: $montoPendiente");
+                    
+                    // Enviar notificación de pago pendiente
+                    $result = $notificationService->notifyPagoPendiente(
+                        $reserva,
+                        $montoPendiente,
+                        $usuarioId
+                    );
+                    
+                    if ($result) {
+                        error_log("✅ Notificación de pago pendiente enviada - Reserva: {$reserva['id_reserva']}, Usuario: $usuarioId, Monto: $montoPendiente");
+                    } else {
+                        error_log("❌ Error al enviar notificación de pago pendiente - Reserva: {$reserva['id_reserva']}");
+                    }
+                }
+            } else {
+                error_log("⚠️ No se encontraron reservas con pago pendiente para el usuario $usuarioId");
+            }
+        } catch (\Exception $e) {
+            error_log("ERROR HomeController - checkAndNotifyPagosPendientes: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
+        }
+    }
+    
+    /**
+     * Endpoint AJAX para verificar y enviar notificaciones de pagos pendientes
+     * Se llama desde JavaScript después de que Pusher esté inicializado
+     */
+    public function verificarPagosPendientes()
+    {
+        header('Content-Type: application/json');
+        
+        if (!Auth::check()) {
+            echo json_encode(['success' => false, 'message' => 'No autenticado']);
+            return;
+        }
+        
+        try {
+            $usuarioId = Auth::id();
+            
+            // Llamar al método estático que verifica y envía notificaciones
+            self::checkAndNotifyPagosPendientes($usuarioId);
+            
+            echo json_encode([
+                'success' => true,
+                'message' => 'Verificación de pagos pendientes completada',
+                'usuario_id' => $usuarioId
+            ]);
+            
+        } catch (\Exception $e) {
+            error_log("ERROR HomeController - verificarPagosPendientes: " . $e->getMessage());
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error al verificar pagos pendientes',
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
     /**
      * Endpoint para obtener notificaciones pendientes del día
      */

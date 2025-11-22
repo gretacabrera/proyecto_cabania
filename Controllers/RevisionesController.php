@@ -114,11 +114,6 @@ class RevisionesController extends Controller
                 return;
             }
 
-            if (empty($inventarios)) {
-                $this->redirect('/revisiones/create', 'Debe seleccionar al menos un elemento con daño', 'error');
-                return;
-            }
-
             // Validar que la reserva esté en estado "pendiente de revisión"
             $reserva = $this->reservaModel->find($idReserva);
             if (!$reserva || $reserva['rela_estadoreserva'] != 8) {
@@ -128,52 +123,54 @@ class RevisionesController extends Controller
 
             // Preparar array de revisiones para insertar
             $revisiones = [];
-            foreach ($inventarios as $invCabaniaId => $nivelDanioId) {
-                if ($nivelDanioId > 0) { // Solo incluir elementos con daño
-                    // Obtener el inventario_cabania para obtener el inventario_id
-                    $sql = "SELECT rela_inventario FROM inventario_cabania WHERE id_inventariocabania = ?";
-                    $db = Database::getInstance();
-                    $stmt = $db->prepare($sql);
-                    $stmt->bind_param('i', $invCabaniaId);
-                    $stmt->execute();
-                    $result = $stmt->get_result();
-                    $invCabania = $result->fetch_assoc();
+            
+            if (!empty($inventarios)) {
+                foreach ($inventarios as $invCabaniaId => $nivelDanioId) {
+                    if ($nivelDanioId > 0) { // Solo incluir elementos con daño
+                        // Obtener el inventario_cabania para obtener el inventario_id
+                        $sql = "SELECT rela_inventario FROM inventario_cabania WHERE id_inventariocabania = ?";
+                        $db = Database::getInstance();
+                        $stmt = $db->prepare($sql);
+                        $stmt->bind_param('i', $invCabaniaId);
+                        $stmt->execute();
+                        $result = $stmt->get_result();
+                        $invCabania = $result->fetch_assoc();
 
-                    if (!$invCabania) {
-                        continue;
+                        if (!$invCabania) {
+                            continue;
+                        }
+
+                        $inventarioId = $invCabania['rela_inventario'];
+
+                        // Buscar el costo asociado al nivel de daño y al inventario
+                        $costoDanio = $this->costoDanioModel->findWhere(
+                            "rela_inventario = ? AND rela_niveldanio = ? AND costodanio_estado = 1",
+                            [$inventarioId, $nivelDanioId]
+                        );
+
+                        $costo = $costoDanio ? $costoDanio['costodanio_importe'] : 0;
+
+                        $revisiones[] = [
+                            'inventariocabania_id' => $invCabaniaId,
+                            'costo' => $costo
+                        ];
                     }
-
-                    $inventarioId = $invCabania['rela_inventario'];
-
-                    // Buscar el costo asociado al nivel de daño y al inventario
-                    $costoDanio = $this->costoDanioModel->findWhere(
-                        "rela_inventario = ? AND rela_niveldanio = ? AND costodanio_estado = 1",
-                        [$inventarioId, $nivelDanioId]
-                    );
-
-                    $costo = $costoDanio ? $costoDanio['costodanio_importe'] : 0;
-
-                    $revisiones[] = [
-                        'inventariocabania_id' => $invCabaniaId,
-                        'costo' => $costo
-                    ];
                 }
             }
 
-            if (empty($revisiones)) {
-                $this->redirect('/revisiones/create', 'No hay elementos con daño para registrar', 'error');
-                return;
-            }
-
-            // Insertar revisiones en una transacción (incluye actualización de estado)
+            // Insertar revisiones (aunque esté vacío) y cambiar estado de reserva
             $insertado = $this->modelo->insertMultiple($revisiones, $idReserva);
 
             if (!$insertado) {
-                $this->redirect('/revisiones/create', 'Error al guardar las revisiones', 'error');
+                $this->redirect('/revisiones/create', 'Error al procesar la revisión', 'error');
                 return;
             }
 
-            $this->redirect('/revisiones', 'Revisiones registradas exitosamente', 'success');
+            $mensaje = empty($revisiones) 
+                ? 'Revisión completada sin daños registrados' 
+                : 'Revisión completada con ' . count($revisiones) . ' elemento(s) dañado(s)';
+
+            $this->redirect('/revisiones', $mensaje, 'success');
         } catch (\Exception $e) {
             $this->redirect('/revisiones/create', 'Error: ' . $e->getMessage(), 'error');
         }
