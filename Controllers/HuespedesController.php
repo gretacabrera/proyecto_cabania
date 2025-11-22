@@ -145,7 +145,7 @@ class HuespedesController extends Controller
 
             // 2. Crear huésped (sin ubicación en creación)
             $huespedData = [
-                'rela_persona' => $personaId,
+                'rela_persona' => $idPersona,
                 'rela_ubicacion' => (int) $this->post('rela_ubicacion'),
                 'huesped_estado' => 1
             ];
