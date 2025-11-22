@@ -199,48 +199,4 @@ class Factura extends Model
         
         return $prefijos[$tipoComprobante] ?? 'FAC';
     }
-    
-    /**
-     * Generar número de factura legible (método legacy)
-     */
-    public function generateFacturaNumber($facturaId)
-    {
-        $year = date('Y');
-        $month = date('m');
-        return sprintf("FAC-%s%s-%04d", $year, $month, $facturaId);
-    }
-    
-    /**
-     * Regenerar detalles de una factura existente
-     * Útil cuando se necesita corregir detalles faltantes
-     */
-    public function regenerarDetalles($facturaId, $nuevosDetalles)
-    {
-        return $this->db->transaction(function() use ($facturaId, $nuevosDetalles) {
-            try {
-                // 1. Eliminar detalles actuales
-                $this->db->query("DELETE FROM facturadetalle WHERE rela_factura = $facturaId");
-                
-                // 2. Crear nuevos detalles
-                if (!empty($nuevosDetalles)) {
-                    $this->createFacturaDetalles($facturaId, $nuevosDetalles);
-                }
-                
-                // 3. Recalcular totales de la factura
-                $subtotal = 0;
-                foreach ($nuevosDetalles as $detalle) {
-                    $subtotal += floatval($detalle['total']);
-                }
-                
-                $updateSql = "UPDATE factura SET factura_subtotal = $subtotal, factura_total = $subtotal WHERE id_factura = $facturaId";
-                $this->db->query($updateSql);
-                
-                return true;
-                
-            } catch (\Exception $e) {
-                error_log("ERROR regenerando detalles de factura: " . $e->getMessage());
-                throw $e;
-            }
-        });
-    }
 }
