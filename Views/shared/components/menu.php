@@ -125,7 +125,7 @@ if (session_status() == PHP_SESSION_NONE) {
                             <span id="notifications-badge" class="badge badge-danger badge-pill position-absolute d-none" 
                                   style="top: 0; right: 5px; font-size: 0.65rem; padding: 0.25em 0.5em;">0</span>
                         </a>
-                        <div class="dropdown-menu dropdown-menu-right p-0" style="min-width: 350px; max-height: 500px; overflow-y: auto;">
+                        <div class="dropdown-menu dropdown-menu-right p-0 notifications-dropdown" style="min-width: 350px; max-height: 500px; overflow-y: auto;">
                             <div class="dropdown-header bg-primary text-white d-flex justify-content-between align-items-center">
                                 <strong><i class="fas fa-bell mr-2"></i>Notificaciones</strong>
                                 <button class="btn btn-sm btn-link text-white p-0" onclick="NotificationService.clearAll()" title="Limpiar todo">

@@ -39,34 +39,42 @@ class ReservasController extends Controller
 
     public function index()
     {
-        $this->requireAuth();
-        
-        // Obtener perfil del usuario
-        $userProfile = \App\Core\Auth::getUserProfile();
-        
-        // Preparar datos base
+        $this->requirePermission('reservas');
+
         $page = (int) $this->get('page', 1);
+        $perPage = (int) $this->get('per_page', 10);
+        
+        // Validar perPage
+        $allowedPerPage = [5, 10, 25, 50];
+        if (!in_array($perPage, $allowedPerPage)) {
+            $perPage = 10;
+        }
+        
         $filters = [
+            'reserva_nro' => $this->get('reserva_nro'),
             'estado' => $this->get('estado'),
             'cabania' => $this->get('cabania'),
+            'fecha_alta' => $this->get('fecha_alta'),
             'fecha_inicio' => $this->get('fecha_inicio'),
             'fecha_fin' => $this->get('fecha_fin'),
             'persona' => $this->get('persona')
         ];
-        
-        // Datos específicos según el perfil
-        switch ($userProfile) {
-            case 'administrador':
-                return $this->indexAdministrador($page, $filters);
-            case 'cajero':
-                return $this->indexCajero($page, $filters);
-            case 'recepcionista':
-                return $this->indexRecepcionista($page, $filters);
-            case 'huesped':
-                return $this->indexHuesped();
-            default:
-                $this->redirect('/', 'Perfil no autorizado para gestionar reservas', 'error');
-        }
+
+        $result = $this->reservaModel->getWithDetails($page, $perPage, $filters);
+        $cabanias = $this->cabaniaModel->getActive();
+        $estadosReserva = $this->estadoReservaModel->getActive();
+
+        $data = [
+            'title' => 'Gestión de Reservas',
+            'reservas' => $result['data'],
+            'pagination' => $result,
+            'filters' => $filters,
+            'cabanias' => $cabanias,
+            'estados_reserva' => $estadosReserva,
+            'isAdminArea' => true
+        ];
+
+        return $this->render('admin/operaciones/reservas/listado', $data, 'main');
     }
 
     /**
@@ -195,27 +203,28 @@ class ReservasController extends Controller
             'cabanias' => $cabanias,
             'metodos_pago' => $metodosPago,
             'es_cajero' => $userModel->esPerfilCajero(),
-            'es_huesped' => $userModel->esPerfilHuesped()
+            'es_huesped' => $userModel->esPerfilHuesped(),
+            'isAdminArea' => true
         ];
-        return $this->render('admin/operaciones/reservas/formulario', $data);
+        return $this->render('admin/operaciones/reservas/formulario', $data, 'main');
     }
 
     public function store()
     {
         $this->requirePermission('reservas');
+        
+        // Solo campos que existen en la tabla reserva
         $data = [
             'reserva_online' => 0, // Marcar como reserva in-situ (admin)
             'rela_cabania' => $this->post('rela_cabania'),
-            'rela_persona' => $this->post('rela_persona'),
-            'reserva_fechainicio' => $this->post('reserva_fechainicio'),
-            'reserva_fechafin' => $this->post('reserva_fechafin'),
-            'reserva_cantidadpersonas' => $this->post('reserva_cantidadpersonas'),
-            'rela_metodopago' => $this->post('rela_metodopago'),
-            'reserva_observaciones' => $this->post('reserva_observaciones', ''),
-            'rela_estadoreserva' => 1
+            'reserva_fhinicio' => $this->post('reserva_fhinicio'),
+            'reserva_fhfin' => $this->post('reserva_fhfin'),
+            'rela_estadoreserva' => 1,
+            'rela_periodo' => $this->post('rela_periodo', 1) // Periodo por defecto
         ];
-        if (empty($data['rela_cabania']) || empty($data['rela_persona']) || 
-            empty($data['reserva_fechainicio']) || empty($data['reserva_fechafin'])) {
+        
+        if (empty($data['rela_cabania']) || 
+            empty($data['reserva_fhinicio']) || empty($data['reserva_fhfin'])) {
             $this->redirect('/admin/operaciones/reservas/formulario', 'Complete los campos obligatorios', 'error');
         }
         try {
@@ -273,43 +282,139 @@ class ReservasController extends Controller
                 'title' => 'Detalle de Reserva',
                 'reserva' => $reserva,
                 'consumos' => $consumos,
+                'isAdminArea' => false,
                 'isHuesped' => true
             ];
-            return $this->render('admin/operaciones/reservas/detalle', $data);
+            return $this->render('admin/operaciones/reservas/detalle', $data, 'main');
         } else {
             // Administradores y recepcionistas requieren permiso
             $this->requirePermission('reservas');
             $consumos = $this->reservaModel->getConsumptions($id);
+            
+            // Obtener estadísticas
+            $estadisticas = [
+                'total_pagos' => 0,
+                'monto_pagado' => 0,
+                'total_servicios' => 0,
+                'total_consumos' => count($consumos)
+            ];
+            
+            // Consultar pagos
+            $db = \App\Core\Database::getInstance();
+            $sqlPagos = "SELECT COUNT(*) as total, COALESCE(SUM(p.pago_total), 0) as monto 
+                        FROM pago p
+                        INNER JOIN factura f ON p.rela_factura = f.id_factura
+                        WHERE f.rela_reserva = ?";
+            $stmtPagos = $db->prepare($sqlPagos);
+            $stmtPagos->bind_param('i', $id);
+            $stmtPagos->execute();
+            $resultPagos = $stmtPagos->get_result();
+            if ($rowPagos = $resultPagos->fetch_assoc()) {
+                $estadisticas['total_pagos'] = $rowPagos['total'];
+                $estadisticas['monto_pagado'] = $rowPagos['monto'];
+            }
+            
+            // Consultar servicios (consumos de tipo servicio)
+            $sqlServicios = "SELECT COUNT(*) as total 
+                           FROM consumo WHERE rela_reserva = ? AND rela_servicio IS NOT NULL";
+            $stmtServicios = $db->prepare($sqlServicios);
+            $stmtServicios->bind_param('i', $id);
+            $stmtServicios->execute();
+            $resultServicios = $stmtServicios->get_result();
+            if ($rowServicios = $resultServicios->fetch_assoc()) {
+                $estadisticas['total_servicios'] = $rowServicios['total'];
+            }
+            
             $data = [
                 'title' => 'Detalle de Reserva',
                 'reserva' => $reserva,
                 'consumos' => $consumos,
+                'estadisticas' => $estadisticas,
+                'isAdminArea' => true,
                 'isHuesped' => false
             ];
-            return $this->render('admin/operaciones/reservas/detalle', $data);
+            return $this->render('admin/operaciones/reservas/detalle', $data, 'main');
         }
     }
 
     public function edit($id)
     {
         $this->requirePermission('reservas');
-        $reserva = $this->reservaModel->find($id);
-        if (!$reserva) {
+        
+        // Obtener reserva con detalles (incluye datos del huésped)
+        $result = $this->reservaModel->getWithDetails(1, 1, ['id' => $id]);
+        if (empty($result['data'])) {
             return $this->view->error(404);
         }
+        $reserva = $result['data'][0];
 
         if ($this->isPost()) {
             return $this->update($id);
         }
 
         $cabanias = $this->cabaniaModel->getActive();
+        $estadosReserva = $this->estadoReservaModel->getActive();
+        
+        // Obtener estadísticas
+        $estadisticas = [
+            'total_consumos' => 0,
+            'total_servicios' => 0,
+            'monto_pagado' => 0
+        ];
+        
+        $db = \App\Core\Database::getInstance();
+        
+        // Consultar consumos
+        $sqlConsumos = "SELECT COUNT(*) as total FROM consumo WHERE rela_reserva = ?";
+        $stmtConsumos = $db->prepare($sqlConsumos);
+        $stmtConsumos->bind_param('i', $id);
+        $stmtConsumos->execute();
+        $resultConsumos = $stmtConsumos->get_result();
+        if ($rowConsumos = $resultConsumos->fetch_assoc()) {
+            $estadisticas['total_consumos'] = $rowConsumos['total'];
+        }
+        
+        // Consultar servicios (consumos de tipo servicio)
+        $sqlServicios = "SELECT COUNT(*) as total FROM consumo WHERE rela_reserva = ? AND rela_servicio IS NOT NULL";
+        $stmtServicios = $db->prepare($sqlServicios);
+        $stmtServicios->bind_param('i', $id);
+        $stmtServicios->execute();
+        $resultServicios = $stmtServicios->get_result();
+        if ($rowServicios = $resultServicios->fetch_assoc()) {
+            $estadisticas['total_servicios'] = $rowServicios['total'];
+        }
+        
+        // Consultar pagos
+        $sqlPagos = "SELECT COALESCE(SUM(p.pago_total), 0) as monto 
+                    FROM pago p
+                    INNER JOIN factura f ON p.rela_factura = f.id_factura
+                    WHERE f.rela_reserva = ?";
+        $stmtPagos = $db->prepare($sqlPagos);
+        $stmtPagos->bind_param('i', $id);
+        $stmtPagos->execute();
+        $resultPagos = $stmtPagos->get_result();
+        if ($rowPagos = $resultPagos->fetch_assoc()) {
+            $estadisticas['monto_pagado'] = $rowPagos['monto'];
+        }
+        
+        // Convertir formato de fechas para datetime-local (YYYY-MM-DDTHH:MM)
+        if (isset($reserva['reserva_fhinicio']) && !empty($reserva['reserva_fhinicio'])) {
+            $reserva['reserva_fhinicio'] = date('Y-m-d\TH:i', strtotime($reserva['reserva_fhinicio']));
+        }
+        if (isset($reserva['reserva_fhfin']) && !empty($reserva['reserva_fhfin'])) {
+            $reserva['reserva_fhfin'] = date('Y-m-d\TH:i', strtotime($reserva['reserva_fhfin']));
+        }
+        
         $data = [
             'title' => 'Editar Reserva',
             'reserva' => $reserva,
-            'cabanias' => $cabanias
+            'cabanias' => $cabanias,
+            'estados_reserva' => $estadosReserva,
+            'estadisticas' => $estadisticas,
+            'isAdminArea' => true
         ];
 
-        return $this->render('admin/operaciones/reservas/formulario', $data);
+        return $this->render('admin/operaciones/reservas/formulario', $data, 'main');
     }
 
     public function update($id)
@@ -324,10 +429,8 @@ class ReservasController extends Controller
         $estadoAnterior = $reserva['rela_estadoreserva'];
         
         $data = [
-            'reserva_fechainicio' => $this->post('reserva_fechainicio'),
-            'reserva_fechafin' => $this->post('reserva_fechafin'),
-            'reserva_cantidadpersonas' => $this->post('reserva_cantidadpersonas'),
-            'reserva_observaciones' => $this->post('reserva_observaciones', '')
+            'reserva_fhinicio' => $this->post('reserva_fhinicio'),
+            'reserva_fhfin' => $this->post('reserva_fhfin')
         ];
         
         // Si se envía un nuevo estado, agregarlo
@@ -3698,6 +3801,260 @@ class ReservasController extends Controller
             }
         } catch (\Exception $e) {
             error_log("Error verificando pagos pendientes: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Exportar a Excel (.xlsx)
+     */
+    public function exportar()
+    {
+        $this->requirePermission('reservas');
+
+        $filters = [
+            'estado' => $this->get('estado'),
+            'cabania' => $this->get('cabania'),
+            'fecha_inicio' => $this->get('fecha_inicio'),
+            'fecha_fin' => $this->get('fecha_fin'),
+            'persona' => $this->get('persona')
+        ];
+
+        $result = $this->reservaModel->getAllWithDetailsForExport($filters);
+        $datos = $result['data'];
+
+        if (empty($datos)) {
+            $this->redirect('/reservas', 'No hay datos para exportar', 'error');
+            return;
+        }
+
+        require_once 'vendor/autoload.php';
+
+        try {
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+
+            // Encabezados
+            $headers = ['N° Reserva', 'Fecha Hora', 'Cabaña', 'Periodo', 'Inicio', 'Fin', 'Estado', 'Online', 'Persona'];
+            $col = 'A';
+            foreach ($headers as $header) {
+                $sheet->setCellValue($col . '1', $header);
+                $sheet->getStyle($col . '1')->getFont()->setBold(true);
+                $sheet->getStyle($col . '1')->getFill()
+                    ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                    ->getStartColor()->setARGB('FFE0E0E0');
+                $col++;
+            }
+
+            // Datos
+            $row = 2;
+            foreach ($datos as $reserva) {
+                $sheet->setCellValue('A' . $row, $reserva['reserva_nro']);
+                $sheet->setCellValue('B' . $row, date('d/m/Y H:i', strtotime($reserva['reserva_fechahora'])));
+                $sheet->setCellValue('C' . $row, $reserva['cabania_nombre'] ?? 'Sin cabaña');
+                $sheet->setCellValue('D' . $row, $reserva['periodo_descripcion'] ?? 'Sin periodo');
+                $sheet->setCellValue('E' . $row, date('d/m/Y H:i', strtotime($reserva['reserva_fhinicio'])));
+                $sheet->setCellValue('F' . $row, date('d/m/Y H:i', strtotime($reserva['reserva_fhfin'])));
+                $sheet->setCellValue('G' . $row, $reserva['estadoreserva_descripcion'] ?? 'Sin estado');
+                $sheet->setCellValue('H' . $row, $reserva['reserva_online'] == 1 ? 'Sí' : 'No');
+                $sheet->setCellValue('I' . $row, ($reserva['persona_nombre'] ?? '') . ' ' . ($reserva['persona_apellido'] ?? ''));
+                $row++;
+            }
+
+            // Ajustar columnas
+            foreach (range('A', 'I') as $columnID) {
+                $sheet->getColumnDimension($columnID)->setAutoSize(true);
+            }
+
+            // Descargar archivo
+            $filename = 'reservas_' . date('Ymd_His') . '.xlsx';
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Cache-Control: max-age=0');
+
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save('php://output');
+            exit;
+
+        } catch (\Exception $e) {
+            error_log("Error exportando a Excel: " . $e->getMessage());
+            $this->redirect('/reservas', 'Error al exportar a Excel', 'error');
+        }
+    }
+
+    /**
+     * Exportar a PDF
+     */
+    public function exportarPdf()
+    {
+        $this->requirePermission('reservas');
+
+        $filters = [
+            'estado' => $this->get('estado'),
+            'cabania' => $this->get('cabania'),
+            'fecha_inicio' => $this->get('fecha_inicio'),
+            'fecha_fin' => $this->get('fecha_fin'),
+            'persona' => $this->get('persona')
+        ];
+
+        $result = $this->reservaModel->getAllWithDetailsForExport($filters);
+        $datos = $result['data'];
+
+        if (empty($datos)) {
+            $this->redirect('/reservas', 'No hay datos para exportar', 'error');
+            return;
+        }
+
+        require_once 'vendor/autoload.php';
+
+        try {
+            $pdf = new \TCPDF('P', 'mm', 'A4', true, 'UTF-8');
+            
+            $pdf->SetCreator('Sistema de Gestión de Cabañas');
+            $pdf->SetAuthor('Sistema de Gestión');
+            $pdf->SetTitle('Listado de Reservas');
+            $pdf->SetSubject('Reservas');
+
+            $pdf->setPrintHeader(false);
+            $pdf->setPrintFooter(false);
+            $pdf->SetMargins(15, 15, 15);
+            $pdf->SetAutoPageBreak(true, 15);
+            $pdf->AddPage();
+
+            // Título
+            $pdf->SetFont('helvetica', 'B', 16);
+            $pdf->Cell(0, 10, 'Listado de Reservas', 0, 1, 'C');
+            $pdf->Ln(3);
+
+            // Info de exportación
+            $pdf->SetFont('helvetica', '', 9);
+            $pdf->Cell(0, 5, 'Fecha de exportación: ' . date('d/m/Y H:i'), 0, 1, 'R');
+            $pdf->Cell(0, 5, 'Total de registros: ' . $result['total'], 0, 1, 'R');
+            $pdf->Ln(5);
+
+            // Tabla
+            $pdf->SetFont('helvetica', 'B', 8);
+            $html = '<table border="1" cellpadding="4" cellspacing="0">
+                <thead>
+                    <tr style="background-color:#E0E0E0;">
+                        <th width="10%"><b>N° Reserva</b></th>
+                        <th width="15%"><b>Fecha</b></th>
+                        <th width="15%"><b>Cabaña</b></th>
+                        <th width="15%"><b>Inicio</b></th>
+                        <th width="15%"><b>Fin</b></th>
+                        <th width="15%"><b>Estado</b></th>
+                        <th width="15%"><b>Persona</b></th>
+                    </tr>
+                </thead>
+                <tbody>';
+
+            $pdf->SetFont('helvetica', '', 7);
+            foreach ($datos as $reserva) {
+                $html .= '<tr>
+                    <td width="10%">' . htmlspecialchars($reserva['reserva_nro']) . '</td>
+                    <td width="15%">' . date('d/m/Y', strtotime($reserva['reserva_fechahora'])) . '</td>
+                    <td width="15%">' . htmlspecialchars($reserva['cabania_nombre'] ?? 'Sin cabaña') . '</td>
+                    <td width="15%">' . date('d/m/Y', strtotime($reserva['reserva_fhinicio'])) . '</td>
+                    <td width="15%">' . date('d/m/Y', strtotime($reserva['reserva_fhfin'])) . '</td>
+                    <td width="15%">' . htmlspecialchars($reserva['estadoreserva_descripcion'] ?? 'Sin estado') . '</td>
+                    <td width="15%">' . htmlspecialchars(($reserva['persona_nombre'] ?? '') . ' ' . ($reserva['persona_apellido'] ?? '')) . '</td>
+                </tr>';
+            }
+
+            $html .= '</tbody></table>';
+            $pdf->writeHTML($html, true, false, true, false, '');
+
+            // Descargar
+            $filename = 'reservas_' . date('Ymd_His') . '.pdf';
+            $pdf->Output($filename, 'D');
+            exit;
+
+        } catch (\Exception $e) {
+            error_log("Error exportando a PDF: " . $e->getMessage());
+            $this->redirect('/reservas', 'Error al exportar a PDF', 'error');
+        }
+    }
+
+    /**
+     * Eliminar (baja lógica) - Cambiar estado a Cancelada
+     */
+    public function delete($id)
+    {
+        $this->requirePermission('reservas');
+
+        $reserva = $this->reservaModel->find($id);
+        if (!$reserva) {
+            $this->redirect('/reservas', 'Reserva no encontrada', 'error');
+            return;
+        }
+
+        if ($this->isPost()) {
+            try {
+                // Cambiar estado a Anulada (ID 6)
+                $this->reservaModel->update($id, ['rela_estadoreserva' => 6]);
+                $this->redirect('/reservas', 'Reserva anulada exitosamente', 'success');
+            } catch (\Exception $e) {
+                $this->redirect('/reservas', 'Error al anular reserva: ' . $e->getMessage(), 'error');
+            }
+            return;
+        }
+
+        // Vista de confirmación (opcional)
+        $this->redirect('/reservas/' . $id, 'Use el botón de cancelar para proceder', 'info');
+    }
+
+    /**
+     * Restaurar reserva cancelada
+     */
+    public function restore($id)
+    {
+        $this->requirePermission('reservas');
+
+        $reserva = $this->reservaModel->find($id);
+        if (!$reserva) {
+            $this->redirect('/reservas', 'Reserva no encontrada', 'error');
+            return;
+        }
+
+        if ($this->isPost()) {
+            try {
+                // Cambiar estado a Confirmada (asumiendo ID 2 es estado confirmada)
+                $this->reservaModel->update($id, ['rela_estadoreserva' => 2]);
+                $this->redirect('/reservas', 'Reserva restaurada exitosamente', 'success');
+            } catch (\Exception $e) {
+                $this->redirect('/reservas', 'Error al restaurar reserva: ' . $e->getMessage(), 'error');
+            }
+            return;
+        }
+
+        $this->redirect('/reservas/' . $id, 'Reserva restaurada', 'success');
+    }
+
+    /**
+     * Cambiar estado mediante AJAX
+     */
+    public function cambiarEstado($id)
+    {
+        $this->requirePermission('reservas');
+        header('Content-Type: application/json');
+
+        if (!$this->isPost()) {
+            echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+            return;
+        }
+
+        $reserva = $this->reservaModel->find($id);
+        if (!$reserva) {
+            echo json_encode(['success' => false, 'message' => 'Reserva no encontrada']);
+            return;
+        }
+
+        $nuevoEstadoId = (int) $this->post('estado');
+        
+        try {
+            $this->reservaModel->update($id, ['rela_estadoreserva' => $nuevoEstadoId]);
+            echo json_encode(['success' => true, 'message' => 'Estado actualizado correctamente']);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'message' => 'Error al cambiar estado: ' . $e->getMessage()]);
         }
     }
 

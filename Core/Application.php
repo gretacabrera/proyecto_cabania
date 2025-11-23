@@ -162,6 +162,8 @@ class Application
         // Rutas de reservas
         $this->router->get('/reservas', 'ReservasController@index');
         $this->router->any('/reservas/create', 'ReservasController@create');
+        $this->router->get('/reservas/exportar', 'ReservasController@exportar');
+        $this->router->get('/reservas/exportar-pdf', 'ReservasController@exportarPdf');
         $this->router->any('/reservas/online', 'ReservasController@online');
         $this->router->get('/reservas/confirmar', 'ReservasController@confirmar');
         $this->router->post('/reservas/servicios', 'ReservasController@servicios');
@@ -198,6 +200,9 @@ class Application
         
         $this->router->get('/reservas/{id}', 'ReservasController@show');
         $this->router->any('/reservas/{id}/edit', 'ReservasController@edit');
+        $this->router->post('/reservas/{id}/delete', 'ReservasController@delete');
+        $this->router->post('/reservas/{id}/restore', 'ReservasController@restore');
+        $this->router->post('/reservas/{id}/estado', 'ReservasController@cambiarEstado');
         $this->router->post('/reservas/{id}/change-status', 'ReservasController@changeStatus');
 
         // Rutas de revisiones

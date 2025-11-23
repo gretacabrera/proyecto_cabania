@@ -110,6 +110,7 @@
     border-left: 0.35em solid transparent;
 }
 
+/* Menú dropdown con scroll automático después de 8 elementos */
 .dropdown-menu {
     background: var(--menu-bg);
     border: 1px solid var(--menu-border);
@@ -118,6 +119,9 @@
     padding: 0.5rem;
     margin-top: 0.5rem;
     min-width: 220px;
+    max-height: calc(8 * 3rem); /* Aproximadamente 8 items de 3rem cada uno */
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .dropdown-item {
@@ -161,6 +165,55 @@
 .dropdown-divider {
     border-color: var(--menu-border);
     margin: 0.5rem 0;
+}
+
+/* Scrollbar personalizado para dropdowns */
+.dropdown-menu::-webkit-scrollbar {
+    width: 6px;
+}
+
+.dropdown-menu::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: var(--menu-radius);
+}
+
+.dropdown-menu::-webkit-scrollbar-thumb {
+    background: var(--menu-border);
+    border-radius: var(--menu-radius);
+    transition: var(--menu-transition);
+}
+
+.dropdown-menu::-webkit-scrollbar-thumb:hover {
+    background: var(--menu-text-light);
+}
+
+/* Scrollbar para Firefox */
+.dropdown-menu {
+    scrollbar-width: thin;
+    scrollbar-color: var(--menu-border) transparent;
+}
+
+/* Dropdown de notificaciones (más alto que los menús normales) */
+.notifications-dropdown {
+    max-height: 500px !important;
+}
+
+.notifications-dropdown::-webkit-scrollbar {
+    width: 8px;
+}
+
+.notifications-dropdown::-webkit-scrollbar-track {
+    background: var(--menu-hover-bg);
+    border-radius: var(--menu-radius);
+}
+
+.notifications-dropdown::-webkit-scrollbar-thumb {
+    background: var(--menu-text-light);
+    border-radius: var(--menu-radius);
+}
+
+.notifications-dropdown::-webkit-scrollbar-thumb:hover {
+    background: var(--menu-primary);
 }
 
 /* Avatar */

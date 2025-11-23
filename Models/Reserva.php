@@ -17,78 +17,132 @@ class Reserva extends Model
      */
     public function getWithDetails($page = 1, $perPage = 10, $filters = [])
     {
-        $where = "er.estadoreserva_estado = 1";
+        $where = "1=1";
+        $params = [];
+        
+        if (!empty($filters['reserva_nro'])) {
+            $where .= " AND r.reserva_nro LIKE ?";
+            $params[] = '%' . $filters['reserva_nro'] . '%';
+        }
         
         if (!empty($filters['estado'])) {
-            $where .= " AND r.rela_estadoreserva = " . (int)$filters['estado'];
+            $where .= " AND r.rela_estadoreserva = ?";
+            $params[] = (int)$filters['estado'];
         }
         
         if (!empty($filters['cabania'])) {
-            $where .= " AND r.rela_cabania = " . (int)$filters['cabania'];
+            $where .= " AND r.rela_cabania = ?";
+            $params[] = (int)$filters['cabania'];
         }
         
         if (!empty($filters['fecha_inicio'])) {
-            $where .= " AND r.reserva_fhinicio >= '" . $this->db->escape($filters['fecha_inicio']) . "'";
+            $where .= " AND r.reserva_fhinicio >= ?";
+            $params[] = $filters['fecha_inicio'];
         }
         
         if (!empty($filters['fecha_fin'])) {
-            $where .= " AND r.reserva_fhfin <= '" . $this->db->escape($filters['fecha_fin']) . "'";
+            $where .= " AND r.reserva_fhfin <= ?";
+            $params[] = $filters['fecha_fin'];
         }
         
         if (!empty($filters['persona'])) {
-            $persona = $this->db->escape($filters['persona']);
-            $where .= " AND (pf.personafisica_nombre LIKE '%$persona%' OR pf.personafisica_apellido LIKE '%$persona%')";
+            $where .= " AND (pf.personafisica_nombre LIKE ? OR pf.personafisica_apellido LIKE ?)";
+            $params[] = '%' . $filters['persona'] . '%';
+            $params[] = '%' . $filters['persona'] . '%';
         }
         
-        // Comentado: pe.persona_dni no existe en el esquema de la BD
-        // if (!empty($filters['huesped_dni'])) {
-        //     $dni = $this->db->escape($filters['huesped_dni']);
-        //     $where .= " AND pe.persona_dni LIKE '%$dni%'";
-        // }
+        return $this->paginateWithParams($page, $perPage, $where, "r.reserva_fhinicio DESC", $params);
+    }
+
+    /**
+     * Obtener todas las reservas con filtros para exportación (sin paginación)
+     */
+    public function getAllWithDetailsForExport($filters = [])
+    {
+        $where = "1=1";
+        $params = [];
         
-        if (!empty($filters['huesped_nombre'])) {
-            $nombre = $this->db->escape($filters['huesped_nombre']);
-            $where .= " AND CONCAT(pf.personafisica_nombre, ' ', pf.personafisica_apellido) LIKE '%$nombre%'";
+        // Aplicar los mismos filtros que getWithDetails
+        if (!empty($filters['reserva_nro'])) {
+            $where .= " AND r.reserva_nro LIKE ?";
+            $params[] = '%' . $filters['reserva_nro'] . '%';
         }
         
-        $sql = "SELECT r.*, 
-                       c.cabania_nombre, c.cabania_codigo, c.cabania_precio, c.cabania_capacidad,
-                       er.estadoreserva_descripcion,
-                       pr.periodo_descripcion, pr.periodo_fechainicio, pr.periodo_fechafin,
-                       GROUP_CONCAT(DISTINCT CONCAT(pf.personafisica_nombre, ' ', pf.personafisica_apellido) SEPARATOR ', ') as huespedes,
-                       MAX((SELECT ct.contacto_descripcion FROM contacto ct 
-                            LEFT JOIN tipocontacto tc ON ct.rela_tipocontacto = tc.id_tipocontacto 
-                            WHERE tc.tipocontacto_descripcion = 'email' AND ct.rela_persona = p.id_persona 
-                            LIMIT 1)) as persona_email,
-                       MAX((SELECT ct.contacto_descripcion FROM contacto ct 
-                            LEFT JOIN tipocontacto tc ON ct.rela_tipocontacto = tc.id_tipocontacto 
-                            WHERE tc.tipocontacto_descripcion = 'telefono' AND ct.rela_persona = p.id_persona 
-                            LIMIT 1)) as persona_telefono,
-                       MAX(pf.personafisica_nombre) as persona_nombre,
-                       MAX(pf.personafisica_apellido) as persona_apellido
-                FROM reserva r
-                LEFT JOIN cabania c ON r.rela_cabania = c.id_cabania
-                LEFT JOIN estadoreserva er ON r.rela_estadoreserva = er.id_estadoreserva
-                LEFT JOIN periodo pr ON r.rela_periodo = pr.id_periodo
-                LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
-                LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
-                LEFT JOIN persona p ON h.rela_persona = p.id_persona
-                LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
-                WHERE $where
-                GROUP BY r.id_reserva
-                ORDER BY r.reserva_fhinicio DESC";
+        if (!empty($filters['estado'])) {
+            $where .= " AND r.rela_estadoreserva = ?";
+            $params[] = (int)$filters['estado'];
+        }
         
+        if (!empty($filters['cabania'])) {
+            $where .= " AND r.rela_cabania = ?";
+            $params[] = (int)$filters['cabania'];
+        }
+        
+        if (!empty($filters['fecha_alta'])) {
+            $where .= " AND DATE(r.reserva_fechahora) = ?";
+            $params[] = $filters['fecha_alta'];
+        }
+        
+        if (!empty($filters['fecha_inicio'])) {
+            $where .= " AND r.reserva_fhinicio >= ?";
+            $params[] = $filters['fecha_inicio'];
+        }
+        
+        if (!empty($filters['fecha_fin'])) {
+            $where .= " AND r.reserva_fhfin <= ?";
+            $params[] = $filters['fecha_fin'];
+        }
+        
+        if (!empty($filters['persona'])) {
+            $where .= " AND (pf.personafisica_nombre LIKE ? OR pf.personafisica_apellido LIKE ?)";
+            $params[] = '%' . $filters['persona'] . '%';
+            $params[] = '%' . $filters['persona'] . '%';
+        }
+        
+        // Query para contar total (para estadísticas)
         $countSql = "SELECT COUNT(DISTINCT r.id_reserva) as total 
                      FROM reserva r
                      LEFT JOIN cabania c ON r.rela_cabania = c.id_cabania
                      LEFT JOIN estadoreserva er ON r.rela_estadoreserva = er.id_estadoreserva
+                     LEFT JOIN periodo pr ON r.rela_periodo = pr.id_periodo
                      LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                      LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                      LEFT JOIN persona p ON h.rela_persona = p.id_persona
                      LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
                      WHERE $where";
+        $totalResult = $this->queryWithParams($countSql, $params);
+        $totalRow = $totalResult->fetch_assoc();
+        $total = (int) $totalRow['total'];
         
-        return $this->paginateCustom($sql, $countSql, $page, $perPage);
+        // Query para obtener TODOS los registros (sin LIMIT)
+        $dataSql = "SELECT r.*, 
+                           c.cabania_nombre, c.cabania_codigo, c.cabania_precio, c.cabania_capacidad,
+                           er.estadoreserva_descripcion,
+                           pr.periodo_descripcion,
+                           MAX(pf.personafisica_nombre) as persona_nombre,
+                           MAX(pf.personafisica_apellido) as persona_apellido
+                    FROM reserva r
+                    LEFT JOIN cabania c ON r.rela_cabania = c.id_cabania
+                    LEFT JOIN estadoreserva er ON r.rela_estadoreserva = er.id_estadoreserva
+                    LEFT JOIN periodo pr ON r.rela_periodo = pr.id_periodo
+                    LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
+                    LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
+                    LEFT JOIN persona p ON h.rela_persona = p.id_persona
+                    LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                    WHERE $where
+                    GROUP BY r.id_reserva
+                    ORDER BY r.reserva_fhinicio DESC";
+        $dataResult = $this->queryWithParams($dataSql, $params);
+        
+        $data = [];
+        while ($row = $dataResult->fetch_assoc()) {
+            $data[] = $row;
+        }
+        
+        return [
+            'data' => $data,
+            'total' => $total
+        ];
     }
 
     /**
@@ -381,32 +435,74 @@ class Reserva extends Model
     }
     
     /**
-     * Paginación personalizada
+     * Obtener reservas con paginación usando parámetros preparados
      */
-    protected function paginateCustom($sql, $countSql, $page, $perPage)
+    private function paginateWithParams($page = 1, $perPage = 10, $where = "1=1", $orderBy = null, $params = [])
     {
         $offset = ($page - 1) * $perPage;
+        $limit = (int) $perPage;
         
-        // Contar total
-        $countResult = $this->db->query($countSql);
-        $totalRecords = $countResult->fetch_assoc()['total'];
+        // Query para contar total
+        $countSql = "SELECT COUNT(DISTINCT r.id_reserva) as total 
+                     FROM reserva r
+                     LEFT JOIN cabania c ON r.rela_cabania = c.id_cabania
+                     LEFT JOIN estadoreserva er ON r.rela_estadoreserva = er.id_estadoreserva
+                     LEFT JOIN periodo pr ON r.rela_periodo = pr.id_periodo
+                     LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
+                     LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
+                     LEFT JOIN persona p ON h.rela_persona = p.id_persona
+                     LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                     WHERE $where";
+        $totalResult = $this->queryWithParams($countSql, $params);
+        $totalRow = $totalResult->fetch_assoc();
+        $total = (int) $totalRow['total'];
         
-        // Obtener registros
-        $paginatedSql = $sql . " LIMIT $perPage OFFSET $offset";
-        $result = $this->db->query($paginatedSql);
+        // Query para obtener registros
+        $orderClause = $orderBy ? "ORDER BY $orderBy" : '';
+        $dataSql = "SELECT r.*, 
+                           c.cabania_nombre, c.cabania_codigo, c.cabania_precio, c.cabania_capacidad,
+                           er.estadoreserva_descripcion,
+                           pr.periodo_descripcion,
+                           MAX(pf.personafisica_nombre) as persona_nombre,
+                           MAX(pf.personafisica_apellido) as persona_apellido
+                    FROM reserva r
+                    LEFT JOIN cabania c ON r.rela_cabania = c.id_cabania
+                    LEFT JOIN estadoreserva er ON r.rela_estadoreserva = er.id_estadoreserva
+                    LEFT JOIN periodo pr ON r.rela_periodo = pr.id_periodo
+                    LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
+                    LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
+                    LEFT JOIN persona p ON h.rela_persona = p.id_persona
+                    LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                    WHERE $where
+                    GROUP BY r.id_reserva
+                    $orderClause LIMIT $limit OFFSET $offset";
+        $dataResult = $this->queryWithParams($dataSql, $params);
         
-        $records = [];
-        while ($row = $result->fetch_assoc()) {
-            $records[] = $row;
+        $data = [];
+        while ($row = $dataResult->fetch_assoc()) {
+            $data[] = $row;
         }
         
+        $totalPages = ceil($total / $perPage);
+        
         return [
-            'data' => $records,
-            'total' => $totalRecords,
+            'data' => $data,
+            'total' => $total,
             'current_page' => $page,
+            'total_pages' => $totalPages,
             'per_page' => $perPage,
-            'total_pages' => ceil($totalRecords / $perPage)
+            'offset' => $offset,
+            'limit' => $limit
         ];
+    }
+
+    /**
+     * Ejecutar query con parámetros preparados
+     * Este método es un alias del método query() heredado del modelo base
+     */
+    private function queryWithParams($sql, $params = [])
+    {
+        return $this->query($sql, $params);
     }
 
     /**
