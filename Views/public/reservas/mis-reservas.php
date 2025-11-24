@@ -169,14 +169,12 @@
                                                 <span class="d-none d-sm-inline">Ver </span>Huéspedes
                                             </a>
                                             
-                                            <!-- Ver Comentarios -->
-                                            <?php if (in_array($reserva['rela_estadoreserva'], [3, 4])): ?>
-                                                <a href="<?= url('/reservas/' . $reserva['id_reserva'] . '/comentarios') ?>" 
-                                                   class="btn btn-outline-secondary btn-sm">
-                                                    <i class="fas fa-comments me-1"></i>
-                                                    <span class="d-none d-sm-inline">Ver </span>Comentarios
-                                                </a>
-                                            <?php endif; ?>
+                                            <!-- Ver Comentarios (visible para todos los estados) -->
+                                            <a href="<?= url('/comentarios?reserva_id=' . $reserva['id_reserva']) ?>" 
+                                               class="btn btn-outline-secondary btn-sm">
+                                                <i class="fas fa-comments me-1"></i>
+                                                <span class="d-none d-sm-inline">Ver </span>Comentarios
+                                            </a>
                                         </div>
                                     </div>
                                 </div>

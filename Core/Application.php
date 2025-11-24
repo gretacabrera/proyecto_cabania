@@ -201,7 +201,7 @@ class Application
         // NOTA: Las vistas de huéspedes, consumos y comentarios ahora usan sus módulos públicos completos:
         // - Huéspedes: /huesped/huespedes?reserva_id={id} (HuespedesController - pendiente de migración)
         // - Consumos: /huesped/consumos?reserva_id={id} (HuespedConsumosController@index)
-        // - Comentarios: /comentarios?reserva_id={id} (ComentariosController - pendiente de migración)
+        // - Comentarios: /comentarios?reserva_id={id} (ComentariosController@index)
         
         // Rutas legacy mantenidas por compatibilidad (se pueden deprecar gradualmente)
         $this->router->get('/reservas/{id}/huespedes', 'ReservasController@verHuespedes');
@@ -440,8 +440,8 @@ class Application
         $this->router->any('/comentarios/{id}/edit', 'ComentariosController@edit');
         $this->router->post('/comentarios/{id}/update', 'ComentariosController@update');
         $this->router->post('/comentarios/{id}/moderate', 'ComentariosController@moderate');
-        $this->router->get('/comentarios/{id}/delete', 'ComentariosController@delete');
-        $this->router->get('/comentarios/{id}/restore', 'ComentariosController@restore');
+        $this->router->post('/comentarios/{id}/delete', 'ComentariosController@delete');
+        $this->router->post('/comentarios/{id}/restore', 'ComentariosController@restore');
         $this->router->get('/comentarios/search', 'ComentariosController@search');
         $this->router->post('/comentarios/{id}/report', 'ComentariosController@report');
 

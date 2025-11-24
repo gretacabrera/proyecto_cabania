@@ -9,7 +9,7 @@ use App\Core\Model;
  */
 class Comentario extends Model
 {
-    protected $table = 'comentarios';
+    protected $table = 'comentario';
     protected $primaryKey = 'id_comentario';
 
     /**
@@ -61,12 +61,14 @@ class Comentario extends Model
      */
     public function findWithRelations($id)
     {
-        $sql = "SELECT c.*, r.reserva_codigo, p.persona_nombre, p.persona_apellido,
+        $sql = "SELECT c.*, r.reserva_codigo, pf.personafisica_nombre, pf.personafisica_apellido,
                        cab.cabania_nombre
                 FROM {$this->table} c
-                LEFT JOIN reservas r ON c.rela_reserva = r.id_reserva
-                LEFT JOIN personas p ON c.rela_persona = p.id_persona
-                LEFT JOIN cabanias cab ON r.rela_cabania = cab.id_cabania
+                LEFT JOIN reserva r ON c.rela_reserva = r.id_reserva
+                LEFT JOIN huesped h ON c.rela_huesped = h.id_huesped
+                LEFT JOIN persona p ON h.rela_persona = p.id_persona
+                LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                LEFT JOIN cabania cab ON r.rela_cabania = cab.id_cabania
                 WHERE c.{$this->primaryKey} = {$id}";
         
         $result = $this->db->query($sql);
@@ -78,13 +80,14 @@ class Comentario extends Model
      */
     public function getReservas()
     {
-        $sql = "SELECT r.id_reserva, r.reserva_codigo, c.cabania_nombre, p.persona_nombre, p.persona_apellido
+        $sql = "SELECT r.id_reserva, r.reserva_codigo, c.cabania_nombre, pf.personafisica_nombre, pf.personafisica_apellido
                 FROM reserva r
                 INNER JOIN cabania c ON r.rela_cabania = c.id_cabania
                 INNER JOIN estadoreserva er ON r.rela_estadoreserva = er.id_estadoreserva
                 INNER JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                 INNER JOIN huesped h ON hr.rela_huesped = h.id_huesped
                 INNER JOIN persona p ON h.rela_persona = p.id_persona
+                INNER JOIN personafisica pf ON p.id_persona = pf.rela_persona
                 WHERE er.estadoreserva_estado = 1
                 ORDER BY r.reserva_fhinicio DESC";
         
@@ -102,7 +105,11 @@ class Comentario extends Model
      */
     public function getPersonas()
     {
-        $sql = "SELECT * FROM personas WHERE rela_estadopersona = 1 ORDER BY persona_nombre, persona_apellido";
+        $sql = "SELECT p.*, pf.personafisica_nombre, pf.personafisica_apellido
+                FROM persona p
+                LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                WHERE p.rela_estadopersona = 1 
+                ORDER BY pf.personafisica_nombre, pf.personafisica_apellido";
         $result = $this->db->query($sql);
         
         $personas = [];
@@ -120,11 +127,13 @@ class Comentario extends Model
     {
         $offset = ($page - 1) * $perPage;
         
-        $sql = "SELECT c.*, p.persona_nombre, p.persona_apellido, cab.cabania_nombre
+        $sql = "SELECT c.*, pf.personafisica_nombre, pf.personafisica_apellido, cab.cabania_nombre
                 FROM {$this->table} c
-                LEFT JOIN personas p ON c.rela_persona = p.id_persona
-                LEFT JOIN reservas r ON c.rela_reserva = r.id_reserva
-                LEFT JOIN cabanias cab ON r.rela_cabania = cab.id_cabania
+                LEFT JOIN huesped h ON c.rela_huesped = h.id_huesped
+                LEFT JOIN persona p ON h.rela_persona = p.id_persona
+                LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                LEFT JOIN reserva r ON c.rela_reserva = r.id_reserva
+                LEFT JOIN cabania cab ON r.rela_cabania = cab.id_cabania
                 WHERE c.comentario_estado = 2
                 ORDER BY c.comentario_fecha DESC
                 LIMIT {$perPage} OFFSET {$offset}";
@@ -183,6 +192,7 @@ class Comentario extends Model
                        FROM comentario c
                        LEFT JOIN huesped h ON c.rela_huesped = h.id_huesped
                        LEFT JOIN persona p ON h.rela_persona = p.id_persona
+                       LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
                        LEFT JOIN usuario u ON u.rela_persona = p.id_persona
                        LEFT JOIN reserva r ON c.rela_reserva = r.id_reserva
                        LEFT JOIN cabania cab ON r.rela_cabania = cab.id_cabania
@@ -190,13 +200,14 @@ class Comentario extends Model
 
         // Query base para obtener registros
         $queryBase = "SELECT c.*,
-                            p.persona_nombre, p.persona_apellido,
+                            pf.personafisica_nombre, pf.personafisica_apellido,
                             cab.cabania_nombre,
-                            r.reserva_fechainicio as reserva_fhinicio,
-                            r.reserva_fechafin as reserva_fhfin
+                            r.reserva_fhinicio,
+                            r.reserva_fhfin
                      FROM comentario c
                      LEFT JOIN huesped h ON c.rela_huesped = h.id_huesped
                      LEFT JOIN persona p ON h.rela_persona = p.id_persona
+                     LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
                      LEFT JOIN usuario u ON u.rela_persona = p.id_persona
                      LEFT JOIN reserva r ON c.rela_reserva = r.id_reserva
                      LEFT JOIN cabania cab ON r.rela_cabania = cab.id_cabania
@@ -212,12 +223,13 @@ class Comentario extends Model
     public function getComentarioParaEdicion($idComentario, $nombreUsuario)
     {
         $sql = "SELECT c.*, 
-                       p.persona_nombre, p.persona_apellido,
+                       pf.personafisica_nombre, pf.personafisica_apellido,
                        cab.cabania_nombre,
-                       r.reserva_fechainicio, r.reserva_fechafin, r.id_reserva
+                       r.reserva_fhinicio, r.reserva_fhfin, r.id_reserva
                 FROM comentario c
                 LEFT JOIN huesped h ON c.rela_huesped = h.id_huesped
                 LEFT JOIN persona p ON h.rela_persona = p.id_persona
+                LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
                 LEFT JOIN usuario u ON u.rela_persona = p.id_persona
                 LEFT JOIN reserva r ON c.rela_reserva = r.id_reserva
                 LEFT JOIN cabania cab ON r.rela_cabania = cab.id_cabania
@@ -258,12 +270,15 @@ class Comentario extends Model
      */
     public function getComentariosByReserva($idReserva)
     {
-        $sql = "SELECT c.*, p.persona_nombre, p.persona_apellido
+        $sql = "SELECT c.*, pf.personafisica_nombre, pf.personafisica_apellido
                 FROM comentario c
-                LEFT JOIN persona p ON c.rela_persona = p.id_persona
+                LEFT JOIN huesped h ON c.rela_huesped = h.id_huesped
+                LEFT JOIN persona p ON h.rela_persona = p.id_persona
+                LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
                 WHERE c.rela_reserva = " . intval($idReserva) . "
                 ORDER BY c.comentario_fechahora DESC";
         
+        error_log("SQL ejecutado en getComentariosByReserva: " . $sql);
         $result = $this->db->query($sql);
         $comentarios = [];
         
@@ -308,5 +323,21 @@ class Comentario extends Model
                 'hasta' => min($offset + $registrosPorPagina, $total)
             ]
         ];
+    }
+
+    /**
+     * Sobrescribir softDelete para usar el campo correcto
+     */
+    public function softDelete($id, $field = 'comentario_estado')
+    {
+        return $this->update($id, [$field => 0]);
+    }
+
+    /**
+     * Sobrescribir restore para usar el campo correcto
+     */
+    public function restore($id, $field = 'comentario_estado')
+    {
+        return $this->update($id, [$field => 1]);
     }
 }

@@ -7,216 +7,196 @@
 // $error_message - mensaje de error (si aplica)
 
 if (isset($error_message)) {
-    echo '<div class="alert alert-error">' . htmlspecialchars($error_message) . '</div>';
+    echo '<div class="alert alert-danger">' . htmlspecialchars($error_message) . '</div>';
     exit;
 }
 
 $pageTitle = $isEdit ? 'Editar Comentario' : 'Nuevo Comentario';
-$actionUrl = $isEdit ? "/proyecto_cabania/comentarios/{$comentario['id_comentario']}/update" : "/proyecto_cabania/comentarios/store";
+$actionUrl = $isEdit ? url("/comentarios/{$comentario['id_comentario']}/update") : url("/comentarios/store");
 ?>
 
-<h1><?php echo $pageTitle; ?></h1>
-
-<?php if ($comentario && isset($comentario['cabania_nombre'])): ?>
-<div class="info-reserva">
-    <h3>Información de la estadía:</h3>
-    <p><strong>Cabaña:</strong> <?php echo htmlspecialchars($comentario['cabania_nombre']); ?></p>
-    <?php if (isset($comentario['reserva_fechainicio'])): ?>
-        <p><strong>Fecha de inicio:</strong> <?php echo date('d/m/Y', strtotime($comentario['reserva_fechainicio'])); ?></p>
-        <p><strong>Fecha de fin:</strong> <?php echo date('d/m/Y', strtotime($comentario['reserva_fechafin'])); ?></p>
-    <?php endif; ?>
-    <?php if ($isEdit && isset($comentario['comentario_fechahora'])): ?>
-        <p><strong>Comentario creado:</strong> <?php echo date('d/m/Y H:i', strtotime($comentario['comentario_fechahora'])); ?></p>
-    <?php endif; ?>
+<div class="container-fluid my-5">
+    <div class="row justify-content-center">
+        <div class="col-12">
+            
+            <!-- Card Principal -->
+            <div class="card border-0 shadow-lg">
+                <!-- Botón Volver dentro de la card -->
+                <div class="px-4 pt-3">
+                    <a href="<?= url('/comentarios') ?>" class="btn btn-link text-primary text-decoration-none p-0">
+                        <i class="fas fa-arrow-left me-2"></i>Volver a Comentarios
+                    </a>
+                </div>
+                
+                <!-- Header -->
+                <div class="card-header bg-white py-3 px-4 border-bottom">
+                    <h2 class="mb-0 fw-bold text-dark">
+                        <i class="fas fa-<?= $isEdit ? 'edit' : 'plus-circle' ?> me-2"></i>
+                        <?= $pageTitle ?>
+                    </h2>
+                </div>
+                
+                <!-- Body -->
+                <div class="card-body p-4">
+                    
+                    <?php if ($comentario && isset($comentario['cabania_nombre'])): ?>
+                        <!-- Información de la Reserva -->
+                        <div class="alert alert-info border-0 mb-4">
+                            <h5 class="alert-heading mb-3">
+                                <i class="fas fa-info-circle me-2"></i>Información de tu Estadía
+                            </h5>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <strong><i class="fas fa-home me-2"></i>Cabaña:</strong><br>
+                                    <?= htmlspecialchars($comentario['cabania_nombre']) ?>
+                                </div>
+                                <?php if (isset($comentario['reserva_fhinicio'])): ?>
+                                    <div class="col-md-4">
+                                        <strong><i class="fas fa-calendar-alt me-2"></i>Check-in:</strong><br>
+                                        <?= date('d/m/Y', strtotime($comentario['reserva_fhinicio'])) ?>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong><i class="fas fa-calendar-check me-2"></i>Check-out:</strong><br>
+                                        <?= date('d/m/Y', strtotime($comentario['reserva_fhfin'])) ?>
+                                    </div>
+                                <?php endif; ?>
+                                <?php if ($isEdit && isset($comentario['comentario_fechahora'])): ?>
+                                    <div class="col-md-12 mt-2">
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock me-1"></i>
+                                            Comentario creado el <?= date('d/m/Y H:i', strtotime($comentario['comentario_fechahora'])) ?>
+                                        </small>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <!-- Formulario -->
+                    <form method="POST" action="<?= $actionUrl ?>" class="needs-validation" novalidate>
+                        
+                        <!-- Calificación -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-star me-2 text-warning"></i>
+                                ¿Cómo calificarías tu estadía?
+                                <span class="text-danger">*</span>
+                            </label>
+                            <div class="rating-stars-selector">
+                                <?php for ($i = 5; $i >= 1; $i--): ?>
+                                    <input type="radio" 
+                                           id="star<?= $i ?>" 
+                                           name="puntuacion" 
+                                           value="<?= $i ?>"
+                                           <?= ($isEdit && $comentario['comentario_puntuacion'] == $i) || (!$isEdit && $i == 5) ? 'checked' : '' ?>
+                                           required>
+                                    <label for="star<?= $i ?>" title="<?= $i ?> estrella<?= $i > 1 ? 's' : '' ?>">
+                                        <i class="fas fa-star"></i>
+                                    </label>
+                                <?php endfor; ?>
+                            </div>
+                        </div>
+                        
+                        <!-- Comentario -->
+                        <div class="mb-4">
+                            <label for="comentario_texto" class="form-label fw-bold">
+                                <i class="fas fa-comment-dots me-2 text-info"></i>
+                                Cuéntanos sobre tu experiencia
+                                <span class="text-danger">*</span>
+                            </label>
+                            <textarea id="comentario_texto" 
+                                      name="comentario_texto" 
+                                      class="form-control" 
+                                      rows="6" 
+                                      maxlength="400" 
+                                      placeholder="Comparte los detalles de tu estadía, qué te gustó, qué destacarías..." 
+                                      required><?= $isEdit ? htmlspecialchars($comentario['comentario_texto']) : '' ?></textarea>
+                            <div class="form-text text-end">
+                                <span id="contador"><?= $isEdit ? strlen($comentario['comentario_texto']) : 0 ?></span>/400 caracteres
+                            </div>
+                        </div>
+                        
+                        <!-- Campos ocultos -->
+                        <?php if ($isEdit): ?>
+                            <input type="hidden" name="id_comentario" value="<?= $comentario['id_comentario'] ?>">
+                            <input type="hidden" name="id_reserva" value="<?= $comentario['rela_reserva'] ?>">
+                            <input type="hidden" name="id_huesped" value="<?= $comentario['rela_huesped'] ?>">
+                        <?php else: ?>
+                            <?php if (isset($reserva_id) && $reserva_id): ?>
+                                <input type="hidden" name="id_reserva" value="<?= $reserva_id ?>">
+                            <?php endif; ?>
+                        <?php endif; ?>
+                        
+                        <!-- Botones de Acción -->
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-<?= $isEdit ? 'save' : 'paper-plane' ?> me-2"></i>
+                                <?= $isEdit ? 'Actualizar Comentario' : 'Enviar Comentario' ?>
+                            </button>
+                            
+                            <a href="<?= url('/comentarios') ?>" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>
+                                <?= $isEdit ? 'Cancelar' : 'Omitir' ?>
+                            </a>
+                        </div>
+                    </form>
+                    
+                </div>
+            </div>
+            
+        </div>
+    </div>
 </div>
-<?php endif; ?>
-
-<form method="post" action="<?php echo $actionUrl; ?>" class="formulario-comentarios">
-    <fieldset>
-        <legend><?php echo $isEdit ? 'Editar tu experiencia' : 'Comparte tu experiencia'; ?></legend>
-        
-        <div class="campo-formulario">
-            <label>¿Cómo calificarías tu estadía?</label>
-            <div class="rating-stars">
-                <?php for ($i = 1; $i <= 5; $i++): ?>
-                    <input type="radio" id="star<?php echo $i; ?>" name="puntuacion" value="<?php echo $i; ?>"
-                           <?php echo ($isEdit && $comentario['comentario_puntuacion'] == $i) || (!$isEdit && $i == 5) ? 'checked' : ''; ?>>
-                    <label for="star<?php echo $i; ?>" title="<?php echo $i; ?> estrella<?php echo $i > 1 ? 's' : ''; ?>">★</label>
-                <?php endfor; ?>
-            </div>
-        </div>
-        
-        <div class="campo-formulario">
-            <label for="comentario_texto">
-                Cuéntanos sobre tu experiencia:
-                <span class="required">*</span>
-            </label>
-            <textarea id="comentario_texto" name="comentario_texto" rows="6" 
-                      maxlength="400" placeholder="Comparte los detalles de tu estadía..." 
-                      required><?php echo $isEdit ? htmlspecialchars($comentario['comentario_texto']) : ''; ?></textarea>
-            <div class="contador-caracteres">
-                <span id="contador"><?php echo $isEdit ? strlen($comentario['comentario_texto']) : 0; ?></span>/400 caracteres
-            </div>
-        </div>
-        
-        <?php if ($isEdit): ?>
-            <input type="hidden" name="id_comentario" value="<?php echo $comentario['id_comentario']; ?>">
-            <input type="hidden" name="id_reserva" value="<?php echo $comentario['rela_reserva']; ?>">
-            <input type="hidden" name="id_huesped" value="<?php echo $comentario['rela_huesped']; ?>">
-        <?php elseif (isset($reserva_info)): ?>
-            <input type="hidden" name="id_reserva" value="<?php echo $reserva_info['id_reserva']; ?>">
-        <?php endif; ?>
-        
-        <div class="botones-formulario">
-            <input type="submit" value="<?php echo $isEdit ? 'Actualizar' : 'Guardar'; ?>" class="button-primary">
-            
-            <?php if ($isEdit): ?>
-                <a href="/proyecto_cabania/comentarios/<?php echo $comentario['id_comentario']; ?>/delete" 
-                   class="abm-button button-danger" 
-                   data-action="confirm-delete" data-message="¿Está seguro que desea eliminar este comentario?">Eliminar</a>
-            <?php endif; ?>
-            
-            <a href="/proyecto_cabania/comentarios" class="abm-button button-secondary">
-                <?php echo $isEdit ? 'Cancelar' : 'Omitir comentario'; ?>
-            </a>
-        </div>
-    </fieldset>
-</form>
 
 <style>
-.info-reserva {
-    background-color: #f8f9fa;
-    border-left: 4px solid #007bff;
-    padding: 15px;
-    margin-bottom: 20px;
-    border-radius: 4px;
-}
-
-.formulario-comentarios fieldset {
-    border: 2px solid #ddd;
-    border-radius: 8px;
-    padding: 25px;
-    margin: 0;
-}
-
-.formulario-comentarios legend {
-    font-weight: bold;
-    padding: 0 10px;
-    color: #333;
-}
-
-.campo-formulario {
-    margin-bottom: 20px;
-}
-
-.campo-formulario label {
-    display: block;
-    font-weight: bold;
-    margin-bottom: 8px;
-    color: #555;
-}
-
-.required {
-    color: #e74c3c;
-}
-
-.rating-stars {
+.rating-stars-selector {
     display: flex;
-    direction: row-reverse;
+    flex-direction: row-reverse;
     justify-content: flex-end;
-    margin-bottom: 10px;
+    gap: 5px;
 }
 
-.rating-stars input[type="radio"] {
+.rating-stars-selector input[type="radio"] {
     display: none;
 }
 
-.rating-stars label {
-    font-size: 30px;
+.rating-stars-selector label {
+    font-size: 2rem;
     color: #ddd;
     cursor: pointer;
-    margin-right: 5px;
-    transition: color 0.2s;
+    transition: all 0.2s ease;
 }
 
-.rating-stars input[type="radio"]:checked ~ label,
-.rating-stars input[type="radio"]:checked + label,
-.rating-stars label:hover,
-.rating-stars label:hover ~ label {
-    color: #f39c12;
+.rating-stars-selector label:hover,
+.rating-stars-selector label:hover ~ label,
+.rating-stars-selector input[type="radio"]:checked ~ label,
+.rating-stars-selector input[type="radio"]:checked + label {
+    color: #ffc107;
+    transform: scale(1.1);
 }
+</style>
 
-textarea {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-family: Arial, sans-serif;
-    font-size: 14px;
-    resize: vertical;
-}
-
-.contador-caracteres {
-    text-align: right;
-    font-size: 12px;
-    color: #666;
-    margin-top: 5px;
-}
-
-.botones-formulario {
-    display: flex;
-    gap: 10px;
-    margin-top: 20px;
-    flex-wrap: wrap;
-}
-
-.button-primary, .button-secondary, .button-danger {
-    padding: 12px 24px;
-    border: none;
-    border-radius: 4px;
-    font-size: 14px;
-    font-weight: bold;
-    text-decoration: none;
-    cursor: pointer;
-    display: inline-block;
-    text-align: center;
-    transition: background-color 0.3s;
-}
-
-.button-primary {
-    background-color: #007bff;
-    color: white;
-}
-
-.button-primary:hover {
-    background-color: #0056b3;
-}
-
-.button-secondary {
-    background-color: #6c757d;
-    color: white;
-}
-
-.button-secondary:hover {
-    background-color: #545b62;
-}
-
-.button-danger {
-    background-color: #dc3545;
-    color: white;
-}
-
-.button-danger:hover {
-    background-color: #c82333;
-}
-
-@media (max-width: 600px) {
-    .botones-formulario {
-        flex-direction: column;
+<script>
+// Contador de caracteres
+document.addEventListener('DOMContentLoaded', function() {
+    const textarea = document.getElementById('comentario_texto');
+    const contador = document.getElementById('contador');
+    
+    if (textarea && contador) {
+        textarea.addEventListener('input', function() {
+            contador.textContent = this.value.length;
+        });
     }
     
-    .button-primary, .button-secondary, .button-danger {
-        width: 100%;
-    }
-
-<?php include __DIR__ . '/../layouts/footer.php'; ?>
+    // Validación Bootstrap
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+});

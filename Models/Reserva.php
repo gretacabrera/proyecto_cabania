@@ -905,6 +905,36 @@ class Reserva extends Model
     }
 
     /**
+     * Obtener la última reserva de un usuario
+     */
+    public function getUltimaReservaUsuario($userId)
+    {
+        try {
+            $sql = "SELECT r.* 
+                    FROM reserva r 
+                    LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva 
+                    LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped 
+                    LEFT JOIN persona p ON h.rela_persona = p.id_persona 
+                    LEFT JOIN usuario u ON p.id_persona = u.rela_persona 
+                    WHERE u.id_usuario = ? 
+                    ORDER BY r.reserva_fhinicio DESC 
+                    LIMIT 1";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $reserva = $result->fetch_assoc();
+            $stmt->close();
+            
+            return $reserva;
+        } catch (\Exception $e) {
+            error_log('Error obteniendo última reserva de usuario: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Obtener el ID del usuario propietario de una reserva
      * (usuario del primer huésped de la reserva)
      */
@@ -928,6 +958,35 @@ class Reserva extends Model
             $stmt->close();
             
             return $row ? (int)$row['id_usuario'] : null;
+        } catch (\Exception $e) {
+            error_log('Error obteniendo usuario de reserva: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Obtener el ID del huésped de una reserva para un usuario específico
+     */
+    public function getHuespedIdFromReserva($reservaId, $usuarioId)
+    {
+        try {
+            $sql = "SELECT h.id_huesped 
+                    FROM reserva r 
+                    LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva 
+                    LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped 
+                    LEFT JOIN persona p ON h.rela_persona = p.id_persona 
+                    LEFT JOIN usuario u ON p.id_persona = u.rela_persona 
+                    WHERE r.id_reserva = ? AND u.id_usuario = ?
+                    LIMIT 1";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param("ii", $reservaId, $usuarioId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $row = $result->fetch_assoc();
+            $stmt->close();
+            
+            return $row ? (int)$row['id_huesped'] : null;
         } catch (\Exception $e) {
             error_log('Error obteniendo usuario de reserva: ' . $e->getMessage());
             return null;
