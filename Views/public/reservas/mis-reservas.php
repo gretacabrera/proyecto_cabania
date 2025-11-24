@@ -155,14 +155,12 @@
                                                 </button>
                                             <?php endif; ?>
                                             
-                                            <!-- Registrar Consumo -->
-                                            <?php if (in_array($reserva['rela_estadoreserva'], [2, 3])): ?>
-                                                <a href="<?= url('/reservas/' . $reserva['id_reserva'] . '/consumos') ?>" 
-                                                   class="btn btn-outline-primary btn-sm">
-                                                    <i class="fas fa-shopping-cart me-1"></i>
-                                                    <span class="d-none d-sm-inline">Ver </span>Consumos
-                                                </a>
-                                            <?php endif; ?>
+                                            <!-- Ver Consumos (visible para todos los estados) -->
+                                            <a href="<?= url('/huesped/consumos?reserva_id=' . $reserva['id_reserva']) ?>" 
+                                               class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-shopping-cart me-1"></i>
+                                                <span class="d-none d-sm-inline">Ver </span>Consumos
+                                            </a>
                                             
                                             <!-- Ver Huéspedes -->
                                             <a href="<?= url('/reservas/' . $reserva['id_reserva'] . '/huespedes') ?>" 

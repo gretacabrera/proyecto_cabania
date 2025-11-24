@@ -11,7 +11,7 @@ require_once __DIR__ . '/../../shared/layouts/header.php';
             <nav aria-label="breadcrumb" class="mb-4">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="<?= url('/') ?>">Inicio</a></li>
-                    <li class="breadcrumb-item"><a href="<?= url('/reservas') ?>">Mis Reservas</a></li>
+                    <li class="breadcrumb-item"><a href="<?= url('/mis-reservas') ?>">Mis Reservas</a></li>
                     <li class="breadcrumb-item active">Huéspedes</li>
                 </ol>
             </nav>

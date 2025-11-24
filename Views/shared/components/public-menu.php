@@ -56,7 +56,7 @@ $currentUser = $isAuthenticated ? Auth::user() : null;
                         <div class="dropdown-menu dropdown-menu-right">
                             <h6 class="dropdown-header">Mi Cuenta</h6>
                             <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" href="<?= $this->url('/reservas') ?>">
+                            <a class="dropdown-item" href="<?= $this->url('/mis-reservas') ?>">
                                 <i class="fas fa-calendar-alt me-2"></i>Mis Reservas
                             </a>
                             <a class="dropdown-item" href="<?= $this->url('/auth/change-password') ?>">

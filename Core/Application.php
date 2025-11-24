@@ -160,6 +160,10 @@ class Application
         $this->router->post('/menus/{id}/estado', 'MenusController@cambiarEstado');
 
         // Rutas de reservas
+        // Ruta pública para huéspedes (debe ir ANTES de /reservas para evitar conflictos)
+        $this->router->get('/mis-reservas', 'ReservasController@misReservas');
+        
+        // Rutas administrativas (requieren permisos)
         $this->router->get('/reservas', 'ReservasController@index');
         $this->router->any('/reservas/create', 'ReservasController@create');
         $this->router->get('/reservas/exportar', 'ReservasController@exportar');
@@ -189,14 +193,21 @@ class Application
         $this->router->post('/reservas/{id}/cancelar', 'ReservasController@cancelarReserva'); // Cancelar por huésped
         $this->router->post('/reservas/{id}/anular', 'ReservasController@anularReserva'); // Anular por admin
         
-        // Rutas unificadas para huéspedes (marcar ingreso/salida, huéspedes, consumos)
+        // Rutas de acciones sobre reservas (marcar ingreso/salida, pagar)
         $this->router->get('/reservas/{id}/marcar-ingreso', 'ReservasController@marcarIngreso');
         $this->router->get('/reservas/{id}/marcar-salida', 'ReservasController@marcarSalida');
+        $this->router->get('/reservas/{id}/pagar', 'ReservasController@pagarReserva');
+        
+        // NOTA: Las vistas de huéspedes, consumos y comentarios ahora usan sus módulos públicos completos:
+        // - Huéspedes: /huesped/huespedes?reserva_id={id} (HuespedesController - pendiente de migración)
+        // - Consumos: /huesped/consumos?reserva_id={id} (HuespedConsumosController@index)
+        // - Comentarios: /comentarios?reserva_id={id} (ComentariosController - pendiente de migración)
+        
+        // Rutas legacy mantenidas por compatibilidad (se pueden deprecar gradualmente)
         $this->router->get('/reservas/{id}/huespedes', 'ReservasController@verHuespedes');
         $this->router->get('/reservas/{id}/consumos', 'ReservasController@gestionarConsumos');
         $this->router->post('/reservas/{id}/consumos/registrar', 'ReservasController@registrarConsumo');
         $this->router->get('/reservas/{id}/comentarios', 'ReservasController@gestionarComentarios');
-        $this->router->get('/reservas/{id}/pagar', 'ReservasController@pagarReserva');
         
         $this->router->get('/reservas/{id}', 'ReservasController@show');
         $this->router->any('/reservas/{id}/edit', 'ReservasController@edit');
