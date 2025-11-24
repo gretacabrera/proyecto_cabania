@@ -33,9 +33,11 @@ class Huesped extends Model
      */
     public function findWithPersona($id)
     {
-        $sql = "SELECT h.*, p.persona_nombre, p.persona_apellido, p.persona_fechanac, p.persona_direccion
+        $sql = "SELECT h.*, pf.personafisica_nombre as persona_nombre, pf.personafisica_apellido as persona_apellido, 
+                       pf.personafisica_fechanac as persona_fechanac, p.persona_direccion
                 FROM {$this->table} h
                 INNER JOIN persona p ON h.rela_persona = p.id_persona
+                LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
                 WHERE h.{$this->primaryKey} = ?";
         
         $result = $this->query($sql, [$id]);
@@ -52,12 +54,13 @@ class Huesped extends Model
         
         // Aplicar filtros
         if (!empty($filters['persona_nombre'])) {
-            $where .= " AND p.persona_nombre LIKE ?";
+            $where .= " AND (pf.personafisica_nombre LIKE ? OR pf.personafisica_apellido LIKE ?)";
+            $params[] = '%' . $filters['persona_nombre'] . '%';
             $params[] = '%' . $filters['persona_nombre'] . '%';
         }
         
         if (!empty($filters['persona_dni'])) {
-            $where .= " AND p.persona_dni LIKE ?";
+            $where .= " AND pf.personafisica_dni LIKE ?";
             $params[] = '%' . $filters['persona_dni'] . '%';
         }
         
@@ -71,7 +74,7 @@ class Huesped extends Model
             $params[] = (int) $filters['huesped_estado'];
         }
         
-        return $this->paginateWithParams($page, $perPage, $where, "p.persona_apellido ASC, p.persona_nombre ASC", $params);
+        return $this->paginateWithParams($page, $perPage, $where, "pf.personafisica_apellido ASC, pf.personafisica_nombre ASC", $params);
     }
 
     /**
@@ -84,12 +87,13 @@ class Huesped extends Model
         
         // Aplicar los mismos filtros que getWithDetails
         if (!empty($filters['persona_nombre'])) {
-            $where .= " AND p.persona_nombre LIKE ?";
+            $where .= " AND (pf.personafisica_nombre LIKE ? OR pf.personafisica_apellido LIKE ?)";
+            $params[] = '%' . $filters['persona_nombre'] . '%';
             $params[] = '%' . $filters['persona_nombre'] . '%';
         }
         
         if (!empty($filters['persona_apellido'])) {
-            $where .= " AND p.persona_apellido LIKE ?";
+            $where .= " AND pf.personafisica_apellido LIKE ?";
             $params[] = '%' . $filters['persona_apellido'] . '%';
         }
         
@@ -107,18 +111,21 @@ class Huesped extends Model
         $countSql = "SELECT COUNT(*) as total 
                      FROM {$this->table} h
                      INNER JOIN persona p ON h.rela_persona = p.id_persona
+                     LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
                      WHERE $where";
         $totalResult = $this->queryWithParams($countSql, $params);
         $totalRow = $totalResult->fetch_assoc();
         $total = (int) $totalRow['total'];
         
         // Query para obtener TODOS los registros (sin LIMIT)
-        $dataSql = "SELECT h.*, p.persona_nombre, p.persona_apellido, p.persona_fechanac, p.persona_direccion, u.ubicacion_descripcion
+        $dataSql = "SELECT h.*, pf.personafisica_nombre as persona_nombre, pf.personafisica_apellido as persona_apellido, 
+                           pf.personafisica_fechanac as persona_fechanac, p.persona_direccion, u.ubicacion_descripcion
                     FROM {$this->table} h
                     INNER JOIN persona p ON h.rela_persona = p.id_persona
+                    LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
                     LEFT JOIN ubicacion u ON h.rela_ubicacion = u.id_ubicacion
                     WHERE $where
-                    ORDER BY p.persona_apellido ASC, p.persona_nombre ASC";
+                    ORDER BY pf.personafisica_apellido ASC, pf.personafisica_nombre ASC";
         $dataResult = $this->queryWithParams($dataSql, $params);
         
         $data = [];
@@ -144,6 +151,7 @@ class Huesped extends Model
         $countSql = "SELECT COUNT(*) as total 
                      FROM {$this->table} h
                      INNER JOIN persona p ON h.rela_persona = p.id_persona
+                     LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
                      WHERE $where";
         $totalResult = $this->queryWithParams($countSql, $params);
         $totalRow = $totalResult->fetch_assoc();
@@ -151,9 +159,11 @@ class Huesped extends Model
         
         // Query para obtener registros
         $orderClause = $orderBy ? "ORDER BY $orderBy" : '';
-        $dataSql = "SELECT h.*, p.persona_nombre, p.persona_apellido, p.persona_fechanac, p.persona_direccion, u.ubicacion_descripcion
+        $dataSql = "SELECT h.*, pf.personafisica_nombre as persona_nombre, pf.personafisica_apellido as persona_apellido, 
+                           pf.personafisica_fechanac as persona_fechanac, p.persona_direccion, u.ubicacion_descripcion
                     FROM {$this->table} h
                     INNER JOIN persona p ON h.rela_persona = p.id_persona
+                    LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
                     LEFT JOIN ubicacion u ON h.rela_ubicacion = u.id_ubicacion
                     WHERE $where $orderClause LIMIT $limit OFFSET $offset";
         $dataResult = $this->queryWithParams($dataSql, $params);
