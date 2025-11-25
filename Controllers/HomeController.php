@@ -63,13 +63,17 @@ class HomeController extends Controller
             'showReservaButton' => true,
             'persona' => $persona,
             'reservas_proximas' => [],
-            'reservas_historial' => []
+            'reservas_historial' => [],
+            'ultimos_consumos' => [],
+            'ultimos_comentarios' => []
         ];
         
         if ($persona) {
             // Obtener reservas próximas del huésped
             $data['reservas_proximas'] = $this->getReservasProximasHuesped($persona['id_persona']);
             $data['reservas_historial'] = $this->getHistorialReservasHuesped($persona['id_persona']);
+            $data['ultimos_consumos'] = $this->getUltimosConsumosHuesped($persona['id_persona'], 3);
+            $data['ultimos_comentarios'] = $this->getUltimosComentariosHuesped($persona['id_persona'], 3);
             
             // Verificar y notificar reservas cercanas
             $this->checkAndNotifyReservasCercanas(Auth::id());
@@ -191,6 +195,72 @@ class HomeController extends Controller
             $reservas[] = $row;
         }
         return $reservas;
+    }
+    
+    private function getUltimosConsumosHuesped($personaId, $limit = 3)
+    {
+        $db = \App\Core\Database::getInstance();
+        $sql = "SELECT c.*, 
+                       COALESCE(p.producto_nombre, s.servicio_descripcion) as item_descripcion,
+                       CASE 
+                           WHEN c.rela_producto IS NOT NULL THEN 'Producto'
+                           WHEN c.rela_servicio IS NOT NULL THEN 'Servicio'
+                           ELSE 'Otro'
+                       END as tipo_item,
+                       r.id_reserva,
+                       cab.cabania_nombre,
+                       ec.estadoconsumo_descripcion
+                FROM consumo c
+                LEFT JOIN producto p ON c.rela_producto = p.id_producto
+                LEFT JOIN servicio s ON c.rela_servicio = s.id_servicio
+                LEFT JOIN reserva r ON c.rela_reserva = r.id_reserva
+                LEFT JOIN cabania cab ON r.rela_cabania = cab.id_cabania
+                LEFT JOIN estadoconsumo ec ON c.rela_estadoconsumo = ec.id_estadoconsumo
+                LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
+                LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
+                WHERE h.rela_persona = ?
+                ORDER BY c.consumo_fechahora DESC
+                LIMIT ?";
+        
+        $stmt = $db->prepare($sql);
+        $stmt->bind_param("ii", $personaId, $limit);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $consumos = [];
+        while ($row = $result->fetch_assoc()) {
+            $consumos[] = $row;
+        }
+        return $consumos;
+    }
+    
+    private function getUltimosComentariosHuesped($personaId, $limit = 3)
+    {
+        $db = \App\Core\Database::getInstance();
+        $sql = "SELECT c.*,
+                       cab.cabania_nombre,
+                       r.reserva_fhinicio,
+                       r.reserva_fhfin,
+                       r.id_reserva
+                FROM comentario c
+                INNER JOIN huesped h ON c.rela_huesped = h.id_huesped
+                LEFT JOIN reserva r ON c.rela_reserva = r.id_reserva
+                LEFT JOIN cabania cab ON r.rela_cabania = cab.id_cabania
+                WHERE h.rela_persona = ?
+                  AND c.comentario_estado = 1
+                ORDER BY c.comentario_fechahora DESC
+                LIMIT ?";
+        
+        $stmt = $db->prepare($sql);
+        $stmt->bind_param("ii", $personaId, $limit);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $comentarios = [];
+        while ($row = $result->fetch_assoc()) {
+            $comentarios[] = $row;
+        }
+        return $comentarios;
     }
     
     private function getTotalCabanias()
