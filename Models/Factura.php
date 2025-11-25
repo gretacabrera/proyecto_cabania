@@ -96,7 +96,7 @@ class Factura extends Model
                 LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                 LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                 LEFT JOIN persona per ON h.rela_persona = per.id_persona
-                LEFT JOIN personafisica pf ON per.id_persona = pf.rela_persona
+                LEFT JOIN personafisica pf ON per.rela_personafisica = pf.id_personafisica
                 WHERE f.id_factura = ?";
 
         $result = $this->query($sql, [$facturaId]);

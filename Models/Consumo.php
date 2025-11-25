@@ -575,7 +575,7 @@ class Consumo extends Model
                 LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                 LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                 LEFT JOIN persona p ON h.rela_persona = p.id_persona
-                LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                 WHERE r.rela_cabania = ?
                 AND r.rela_estadoreserva IN (2, 3)
                 AND r.reserva_fhfin >= NOW()

@@ -108,7 +108,7 @@ class Reserva extends Model
                      LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                      LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                      LEFT JOIN persona p ON h.rela_persona = p.id_persona
-                     LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                     LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                      WHERE $where";
         $totalResult = $this->queryWithParams($countSql, $params);
         $totalRow = $totalResult->fetch_assoc();
@@ -128,7 +128,7 @@ class Reserva extends Model
                     LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                     LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                     LEFT JOIN persona p ON h.rela_persona = p.id_persona
-                    LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                    LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                     WHERE $where
                     GROUP BY r.id_reserva
                     ORDER BY r.reserva_fhinicio DESC";
@@ -274,7 +274,7 @@ class Reserva extends Model
                 LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                 LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                 LEFT JOIN persona p ON h.rela_persona = p.id_persona
-                LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                 WHERE r.rela_estadoreserva = ?
                 ORDER BY r.reserva_fhinicio";
         
@@ -451,7 +451,7 @@ class Reserva extends Model
                      LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                      LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                      LEFT JOIN persona p ON h.rela_persona = p.id_persona
-                     LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                     LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                      WHERE $where";
         $totalResult = $this->queryWithParams($countSql, $params);
         $totalRow = $totalResult->fetch_assoc();
@@ -472,7 +472,7 @@ class Reserva extends Model
                     LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                     LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                     LEFT JOIN persona p ON h.rela_persona = p.id_persona
-                    LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                    LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                     WHERE $where
                     GROUP BY r.id_reserva
                     $orderClause LIMIT $limit OFFSET $offset";
@@ -744,7 +744,7 @@ class Reserva extends Model
                     LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                     LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                     LEFT JOIN persona per ON h.rela_persona = per.id_persona
-                    LEFT JOIN personafisica pf ON per.id_persona = pf.rela_persona
+                    LEFT JOIN personafisica pf ON per.rela_personafisica = pf.id_personafisica
                     LEFT JOIN contacto cont ON per.id_persona = cont.rela_persona 
                         AND cont.rela_tipocontacto = 1 
                         AND cont.contacto_estado = 1
@@ -1439,7 +1439,7 @@ class Reserva extends Model
                     INNER JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                     INNER JOIN huesped h ON hr.rela_huesped = h.id_huesped
                     INNER JOIN persona p ON h.rela_persona = p.id_persona
-                    INNER JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                    INNER JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                     LEFT JOIN reintegro rei ON r.id_reserva = rei.rela_reserva
                     WHERE r.rela_estadoreserva = 5
                       AND rei.id_reintegro IS NULL
@@ -1465,3 +1465,4 @@ class Reserva extends Model
     }
 
 }
+

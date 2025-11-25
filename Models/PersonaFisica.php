@@ -52,7 +52,7 @@ class PersonaFisica extends Model
                        p.persona_telefono,
                        TIMESTAMPDIFF(YEAR, pf.personafisica_fechanac, CURDATE()) as edad
                 FROM personafisica pf
-                INNER JOIN persona p ON pf.rela_persona = p.id_persona
+                INNER JOIN persona p ON p.rela_personafisica = pf.id_personafisica
                 WHERE $where
                 ORDER BY pf.personafisica_apellido, pf.personafisica_nombre ASC";
         
@@ -69,7 +69,7 @@ class PersonaFisica extends Model
         // Contar total
         $countSql = "SELECT COUNT(*) as total 
                      FROM personafisica pf
-                     INNER JOIN persona p ON pf.rela_persona = p.id_persona
+                     INNER JOIN persona p ON p.rela_personafisica = pf.id_personafisica
                      WHERE $where";
         
         $countStmt = $this->db->prepare($countSql);
@@ -118,7 +118,7 @@ class PersonaFisica extends Model
                        p.persona_estado,
                        TIMESTAMPDIFF(YEAR, pf.personafisica_fechanac, CURDATE()) as edad
                 FROM personafisica pf
-                INNER JOIN persona p ON pf.rela_persona = p.id_persona
+                INNER JOIN persona p ON p.rela_personafisica = pf.id_personafisica
                 WHERE pf.{$this->primaryKey} = ?";
         
         $result = $this->query($sql, [$id]);
@@ -266,14 +266,14 @@ class PersonaFisica extends Model
                        p.persona_telefono,
                        TIMESTAMPDIFF(YEAR, pf.personafisica_fechanac, CURDATE()) as edad
                 FROM personafisica pf
-                INNER JOIN persona p ON pf.rela_persona = p.id_persona
+                INNER JOIN persona p ON p.rela_personafisica = pf.id_personafisica
                 WHERE $where
                 ORDER BY pf.personafisica_apellido, pf.personafisica_nombre ASC";
         
         // Contar total
         $countSql = "SELECT COUNT(*) as total 
                      FROM personafisica pf
-                     INNER JOIN persona p ON pf.rela_persona = p.id_persona
+                     INNER JOIN persona p ON p.rela_personafisica = pf.id_personafisica
                      WHERE $where";
         
         $countStmt = $this->db->prepare($countSql);
@@ -331,7 +331,7 @@ class PersonaFisica extends Model
                        p.persona_telefono,
                        TIMESTAMPDIFF(YEAR, pf.personafisica_fechanac, CURDATE()) as edad
                 FROM personafisica pf
-                INNER JOIN persona p ON pf.rela_persona = p.id_persona
+                INNER JOIN persona p ON p.rela_personafisica = pf.id_personafisica
                 WHERE TIMESTAMPDIFF(YEAR, pf.personafisica_fechanac, CURDATE()) BETWEEN ? AND ?
                 ORDER BY pf.personafisica_apellido, pf.personafisica_nombre";
         
@@ -345,3 +345,4 @@ class PersonaFisica extends Model
         return $personas;
     }
 }
+

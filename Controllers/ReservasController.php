@@ -2353,7 +2353,7 @@ class ReservasController extends Controller
                     INNER JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                     INNER JOIN huesped h ON hr.rela_huesped = h.id_huesped
                     INNER JOIN persona p ON h.rela_persona = p.id_persona
-                    LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                    LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                     LEFT JOIN contacto c ON p.id_persona = c.rela_persona 
                         AND c.rela_tipocontacto = 1 AND c.contacto_estado = 1
                     WHERE r.id_reserva = ?
@@ -4059,3 +4059,4 @@ class ReservasController extends Controller
     }
 
 }
+

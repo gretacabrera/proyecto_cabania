@@ -292,7 +292,7 @@ class HomeController extends Controller
                                LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                                LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                                LEFT JOIN persona p ON h.rela_persona = p.id_persona
-                               LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                               LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                                ORDER BY r.id_reserva DESC
                                LIMIT ?");
         $stmt->bind_param("i", $limite);
@@ -383,7 +383,7 @@ class HomeController extends Controller
                                LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                                LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                                LEFT JOIN persona p ON h.rela_persona = p.id_persona
-                               LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                               LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                                ORDER BY f.id_factura DESC
                                LIMIT ?");
         $stmt->bind_param("i", $limite);
@@ -408,7 +408,7 @@ class HomeController extends Controller
                                LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                                LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                                LEFT JOIN persona p ON h.rela_persona = p.id_persona
-                               LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                               LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                                WHERE r.rela_estadoreserva = 1
                                ORDER BY r.reserva_fhinicio ASC");
         
@@ -433,7 +433,7 @@ class HomeController extends Controller
                                LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                                LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                                LEFT JOIN persona p ON h.rela_persona = p.id_persona
-                               LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                               LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                                WHERE DATE(r.reserva_fhinicio) = ?
                                ORDER BY r.reserva_fhinicio ASC");
         $stmt->bind_param("s", $hoy);
@@ -459,7 +459,7 @@ class HomeController extends Controller
                                LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                                LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                                LEFT JOIN persona p ON h.rela_persona = p.id_persona
-                               LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                               LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                                WHERE DATE(r.reserva_fhinicio) = ? AND r.rela_estadoreserva = 2
                                ORDER BY r.reserva_fhinicio ASC");
         $stmt->bind_param("s", $hoy);
@@ -485,7 +485,7 @@ class HomeController extends Controller
                                LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                                LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                                LEFT JOIN persona p ON h.rela_persona = p.id_persona
-                               LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                               LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                                WHERE DATE(r.reserva_fhfin) = ? AND r.rela_estadoreserva IN (2, 3)
                                ORDER BY r.reserva_fhfin ASC");
         $stmt->bind_param("s", $hoy);
@@ -513,7 +513,7 @@ class HomeController extends Controller
                                LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                                LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                                LEFT JOIN persona p ON h.rela_persona = p.id_persona
-                               LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                               LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                                WHERE DATE(r.reserva_fhinicio) BETWEEN CURDATE() AND ? 
                                AND r.rela_estadoreserva IN (1, 2)
                                ORDER BY r.reserva_fhinicio ASC");

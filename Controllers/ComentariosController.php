@@ -375,12 +375,21 @@ class ComentariosController extends Controller
 
         $nombre_usuario = $_SESSION["usuario_nombre"];
         
-        // Obtener comentario con verificación de pertenencia al usuario
+        // Verificar que el comentario pertenece al usuario
+        if (!$this->comentarioModel->verificarComentarioUsuario($id, $nombre_usuario)) {
+            $data = [
+                'error_message' => 'No se encontró el comentario o no tiene permisos para editarlo.',
+                'isPublicArea' => true
+            ];
+            return $this->render('public/comentarios/formulario', $data, 'main');
+        }
+        
+        // Obtener comentario (sin validar usuario ya que ya se validó arriba)
         $comentario = $this->comentarioModel->getComentarioParaEdicion($id, $nombre_usuario);
         
         if (!$comentario) {
             $data = [
-                'error_message' => 'No se encontró el comentario o no tiene permisos para editarlo.',
+                'error_message' => 'No se encontró el comentario.',
                 'isPublicArea' => true
             ];
             return $this->render('public/comentarios/formulario', $data, 'main');

@@ -99,7 +99,7 @@ class Persona extends Model
                        pf.personafisica_dni AS persona_dni,
                        ep.estadopersona_descripcion
                 FROM persona p
-                LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                 LEFT JOIN estadopersona ep ON p.rela_estadopersona = ep.id_estadopersona
                 WHERE p.id_persona = ?";
         
@@ -272,7 +272,7 @@ class Persona extends Model
                        pf.personafisica_fechanac
                 FROM persona p
                 LEFT JOIN usuario u ON p.id_persona = u.rela_persona
-                LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                 WHERE u.usuario_nombre = ? AND u.usuario_estado = 1";
         
         $result = $this->query($sql, [$nombreUsuario]);
@@ -360,7 +360,7 @@ class Persona extends Model
                        END as tipo_persona
                 FROM persona p
                 LEFT JOIN estadopersona ep ON p.rela_estadopersona = ep.id_estadopersona
-                LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                 LEFT JOIN personajuridica pj ON p.id_persona = pj.rela_persona
                 WHERE p.id_persona = ?
                 LIMIT 1";
@@ -454,7 +454,7 @@ class Persona extends Model
         // Contar total
         $countSql = "SELECT COUNT(DISTINCT p.id_persona) as total
                      FROM persona p
-                     LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                     LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                      LEFT JOIN personajuridica pj ON p.id_persona = pj.rela_persona
                      WHERE {$where}";
         
@@ -478,7 +478,7 @@ class Persona extends Model
                        END as tipo_persona
                 FROM persona p
                 LEFT JOIN estadopersona ep ON p.rela_estadopersona = ep.id_estadopersona
-                LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                 LEFT JOIN personajuridica pj ON p.id_persona = pj.rela_persona
                 WHERE {$where}
                 ORDER BY p.persona_apellido ASC, p.persona_nombre ASC

@@ -166,9 +166,24 @@ class Comentario extends Model
      */
     public function getComentariosUsuarioConFiltros($nombreUsuario, $filtros = [], $pagina = 1, $registrosPorPagina = 10)
     {
+        // Primero obtener el id_persona del usuario
+        $sqlUsuario = "SELECT rela_persona FROM usuario WHERE usuario_nombre = '" . addslashes($nombreUsuario) . "' LIMIT 1";
+        $resultUsuario = $this->db->query($sqlUsuario);
+        
+        if (!$resultUsuario) {
+            return $this->paginateCustomQuery("SELECT c.* FROM comentario c WHERE 1=0", "SELECT COUNT(*) as total FROM comentario c WHERE 1=0", $pagina, $registrosPorPagina);
+        }
+        
+        $usuario = $resultUsuario->fetch_assoc();
+        if (!$usuario) {
+            return $this->paginateCustomQuery("SELECT c.* FROM comentario c WHERE 1=0", "SELECT COUNT(*) as total FROM comentario c WHERE 1=0", $pagina, $registrosPorPagina);
+        }
+        
+        $idPersonaUsuario = $usuario['rela_persona'];
+        
         $whereConditions = [
             "c.comentario_estado = 1",
-            "u.usuario_nombre = '" . addslashes($nombreUsuario) . "'"
+            "p.id_persona = " . intval($idPersonaUsuario)
         ];
 
         // Aplicar filtros
@@ -190,10 +205,9 @@ class Comentario extends Model
         // Query para contar registros
         $queryCount = "SELECT COUNT(*) as total
                        FROM comentario c
-                       LEFT JOIN huesped h ON c.rela_huesped = h.id_huesped
-                       LEFT JOIN persona p ON h.rela_persona = p.id_persona
+                       INNER JOIN huesped h ON c.rela_huesped = h.id_huesped
+                       INNER JOIN persona p ON h.rela_persona = p.id_persona
                        LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
-                       LEFT JOIN usuario u ON u.rela_persona = p.id_persona
                        LEFT JOIN reserva r ON c.rela_reserva = r.id_reserva
                        LEFT JOIN cabania cab ON r.rela_cabania = cab.id_cabania
                        $whereClause";
@@ -205,10 +219,9 @@ class Comentario extends Model
                             r.reserva_fhinicio,
                             r.reserva_fhfin
                      FROM comentario c
-                     LEFT JOIN huesped h ON c.rela_huesped = h.id_huesped
-                     LEFT JOIN persona p ON h.rela_persona = p.id_persona
+                     INNER JOIN huesped h ON c.rela_huesped = h.id_huesped
+                     INNER JOIN persona p ON h.rela_persona = p.id_persona
                      LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
-                     LEFT JOIN usuario u ON u.rela_persona = p.id_persona
                      LEFT JOIN reserva r ON c.rela_reserva = r.id_reserva
                      LEFT JOIN cabania cab ON r.rela_cabania = cab.id_cabania
                      $whereClause
@@ -220,26 +233,38 @@ class Comentario extends Model
     /**
      * Obtener comentario para edición (migrado desde Views)
      */
-    public function getComentarioParaEdicion($idComentario, $nombreUsuario)
+    public function getComentarioParaEdicion($idComentario, $nombreUsuario, $incluirEliminados = false)
     {
         $sql = "SELECT c.*, 
                        pf.personafisica_nombre, pf.personafisica_apellido,
                        cab.cabania_nombre,
-                       r.reserva_fhinicio, r.reserva_fhfin, r.id_reserva
+                       r.reserva_fhinicio, r.reserva_fhfin, r.id_reserva,
+                       p.id_persona as persona_huesped
                 FROM comentario c
-                LEFT JOIN huesped h ON c.rela_huesped = h.id_huesped
-                LEFT JOIN persona p ON h.rela_persona = p.id_persona
+                INNER JOIN huesped h ON c.rela_huesped = h.id_huesped
+                INNER JOIN persona p ON h.rela_persona = p.id_persona
                 LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
-                LEFT JOIN usuario u ON u.rela_persona = p.id_persona
                 LEFT JOIN reserva r ON c.rela_reserva = r.id_reserva
                 LEFT JOIN cabania cab ON r.rela_cabania = cab.id_cabania
-                WHERE c.id_comentario = " . intval($idComentario) . "
-                AND c.comentario_estado = 1
-                AND u.usuario_nombre = '" . addslashes($nombreUsuario) . "'
-                LIMIT 1";
+                WHERE c.id_comentario = " . intval($idComentario);
+        
+        // Solo filtrar por estado si no se solicita incluir eliminados
+        if (!$incluirEliminados) {
+            $sql .= " AND c.comentario_estado = 1";
+        }
+        
+        $sql .= " LIMIT 1";
 
+        error_log("=== DEBUG getComentarioParaEdicion ===");
+        error_log("incluirEliminados: " . ($incluirEliminados ? 'true' : 'false'));
+        error_log("SQL: " . $sql);
+        
         $result = $this->db->query($sql);
-        return $result ? $result->fetch_assoc() : null;
+        $data = $result ? $result->fetch_assoc() : null;
+        
+        error_log("Resultado: " . ($data ? "ENCONTRADO (persona_huesped=" . ($data['persona_huesped'] ?? 'NULL') . ", estado=" . ($data['comentario_estado'] ?? 'NULL') . ")" : "NULL"));
+        
+        return $data;
     }
 
     /**
@@ -247,8 +272,43 @@ class Comentario extends Model
      */
     public function verificarComentarioUsuario($idComentario, $nombreUsuario)
     {
-        $comentario = $this->getComentarioParaEdicion($idComentario, $nombreUsuario);
-        return $comentario !== null;
+        error_log("=== DEBUG verificarComentarioUsuario ===");
+        error_log("idComentario: " . $idComentario);
+        error_log("nombreUsuario: " . $nombreUsuario);
+        
+        // Obtener id_persona del usuario
+        $sqlUsuario = "SELECT rela_persona FROM usuario WHERE usuario_nombre = '" . addslashes($nombreUsuario) . "' LIMIT 1";
+        error_log("SQL Usuario: " . $sqlUsuario);
+        $resultUsuario = $this->db->query($sqlUsuario);
+        
+        if (!$resultUsuario) {
+            error_log("ERROR: Query usuario falló");
+            return false;
+        }
+        
+        $usuario = $resultUsuario->fetch_assoc();
+        if (!$usuario) {
+            error_log("ERROR: Usuario no encontrado");
+            return false;
+        }
+        
+        $idPersonaUsuario = $usuario['rela_persona'];
+        error_log("ID Persona del usuario: " . $idPersonaUsuario);
+        
+        // Obtener comentario INCLUYENDO los eliminados (para poder verificar permisos)
+        $comentario = $this->getComentarioParaEdicion($idComentario, $nombreUsuario, true);
+        
+        if (!$comentario) {
+            error_log("ERROR: Comentario no encontrado");
+            return false;
+        }
+        
+        error_log("ID Persona del huesped: " . ($comentario['persona_huesped'] ?? 'NULL'));
+        
+        $resultado = $comentario['persona_huesped'] == $idPersonaUsuario;
+        error_log("Resultado comparación: " . ($resultado ? "TRUE" : "FALSE"));
+        
+        return $resultado;
     }
 
     /**
@@ -276,6 +336,7 @@ class Comentario extends Model
                 LEFT JOIN persona p ON h.rela_persona = p.id_persona
                 LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                 WHERE c.rela_reserva = " . intval($idReserva) . "
+                AND c.comentario_estado = 1
                 ORDER BY c.comentario_fechahora DESC";
         
         $result = $this->db->query($sql);

@@ -88,7 +88,7 @@ class Usuario extends Model
                        pr.perfil_descripcion
                 FROM usuario u
                 LEFT JOIN persona pe ON u.rela_persona = pe.id_persona
-                LEFT JOIN personafisica pf ON pe.id_persona = pf.rela_persona
+                LEFT JOIN personafisica pf ON pe.rela_personafisica = pf.id_personafisica
                 LEFT JOIN perfil pr ON u.rela_perfil = pr.id_perfil
                 WHERE $where
                 ORDER BY u.usuario_nombre ASC";
@@ -96,7 +96,7 @@ class Usuario extends Model
         $countSql = "SELECT COUNT(*) as total 
                      FROM usuario u
                      LEFT JOIN persona pe ON u.rela_persona = pe.id_persona
-                     LEFT JOIN personafisica pf ON pe.id_persona = pf.rela_persona
+                     LEFT JOIN personafisica pf ON pe.rela_personafisica = pf.id_personafisica
                      LEFT JOIN perfil pr ON u.rela_perfil = pr.id_perfil
                      WHERE $where";
         
@@ -137,7 +137,7 @@ class Usuario extends Model
         $countSql = "SELECT COUNT(*) as total 
                      FROM usuario u
                      LEFT JOIN persona pe ON u.rela_persona = pe.id_persona
-                     LEFT JOIN personafisica pf ON pe.id_persona = pf.rela_persona
+                     LEFT JOIN personafisica pf ON pe.rela_personafisica = pf.id_personafisica
                      LEFT JOIN perfil pr ON u.rela_perfil = pr.id_perfil
                      WHERE $where";
         
@@ -160,7 +160,7 @@ class Usuario extends Model
                        pr.perfil_descripcion
                 FROM usuario u
                 LEFT JOIN persona pe ON u.rela_persona = pe.id_persona
-                LEFT JOIN personafisica pf ON pe.id_persona = pf.rela_persona
+                LEFT JOIN personafisica pf ON pe.rela_personafisica = pf.id_personafisica
                 LEFT JOIN perfil pr ON u.rela_perfil = pr.id_perfil
                 WHERE $where
                 ORDER BY u.usuario_nombre ASC";
@@ -714,7 +714,7 @@ class Usuario extends Model
                        pr.perfil_descripcion
                 FROM {$this->table} u
                 LEFT JOIN persona p ON u.rela_persona = p.id_persona
-                LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                 LEFT JOIN perfil pr ON u.rela_perfil = pr.id_perfil
                 WHERE u.{$this->primaryKey} = ?";
         
@@ -791,7 +791,7 @@ class Usuario extends Model
                        pf.personafisica_nombre as persona_nombre, pf.personafisica_apellido as persona_apellido
                 FROM {$this->table} u
                 LEFT JOIN persona p ON u.rela_persona = p.id_persona
-                LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                 WHERE u.usuario_token = ? 
                 AND u.usuario_fhtoken > DATE_SUB(NOW(), INTERVAL 24 HOUR)
                 AND u.usuario_estado = 2";
@@ -871,7 +871,7 @@ class Usuario extends Model
                         LIMIT 1) AS persona_email
                 FROM {$this->table} u
                 LEFT JOIN persona p ON u.rela_persona = p.id_persona
-                LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                 WHERE u.{$this->primaryKey} = ?";
         
         $result = $this->query($sql, [$userId]);
@@ -972,7 +972,7 @@ class Usuario extends Model
                        pf.personafisica_nombre as persona_nombre, pf.personafisica_apellido as persona_apellido
                 FROM {$this->table} u
                 LEFT JOIN persona p ON u.rela_persona = p.id_persona
-                LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                 WHERE u.usuario_token = ? 
                 AND u.usuario_fhtoken > DATE_SUB(NOW(), INTERVAL 1 HOUR)
                 AND u.usuario_estado = 1"; // Solo usuarios activos
@@ -1031,7 +1031,7 @@ class Usuario extends Model
                        c.contacto_descripcion as persona_email
                 FROM {$this->table} u
                 LEFT JOIN persona p ON u.rela_persona = p.id_persona
-                LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                 LEFT JOIN contacto c ON c.rela_persona = p.id_persona
                 LEFT JOIN tipocontacto tc ON c.rela_tipocontacto = tc.id_tipocontacto
                 WHERE c.contacto_descripcion = ?
@@ -1153,3 +1153,4 @@ class Usuario extends Model
         }
     }
 }
+
