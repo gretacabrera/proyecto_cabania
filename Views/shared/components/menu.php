@@ -54,7 +54,7 @@ if (session_status() == PHP_SESSION_NONE) {
                             <a class="nav-link" href="<?= $this->url('/catalogo') ?>">Catálogo</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="<?= $this->url('/reservas') ?>">Reservas</a>
+                            <a class="nav-link" href="<?= $this->url('/mis-reservas') ?>">Reservas</a>
                         </li>
                     <?php else: ?>
                     <?php 

@@ -29,15 +29,82 @@ class Huesped extends Model
     }
 
     /**
+     * Obtener huéspedes de una reserva específica con detalles
+     */
+    public function getByReserva($reservaId)
+    {
+        $sql = "SELECT h.*, 
+                       pf.personafisica_dni as persona_dni,
+                       pf.personafisica_nombre as persona_nombre, 
+                       pf.personafisica_apellido as persona_apellido, 
+                       pf.personafisica_fechanac as persona_fechanac, 
+                       p.persona_direccion,
+                       u.ubicacion_descripcion,
+                       (SELECT COUNT(*) FROM usuario WHERE rela_persona = h.rela_persona AND usuario_estado = 1) as tiene_usuario
+                FROM huesped_reserva hr
+                INNER JOIN {$this->table} h ON hr.rela_huesped = h.{$this->primaryKey}
+                INNER JOIN persona p ON h.rela_persona = p.id_persona
+                LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
+                LEFT JOIN ubicacion u ON h.rela_ubicacion = u.id_ubicacion
+                WHERE hr.rela_reserva = ?
+                AND hr.huespedreserva_estado = 1
+                ORDER BY pf.personafisica_apellido ASC, pf.personafisica_nombre ASC";
+        
+        $result = $this->query($sql, [$reservaId]);
+        
+        // Verificar si hubo error en la consulta
+        if ($result === false) {
+            error_log("Error en getByReserva: " . $this->db->error);
+            return [];
+        }
+        
+        $huespedes = [];
+        while ($row = $result->fetch_assoc()) {
+            // Obtener condiciones de salud
+            $condiciones = $this->getCondicionesSaludDescripciones($row['id_huesped']);
+            $row['condiciones'] = $condiciones;
+            $huespedes[] = $row;
+        }
+        
+        return $huespedes;
+    }
+
+    /**
+     * Obtener descripciones de condiciones de salud del huésped
+     */
+    private function getCondicionesSaludDescripciones($huespedId)
+    {
+        $sql = "SELECT cs.condicionsalud_descripcion 
+                FROM huesped_condicionsalud hc
+                INNER JOIN condicionsalud cs ON hc.rela_condicionsalud = cs.id_condicionsalud
+                WHERE hc.rela_huesped = ? AND hc.huespedcondicionsalud_estado = 1
+                ORDER BY cs.condicionsalud_descripcion ASC";
+        
+        $result = $this->query($sql, [$huespedId]);
+        
+        $condiciones = [];
+        while ($row = $result->fetch_assoc()) {
+            $condiciones[] = $row['condicionsalud_descripcion'];
+        }
+        
+        return $condiciones;
+    }
+
+    /**
      * Obtener huésped con información de persona
      */
     public function findWithPersona($id)
     {
-        $sql = "SELECT h.*, pf.personafisica_nombre as persona_nombre, pf.personafisica_apellido as persona_apellido, 
-                       pf.personafisica_fechanac as persona_fechanac, p.persona_direccion
+        $sql = "SELECT h.*, 
+                       pf.personafisica_dni as persona_dni,
+                       pf.personafisica_nombre as persona_nombre, 
+                       pf.personafisica_apellido as persona_apellido, 
+                       pf.personafisica_fechanac as persona_fechanac, 
+                       p.persona_direccion,
+                       h.rela_ubicacion
                 FROM {$this->table} h
                 INNER JOIN persona p ON h.rela_persona = p.id_persona
-                LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                 WHERE h.{$this->primaryKey} = ?";
         
         $result = $this->query($sql, [$id]);
@@ -111,7 +178,7 @@ class Huesped extends Model
         $countSql = "SELECT COUNT(*) as total 
                      FROM {$this->table} h
                      INNER JOIN persona p ON h.rela_persona = p.id_persona
-                     LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                     LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                      WHERE $where";
         $totalResult = $this->queryWithParams($countSql, $params);
         $totalRow = $totalResult->fetch_assoc();
@@ -122,7 +189,7 @@ class Huesped extends Model
                            pf.personafisica_fechanac as persona_fechanac, p.persona_direccion, u.ubicacion_descripcion
                     FROM {$this->table} h
                     INNER JOIN persona p ON h.rela_persona = p.id_persona
-                    LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                    LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                     LEFT JOIN ubicacion u ON h.rela_ubicacion = u.id_ubicacion
                     WHERE $where
                     ORDER BY pf.personafisica_apellido ASC, pf.personafisica_nombre ASC";
@@ -151,7 +218,7 @@ class Huesped extends Model
         $countSql = "SELECT COUNT(*) as total 
                      FROM {$this->table} h
                      INNER JOIN persona p ON h.rela_persona = p.id_persona
-                     LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                     LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                      WHERE $where";
         $totalResult = $this->queryWithParams($countSql, $params);
         $totalRow = $totalResult->fetch_assoc();
@@ -163,7 +230,7 @@ class Huesped extends Model
                            pf.personafisica_fechanac as persona_fechanac, p.persona_direccion, u.ubicacion_descripcion
                     FROM {$this->table} h
                     INNER JOIN persona p ON h.rela_persona = p.id_persona
-                    LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                    LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                     LEFT JOIN ubicacion u ON h.rela_ubicacion = u.id_ubicacion
                     WHERE $where $orderClause LIMIT $limit OFFSET $offset";
         $dataResult = $this->queryWithParams($dataSql, $params);
@@ -219,6 +286,7 @@ class Huesped extends Model
                 FROM huesped_reserva hr
                 INNER JOIN reserva r ON hr.rela_reserva = r.id_reserva
                 WHERE hr.rela_huesped = ? 
+                AND hr.huespedreserva_estado = 1
                 AND DATE(r.reserva_fhfin) >= ? 
                 AND r.rela_estadoreserva IN (1, 2)";
         
@@ -235,7 +303,8 @@ class Huesped extends Model
     {
         $sql = "SELECT COUNT(*) as total 
                 FROM huesped_reserva hr
-                WHERE hr.rela_huesped = ?";
+                WHERE hr.rela_huesped = ?
+                AND hr.huespedreserva_estado = 1";
         
         $result = $this->query($sql, [$huespedId]);
         $row = $result->fetch_assoc();
@@ -253,6 +322,7 @@ class Huesped extends Model
                 INNER JOIN reserva r ON hr.rela_reserva = r.id_reserva
                 INNER JOIN cabania c ON r.rela_cabania = c.id_cabania
                 WHERE hr.rela_huesped = ? 
+                AND hr.huespedreserva_estado = 1
                 AND r.rela_estadoreserva IN (2, 3)";
         
         $result = $this->query($sql, [$huespedId]);
@@ -269,7 +339,8 @@ class Huesped extends Model
         $sql = "SELECT MAX(r.reserva_fhinicio) as ultima_reserva
                 FROM huesped_reserva hr
                 INNER JOIN reserva r ON hr.rela_reserva = r.id_reserva
-                WHERE hr.rela_huesped = ?";
+                WHERE hr.rela_huesped = ?
+                AND hr.huespedreserva_estado = 1";
         
         $result = $this->query($sql, [$huespedId]);
         $row = $result->fetch_assoc();
@@ -294,6 +365,42 @@ class Huesped extends Model
         }
         
         return $condiciones;
+    }
+
+    /**
+     * Obtener IDs de condiciones de salud activas del huésped
+     */
+    public function getCondicionesSaludIds($huespedId)
+    {
+        $sql = "SELECT rela_condicionsalud 
+                FROM huesped_condicionsalud 
+                WHERE rela_huesped = ? AND huespedcondicionsalud_estado = 1";
+        
+        $result = $this->query($sql, [$huespedId]);
+        
+        $condicionesIds = [];
+        while ($row = $result->fetch_assoc()) {
+            $condicionesIds[] = (int)$row['rela_condicionsalud'];
+        }
+        
+        return $condicionesIds;
+    }
+
+    /**
+     * Verificar si el huésped tiene usuario asociado
+     */
+    public function tieneUsuarioAsociado($huespedId)
+    {
+        $huesped = $this->find($huespedId);
+        if (!$huesped) {
+            return false;
+        }
+
+        $sql = "SELECT COUNT(*) as total FROM usuario WHERE rela_persona = ? AND usuario_estado = 1";
+        $result = $this->query($sql, [$huesped['rela_persona']]);
+        $row = $result->fetch_assoc();
+        
+        return ($row['total'] > 0);
     }
 
     /**
@@ -369,7 +476,7 @@ class Huesped extends Model
      */
     public function asociarReserva($huespedId, $reservaId)
     {
-        $sql = "INSERT INTO huesped_reserva (rela_reserva, rela_huesped) VALUES (?, ?)";
+        $sql = "INSERT INTO huesped_reserva (rela_reserva, rela_huesped, huespedreserva_estado) VALUES (?, ?, 1)";
         $stmt = $this->db->prepare($sql);
         $stmt->bind_param('ii', $reservaId, $huespedId);
         $result = $stmt->execute();
@@ -439,5 +546,65 @@ class Huesped extends Model
     {
         $huesped = $this->findWhere("rela_persona = ?", [$personaId]);
         return $huesped !== false && $huesped !== null;
+    }
+
+    /**
+     * Buscar huésped por ID de persona física
+     */
+    public function findByPersonaFisicaId($personaFisicaId)
+    {
+        $sql = "SELECT h.* FROM huesped h 
+                INNER JOIN persona p ON h.rela_persona = p.id_persona
+                WHERE p.rela_personafisica = ?
+                LIMIT 1";
+        $result = $this->query($sql, [$personaFisicaId]);
+        return $result->fetch_assoc();
+    }
+
+    /**
+     * Verificar si huésped ya está asociado a una reserva (activo)
+     */
+    public function estaAsociadoAReserva($huespedId, $reservaId)
+    {
+        $sql = "SELECT * FROM huesped_reserva 
+                WHERE rela_reserva = ? 
+                AND rela_huesped = ?
+                AND huespedreserva_estado = 1";
+        $result = $this->query($sql, [$reservaId, $huespedId]);
+        $asociacion = $result->fetch_assoc();
+        return $asociacion !== null && $asociacion !== false;
+    }
+
+    /**
+     * Actualizar el estado de un huésped en una reserva específica
+     * Solo modifica el registro en huesped_reserva, sin afectar huesped ni persona
+     * 
+     * @param int $huespedId ID del huésped
+     * @param int $reservaId ID de la reserva
+     * @param int $estado Nuevo estado (0=Eliminado, 1=Activo)
+     * @return bool True si se actualizó correctamente
+     */
+    public function updateEstadoEnReserva($huespedId, $reservaId, $estado)
+    {
+        $sql = "UPDATE huesped_reserva 
+                SET huespedreserva_estado = ? 
+                WHERE rela_huesped = ? AND rela_reserva = ?";
+        
+        error_log("updateEstadoEnReserva - SQL: $sql");
+        error_log("updateEstadoEnReserva - Params: estado=$estado, huespedId=$huespedId, reservaId=$reservaId");
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('iii', $estado, $huespedId, $reservaId);
+        $result = $stmt->execute();
+        
+        if (!$result) {
+            error_log("updateEstadoEnReserva - Error SQL: " . $stmt->error);
+            return false;
+        }
+        
+        $affectedRows = $stmt->affected_rows;
+        error_log("updateEstadoEnReserva - Filas afectadas: $affectedRows");
+        
+        return $affectedRows > 0;
     }
 }

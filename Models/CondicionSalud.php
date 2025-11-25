@@ -21,6 +21,22 @@ class CondicionSalud extends Model
     }
 
     /**
+     * Obtener todas las condiciones de salud
+     */
+    public function getAll()
+    {
+        $sql = "SELECT * FROM {$this->table} ORDER BY condicionsalud_descripcion ASC";
+        $result = $this->query($sql);
+        
+        $condiciones = [];
+        while ($row = $result->fetch_assoc()) {
+            $condiciones[] = $row;
+        }
+        
+        return $condiciones;
+    }
+
+    /**
      * Obtener condiciones de salud con filtros y paginación
      */
     public function getWithDetails($page = 1, $perPage = 10, $filters = [])

@@ -131,11 +131,10 @@ class PersonaFisica extends Model
     public function findByDNI($dni)
     {
         $sql = "SELECT pf.*,
-                       p.persona_email,
-                       p.persona_telefono,
+                       p.persona_direccion,
                        TIMESTAMPDIFF(YEAR, pf.personafisica_fechanac, CURDATE()) as edad
                 FROM personafisica pf
-                INNER JOIN persona p ON pf.rela_persona = p.id_persona
+                INNER JOIN persona p ON p.rela_personafisica = pf.id_personafisica
                 WHERE pf.personafisica_dni = ?
                 LIMIT 1";
         
@@ -148,16 +147,27 @@ class PersonaFisica extends Model
      */
     public function findByPersona($personaId)
     {
-        $sql = "SELECT pf.*,
-                       p.persona_email,
-                       p.persona_telefono,
-                       TIMESTAMPDIFF(YEAR, pf.personafisica_fechanac, CURDATE()) as edad
+        $sql = "SELECT pf.*
                 FROM personafisica pf
-                INNER JOIN persona p ON pf.rela_persona = p.id_persona
-                WHERE pf.rela_persona = ?
+                INNER JOIN persona p ON p.rela_personafisica = pf.id_personafisica
+                WHERE p.id_persona = ?
                 LIMIT 1";
         
         $result = $this->query($sql, [$personaId]);
+        return $result->fetch_assoc();
+    }
+
+    /**
+     * Verificar si DNI existe excluyendo una persona específica
+     */
+    public function dniExisteExceptoPersona($dni, $personaId)
+    {
+        $sql = "SELECT pf.* FROM personafisica pf 
+                INNER JOIN persona p ON p.rela_personafisica = pf.id_personafisica 
+                WHERE pf.personafisica_dni = ? AND p.id_persona != ?
+                LIMIT 1";
+        
+        $result = $this->query($sql, [$dni, $personaId]);
         return $result->fetch_assoc();
     }
 

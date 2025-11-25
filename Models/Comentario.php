@@ -67,7 +67,7 @@ class Comentario extends Model
                 LEFT JOIN reserva r ON c.rela_reserva = r.id_reserva
                 LEFT JOIN huesped h ON c.rela_huesped = h.id_huesped
                 LEFT JOIN persona p ON h.rela_persona = p.id_persona
-                LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                 LEFT JOIN cabania cab ON r.rela_cabania = cab.id_cabania
                 WHERE c.{$this->primaryKey} = {$id}";
         
@@ -87,7 +87,7 @@ class Comentario extends Model
                 INNER JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                 INNER JOIN huesped h ON hr.rela_huesped = h.id_huesped
                 INNER JOIN persona p ON h.rela_persona = p.id_persona
-                INNER JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                INNER JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                 WHERE er.estadoreserva_estado = 1
                 ORDER BY r.reserva_fhinicio DESC";
         
@@ -107,7 +107,7 @@ class Comentario extends Model
     {
         $sql = "SELECT p.*, pf.personafisica_nombre, pf.personafisica_apellido
                 FROM persona p
-                LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                 WHERE p.rela_estadopersona = 1 
                 ORDER BY pf.personafisica_nombre, pf.personafisica_apellido";
         $result = $this->db->query($sql);
@@ -131,7 +131,7 @@ class Comentario extends Model
                 FROM {$this->table} c
                 LEFT JOIN huesped h ON c.rela_huesped = h.id_huesped
                 LEFT JOIN persona p ON h.rela_persona = p.id_persona
-                LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                 LEFT JOIN reserva r ON c.rela_reserva = r.id_reserva
                 LEFT JOIN cabania cab ON r.rela_cabania = cab.id_cabania
                 WHERE c.comentario_estado = 2
@@ -192,7 +192,7 @@ class Comentario extends Model
                        FROM comentario c
                        LEFT JOIN huesped h ON c.rela_huesped = h.id_huesped
                        LEFT JOIN persona p ON h.rela_persona = p.id_persona
-                       LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                       LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                        LEFT JOIN usuario u ON u.rela_persona = p.id_persona
                        LEFT JOIN reserva r ON c.rela_reserva = r.id_reserva
                        LEFT JOIN cabania cab ON r.rela_cabania = cab.id_cabania
@@ -207,7 +207,7 @@ class Comentario extends Model
                      FROM comentario c
                      LEFT JOIN huesped h ON c.rela_huesped = h.id_huesped
                      LEFT JOIN persona p ON h.rela_persona = p.id_persona
-                     LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                     LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                      LEFT JOIN usuario u ON u.rela_persona = p.id_persona
                      LEFT JOIN reserva r ON c.rela_reserva = r.id_reserva
                      LEFT JOIN cabania cab ON r.rela_cabania = cab.id_cabania
@@ -229,7 +229,7 @@ class Comentario extends Model
                 FROM comentario c
                 LEFT JOIN huesped h ON c.rela_huesped = h.id_huesped
                 LEFT JOIN persona p ON h.rela_persona = p.id_persona
-                LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                 LEFT JOIN usuario u ON u.rela_persona = p.id_persona
                 LEFT JOIN reserva r ON c.rela_reserva = r.id_reserva
                 LEFT JOIN cabania cab ON r.rela_cabania = cab.id_cabania
@@ -274,11 +274,10 @@ class Comentario extends Model
                 FROM comentario c
                 LEFT JOIN huesped h ON c.rela_huesped = h.id_huesped
                 LEFT JOIN persona p ON h.rela_persona = p.id_persona
-                LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                 WHERE c.rela_reserva = " . intval($idReserva) . "
                 ORDER BY c.comentario_fechahora DESC";
         
-        error_log("SQL ejecutado en getComentariosByReserva: " . $sql);
         $result = $this->db->query($sql);
         $comentarios = [];
         

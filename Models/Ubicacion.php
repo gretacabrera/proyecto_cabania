@@ -27,4 +27,20 @@ class Ubicacion extends Model
         
         return $ubicaciones;
     }
+
+    /**
+     * Obtener todas las ubicaciones
+     */
+    public function getAll()
+    {
+        $sql = "SELECT * FROM {$this->table} ORDER BY ubicacion_descripcion ASC";
+        $result = $this->query($sql);
+        
+        $ubicaciones = [];
+        while ($row = $result->fetch_assoc()) {
+            $ubicaciones[] = $row;
+        }
+        
+        return $ubicaciones;
+    }
 }

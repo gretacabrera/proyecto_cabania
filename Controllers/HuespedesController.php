@@ -25,72 +25,139 @@ class HuespedesController extends Controller
     }
 
     /**
-     * Listar huéspedes
+     * Listar huéspedes del usuario actual (para vistas públicas)
+     * Si recibe reserva_id, filtra por esa reserva específica
      */
     public function index()
     {
-        $this->requirePermission('huespedes');
-
-        $page = (int) $this->get('page', 1);
-        $perPage = (int) $this->get('per_page', 10);
-        
-        // Validar que perPage esté dentro de los valores permitidos
-        $allowedPerPage = [5, 10, 25, 50];
-        if (!in_array($perPage, $allowedPerPage)) {
-            $perPage = 10;
+        // Verificar autenticación para huéspedes públicos
+        if (!\App\Core\Auth::check()) {
+            $this->redirect('/auth/login', 'Debe iniciar sesión para ver los huéspedes', 'error');
+            return;
         }
         
-        $filters = [
-            'persona_nombre' => $this->get('persona_nombre'),
-            'persona_dni' => $this->get('persona_dni'),
-            'rela_ubicacion' => $this->get('rela_ubicacion'),
-            'huesped_estado' => $this->get('huesped_estado')
-        ];
-
-        $result = $this->huespedModel->getWithDetails($page, $perPage, $filters);
+        $userId = $_SESSION['usuario_id'] ?? null;
+        if (!$userId) {
+            $this->redirect('/auth/login', 'Debe iniciar sesión para ver los huéspedes', 'error');
+            return;
+        }
+        
+        $reservaId = $this->get('reserva_id');
+        
+        // Validar que se haya proporcionado reserva_id
+        if (!$reservaId) {
+            $this->redirect('/mis-reservas', 'Debe seleccionar una reserva', 'error');
+            return;
+        }
+        
+        // Obtener información de la reserva
+        $reservaModel = new \App\Models\Reserva();
+        $reserva = $reservaModel->find($reservaId);
+        
+        if (!$reserva) {
+            $this->redirect('/mis-reservas', 'Reserva no encontrada', 'error');
+            return;
+        }
+        
+        // Verificar que es el propietario de la reserva
+        if (!$reservaModel->isReservaOwner($reservaId, $userId)) {
+            $this->redirect('/mis-reservas', 'No tiene permisos para ver esta información', 'error');
+            return;
+        }
+        
+        // Obtener huéspedes de la reserva
+        $huespedes = $this->huespedModel->getByReserva($reservaId);
+        
+        // Obtener ubicaciones para el select
+        $ubicaciones = $this->ubicacionModel->getAll();
+        
+        // Obtener condiciones de salud
+        $condicionesModel = new \App\Models\CondicionSalud();
+        $condicionesSalud = $condicionesModel->getAll();
 
         $data = [
-            'title' => 'Gestión de Huéspedes',
-            'huespedes' => $result['data'],
-            'pagination' => $result,
-            'filters' => $filters,
-            'ubicaciones' => $this->ubicacionModel->getAllActive(),
-            'isAdminArea' => true
+            'title' => 'Huéspedes de la Reserva #' . $reservaId,
+            'huespedes' => $huespedes,
+            'reserva_id' => $reservaId,
+            'reserva' => $reserva,
+            'ubicaciones' => $ubicaciones,
+            'condicionesSalud' => $condicionesSalud,
+            'isPublicArea' => true
         ];
 
-        return $this->render('admin/operaciones/huespedes/listado', $data, 'main');
+        return $this->render('public/huespedes/listado', $data, 'main');
     }
 
     /**
-     * Mostrar formulario de nuevo huésped
+     * Crear nuevo huésped (modo público con JSON response)
      */
     public function create()
     {
-        $this->requirePermission('huespedes');
+        // Verificar autenticación
+        if (!\App\Core\Auth::check()) {
+            if ($this->isAjax()) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Debe iniciar sesión']);
+                return;
+            }
+            $this->redirect('/auth/login', 'Debe iniciar sesión', 'error');
+            return;
+        }
 
         if ($this->isPost()) {
             return $this->store();
         }
 
+        // Detectar si es área pública (tiene reserva_id en URL)
+        $reservaId = $this->get('reserva_id');
+        $isPublicArea = !empty($reservaId);
+
         // Obtener condiciones de salud activas
         $condicionSaludModel = new \App\Models\CondicionSalud();
         $condicionesSalud = $condicionSaludModel->findAll("condicionsalud_estado = 1", "condicionsalud_descripcion ASC");
 
-        // Obtener reservas futuras (fecha fin mayor a la fecha/hora actual)
-        $reservaModel = new \App\Models\Reserva();
-        $reservas = $reservaModel->findAll("reserva_fhfin > NOW()", "reserva_fhfin ASC");
+        // Obtener ubicaciones
+        $ubicaciones = $this->ubicacionModel->getAll();
 
-        $data = [
-            'title' => 'Nuevo Huésped',
-            'condicionesSalud' => $condicionesSalud,
-            'reservas' => $reservas,
-            'ubicaciones' => $this->ubicacionModel->getAllActive(),
-            'huesped' => [],
-            'isEdit' => false,
-            'isAdminArea' => true
-        ];
+        if ($isPublicArea) {
+            // Verificar que la reserva existe y pertenece al usuario
+            $userId = $_SESSION['usuario_id'] ?? null;
+            $reservaModel = new \App\Models\Reserva();
+            $reserva = $reservaModel->find($reservaId);
+            
+            if (!$reserva || !$reservaModel->isReservaOwner($reservaId, $userId)) {
+                $this->redirect('/mis-reservas', 'No tiene permisos para esta reserva', 'error');
+                return;
+            }
 
-        return $this->render('admin/operaciones/huespedes/formulario', $data, 'main');
+            $data = [
+                'title' => 'Nuevo Huésped',
+                'condicionesSalud' => $condicionesSalud,
+                'ubicaciones' => $ubicaciones,
+                'reserva_id' => $reservaId,
+                'huesped' => null,
+                'isEdit' => false,
+                'isPublicArea' => true
+            ];
+
+            return $this->render('public/huespedes/formulario', $data, 'main');
+        } else {
+            // Área de administración
+            $reservaModel = new \App\Models\Reserva();
+            $reservas = $reservaModel->findAll("reserva_fhfin > NOW()", "reserva_fhfin ASC");
+
+            $data = [
+                'title' => 'Nuevo Huésped',
+                'condicionesSalud' => $condicionesSalud,
+                'reservas' => $reservas,
+                'ubicaciones' => $ubicaciones,
+                'huesped' => [],
+                'isEdit' => false,
+                'isAdminArea' => true
+            ];
+
+            return $this->render('admin/operaciones/huespedes/formulario', $data, 'main');
+        }
     }
 
     /**
@@ -98,40 +165,68 @@ class HuespedesController extends Controller
      */
     public function store()
     {
-        $this->requirePermission('huespedes');
+        // Verificar autenticación
+        if (!\App\Core\Auth::check()) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Debe iniciar sesión']);
+            return;
+        }
 
-        // Datos de persona
-        $personaData = [
-            'persona_nombre' => $this->post('persona_nombre'),
-            'persona_apellido' => $this->post('persona_apellido'),
-            'persona_fechanac' => $this->post('persona_fechanac'),
-            'persona_direccion' => $this->post('persona_direccion'),
-            'rela_estadopersona' => 1 // Estado activo por defecto
-        ];
+        // Datos de persona física
+        $dni = $this->post('persona_dni');
+        $nombre = $this->post('persona_nombre');
+        $apellido = $this->post('persona_apellido');
+        $fechaNac = $this->post('persona_fechanac');
+        $direccion = $this->post('persona_direccion');
+        $ubicacion = $this->post('rela_ubicacion');
 
         // Condiciones de salud seleccionadas
         $condicionesSeleccionadas = $this->post('condiciones_salud', []);
         
-        // Reserva opcional
+        // Reserva (automática desde URL)
         $idReserva = $this->post('rela_reserva');
 
         // Validaciones
-        if (empty($personaData['persona_nombre'])) {
-            $this->redirect('/huespedes/create', 'El nombre es obligatorio', 'error');
+        if (empty($dni)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'El DNI es obligatorio']);
             return;
         }
-        if (empty($personaData['persona_apellido'])) {
-            $this->redirect('/huespedes/create', 'El apellido es obligatorio', 'error');
+        if (empty($nombre)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'El nombre es obligatorio']);
             return;
         }
-        if (empty($personaData['persona_fechanac'])) {
-            $this->redirect('/huespedes/create', 'La fecha de nacimiento es obligatoria', 'error');
+        if (empty($apellido)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'El apellido es obligatorio']);
             return;
         }
-        if (empty($personaData['persona_direccion'])) {
-            $this->redirect('/huespedes/create', 'La dirección es obligatoria', 'error');
+        if (empty($fechaNac)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'La fecha de nacimiento es obligatoria']);
             return;
         }
+        if (empty($direccion)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'La dirección es obligatoria']);
+            return;
+        }
+
+        // Validar DNI duplicado
+        $personaFisicaModel = new \App\Models\PersonaFisica();
+        $dniExistente = $personaFisicaModel->findWhere('personafisica_dni = ?', [$dni]);
+        if ($dniExistente) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Ya existe un huésped con este DNI']);
+            return;
+        }
+
+        // Datos de persona
+        $personaData = [
+            'persona_direccion' => $direccion,
+            'rela_estadopersona' => 1
+        ];
 
         try {
             // Iniciar transacción
@@ -143,10 +238,24 @@ class HuespedesController extends Controller
                 throw new \Exception('Error al crear la persona');
             }
 
-            // 2. Crear huésped (sin ubicación en creación)
+            // 2. Crear persona física
+            $personaFisicaModel = new \App\Models\PersonaFisica();
+            $personaFisicaData = [
+                'rela_persona' => $idPersona,
+                'personafisica_dni' => $dni,
+                'personafisica_nombre' => $nombre,
+                'personafisica_apellido' => $apellido,
+                'personafisica_fechanac' => $fechaNac
+            ];
+            $idPersonaFisica = $personaFisicaModel->create($personaFisicaData);
+            if (!$idPersonaFisica) {
+                throw new \Exception('Error al crear la persona física');
+            }
+
+            // 3. Crear huésped
             $huespedData = [
                 'rela_persona' => $idPersona,
-                'rela_ubicacion' => (int) $this->post('rela_ubicacion'),
+                'rela_ubicacion' => $ubicacion ? (int)$ubicacion : null,
                 'huesped_estado' => 1
             ];
             $idHuesped = $this->huespedModel->create($huespedData);
@@ -154,16 +263,16 @@ class HuespedesController extends Controller
                 throw new \Exception('Error al crear el huésped');
             }
 
-            // 3. Obtener TODAS las condiciones de salud activas
+            // 4. Obtener TODAS las condiciones de salud activas
             $condicionSaludModel = new \App\Models\CondicionSalud();
             $todasCondiciones = $condicionSaludModel->findAll("condicionsalud_estado = 1");
             
-            // 4. Guardar TODAS las condiciones con estado según selección
+            // 5. Guardar TODAS las condiciones con estado según selección
             if (!$this->huespedModel->saveCondicionesSalud($idHuesped, $todasCondiciones, $condicionesSeleccionadas)) {
                 throw new \Exception('Error al asignar condiciones de salud');
             }
 
-            // 5. Asociar reserva si fue seleccionada
+            // 6. Asociar reserva (obligatoria desde parámetro URL)
             if (!empty($idReserva)) {
                 if (!$this->huespedModel->asociarReserva($idHuesped, $idReserva)) {
                     throw new \Exception('Error al asociar la reserva');
@@ -173,11 +282,13 @@ class HuespedesController extends Controller
             // Commit de la transacción
             $this->huespedModel->commit();
 
-            $this->redirect('/huespedes', 'Huésped creado exitosamente', 'success');
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'Huésped creado exitosamente']);
         } catch (\Exception $e) {
             // Rollback en caso de error
             $this->huespedModel->rollback();
-            $this->redirect('/huespedes/create', 'Error al crear el huésped: ' . $e->getMessage(), 'error');
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Error al crear el huésped: ' . $e->getMessage()]);
         }
     }
 
@@ -225,98 +336,198 @@ class HuespedesController extends Controller
     }
 
     /**
-     * Mostrar formulario de edición
+     * Método AJAX para obtener datos del huésped para edición
      */
-    public function edit($id)
+    public function editAjax($id)
     {
-        $this->requirePermission('huespedes');
+        // Verificar autenticación
+        if (!\App\Core\Auth::check()) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Debe iniciar sesión']);
+            return;
+        }
 
         $huesped = $this->huespedModel->findWithPersona($id);
         if (!$huesped) {
-            return $this->view->error(404);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Huésped no encontrado']);
+            return;
+        }
+
+        // Obtener DNI de PersonaFisica - ya viene en findWithPersona()
+        // El DNI ya está disponible en $huesped['persona_dni']
+
+        // Obtener condiciones de salud del huésped
+        $condicionesIds = $this->huespedModel->getCondicionesSaludIds($id);
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'huesped' => $huesped,
+            'condiciones' => $condicionesIds
+        ]);
+    }
+
+    /**
+     * Actualizar huésped (modo público con JSON response)
+     */
+    public function edit($id)
+    {
+        // Verificar autenticación
+        if (!\App\Core\Auth::check()) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Debe iniciar sesión']);
+            return;
+        }
+
+        $huesped = $this->huespedModel->findWithPersona($id);
+        if (!$huesped) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Huésped no encontrado']);
+            return;
         }
 
         if ($this->isPost()) {
             return $this->update($id);
         }
 
-        // Obtener estadísticas del huésped
-        $estadisticas = $this->huespedModel->getStatistics($id);
-        
+        // Detectar si es área pública (tiene reserva_id en URL)
+        $reservaId = $this->get('reserva_id');
+        $isPublicArea = !empty($reservaId);
+
         // Obtener todas las condiciones de salud activas
         $condicionSaludModel = new \App\Models\CondicionSalud();
         $condicionesSalud = $condicionSaludModel->findAll("condicionsalud_estado = 1", "condicionsalud_descripcion ASC");
         
-        // Obtener condiciones de salud asignadas al huésped
-        $condicionesHuesped = $this->huespedModel->getCondicionesSalud($id);
+        // Obtener condiciones de salud asignadas al huésped (array de IDs)
+        $condicionesSeleccionadas = $this->huespedModel->getCondicionesSaludIds($id);
 
-        // Obtener reservas futuras (fecha fin mayor a la fecha/hora actual)
-        $reservaModel = new \App\Models\Reserva();
-        $reservas = $reservaModel->findAll("reserva_fhfin > NOW()", "reserva_fhfin ASC");
+        // Obtener ubicaciones
+        $ubicaciones = $this->ubicacionModel->getAll();
 
-        // Obtener reserva actual del huésped (si tiene alguna asociada)
-        $reservaActualId = $this->huespedModel->getReservaAsociada($id);
+        if ($isPublicArea) {
+            // Verificar que la reserva existe y pertenece al usuario
+            $userId = $_SESSION['usuario_id'] ?? null;
+            $reservaModel = new \App\Models\Reserva();
+            $reserva = $reservaModel->find($reservaId);
+            
+            if (!$reserva || !$reservaModel->isReservaOwner($reservaId, $userId)) {
+                $this->redirect('/mis-reservas', 'No tiene permisos para esta reserva', 'error');
+                return;
+            }
 
-        $data = [
-            'title' => 'Editar Huésped',
-            'huesped' => $huesped,
-            'estadisticas' => $estadisticas,
-            'condicionesSalud' => $condicionesSalud,
-            'condicionesHuesped' => $condicionesHuesped,
-            'reservas' => $reservas,
-            'reservaActualId' => $reservaActualId,
-            'ubicaciones' => $this->ubicacionModel->getAllActive(),
-            'isEdit' => true,
-            'isAdminArea' => true
-        ];
+            $data = [
+                'title' => 'Editar Huésped',
+                'huesped' => $huesped,
+                'condicionesSalud' => $condicionesSalud,
+                'condicionesSeleccionadas' => $condicionesSeleccionadas,
+                'ubicaciones' => $ubicaciones,
+                'reserva_id' => $reservaId,
+                'isEdit' => true,
+                'isPublicArea' => true
+            ];
 
-        return $this->render('admin/operaciones/huespedes/formulario', $data, 'main');
+            return $this->render('public/huespedes/formulario', $data, 'main');
+        } else {
+            // Área de administración
+            $estadisticas = $this->huespedModel->getStatistics($id);
+            $condicionesHuesped = $this->huespedModel->getCondicionesSalud($id);
+            $reservaModel = new \App\Models\Reserva();
+            $reservas = $reservaModel->findAll("reserva_fhfin > NOW()", "reserva_fhfin ASC");
+            $reservaActualId = $this->huespedModel->getReservaAsociada($id);
+
+            $data = [
+                'title' => 'Editar Huésped',
+                'huesped' => $huesped,
+                'estadisticas' => $estadisticas,
+                'condicionesSalud' => $condicionesSalud,
+                'condicionesHuesped' => $condicionesHuesped,
+                'reservas' => $reservas,
+                'reservaActualId' => $reservaActualId,
+                'ubicaciones' => $ubicaciones,
+                'isEdit' => true,
+                'isAdminArea' => true
+            ];
+
+            return $this->render('admin/operaciones/huespedes/formulario', $data, 'main');
+        }
     }
 
     /**
-     * Actualizar huésped
+     * Actualizar huésped (usado por edit)
      */
     public function update($id)
     {
-        $this->requirePermission('huespedes');
+        // Verificar autenticación
+        if (!\App\Core\Auth::check()) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Debe iniciar sesión']);
+            return;
+        }
 
         $huesped = $this->huespedModel->find($id);
         if (!$huesped) {
-            return $this->view->error(404);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Huésped no encontrado']);
+            return;
         }
 
-        // Datos de la persona
-        $personaData = [
-            'persona_nombre' => $this->post('persona_nombre'),
-            'persona_apellido' => $this->post('persona_apellido'),
-            'persona_fechanac' => $this->post('persona_fechanac'),
-            'persona_direccion' => $this->post('persona_direccion')
-        ];
-
-        // Datos del huésped (solo ubicación es editable)
-        $huespedData = [
-            'rela_ubicacion' => (int) $this->post('rela_ubicacion')
-        ];
+        // Datos de persona física
+        $dni = $this->post('persona_dni');
+        $nombre = $this->post('persona_nombre');
+        $apellido = $this->post('persona_apellido');
+        $fechaNac = $this->post('persona_fechanac');
+        $direccion = $this->post('persona_direccion');
+        $ubicacion = $this->post('rela_ubicacion');
 
         // Condiciones de salud seleccionadas
         $condicionesSeleccionadas = $this->post('condiciones_salud', []);
 
         // Validaciones
-        if (empty($personaData['persona_nombre'])) {
-            $this->redirect("/huespedes/$id/edit", 'El nombre es obligatorio', 'error');
+        if (empty($dni)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'El DNI es obligatorio']);
             return;
         }
-        if (empty($personaData['persona_apellido'])) {
-            $this->redirect("/huespedes/$id/edit", 'El apellido es obligatorio', 'error');
+        if (empty($nombre)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'El nombre es obligatorio']);
             return;
         }
-        if (empty($personaData['persona_fechanac'])) {
-            $this->redirect("/huespedes/$id/edit", 'La fecha de nacimiento es obligatoria', 'error');
+        if (empty($apellido)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'El apellido es obligatorio']);
             return;
         }
-        if (empty($personaData['persona_direccion'])) {
-            $this->redirect("/huespedes/$id/edit", 'La dirección es obligatoria', 'error');
+        if (empty($fechaNac)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'La fecha de nacimiento es obligatoria']);
             return;
+        }
+        if (empty($direccion)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'La dirección es obligatoria']);
+            return;
+        }
+
+        // Validar DNI duplicado (excepto el actual)
+        $personaFisicaModel = new \App\Models\PersonaFisica();
+        $dniExistente = $personaFisicaModel->dniExisteExceptoPersona($dni, $huesped['rela_persona']);
+        if ($dniExistente) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Ya existe otro huésped con este DNI']);
+            return;
+        }
+
+        // Datos de persona
+        $personaData = [
+            'persona_direccion' => $direccion
+        ];
+
+        // Datos del huésped - solo actualizar ubicación si se proporcionó
+        $huespedData = [];
+        if (!empty($ubicacion)) {
+            $huespedData['rela_ubicacion'] = (int)$ubicacion;
         }
 
         try {
@@ -329,76 +540,130 @@ class HuespedesController extends Controller
                 throw new \Exception('Error al actualizar los datos de la persona');
             }
 
-            // 2. Actualizar datos del huésped (ubicación)
-            if (!$this->huespedModel->update($id, $huespedData)) {
-                throw new \Exception('Error al actualizar el huésped');
+            // 2. Actualizar persona física
+            $personaFisicaModel = new \App\Models\PersonaFisica();
+            // Obtener id_personafisica desde la tabla persona
+            $persona = $this->personaModel->find($idPersona);
+            if ($persona && $persona['rela_personafisica']) {
+                $personaFisicaData = [
+                    'personafisica_dni' => $dni,
+                    'personafisica_nombre' => $nombre,
+                    'personafisica_apellido' => $apellido,
+                    'personafisica_fechanac' => $fechaNac
+                ];
+                if (!$personaFisicaModel->update($persona['rela_personafisica'], $personaFisicaData)) {
+                    throw new \Exception('Error al actualizar la persona física');
+                }
             }
 
-            // 3. Obtener TODAS las condiciones de salud activas
+            // 3. Actualizar datos del huésped (ubicación) - solo si hay datos
+            if (!empty($huespedData)) {
+                if (!$this->huespedModel->update($id, $huespedData)) {
+                    throw new \Exception('Error al actualizar el huésped');
+                }
+            }
+
+            // 4. Obtener TODAS las condiciones de salud activas
             $condicionSaludModel = new \App\Models\CondicionSalud();
             $todasCondiciones = $condicionSaludModel->findAll("condicionsalud_estado = 1");
 
-            // 4. Actualizar condiciones de salud
+            // 5. Actualizar condiciones de salud
             if (!$this->huespedModel->updateCondicionesSalud($id, $todasCondiciones, $condicionesSeleccionadas)) {
                 throw new \Exception('Error al actualizar condiciones de salud');
-            }
-
-            // 5. Actualizar reserva asociada (opcional)
-            $nuevaReservaId = $this->post('rela_reserva');
-            if (!empty($nuevaReservaId)) {
-                // Primero eliminar asociación anterior si existe
-                $this->huespedModel->eliminarReservaAsociada($id);
-                
-                // Luego asociar la nueva reserva
-                if (!$this->huespedModel->asociarReserva($id, $nuevaReservaId)) {
-                    throw new \Exception('Error al asociar reserva');
-                }
-            } else {
-                // Si no seleccionó reserva, eliminar asociación existente
-                $this->huespedModel->eliminarReservaAsociada($id);
             }
 
             // Commit de la transacción
             $this->huespedModel->commit();
 
-            $this->redirect('/huespedes', 'Huésped actualizado correctamente', 'exito');
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'Huésped actualizado correctamente']);
         } catch (\Exception $e) {
             // Rollback en caso de error
             $this->huespedModel->rollback();
-            $this->redirect("/huespedes/$id/edit", 'Error al actualizar el huésped: ' . $e->getMessage(), 'error');
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Error al actualizar el huésped: ' . $e->getMessage()]);
         }
     }
 
     /**
-     * Baja lógica de huésped
+     * Baja lógica de huésped (modo público con JSON response)
      */
     public function delete($id)
     {
-        $this->requirePermission('huespedes');
+        // Verificar autenticación
+        if (!\App\Core\Auth::check()) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Debe iniciar sesión']);
+            return;
+        }
 
         $huesped = $this->huespedModel->find($id);
         if (!$huesped) {
-            return $this->view->error(404);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Huésped no encontrado']);
+            return;
         }
 
-        if ($this->huespedModel->softDelete($id, 'huesped_estado')) {
-            $this->redirect('/huespedes', 'Huésped eliminado correctamente', 'exito');
-        } else {
-            $this->redirect('/huespedes', 'Error al eliminar el huésped', 'error');
+        // Obtener reserva_id del contexto
+        $reservaId = $this->get('reserva_id');
+        if (!$reservaId) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'No se especificó la reserva']);
+            return;
+        }
+
+        try {
+            // Verificar que el huésped esté asociado activamente a la reserva
+            if (!$this->huespedModel->estaAsociadoAReserva($id, $reservaId)) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'El huésped no está asociado a esta reserva o ya fue eliminado']);
+                return;
+            }
+
+            // Cambiar solo el estado del registro en huesped_reserva
+            // NO se modifica el estado del huésped ni de la persona
+            if (!$this->huespedModel->updateEstadoEnReserva($id, $reservaId, 0)) {
+                throw new \Exception('Error al actualizar el estado');
+            }
+
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'Huésped eliminado de la reserva correctamente']);
+        } catch (\Exception $e) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Error al eliminar el huésped: ' . $e->getMessage()]);
         }
     }
 
     /**
-     * Restaurar huésped
+     * Restaurar huésped en una reserva
      */
     public function restore($id)
     {
         $this->requirePermission('huespedes');
 
-        if ($this->huespedModel->restore($id, 'huesped_estado')) {
-            $this->redirect('/huespedes', 'Huésped restaurado correctamente', 'exito');
-        } else {
-            $this->redirect('/huespedes', 'Error al restaurar el huésped', 'error');
+        // Obtener reserva_id del contexto
+        $reservaId = $this->get('reserva_id');
+        if (!$reservaId) {
+            $this->redirect('/huespedes', 'No se especificó la reserva', 'error');
+            return;
+        }
+
+        $huesped = $this->huespedModel->find($id);
+        if (!$huesped) {
+            $this->redirect('/huespedes?reserva_id=' . $reservaId, 'Huésped no encontrado', 'error');
+            return;
+        }
+
+        try {
+            // Restaurar solo el estado del registro en huesped_reserva
+            // NO se modifica el estado del huésped ni de la persona
+            if (!$this->huespedModel->updateEstadoEnReserva($id, $reservaId, 1)) {
+                throw new \Exception('Error al restaurar el huésped en la reserva');
+            }
+
+            $this->redirect('/huespedes?reserva_id=' . $reservaId, 'Huésped restaurado en la reserva correctamente', 'exito');
+        } catch (\Exception $e) {
+            $this->redirect('/huespedes?reserva_id=' . $reservaId, 'Error al restaurar el huésped: ' . $e->getMessage(), 'error');
         }
     }
 
@@ -715,6 +980,135 @@ class HuespedesController extends Controller
         } catch (\Exception $e) {
             error_log("Error al exportar huéspedes a PDF: " . $e->getMessage());
             $this->redirect('/huespedes', 'Error al exportar PDF: ' . $e->getMessage(), 'error');
+        }
+    }
+
+    /**
+     * Buscar persona por DNI (AJAX)
+     */
+    public function buscarPorDni()
+    {
+        // Verificar autenticación
+        if (!\App\Core\Auth::check()) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Debe iniciar sesión']);
+            return;
+        }
+
+        $dni = $this->get('dni');
+        $reservaId = $this->get('reserva_id');
+        
+        if (empty($dni)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'DNI requerido']);
+            return;
+        }
+
+        if (empty($reservaId)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Reserva ID requerido']);
+            return;
+        }
+
+        try {
+            // Buscar persona física por DNI
+            $personaFisicaModel = new \App\Models\PersonaFisica();
+            $personaFisica = $personaFisicaModel->findByDNI($dni);
+
+            if (!$personaFisica) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false]);
+                return;
+            }
+
+            // Buscar si existe un huésped asociado a esta persona física
+            $huesped = $this->huespedModel->findByPersonaFisicaId($personaFisica['id_personafisica']);
+
+            if (!$huesped) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false]);
+                return;
+            }
+
+            // Verificar si el huésped ya está asociado a esta reserva
+            if ($this->huespedModel->estaAsociadoAReserva($huesped['id_huesped'], $reservaId)) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'Este huésped ya está asociado a esta reserva'
+                ]);
+                return;
+            }
+
+            // Retornar información del huésped encontrado para confirmación
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'huesped' => [
+                    'id_huesped' => $huesped['id_huesped'],
+                    'persona_dni' => $personaFisica['personafisica_dni'],
+                    'persona_nombre' => $personaFisica['personafisica_nombre'],
+                    'persona_apellido' => $personaFisica['personafisica_apellido'],
+                    'persona_fechanac' => $personaFisica['personafisica_fechanac'],
+                    'persona_direccion' => $personaFisica['persona_direccion'] ?? ''
+                ]
+            ]);
+        } catch (\Exception $e) {
+            error_log("Error al buscar persona por DNI: " . $e->getMessage());
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false]);
+        }
+    }
+
+    /**
+     * Asociar huésped existente a reserva (AJAX)
+     */
+    public function asociarHuespedExistente()
+    {
+        // Verificar autenticación
+        if (!\App\Core\Auth::check()) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Debe iniciar sesión']);
+            return;
+        }
+
+        $huespedId = $this->post('huesped_id');
+        $reservaId = $this->post('reserva_id');
+
+        if (empty($huespedId) || empty($reservaId)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Datos incompletos']);
+            return;
+        }
+
+        try {
+            // Verificar que el huésped existe
+            $huesped = $this->huespedModel->find($huespedId);
+            if (!$huesped) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Huésped no encontrado']);
+                return;
+            }
+
+            // Verificar que no esté ya asociado
+            if ($this->huespedModel->estaAsociadoAReserva($huespedId, $reservaId)) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Este huésped ya está asociado a esta reserva']);
+                return;
+            }
+
+            // Asociar huésped a la reserva
+            if ($this->huespedModel->asociarReserva($huespedId, $reservaId)) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => true, 'message' => 'Huésped asociado correctamente a la reserva']);
+            } else {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Error al asociar el huésped']);
+            }
+        } catch (\Exception $e) {
+            error_log("Error al asociar huésped: " . $e->getMessage());
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Error al asociar huésped']);
         }
     }
 }

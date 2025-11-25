@@ -162,14 +162,12 @@
                                                 <span class="d-none d-sm-inline">Ver </span>Consumos
                                             </a>
                                             
-                                            <!-- Ver Huéspedes -->
-                                            <a href="<?= url('/reservas/' . $reserva['id_reserva'] . '/huespedes') ?>" 
-                                               class="btn btn-outline-info btn-sm">
-                                                <i class="fas fa-users me-1"></i>
-                                                <span class="d-none d-sm-inline">Ver </span>Huéspedes
-                                            </a>
-                                            
-                                            <!-- Ver Comentarios (visible para todos los estados) -->
+                            <!-- Ver Huéspedes (visible para todos los estados) -->
+                            <a href="<?= url('/huespedes?reserva_id=' . $reserva['id_reserva']) ?>" 
+                               class="btn btn-outline-info btn-sm">
+                                <i class="fas fa-users me-1"></i>
+                                <span class="d-none d-sm-inline">Ver </span>Huéspedes
+                            </a>                                            <!-- Ver Comentarios (visible para todos los estados) -->
                                             <a href="<?= url('/comentarios?reserva_id=' . $reserva['id_reserva']) ?>" 
                                                class="btn btn-outline-secondary btn-sm">
                                                 <i class="fas fa-comments me-1"></i>

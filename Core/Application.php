@@ -131,8 +131,11 @@ class Application
         $this->router->any('/huespedes/create', 'HuespedesController@create');
         $this->router->get('/huespedes/exportar', 'HuespedesController@exportar');
         $this->router->get('/huespedes/exportar-pdf', 'HuespedesController@exportarPdf');
-        $this->router->get('/huespedes/{id}', 'HuespedesController@show');
+        $this->router->get('/huespedes/buscar-por-dni', 'HuespedesController@buscarPorDni');
+        $this->router->post('/huespedes/asociar-existente', 'HuespedesController@asociarHuespedExistente');
+        $this->router->get('/huespedes/{id}/edit-ajax', 'HuespedesController@editAjax'); // AJAX para cargar datos
         $this->router->any('/huespedes/{id}/edit', 'HuespedesController@edit');
+        $this->router->get('/huespedes/{id}', 'HuespedesController@show');
         $this->router->post('/huespedes/{id}/delete', 'HuespedesController@delete');
         $this->router->post('/huespedes/{id}/restore', 'HuespedesController@restore');
         $this->router->post('/huespedes/{id}/estado', 'HuespedesController@cambiarEstado');

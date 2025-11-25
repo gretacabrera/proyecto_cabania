@@ -2743,7 +2743,7 @@ class ReservasController extends Controller
                             INNER JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                             INNER JOIN huesped h ON hr.rela_huesped = h.id_huesped
                             INNER JOIN persona p ON h.rela_persona = p.id_persona
-                            LEFT JOIN personafisica pf ON p.id_persona = pf.rela_persona
+                            LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                             LEFT JOIN factura f ON r.id_reserva = f.rela_reserva
                             WHERE p.id_persona = ?
                             GROUP BY r.id_reserva, r.reserva_fechahora, r.reserva_fhinicio, r.reserva_fhfin, 
