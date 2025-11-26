@@ -315,4 +315,51 @@ class EstadoConsumo extends Model
             'total' => $total
         ];
     }
+
+    /**
+     * Obtener estadísticas de uso de un estado
+     */
+    public function getEstadisticasUso($estadoId)
+    {
+        $sql = "SELECT 
+                    COUNT(c.id_consumo) as total_consumos,
+                    SUM(c.consumo_total) as monto_total,
+                    AVG(c.consumo_total) as monto_promedio,
+                    MIN(c.consumo_fechahora) as primer_uso,
+                    MAX(c.consumo_fechahora) as ultimo_uso
+                FROM consumo c
+                WHERE c.rela_estadoconsumo = ?";
+        
+        $result = $this->query($sql, [$estadoId]);
+        $estadisticas = $result->fetch_assoc();
+        
+        // Obtener consumos recientes con este estado
+        $sqlRecientes = "SELECT c.*, 
+                               p.producto_nombre,
+                               s.servicio_descripcion,
+                               cab.cabania_nombre
+                        FROM consumo c
+                        LEFT JOIN producto p ON c.rela_producto = p.id_producto
+                        LEFT JOIN servicio s ON c.rela_servicio = s.id_servicio
+                        LEFT JOIN reserva r ON c.rela_reserva = r.id_reserva
+                        LEFT JOIN cabania cab ON r.rela_cabania = cab.id_cabania
+                        WHERE c.rela_estadoconsumo = ?
+                        ORDER BY c.consumo_fechahora DESC
+                        LIMIT 5";
+        
+        $resultRecientes = $this->query($sqlRecientes, [$estadoId]);
+        $consumosRecientes = [];
+        while ($row = $resultRecientes->fetch_assoc()) {
+            $consumosRecientes[] = $row;
+        }
+        
+        return [
+            'total_consumos' => (int)$estadisticas['total_consumos'],
+            'monto_total' => $estadisticas['monto_total'] ?? 0,
+            'monto_promedio' => $estadisticas['monto_promedio'] ?? 0,
+            'primer_uso' => $estadisticas['primer_uso'],
+            'ultimo_uso' => $estadisticas['ultimo_uso'],
+            'consumos_recientes' => $consumosRecientes
+        ];
+    }
 }

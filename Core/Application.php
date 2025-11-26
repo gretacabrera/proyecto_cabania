@@ -390,6 +390,17 @@ class Application
         $this->router->post('/estadosreservas/{id}/restore', 'EstadosReservasController@restore');
         $this->router->post('/estadosreservas/{id}/estado', 'EstadosReservasController@cambiarEstado');
 
+        // Rutas de estados de consumo
+        $this->router->get('/estadosconsumo', 'EstadosConsumosController@index');
+        $this->router->any('/estadosconsumo/create', 'EstadosConsumosController@create');
+        $this->router->get('/estadosconsumo/exportar', 'EstadosConsumosController@exportar');
+        $this->router->get('/estadosconsumo/exportar-pdf', 'EstadosConsumosController@exportarPdf');
+        $this->router->get('/estadosconsumo/{id}', 'EstadosConsumosController@show');
+        $this->router->any('/estadosconsumo/{id}/edit', 'EstadosConsumosController@edit');
+        $this->router->post('/estadosconsumo/{id}/delete', 'EstadosConsumosController@delete');
+        $this->router->post('/estadosconsumo/{id}/restore', 'EstadosConsumosController@restore');
+        $this->router->post('/estadosconsumo/{id}/estado', 'EstadosConsumosController@cambiarEstado');
+
         // Rutas de tipos de servicios
         $this->router->get('/tiposservicios', 'TiposServiciosController@index');
         $this->router->any('/tiposservicios/create', 'TiposServiciosController@create');
