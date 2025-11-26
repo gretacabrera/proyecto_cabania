@@ -193,7 +193,7 @@ class Salida extends Model
 
             // Liberar la cabaña (cambiar estado a libre = 1)
             $updateCabaniaQuery = "UPDATE cabania 
-                                  SET cabania_estado = 1
+                                  SET rela_estadocabania = 1
                                   WHERE id_cabania = ?";
             
             $stmt = $db->prepare($updateCabaniaQuery);

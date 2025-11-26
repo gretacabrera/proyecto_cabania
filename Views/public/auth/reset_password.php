@@ -18,8 +18,8 @@
         </div>
     </div>
     
-    <div class="form-group">
-        <label for="new_password">
+    <div class="form-group mb-3">
+        <label for="new_password" class="mb-2">
             <i class="fas fa-lock"></i>
             Nueva Contraseña
         </label>
@@ -28,7 +28,7 @@
                 type="password" 
                 id="new_password" 
                 name="new_password" 
-                class="form-control"
+                class="form-control form-control-lg"
                 placeholder="Ingrese su nueva contraseña"
                 required 
                 minlength="6"
@@ -38,11 +38,11 @@
                 <i class="fas fa-eye"></i>
             </button>
         </div>
-        <small class="form-text text-muted">Mínimo 6 caracteres</small>
+        <small class="form-text text-muted mt-2 d-block">Mínimo 6 caracteres</small>
     </div>
 
-    <div class="form-group">
-        <label for="confirm_password">
+    <div class="form-group mb-3">
+        <label for="confirm_password" class="mb-2">
             <i class="fas fa-lock"></i>
             Confirmar Contraseña
         </label>
@@ -51,7 +51,7 @@
                 type="password" 
                 id="confirm_password" 
                 name="confirm_password" 
-                class="form-control"
+                class="form-control form-control-lg"
                 placeholder="Confirme su nueva contraseña"
                 required 
                 minlength="6"
@@ -71,19 +71,19 @@
         <small class="strength-text" id="strengthText">Ingrese una contraseña</small>
     </div>
 
-    <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+    <button type="submit" class="btn btn-primary btn-lg w-100" id="submitBtn">
         <i class="fas fa-key"></i>
         Restablecer Contraseña
     </button>
 </form>
 
-<div class="auth-divider">
+<div class="auth-divider my-3">
     <span>o</span>
 </div>
 
 <div class="auth-alternative">
-    <p>¿Recordó su contraseña?</p>
-    <a href="<?= url('/auth/login') ?>" class="btn btn-outline-primary">
+    <p class="mb-2">¿Recordó su contraseña?</p>
+    <a href="<?= url('/auth/login') ?>" class="btn btn-outline-primary w-100">
         <i class="fas fa-sign-in-alt"></i>
         Volver al Login
     </a>

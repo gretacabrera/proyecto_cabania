@@ -658,3 +658,148 @@
 .auth .security-content small {
     color: #6c757d;
 }
+
+/* ========================================== */
+/* RESPONSIVE - Dispositivos Móviles         */
+/* ========================================== */
+
+/* iPhone 16, Redmi 13C y similares (hasta 430px) */
+@media (max-width: 430px) {
+    /* Formularios de autenticación */
+    .modern-form {
+        padding: 1rem;
+    }
+    
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    
+    .form-group label {
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Inputs más grandes para mejor touch */
+    .form-control,
+    .form-control-lg {
+        font-size: 16px !important; /* Evita zoom en iOS */
+        padding: 0.75rem 1rem;
+        min-height: 48px; /* Mejor para touch */
+    }
+    
+    .form-select,
+    .form-select-lg {
+        font-size: 16px !important;
+        padding: 0.75rem 1rem;
+        min-height: 48px;
+    }
+    
+    /* Botones más grandes */
+    .btn-lg {
+        padding: 0.875rem 1.5rem;
+        font-size: 1rem;
+        min-height: 48px;
+    }
+    
+    .btn {
+        min-height: 44px;
+    }
+    
+    /* Password toggle button */
+    .password-toggle {
+        min-width: 44px;
+        min-height: 44px;
+    }
+    
+    /* Formulario de registro - campos en columna única */
+    .register-container .row {
+        margin-left: 0;
+        margin-right: 0;
+    }
+    
+    .register-container .row > [class*="col-"] {
+        padding-left: 0;
+        padding-right: 0;
+    }
+    
+    /* Espaciado de secciones */
+    .form-section {
+        padding: 1.5rem 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .form-section h3 {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+    
+    /* Auth alternatives */
+    .auth-alternative {
+        padding: 1rem;
+        text-align: center;
+    }
+    
+    .auth-divider {
+        margin: 1.5rem 0;
+    }
+    
+    .auth-help {
+        margin-top: 1rem;
+        font-size: 0.875rem;
+    }
+    
+    /* Security info cards */
+    .auth-security-info {
+        padding: 1rem;
+        margin-top: 1.5rem;
+    }
+    
+    .security-item {
+        flex-direction: row;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+        align-items: center;
+    }
+    
+    .security-item i {
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+    
+    .security-content h6 {
+        font-size: 0.8rem;
+        margin-bottom: 0.15rem;
+    }
+    
+    .security-content small {
+        font-size: 0.7rem;
+    }
+    
+    /* Indicador de fortaleza */
+    .password-strength {
+        margin-bottom: 1rem;
+    }
+    
+    .strength-bar {
+        height: 6px; /* Más visible en móvil */
+    }
+}
+
+/* Tablets y pantallas medianas */
+@media (min-width: 431px) and (max-width: 768px) {
+    .form-control,
+    .form-control-lg {
+        font-size: 16px; /* Evita zoom en iOS */
+    }
+    
+    .form-select,
+    .form-select-lg {
+        font-size: 16px;
+    }
+    
+    /* Formulario de registro - 2 columnas en tablet */
+    .register-container .row > .col-md-6 {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+}

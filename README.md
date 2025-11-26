@@ -1,29 +1,30 @@
 # Sistema de Gestión de Cabañas - Casa de Palos
 
-**Sistema integral para la gestión de cabañas, reservas online, huéspedes y servicios**
+**Sistema integral para la gestión de cabañas, reservas online con MercadoPago, notificaciones en tiempo real con Pusher, huéspedes y servicios**
 
 Desarrollado con PHP utilizando arquitectura MVC personalizada y paradigma de programación orientada a objetos.
 
 **Proyecto:** SIRCA - Sistema Integral de Reservas de Cabañas y Alojamientos  
 **Institución:** ISRMM - Desarrollo de Software  
 **Integrantes:** Hernan Lopez, Greta Cabrera, Horacio Ortiz
-**Fecha:** Octubre 2025
+**Fecha:** Noviembre 2025
 
 ---
 
 ## 🎯 **Descripción del Proyecto**
 
-**Casa de Palos** es un sistema web integral para la gestión completa de un complejo de cabañas turísticas. Desarrollado con arquitectura MVC personalizada, proporciona una solución robusta tanto para la gestión administrativa como para la experiencia del huésped.
+**Casa de Palos** es un sistema web integral para la gestión completa de un complejo de cabañas turísticas. Desarrollado con **arquitectura MVC personalizada** que implementa el patrón **Microkernel** en su núcleo (Core) y **Screaming Architecture** en su organización visual (Views), proporciona una solución robusta, extensible y mantenible tanto para la gestión administrativa como para la experiencia del huésped.
 
 ### **🌟 Funcionalidades Principales**
 
 #### **Para Huéspedes (Sistema Público)**
 - **🌐 Catálogo Público**: Exploración de cabañas con filtros avanzados
-- **📅 Sistema de Reservas Online**: Proceso completo de 5 pasos con validaciones
-- **💳 Simulación de Pagos**: Tarjeta, transferencia bancaria, efectivo
+- **📅 Sistema de Reservas Online**: Proceso completo de 6 pasos con validaciones
+- **💳 Pagos Reales con MercadoPago**: Integración completa con Checkout Pro y Wallet Brick
+- **🔔 Notificaciones en Tiempo Real**: Sistema Pusher con 4 tipos de notificaciones push
 - **✨ Servicios Adicionales**: Spa, restaurante, tours y actividades
 - **💬 Sistema de Comentarios**: Feedback y puntuación de estadías
-- **📧 Confirmaciones Automáticas**: Emails con detalles de reserva
+- **📧 Confirmaciones Automáticas**: Emails con detalles completos de pago y huéspedes
 
 #### **Para Administración (Panel Interno)**
 - **🏠 Gestión de Cabañas**: CRUD completo con estados, fotos y disponibilidad
@@ -37,10 +38,13 @@ Desarrollado con PHP utilizando arquitectura MVC personalizada y paradigma de pr
 
 ### **🛠️ Stack Tecnológico**
 - **Backend**: PHP 8.0+ con Programación Orientada a Objetos
-- **Arquitectura**: MVC personalizado con patrón Active Record
-- **Base de Datos**: MySQL 8.0 con 24 tablas relacionales + numeración automática
+- **Arquitectura**: MVC personalizado con patrón **Microkernel** (Core) y **Screaming Architecture** (Views)
+- **Patrón de Datos**: Active Record para persistencia
+- **Base de Datos**: MySQL 8.0 con 28 tablas relacionales + numeración automática
 - **Frontend**: HTML5, CSS3, Bootstrap 5.3, JavaScript ES6+
-- **Dependencias**: PHPMailer para emails, SweetAlert2 para UX
+- **Pagos Online**: MercadoPago SDK v3.7.1 (Checkout Pro con Wallet Brick)
+- **Notificaciones en Tiempo Real**: Pusher SDK v7.2.7 (canales privados, WebSockets)
+- **Dependencias**: PHPMailer para emails, SweetAlert2 para UX, PhpSpreadsheet para Excel, TCPDF para PDF
 - **Seguridad**: Consultas preparadas, escape de datos, CSRF protection, validaciones
 - **Facturación**: Sistema automático de numeración correlativa por tipo de comprobante
 
@@ -73,18 +77,23 @@ date.timezone = America/Argentina/Buenos_Aires
 ```
 
 ### **Configuración de Base de Datos**
-La base de datos incluye **24 tablas principales** organizadas en módulos:
+La base de datos incluye **28 tablas principales** organizadas en módulos:
 
-#### **📊 Entidades Principales (9 tablas)**
+#### **📊 Entidades Principales (13 tablas)**
 - `cabania` - Información de cabañas del complejo
 - `reserva` - Reservas de huéspedes con estados dinámicos  
 - `persona` - Datos personales de huéspedes y usuarios
+- `huesped` - Relación persona-reserva (tabla pivote)
 - `usuario` - Usuarios del sistema (admin/recepcionista)
 - `producto` - Inventario de productos vendibles
 - `servicio` - Servicios ofrecidos (spa, tours, etc.)
 - `consumo` - Registro de consumos de huéspedes
 - `comentario` - Feedback y puntuaciones
 - `factura` - Facturas con numeración automática correlativa
+- `facturadetalle` - Detalles de items facturados
+- `pago` - Registro de transacciones con MercadoPago
+- `ingreso` - Check-in de huéspedes
+- `salida` - Check-out de huéspedes
 
 #### **⚙️ Tablas de Configuración (10 tablas)**
 - `categoria` - Categorías de productos
@@ -98,66 +107,303 @@ La base de datos incluye **24 tablas principales** organizadas en módulos:
 - `tipocontacto` - Tipos de contacto
 - `tiposervicio` - Tipos de servicios
 
-#### **🔐 Sistema de Seguridad (7 tablas)**
+#### **🔐 Sistema de Seguridad (5 tablas)**
 - `perfil` - Roles del sistema (admin, recepcionista, huésped)
 - `modulo` - Módulos del sistema
 - `perfil_modulo` - Permisos por perfil
 - `menu` - Menús por perfil
 - `contacto` - Información de contacto
 - `pago` - Registro de transacciones
-- `tipocomprobante` - Tipos de facturas (A, B, C, Ticket) con numeración automática
 
 ## 🏗️ **Arquitectura del Sistema**
 
-### **Estructura del Proyecto**
+### **🎯 Estilos Arquitectónicos Implementados**
+
+El proyecto combina dos estilos arquitectónicos complementarios que garantizan extensibilidad, mantenibilidad y claridad organizacional:
+
+#### **1. Microkernel Architecture (Core Framework)**
+
+**Definición:** Arquitectura basada en un núcleo mínimo y extensible que proporciona las funcionalidades esenciales del sistema, permitiendo agregar características adicionales mediante plugins o módulos sin modificar el núcleo.
+
+**Implementación en el Proyecto:**
+
+```
+Core/ (Microkernel - 12 componentes esenciales)
+├── Application.php      # Sistema mínimo central
+├── Router.php          # Núcleo de enrutamiento
+├── Controller.php      # Clase base extensible
+├── Model.php           # Persistencia base
+├── View.php            # Renderizado base
+├── Database.php        # Conexión fundamental
+├── Auth.php            # Autenticación base
+├── Validator.php       # Validación core
+├── EmailService.php    # Servicio de email
+├── Autoloader.php      # Carga automática
+├── config.php          # Configuración central
+└── helpers.php         # Utilidades globales
+
+Controllers/ (Plugins - 32 módulos especializados)
+├── HomeController.php           # Plugin público
+├── CabaniasController.php       # Plugin de negocio
+├── ReservasController.php       # Plugin transaccional
+└── ... (29 más)                 # Módulos independientes
+```
+
+**Características del Microkernel:**
+
+✅ **Núcleo Mínimo (Core):**
+- 12 componentes esenciales que NO cambian frecuentemente
+- Funcionalidades fundamentales: enrutamiento, ORM, autenticación, vistas
+- Estabilidad garantizada sin modificaciones constantes
+
+✅ **Sistema de Plugins (Controllers):**
+- 32 controladores como módulos independientes
+- Cada controlador es un "plugin" que extiende la funcionalidad base
+- Se pueden agregar/remover controladores sin afectar el núcleo
+- Ejemplos: CabaniasController, ProductosController, TotemConsumosController
+
+✅ **Extensibilidad:**
+- Nuevos módulos se crean extendiendo `Controller` base
+- No requiere modificar el Core para agregar funcionalidades
+- Ejemplo: `class NuevoController extends Controller { }`
+
+✅ **Separación de Responsabilidades:**
+- **Core:** Infraestructura técnica (qué hace el framework)
+- **Controllers:** Lógica de negocio (qué hace la aplicación)
+- **Models:** Acceso a datos (cómo se persiste)
+
+**Ventajas del Microkernel en este Proyecto:**
+- 🔧 **Mantenibilidad:** Cambios en módulos no afectan el núcleo
+- 🚀 **Escalabilidad:** Agregar nuevos módulos sin refactorizar
+- 🛡️ **Estabilidad:** Core robusto y probado
+- 🔌 **Modularidad:** Controladores como plugins intercambiables
+
+---
+
+#### **2. Screaming Architecture (Organización de Views)**
+
+**Definición:** Arquitectura que comunica claramente el propósito del sistema mediante su estructura de carpetas. Al ver la organización, se "grita" instantáneamente qué hace el sistema (gestión de cabañas) en lugar de detalles técnicos.
+
+**Implementación en el Proyecto:**
+
+```
+Views/
+├── public/                      # 🌐 SCREAMING: "Sistema para huéspedes"
+│   ├── home.php                    # Landing de cabañas
+│   ├── auth/                       # Autenticación de usuarios
+│   ├── catalogo/                   # Exploración de cabañas
+│   ├── reservas/                   # 🔥 Sistema de reservas (5 pasos)
+│   ├── comentarios/                # Feedback de estadías
+│   └── huesped/                    # Área de huéspedes
+│
+├── admin/                       # 🏢 SCREAMING: "Sistema de gestión administrativa"
+│   ├── dashboard.php               # Panel de control
+│   ├── configuracion/              # ⚙️ Configuración del complejo
+│   │   ├── categorias/                # Categorías de productos
+│   │   ├── marcas/                    # Marcas
+│   │   ├── estadosreservas/           # Estados de reservas
+│   │   └── ... (10 más)               # Configuraciones específicas
+│   ├── operaciones/                # 🏠 SCREAMING: "Operaciones diarias"
+│   │   ├── cabanias/                  # Gestión de cabañas
+│   │   ├── reservas/                  # Control de reservas
+│   │   ├── productos/                 # Inventario
+│   │   ├── servicios/                 # Servicios ofrecidos
+│   │   ├── consumos/                  # Registro de consumos
+│   │   ├── huespedes/                 # Gestión de huéspedes
+│   │   ├── inventario/                # Control de stock
+│   │   └── revisiones/                # Revisiones de cabañas
+│   ├── seguridad/                  # 🔐 SCREAMING: "Administración de accesos"
+│   │   ├── usuarios/                  # Gestión de usuarios
+│   │   ├── perfiles/                  # Roles y permisos
+│   │   └── ... (3 más)                # Configuración de seguridad
+│   └── reportes/                   # 📊 SCREAMING: "Analytics del negocio"
+│       ├── dashboard/                 # Dashboard ejecutivo
+│       ├── consumos/                  # Reportes de ventas
+│       ├── demografico/               # Análisis de huéspedes
+│       └── ... (4 más)                # Reportes especializados
+│
+├── totem/                       # 📱 SCREAMING: "Sistema de pedidos sin login"
+│   └── consumos/                   # Pedidos desde cabañas
+│
+└── shared/                      # Componentes técnicos (NO screaming)
+    ├── layouts/                    # Plantillas base
+    ├── components/                 # Elementos reutilizables
+    └── errors/                     # Páginas de error
+```
+
+**Características de Screaming Architecture:**
+
+✅ **Intención Clara del Negocio:**
+- Al abrir `Views/admin/operaciones/` → Inmediatamente se entiende: "Operaciones de un complejo de cabañas"
+- No hay carpetas genéricas como `mvc/`, `controllers/`, `data/`
+- Carpetas nombradas según conceptos de dominio: `cabanias/`, `reservas/`, `huespedes/`
+
+✅ **Organización por Casos de Uso:**
+- `public/reservas/` → Flujo completo de reserva online (5 pasos)
+- `admin/operaciones/` → Gestión diaria del complejo
+- `admin/reportes/` → Analytics y toma de decisiones
+- Cada carpeta representa una funcionalidad de negocio real
+
+✅ **Segregación por Actor:**
+- `public/` → Usuario huésped (reservas, catálogo)
+- `admin/` → Personal administrativo (gestión, reportes)
+- `totem/` → Sistema autoservicio sin autenticación
+- Separación clara de responsabilidades por tipo de usuario
+
+✅ **Jerarquía Semántica:**
+```
+admin/
+  └── operaciones/          # Nivel 1: Categoría de negocio
+      └── cabanias/         # Nivel 2: Entidad de dominio
+          ├── listado.php      # Nivel 3: Acción específica
+          ├── formulario.php   # Nivel 3: Acción específica
+          └── detalle.php      # Nivel 3: Acción específica
+```
+
+**Contraste con Arquitectura Tradicional:**
+
+❌ **Arquitectura Genérica (NO screaming):**
+```
+views/
+  ├── list.php
+  ├── form.php
+  ├── detail.php
+  └── admin/
+      ├── table1/
+      ├── table2/
+      └── crud/
+```
+
+✅ **Screaming Architecture (este proyecto):**
+```
+Views/
+  ├── public/
+  │   └── reservas/          # "Este sistema maneja RESERVAS"
+  └── admin/
+      └── operaciones/
+          ├── cabanias/      # "de CABAÑAS"
+          ├── huespedes/     # "con HUÉSPEDES"
+          └── consumos/      # "que consumen productos/servicios"
+```
+
+**Ventajas de Screaming Architecture en este Proyecto:**
+- 👁️ **Comprensión Inmediata:** Cualquier desarrollador entiende el dominio en segundos
+- 📍 **Navegación Intuitiva:** Fácil localizar funcionalidades por nombre de negocio
+- 🧩 **Cohesión de Dominio:** Archivos relacionados agrupados por concepto de negocio
+- 📖 **Documentación Autónoma:** La estructura ES la documentación del sistema
+- 🔍 **Onboarding Rápido:** Nuevos desarrolladores comprenden el sistema sin explicaciones
+
+---
+
+### **🔗 Integración de Ambos Estilos**
+
+**Microkernel (Core) + Screaming Architecture (Views) = Sistema Robusto y Comprensible**
+
+```
+Flujo de Solicitud:
+
+1. [Usuario] → http://localhost/proyecto_cabania/reservas/confirmar
+                ↓
+2. [Core/Router.php] → Microkernel enruta la solicitud
+                ↓
+3. [Controllers/ReservasController.php] → Plugin procesa lógica
+                ↓
+4. [Models/Reserva.php] → Acceso a datos via Microkernel
+                ↓
+5. [Views/public/reservas/confirmar.php] → Screaming Architecture muestra vista
+                ↓
+6. [Response] → HTML renderizado al usuario
+```
+
+**Beneficios de la Combinación:**
+- 🏗️ **Infraestructura Sólida:** Microkernel garantiza estabilidad técnica
+- 💼 **Claridad de Negocio:** Screaming Architecture comunica el dominio
+- 🔧 **Mantenibilidad:** Cambios técnicos en Core, cambios de negocio en Views
+- 📈 **Escalabilidad:** Agregar módulos (Microkernel) y vistas (Screaming) sin conflictos
+
+---
+
+### **Estructura del Proyecto
 ```
 proyecto_cabania/
-├── 📁 Controllers/            # 27 Controladores MVC organizados por funcionalidad
-│   ├── 🌐 Públicos (6):
+├── 📁 Controllers/            # 32 Controladores MVC organizados por funcionalidad
+│   ├── 🌐 Públicos (8):
 │   │   ├── HomeController.php        # Página principal y landing
 │   │   ├── AuthController.php        # Login, registro, recuperación
+│   │   ├── EmailVerificationController.php # Verificación de emails
 │   │   ├── CatalogoController.php    # Catálogo público de cabañas
 │   │   ├── ReservasController.php    # Sistema de reservas online (5 pasos)
 │   │   ├── ComentariosController.php # Feedback de huéspedes
-│   │   └── ... (2 más)
-│   ├── ⚙️ Configuración (10):
+│   │   ├── HuespedConsumosController.php # Self-service de consumos
+│   │   └── TotemConsumosController.php # Totem sin autenticación
+│   ├── ⚙️ Configuración (13):
 │   │   ├── CategoriasController.php  # Categorías de productos
+│   │   ├── MarcasController.php      # Marcas de productos
+│   │   ├── EstadosPersonasController.php # Estados de huéspedes
+│   │   ├── EstadosProductosController.php # Estados de productos
 │   │   ├── EstadosReservasController.php # Estados dinámicos de reservas
+│   │   ├── CondicionesSaludController.php # Condiciones médicas
 │   │   ├── MetodosPagosController.php # Métodos de pago
-│   │   └── ... (7 más)
-│   ├── 🏢 Operaciones (5):
+│   │   ├── PeriodosController.php    # Temporadas y períodos
+│   │   ├── TiposContactosController.php # Tipos de contacto
+│   │   ├── TiposServiciosController.php # Tipos de servicios
+│   │   ├── NivelDanioController.php  # Niveles de daño
+│   │   ├── CostosDanioController.php # Costos de daños
+│   │   └── ... (1 más)
+│   ├── 🏢 Operaciones (7):
 │   │   ├── CabaniasController.php    # Gestión de cabañas
 │   │   ├── ProductosController.php   # Inventario y productos
 │   │   ├── ServiciosController.php   # Servicios ofrecidos
-│   │   └── ... (2 más)
+│   │   ├── ConsumosController.php    # Registro administrativo
+│   │   ├── HuespedesController.php   # Gestión de huéspedes
+│   │   ├── InventarioController.php  # Control de stock
+│   │   └── RevisionesController.php  # Revisiones de cabañas
 │   ├── 🔐 Seguridad (5):
 │   │   ├── UsuariosController.php    # Gestión de usuarios
 │   │   ├── PerfilesController.php    # Roles y permisos
-│   │   └── ... (3 más)
+│   │   ├── PerfilesModulosController.php # Asignación de permisos
+│   │   ├── ModulosController.php     # Módulos del sistema
+│   │   └── MenusController.php       # Menús dinámicos
 │   └── 📊 Reportes (1):
 │       └── ReportesController.php    # Analytics y dashboard
 │
-├── 📁 Models/                 # 25 Modelos con Active Record y relaciones
-│   ├── 🏠 Negocio Principal:
+├── 📁 Models/                 # 28 Modelos con Active Record y relaciones
+│   ├── 🏠 Negocio Principal (8):
 │   │   ├── Cabania.php              # Cabañas con disponibilidad
 │   │   ├── Reserva.php              # Reservas transaccionales
 │   │   ├── Usuario.php              # Autenticación multi-perfil
 │   │   ├── Persona.php              # Datos de huéspedes
-│   │   └── ... (4 más)
-│   ├── 🛍️ Comercial:
+│   │   ├── Huesped.php              # Relación persona-reserva
+│   │   ├── Ingreso.php              # Check-in de huéspedes
+│   │   ├── Salida.php               # Check-out de huéspedes
+│   │   └── Revision.php             # Revisiones de cabañas
+│   ├── 🛍️ Comercial (10):
 │   │   ├── Producto.php             # Inventario con stock
 │   │   ├── Servicio.php             # Servicios con categorías
 │   │   ├── Consumo.php              # Registro de ventas
-│   │   └── ... (3 más)
-│   └── ⚙️ Sistema:
+│   │   ├── Categoria.php            # Categorías de productos
+│   │   ├── Marca.php                # Marcas de productos
+│   │   ├── Inventario.php           # Control de stock
+│   │   ├── Factura.php              # Facturas con numeración automática
+│   │   ├── FacturaDetalle.php       # Detalles de factura
+│   │   ├── Pago.php                 # Registro de transacciones
+│   │   └── MetodoPago.php           # Métodos de pago
+│   └── ⚙️ Sistema (10):
 │       ├── EstadoReserva.php        # Estados dinámicos sin hardcode
+│       ├── EstadoPersona.php        # Estados de huéspedes
+│       ├── EstadoProducto.php       # Estados de productos
 │       ├── Perfil.php               # Sistema de roles
-│       └── ... (15 más)
+│       ├── PerfilModulo.php         # Permisos por perfil
+│       ├── Modulo.php               # Módulos del sistema
+│       ├── Menu.php                 # Menús dinámicos
+│       ├── CondicionSalud.php       # Condiciones médicas
+│       ├── CostoDanio.php           # Costos de daños
+│       └── NivelDanio.php           # Niveles de daño
 │
-├── 📁 Views/                  # Sistema organizado en 3 secciones
-│   ├── 🌐 public/                   # Experiencia del huésped (7 módulos)
+├── 📁 Views/                  # Sistema organizado en 4 secciones (49 módulos)
+│   ├── 🌐 public/                   # Experiencia del huésped (9 módulos)
 │   │   ├── home.php                    # Landing page optimizada
-│   │   ├── 📁 auth/                    # Autenticación de usuarios
+│   │   ├── 📁 auth/                    # Autenticación (login, registro, recuperar)
 │   │   ├── 📁 catalogo/                # Exploración de cabañas
 │   │   ├── 📁 reservas/                # 🔥 Sistema de 5 pasos:
 │   │   │   ├── confirmar.php              # ✅ Validación de datos
@@ -166,28 +412,33 @@ proyecto_cabania/
 │   │   │   ├── pago.php                   # 💳 Simulación de pagos
 │   │   │   └── exito.php                  # 🎉 Confirmación final
 │   │   ├── 📁 comentarios/             # Sistema de feedback
-│   │   └── ... (3 más)
-│   ├── 🏢 admin/                    # Panel administrativo (24 módulos)
-│   │   ├── 📁 configuracion/           # Configuración básica (10)
-│   │   ├── 📁 operaciones/             # Gestión diaria (5)
-│   │   ├── 📁 seguridad/               # Administración (5)
-│   │   └── 📁 reportes/                # Analytics (4)
-│   └── 📁 shared/                   # Componentes reutilizables
-│       ├── 📁 layouts/                 # Plantillas base
-│       ├── 📁 components/              # Elementos comunes
-│       └── 📁 errors/                  # Páginas de error
+│   │   └── 📁 huesped/                 # Área de huéspedes (consumos self-service)
+│   ├── 🏢 admin/                    # Panel administrativo (32 módulos)
+│   │   ├── dashboard.php               # Dashboard ejecutivo
+│   │   ├── 📁 configuracion/           # Configuración básica (13 módulos)
+│   │   ├── 📁 operaciones/             # Gestión diaria (9 módulos)
+│   │   ├── 📁 seguridad/               # Administración (5 módulos)
+│   │   └── 📁 reportes/                # Analytics (7 módulos)
+│   ├── 📁 totem/                    # Módulo Totem sin autenticación (1 módulo)
+│   │   └── 📁 consumos/                # Sistema de pedidos desde cabañas
+│   └── 📁 shared/                   # Componentes reutilizables (7 elementos)
+│       ├── 📁 layouts/                 # Plantillas base (main, auth, public, totem)
+│       ├── 📁 components/              # Elementos comunes (header, footer, sidebar)
+│       └── 📁 errors/                  # Páginas de error (404, 403, 500)
 │
-├── 📁 Core/                   # Framework MVC personalizado (13 componentes)
-│   ├── Application.php              # Bootstrap y ciclo de vida
-│   ├── Router.php                   # Enrutamiento con URLs amigables
-│   ├── Controller.php               # Clase base con funcionalidades
-│   ├── Model.php                    # Active Record con CRUD
-│   ├── View.php                     # Motor de renderizado seguro
-│   ├── Database.php                 # Singleton con pool de conexiones
-│   ├── Auth.php                     # Autenticación multi-perfil
-│   ├── Validator.php                # Sistema de validaciones
-│   ├── EmailService.php             # Servicio de emails con PHPMailer
-│   └── ... (4 más)
+├── 📁 Core/                   # Framework MVC personalizado (12 componentes)
+│   ├── Application.php              # Bootstrap y enrutamiento (68 rutas activas)
+│   ├── Router.php                   # Enrutamiento dinámico con parámetros
+│   ├── Controller.php               # Clase base con render y permisos
+│   ├── Model.php                    # Active Record con CRUD y relaciones
+│   ├── View.php                     # Renderizado con layouts y escape automático
+│   ├── Database.php                 # Singleton con transacciones ACID
+│   ├── Auth.php                     # Autenticación multi-perfil granular
+│   ├── Validator.php                # Validaciones y sanitización
+│   ├── EmailService.php             # PHPMailer para confirmaciones
+│   ├── Autoloader.php               # Carga automática PSR-4
+│   ├── config.php                   # Configuración centralizada
+│   └── helpers.php                  # Funciones globales (url, dd, e, etc.)
 │
 ├── 📁 assets/                 # Recursos frontend organizados
 │   ├── 📁 css/                      # Estilos por módulo (7 archivos)
@@ -197,7 +448,7 @@ proyecto_cabania/
 │   ├── 📁 cabanias/                 # Fotos de las 8 cabañas
 │   └── 📁 productos/                # Imágenes de productos
 ├── 📁 vendor/                 # Dependencias (PHPMailer via Composer)
-├── 📄 bd.sql                  # Base de datos completa (24 tablas)
+├── 📄 bd.sql                  # Base de datos completa (28 tablas)
 ├── 📄 composer.json           # Gestión de dependencias
 ├── 📄 index.php               # Punto de entrada con manejo de errores
 ├── 📄 .htaccess               # Configuración Apache con seguridad
@@ -207,37 +458,45 @@ proyecto_cabania/
 
 ### **Componentes del Framework MVC Personalizado**
 
-#### **🎯 Core Framework** (11 componentes)
-- **Application**: Bootstrap y ciclo de vida
-- **Router**: Enrutamiento con URLs amigables  
-- **Controller**: Clase base con funcionalidades comunes
-- **Model**: Active Record con operaciones CRUD
-- **View**: Motor de plantillas con layouts
-- **Database**: Singleton con conexiones optimizadas
-- **Auth**: Autenticación multi-perfil y permisos
-- **Validator**: Sistema completo de validaciones
-- **Autoloader**: PSR-4 compatible
-- **Config**: Configuración centralizada
-- **Helpers**: Utilidades globales
+> **Arquitectura Base:** Patrón **Microkernel** con núcleo mínimo extensible
 
-#### **📊 Modelos de Datos** (25 modelos)
-- **Alojamiento**: Cabania, Reserva, Ingreso, Salida
-- **Usuarios**: Usuario, Persona, Perfil
-- **Comercial**: Producto, Servicio, Consumo, Categoria
-- **Configuración**: Estados, Métodos de pago, Períodos
-- **Sistema**: Modulo, Menu, PerfilModulo
+#### **🎯 Core Framework - Microkernel** (13 componentes esenciales)
+- **Application**: Bootstrap y ciclo de vida con 68 rutas activas
+- **Router**: Enrutamiento dinámico con parámetros {id}
+- **Controller**: Clase base con render, permisos y validaciones
+- **Model**: Active Record con CRUD, relaciones y paginación
+- **View**: Motor de plantillas con layouts y escape automático
+- **Database**: Singleton con transacciones ACID y prepared statements
+- **Auth**: Autenticación multi-perfil con permisos granulares
+- **Validator**: Sistema completo de validaciones y sanitización
+- **EmailService**: Integración PHPMailer para confirmaciones
+- **NotificationService**: Sistema de notificaciones en tiempo real con Pusher (4 tipos)
+- **Autoloader**: PSR-4 compatible para clases
+- **Config**: Configuración centralizada (app, database, mail)
+- **Helpers**: Utilidades globales (url, dd, e, csrf_token, etc.)
 
-#### **🎮 Controladores** (27 controladores activos)
-- **Públicos**: Home, Auth, Catalogo, Reservas (6)
-- **Configuración**: Categorías, Estados, Métodos (10)
-- **Operaciones**: Cabañas, Productos, Servicios (5)
-- **Administración**: Usuarios, Perfiles, Módulos (5)
+#### **📊 Modelos de Datos** (28 modelos)
+- **Alojamiento**: Cabania, Reserva, Huesped, Ingreso, Salida, Revision
+- **Usuarios**: Usuario, Persona, Perfil, PerfilModulo
+- **Comercial**: Producto, Servicio, Consumo, Categoria, Marca, Inventario, Factura, FacturaDetalle, Pago
+- **Configuración**: EstadoReserva, EstadoPersona, EstadoProducto, MetodoPago, Periodo, TipoContacto, TipoServicio
+- **Sistema**: Modulo, Menu, CondicionSalud, CostoDanio, NivelDanio, Contacto, Comentario, Reporte
+
+#### **🎮 Controladores** (33 controladores activos)
+- **Públicos**: Home, Auth, EmailVerification, Catalogo, Reservas, Comentarios, HuespedConsumos, TotemConsumos (8)
+- **Configuración**: Categorías, Marcas, Estados (Personas/Productos/Reservas), Condiciones, Métodos, Períodos, Tipos, Niveles, Costos (13)
+- **Operaciones**: Cabañas, Productos, Servicios, Consumos, Huéspedes, Inventario, Revisiones (7)
+- **Administración**: Usuarios, Perfiles, PerfilesModulos, Módulos, Menús (5)
 - **Reportes**: Analytics y reportes (1)
+- **Notificaciones**: Pusher (autenticación de canales privados) (1)
 
-#### **🖼️ Sistema de Vistas** (31+ elementos)
-- **Público**: 7 módulos con sistema completo de reservas
-- **Admin**: 24 módulos organizados por funcionalidad
-- **Compartidas**: Layouts, componentes, errores
+#### **🖼️ Sistema de Vistas - Screaming Architecture** (49 módulos)
+> **Organización:** Estructura que "grita" el propósito del sistema (gestión de cabañas)
+
+- **Público**: 9 módulos con sistema completo de reservas
+- **Admin**: 32 módulos organizados por funcionalidad (Dashboard + Configuración + Operaciones + Seguridad + Reportes)
+- **Totem**: 1 módulo sin autenticación para pedidos
+- **Compartidas**: 7 elementos reutilizables (layouts, components, errors)
 
 ## 🚀 **Instalación y Configuración**
 
@@ -442,19 +701,31 @@ El sistema de reservas es el **corazón del proyecto**, implementando un flujo t
 - ☑️ Aceptación obligatoria de términos y condiciones
 - � Botones "Modificar Reserva" y "Cancelar"
 
-**Paso 4: Procesamiento de Pago** (`/reservas/pago`)
-- 💳 **Tarjeta de Crédito**: Con validación real (rechazo simulado para testing)
-- 🏦 **Transferencia Bancaria**: Datos completos de cuenta
-- 💵 **Efectivo**: Pago diferido al momento del check-in
-- 🔐 Validaciones por método específico
-- ⚡ Procesamiento transaccional con rollback automático
+**Paso 4: Pasarela de Pago MercadoPago** (`/reservas/pasarela`)
+- 💳 **Wallet Brick**: Interfaz optimizada de MercadoPago
+- 🏦 **Métodos de pago**: Tarjetas, efectivo, transferencias
+- 🔐 **SDK v3.7.1**: Integración certificada con API moderna
+- 💼 **Diseño Profesional**: Colores corporativos sobrios (blanco, gris, bordes)
+- ⚡ **Procesamiento Real**: Transacción completa con MercadoPago
+- 🛡️ **Seguridad**: Certificación PCI-DSS, HTTPS obligatorio
 
-**Paso 5: Confirmación Exitosa** (`/reservas/exito`)
+**Paso 5: Callbacks de MercadoPago**
+- ✅ **Pago Exitoso**: Confirma reserva, genera factura, envía email
+- ❌ **Pago Rechazado**: Permite reintentar con otro método
+- ⏳ **Pago Pendiente**: Notifica al usuario del estado
+- 🔔 **Webhook IPN**: Notificaciones asíncronas de MercadoPago
+
+**Paso 6: Confirmación Exitosa** (`/reservas/exito`)
 - 🎉 Mensaje de éxito con animación
 - 🎫 Número de reserva único generado
-- 📧 Email de confirmación automático (PHPMailer)
+- 📧 Email de confirmación automático con datos completos:
+  - Método de pago: MercadoPago
+  - Monto total abonado
+  - Cantidad de huéspedes (adultos y menores por edad)
+  - Fechas de check-in/check-out
+  - Información de contacto del complejo
 - 📱 Información práctica para la estadía
-- 💾 Opción de descargar/imprimir comprobante
+- 💾 Comprobante digital de reserva
 
 #### **⚙️ Estados Dinámicos (Sin Hardcode)**
 El sistema maneja **8 estados** de reserva completamente dinámicos:
@@ -490,31 +761,474 @@ $this->db->transaction(function() {
 - ✅ **Verificación de disponibilidad** antes de crear la reserva
 - ✅ **Rollback automático** si falla cualquier paso del proceso
 
-#### **💳 Transacción 2: Confirmación de Pago Completa**
+#### **💳 Transacción 2: Confirmación de Pago MercadoPago**
 **Ubicación:** `Models/Reserva.php` → `confirmPayment()`
 
 ```php
 $this->db->transaction(function() {
-    // 1. Verificar reserva en estado PENDIENTE
-    // 2. Registrar pago con método seleccionado
-    // 3. Cambiar estado reserva a CONFIRMADA
-    // 4. Cambiar estado cabaña a OCUPADA
-    // 5. Generar factura completa con detalles
-    // 6. Rollback automático si hay errores
+    // 1. Validar payment_id de MercadoPago
+    // 2. Verificar si reserva ya fue confirmada (evitar duplicados)
+    // 3. Generar factura con número automático
+    // 4. Registrar pago vinculado a factura (método: MercadoPago)
+    // 5. Cambiar estado reserva a CONFIRMADA (2)
+    // 6. Enviar email con datos completos (huéspedes, monto, método)
+    // 7. Rollback automático si hay errores
 });
 ```
 
 **Características:**
-- ✅ **Transacción completa** que procesa pago, factura y cambios de estado
-- ✅ **Generación de factura** con número automático y detalles
-- ✅ **Actualización de estados** de reserva y cabaña
-- ✅ **Manejo robusto de errores** con logging detallado
+- ✅ **Integración MercadoPago**: Valida payment_id y external_reference
+- ✅ **Detección de Duplicados**: Evita procesar dos veces la misma reserva
+- ✅ **Transacción Completa**: Factura → Pago → Estado → Email
+- ✅ **Consultas SQL Optimizadas**: JOINs correctos (pago → factura → reserva)
+- ✅ **Email con Datos Completos**: Huéspedes por edad, monto, método de pago
+- ✅ **Manejo Robusto de Errores**: Logging detallado y rollback
 
 #### **🛡️ Beneficios de la Implementación ACID**
 - **Atomicidad:** Las operaciones se completan totalmente o no se ejecutan
 - **Consistencia:** Estados siempre coherentes entre todas las tablas
 - **Aislamiento:** Transacciones concurrentes no interfieren entre sí
 - **Durabilidad:** Una vez confirmada, la transacción es permanente
+
+---
+
+## 💳 **Integración con MercadoPago**
+
+### **SDK v3.7.1 - Checkout Pro con Wallet Brick**
+
+El sistema implementa la integración más moderna de MercadoPago para procesamiento de pagos online.
+
+#### **Características de la Integración**
+
+**Tecnología:**
+- **SDK PHP**: `mercadopago/dx-php` v3.7.1
+- **API Moderna**: MercadoPagoConfig, PreferenceClient, PaymentClient
+- **JavaScript SDK**: MercadoPago.js para Wallet Brick
+- **Modo**: PRUEBA (credenciales de test incluidas)
+
+**Flujo de Pago:**
+```php
+// 1. Crear preferencia de pago
+use MercadoPago\MercadoPagoConfig;
+use MercadoPago\Client\Preference\PreferenceClient;
+
+MercadoPagoConfig::setAccessToken($access_token);
+$client = new PreferenceClient();
+$preference = $client->create([
+    'external_reference' => $reserva_id,
+    'items' => [[
+        'title' => "Reserva Cabaña {$nombre}",
+        'quantity' => 1,
+        'unit_price' => (float)$total
+    ]],
+    'back_urls' => [
+        'success' => "{$base_url}/reservas/pago-exitoso",
+        'failure' => "{$base_url}/reservas/pago-fallido",
+        'pending' => "{$base_url}/reservas/pago-pendiente"
+    ],
+    'notification_url' => "{$base_url}/reservas/webhook"
+]);
+
+// 2. Renderizar Wallet Brick
+const mp = new MercadoPago('PUBLIC_KEY', { locale: 'es-AR' });
+await mp.bricks().create('wallet', 'wallet_container', {
+    initialization: { preferenceId: preference.id }
+});
+
+// 3. Usuario completa pago en MercadoPago
+// 4. Callback procesa resultado
+```
+
+**Métodos de Pago Soportados:**
+- 💳 Tarjetas de crédito y débito
+- 💵 Efectivo (PagoFácil, Rapipago)
+- 🏦 Transferencias bancarias
+- 📱 Dinero en cuenta de MercadoPago
+
+**Seguridad:**
+- ✅ Certificación PCI-DSS nivel 1
+- ✅ Tokenización de tarjetas
+- ✅ Protección contra fraude
+- ✅ HTTPS obligatorio en producción
+- ✅ Webhook signature validation
+
+**Configuración en `.env`:**
+```env
+# Credenciales de PRUEBA
+MERCADOPAGO_PUBLIC_KEY=APP_USR-7075d473-4e10-4d89-a27d-d79955b3a175
+MERCADOPAGO_ACCESS_TOKEN=APP_USR-374665803802227-111721-...
+MERCADOPAGO_BASE_URL=https://tu-dominio.com/proyecto_cabania/
+
+# Usuarios de prueba incluidos
+MERCADOPAGO_VENDEDOR_USER_ID=2997053882
+MERCADOPAGO_COMPRADOR_EMAIL=test_user_1316051943@testuser.com
+
+# Tarjetas de prueba (5 tarjetas configuradas)
+# Mastercard, Visa, American Express, Débito Mastercard, Débito Visa
+```
+
+**Testing:**
+```bash
+# Escenarios de prueba implementados
+- Pago aprobado: Nombre "APRO"
+- Pago rechazado: Nombre "OTHE"
+- Pago pendiente: Nombre "CONT"
+# + 13 escenarios más para testing exhaustivo
+```
+
+**Callbacks Implementados:**
+- `/reservas/pago-exitoso` - Procesa pago aprobado
+- `/reservas/pago-fallido` - Maneja rechazo
+- `/reservas/pago-pendiente` - Estado pendiente
+- `/reservas/webhook` - Notificaciones IPN
+
+**Transacción de Pago:**
+```sql
+-- Estructura de datos
+reserva (id_reserva, reserva_total, rela_estadoreserva)
+    ↓
+factura (id_factura, rela_reserva, factura_total, factura_numero)
+    ↓
+pago (id_pago, rela_factura, rela_metododepago, pago_total)
+    ↓
+metododepago (id_metododepago, metododepago_descripcion: 'MercadoPago')
+```
+
+**Consultas SQL para Emails:**
+```sql
+-- Método de pago
+SELECT mp.metododepago_descripcion 
+FROM pago p
+INNER JOIN factura f ON p.rela_factura = f.id_factura
+INNER JOIN metododepago mp ON p.rela_metododepago = mp.id_metododepago
+WHERE f.rela_reserva = ?
+
+-- Total pagado
+SELECT SUM(p.pago_total) as total
+FROM pago p
+INNER JOIN factura f ON p.rela_factura = f.id_factura
+WHERE f.rela_reserva = ?
+
+-- Huéspedes por edad
+SELECT 
+    COUNT(CASE WHEN h.huesped_edad >= 18 THEN 1 END) as adultos,
+    COUNT(CASE WHEN h.huesped_edad < 18 THEN 1 END) as menores
+FROM huesped_reserva hr
+INNER JOIN huesped h ON hr.rela_huesped = h.id_huesped
+WHERE hr.rela_reserva = ?
+```
+
+**Migración a Producción:**
+1. Crear cuenta de vendedor en MercadoPago
+2. Obtener credenciales de PRODUCCIÓN
+3. Actualizar `.env`:
+   ```env
+   MERCADOPAGO_PUBLIC_KEY=APP_USR-[tu-public-key]
+   MERCADOPAGO_ACCESS_TOKEN=APP_USR-[tu-access-token]
+   MERCADOPAGO_BASE_URL=https://[tu-dominio-produccion]/
+   ```
+4. Configurar HTTPS (obligatorio)
+5. Validar webhook con signature
+6. Testing exhaustivo con tarjetas reales
+
+---
+
+## 🔔 **Sistema de Notificaciones en Tiempo Real con Pusher**
+
+### **📡 Integración Pusher SDK v7.2.7**
+
+Sistema completo de notificaciones push para **huéspedes** que proporciona actualizaciones en tiempo real sobre eventos importantes de su estadía.
+
+#### **🎯 Tipos de Notificaciones Implementadas**
+
+**1. 🗓️ Reserva Cercana**
+- **Cuándo**: 24 horas antes del check-in
+- **Mensaje**: "¡Tu reserva es mañana! Tu estadía en [Cabaña] comienza el [Fecha]"
+- **Tipo**: Success (verde)
+- **Icono**: `fas fa-calendar-check`
+
+**2. 💳 Pago Pendiente**
+- **Cuándo**: Cuando hay saldo sin pagar en una reserva
+- **Mensaje**: "Tienes un saldo pendiente de $[Monto]"
+- **Tipo**: Warning (amarillo)
+- **Icono**: `fas fa-exclamation-triangle`
+
+**3. 🛒 Pedido en Cabaña**
+- **Cuándo**: Al crear consumo desde totem/menú
+- **Mensaje**: "Tu pedido de [Cantidad] [Item] fue registrado"
+- **Tipo**: Success (verde)
+- **Icono**: `fas fa-shopping-cart`
+
+**4. ⚠️ Inconveniente de Pedido**
+- **Cuándo**: Cuando hay problemas con un consumo (stock, cancelación)
+- **Mensaje**: [Motivo específico del inconveniente]
+- **Tipo**: Danger (rojo)
+- **Icono**: `fas fa-times-circle`
+
+### **🏗️ Arquitectura del Sistema**
+
+#### **Backend (PHP)**
+
+**Componente Principal: `Core/NotificationService.php`**
+```php
+use Pusher\Pusher;
+
+class NotificationService {
+    private $pusher;
+    
+    public function __construct() {
+        $this->pusher = new Pusher(
+            getenv('PUSHER_APP_KEY'),
+            getenv('PUSHER_APP_SECRET'),
+            getenv('PUSHER_APP_ID'),
+            ['cluster' => getenv('PUSHER_APP_CLUSTER')]
+        );
+    }
+    
+    // Métodos para cada tipo de notificación
+    public function reservaCercana($usuarioId, $reservaData) { }
+    public function pagoPendiente($usuarioId, $montoRestante) { }
+    public function pedidoCabania($usuarioId, $consumoData) { }
+    public function inconvenientePedido($usuarioId, $motivo) { }
+}
+```
+
+**Integración en Controladores:**
+```php
+// ReservasController::pagoExitoso()
+$usuarioId = $this->modelo->getUsuarioIdFromReserva($reservaId);
+$notificationService = new NotificationService();
+$notificationService->pedidoCabania($usuarioId, $consumoData);
+
+// ConsumosController::reportarInconveniente()
+$notificationService->inconvenientePedido($usuarioId, $motivo);
+```
+
+**Autenticación de Canales: `Controllers/PusherController.php`**
+```php
+public function auth() {
+    // 1. Validar que el usuario esté autenticado
+    if (!Auth::check()) {
+        http_response_code(403);
+        return;
+    }
+    
+    // 2. Validar que sea huésped
+    if ($_SESSION['perfil_nombre'] !== 'huesped') {
+        http_response_code(403);
+        return;
+    }
+    
+    // 3. Validar canal privado
+    $expectedChannel = "private-user-{$_SESSION['id_usuario']}";
+    if ($_POST['channel_name'] !== $expectedChannel) {
+        http_response_code(403);
+        return;
+    }
+    
+    // 4. Autorizar canal
+    echo $pusher->authorizeChannel($_POST['channel_name'], $_POST['socket_id']);
+}
+```
+
+#### **Frontend (JavaScript)**
+
+**Inicialización en `Views/shared/layouts/header.php`:**
+```html
+<!-- Solo para huéspedes -->
+<?php if (isset($_SESSION['perfil_nombre']) && $_SESSION['perfil_nombre'] === 'huesped'): ?>
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+    <script>
+        window.pusherConfig = {
+            key: '<?= getenv('PUSHER_APP_KEY') ?>',
+            cluster: '<?= getenv('PUSHER_APP_CLUSTER') ?>',
+            userId: '<?= $_SESSION['id_usuario'] ?>',
+            authEndpoint: '<?= url('/pusher/auth') ?>'
+        };
+    </script>
+    <script src="<?= asset('js/notifications.js') ?>"></script>
+<?php endif; ?>
+```
+
+**Sistema de Notificaciones `assets/js/notifications.js`:**
+```javascript
+const pusher = new Pusher(pusherConfig.key, {
+    cluster: pusherConfig.cluster,
+    authEndpoint: pusherConfig.authEndpoint
+});
+
+const channel = pusher.subscribe(`private-user-${pusherConfig.userId}`);
+
+channel.bind('notification', function(data) {
+    // 1. Mostrar toast visual
+    mostrarToast(data.titulo, data.mensaje, data.tipo);
+    
+    // 2. Agregar a dropdown de notificaciones
+    agregarNotificacion(data);
+    
+    // 3. Actualizar badge contador
+    actualizarContador();
+});
+```
+
+**Badge de Notificaciones en `Views/shared/components/menu.php`:**
+```html
+<li class="nav-item dropdown" id="notifications-dropdown">
+    <a class="nav-link position-relative" href="#" data-bs-toggle="dropdown">
+        <i class="fas fa-bell"></i>
+        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
+              id="notifications-count" style="display: none;">0</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" id="notifications-list">
+        <li class="dropdown-item text-center text-muted">No hay notificaciones</li>
+    </ul>
+</li>
+```
+
+### **🔐 Seguridad - Canales Privados**
+
+**Características de Seguridad:**
+- ✅ **Canal por Usuario**: `private-user-{userId}` - Cada huésped solo recibe SUS notificaciones
+- ✅ **Autenticación Obligatoria**: Endpoint `/pusher/auth` valida identidad antes de suscribir
+- ✅ **Validación de Perfil**: Solo usuarios con perfil "huésped" pueden suscribirse
+- ✅ **Validación de Canal**: Verifica que el canal solicitado corresponda al usuario autenticado
+- ✅ **Aislamiento Total**: Usuario A nunca ve notificaciones de Usuario B
+
+**Flujo de Autenticación:**
+```
+1. [FRONTEND] Pusher intenta suscribirse a "private-user-123"
+   ↓
+2. [PUSHER] Solicita autorización al backend
+   ↓
+3. [BACKEND] /pusher/auth valida:
+   - ¿Usuario autenticado? ✓
+   - ¿Es huésped? ✓
+   - ¿Canal correcto para este usuario? ✓
+   ↓
+4. [BACKEND] Genera firma de autorización
+   ↓
+5. [PUSHER] Aprueba suscripción
+   ↓
+6. [FRONTEND] Canal privado conectado y listo
+```
+
+### **⚙️ Configuración Requerida**
+
+**Variables de Entorno (`.env`):**
+```env
+# Pusher Configuration
+PUSHER_APP_ID=your_app_id
+PUSHER_APP_KEY=your_public_key
+PUSHER_APP_SECRET=your_secret_key
+PUSHER_APP_CLUSTER=us2
+```
+
+**Dependencias de Composer:**
+```json
+{
+    "require": {
+        "pusher/pusher-php-server": "^7.2"
+    }
+}
+```
+
+**Instalación:**
+```bash
+composer require pusher/pusher-php-server
+```
+
+**Archivos del Sistema:**
+- ✅ `Core/NotificationService.php` - Servicio de notificaciones backend
+- ✅ `Controllers/PusherController.php` - Autenticación de canales
+- ✅ `Models/Reserva.php` - Método `getUsuarioIdFromReserva()`
+- ✅ `assets/js/notifications.js` - Sistema frontend de notificaciones
+- ✅ `assets/css/notifications.css` - Estilos visuales
+- ✅ `Views/shared/components/menu.php` - Badge de notificaciones
+- ✅ `Views/shared/layouts/header.php` - Inicialización de Pusher
+
+### **🔄 Flujo Completo de Notificación**
+
+```
+1. [EVENTO] Ocurre acción (ej: nuevo consumo creado)
+   ↓
+2. [CONTROLLER] Obtiene usuarioId del huésped
+   - ConsumosController::create() → Reserva::getUsuarioIdFromReserva()
+   ↓
+3. [SERVICE] NotificationService::pedidoCabania($usuarioId, $data)
+   - Valida $usuarioId
+   - Construye payload de notificación
+   - Trigger a "private-user-{$usuarioId}"
+   ↓
+4. [PUSHER] Enruta notificación al canal privado
+   - Valida autenticación del canal
+   - Envía SOLO al usuario correcto
+   ↓
+5. [FRONTEND] notifications.js recibe evento
+   - Escucha evento 'notification'
+   - Muestra toast visual (Bootstrap)
+   - Agrega a dropdown de notificaciones
+   - Actualiza badge contador
+   ↓
+6. [USUARIO] Ve notificación en tiempo real
+   - Toast emergente con auto-cierre (5 seg)
+   - Badge rojo con número de notificaciones
+   - Dropdown con historial
+```
+
+### **📊 Estadísticas de Implementación**
+
+**Componentes Backend:**
+- ✅ 1 Servicio de notificaciones (`NotificationService.php`)
+- ✅ 1 Controlador de autenticación (`PusherController.php`)
+- ✅ 1 Método de obtención de usuario (`getUsuarioIdFromReserva()` en Reserva)
+- ✅ 4 Métodos de notificación (reservaCercana, pagoPendiente, pedidoCabania, inconvenientePedido)
+- ✅ 1 Endpoint de autenticación (`/pusher/auth`)
+
+**Componentes Frontend:**
+- ✅ 1 Archivo JavaScript (`notifications.js` - ~120 líneas)
+- ✅ 1 Archivo CSS (`notifications.css` - ~30 líneas)
+- ✅ 1 Badge de notificaciones en menú
+- ✅ 1 Script de inicialización en header
+- ✅ 4 Funciones principales (suscripción, mostrar toast, agregar notificación, actualizar contador)
+
+**Integración:**
+- ✅ 2 Controladores actualizados (ReservasController, ConsumosController)
+- ✅ 1 Modelo actualizado (Reserva con método getUsuarioIdFromReserva)
+- ✅ Canales privados por usuario para máxima seguridad
+- ✅ Autenticación obligatoria antes de suscripción
+
+### **🧪 Testing y Debugging**
+
+**Dashboard de Pusher:**
+- Monitoreo en tiempo real de eventos
+- Visualización de usuarios conectados
+- Historial de notificaciones enviadas
+- Debug Console para troubleshooting
+
+**Console del Navegador:**
+```javascript
+// Verificar conexión
+pusher.connection.bind('connected', () => {
+    console.log('✅ Pusher conectado');
+});
+
+// Verificar suscripción
+channel.bind('pusher:subscription_succeeded', () => {
+    console.log('✅ Suscrito a canal privado');
+});
+
+// Log de notificaciones
+channel.bind('notification', (data) => {
+    console.log('📩 Notificación recibida:', data);
+});
+```
+
+**Errores Comunes:**
+- ❌ 403 Forbidden → Verificar autenticación de canal en `/pusher/auth`
+- ❌ No se reciben notificaciones → Verificar `PUSHER_APP_KEY` y `PUSHER_APP_CLUSTER`
+- ❌ Badge no actualiza → Verificar que `notifications.js` esté cargado
+
+---
 
 ### **🧾 Sistema de Facturación Automática**
 
@@ -622,6 +1336,84 @@ $numero = $factura->generateNumeroFactura($tipoComprobante);
 ```
 
 ## 💻 **Desarrollo y Personalización**
+
+### **🏛️ Patrones Arquitectónicos a Seguir**
+
+Al extender el sistema, es fundamental respetar los estilos arquitectónicos implementados:
+
+#### **Microkernel - Agregar Nueva Funcionalidad**
+
+**Regla de Oro:** NO modificar Core, extender mediante nuevos controladores/modelos
+
+```php
+// ✅ CORRECTO: Crear nuevo plugin (controlador)
+class NuevoModuloController extends Controller {
+    // El Core no cambia, solo se extiende
+}
+
+// ❌ INCORRECTO: Modificar Application.php o Router.php
+// Solo modificar Core si es una funcionalidad fundamental del framework
+```
+
+**Proceso de Extensión:**
+1. **Crear Controlador** → `Controllers/NuevoController.php` (nuevo plugin)
+2. **Crear Modelo** → `Models/NuevoModelo.php` (extiende Model base)
+3. **Registrar Ruta** → `Core/Application.php` (configuración, no lógica)
+4. **Crear Vistas** → Seguir Screaming Architecture ↓
+
+#### **Screaming Architecture - Organizar Nuevas Vistas**
+
+**Regla de Oro:** La estructura debe comunicar el propósito de negocio
+
+```bash
+# ✅ CORRECTO: Nombres de dominio claros
+Views/
+  └── admin/
+      └── operaciones/
+          └── eventos/              # "Este módulo gestiona EVENTOS"
+              ├── listado.php
+              ├── formulario.php
+              └── detalle.php
+
+# ❌ INCORRECTO: Nombres técnicos genéricos
+Views/
+  └── admin/
+      └── crud/
+          └── tabla5/              # "¿Qué es tabla5?"
+              ├── list.php
+              └── form.php
+```
+
+**Preguntas Guía al Crear Carpetas:**
+- ¿Un nuevo desarrollador entiende qué hace este módulo solo por su nombre?
+- ¿El nombre refleja un concepto de negocio (cabañas, reservas) o técnico (crud, data)?
+- ¿La jerarquía agrupa por funcionalidad de usuario (operaciones, reportes) o por tecnología?
+
+**Ejemplo Práctico - Agregar Módulo de Eventos:**
+
+```bash
+# Paso 1: Crear controlador (Microkernel)
+Controllers/EventosController.php       # Nuevo plugin
+
+# Paso 2: Crear modelo
+Models/Evento.php                        # Extiende Model base
+
+# Paso 3: Crear vistas (Screaming Architecture)
+Views/
+  └── admin/
+      └── operaciones/                   # Categoría existente
+          └── eventos/                   # Nueva entidad de dominio
+              ├── listado.php               # CRUD estándar
+              ├── formulario.php
+              ├── detalle.php
+              └── calendario.php            # Vista específica de eventos
+
+# Paso 4: Registrar rutas
+Core/Application.php
+  $this->router->get('/eventos', 'EventosController@index');
+```
+
+---
 
 ### **📝 Convenciones de Código**
 
@@ -914,23 +1706,26 @@ if (password_verify($inputPassword, $storedHash)) {
 - ✅ **Sistema de facturación automática** con numeración correlativa
 
 #### **Modelos de Datos**
-- ✅ **25 modelos** implementados con relaciones
+- ✅ **28 modelos** implementados con relaciones
 - ✅ Operaciones CRUD genéricas en clase base
 - ✅ Validaciones específicas por modelo
 - ✅ Métodos personalizados por entidad
 - ✅ Integración completa con base de datos
+- ✅ 47 relaciones documentadas (18 hasMany, 25 belongsTo, 4 belongsToMany)
 
 #### **Controladores**
-- ✅ **27 controladores** organizados por funcionalidad
-- ✅ Separación público/administrativo
+- ✅ **32 controladores** organizados por funcionalidad
+- ✅ Separación público/administrativo/totem
 - ✅ Integración con sistema de permisos
 - ✅ Manejo de respuestas HTTP y JSON
 - ✅ Validación de acceso por perfil
+- ✅ Sistema de consumos multimodal (3 módulos)
 
 #### **Sistema de Vistas**
-- ✅ **31+ elementos** organizados jerárquicamente
+- ✅ **49 módulos** organizados jerárquicamente
 - ✅ **Sistema completo de reservas online** (5 pasos)
-- ✅ Panel administrativo con 24 módulos
+- ✅ Panel administrativo con 32 módulos
+- ✅ Módulo totem sin autenticación
 - ✅ Componentes compartidos y layouts
 - ✅ Diseño responsive con Bootstrap 5
 
@@ -961,11 +1756,11 @@ if (password_verify($inputPassword, $storedHash)) {
 - 🔄 Exportación de reportes (PDF/Excel)
 
 #### **Arquitectura**
-- **Framework**: MVC personalizado
-- **Base de datos**: 25 tablas relacionales
-- **Vistas**: 31+ elementos organizados
-- **Controladores**: 27 controladores especializados
-- **Modelos**: 25 modelos con relaciones
+- **Framework**: MVC personalizado (12 componentes Core)
+- **Base de datos**: 28 tablas relacionales
+- **Vistas**: 49 módulos organizados
+- **Controladores**: 32 controladores especializados
+- **Modelos**: 28 modelos con 47 relaciones
 
 ---
 
@@ -973,10 +1768,12 @@ if (password_verify($inputPassword, $storedHash)) {
 
 Para información detallada sobre cada componente, consultar:
 
-- **[Controllers/README.md](Controllers/README.md)** - Documentación completa de controladores
-- **[Core/README.md](Core/README.md)** - Framework y arquitectura interna
-- **[Models/README.md](Models/README.md)** - Modelos de datos y relaciones  
-- **[Views/README.md](Views/README.md)** - Sistema de vistas y flujos
+- **[Controllers/README.md](Controllers/README.md)** - Documentación completa de controladores (incluye PusherController)
+- **[Core/README.md](Core/README.md)** - Framework y arquitectura interna con MercadoPago y Pusher
+- **[Models/README.md](Models/README.md)** - Modelos de datos, relaciones y transacciones (incluye getUsuarioIdFromReserva)  
+- **[Views/README.md](Views/README.md)** - Sistema de vistas, flujos, pasarela de pago y notificaciones
+- **[INSTRUCTIVO_MERCADOPAGO.md](INSTRUCTIVO_MERCADOPAGO.md)** - Guía completa de integración MercadoPago
+- **[NOTIFICACIONES.md](NOTIFICACIONES.md)** - Documentación completa del sistema de notificaciones Pusher
 - **[ESTADOS_RESERVA_README.md](ESTADOS_RESERVA_README.md)** - Sistema de estados sin hardcode
 - **[SISTEMA_CONSUMOS.md](SISTEMA_CONSUMOS.md)** - Sistema de consumos multimodal (3 módulos)
 - **[GUIA_USO_CONSUMOS.md](GUIA_USO_CONSUMOS.md)** - Guía de usuario para sistema de consumos
@@ -995,29 +1792,54 @@ Para información detallada sobre cada componente, consultar:
 - **Repositorio:** [gretacabrera/proyecto_cabania](https://github.com/gretacabrera/proyecto_cabania)
 
 ### **Estado Actual del Desarrollo**
-- **Versión:** 2.1 (Octubre 2025)
+- **Versión:** 2.2 (Noviembre 2025)
 - **Estado:** ✅ Completamente funcional y documentado
 - **Cobertura:** 100% de funcionalidades implementadas
 - **Testing:** Validado en entorno de desarrollo local
+- **Documentación:** Sincronizada al 14/11/2025
 
 ### **Tecnologías Implementadas**
 - **Backend:** PHP 8.0+ con MVC personalizado
 - **Frontend:** HTML5, CSS3, Bootstrap 5.3, JavaScript ES6+
-- **Base de Datos:** MySQL 8.0 (24 tablas relacionales)
+- **Base de Datos:** MySQL 8.0 (28 tablas relacionales)
 - **Dependencias:** PHPMailer, SweetAlert2, Font Awesome
 - **Servidor Web:** Apache 2.4 con mod_rewrite
 - **Control de Versiones:** Git con GitHub
 
 ### **Métricas del Proyecto**
-- **Líneas de Código:** ~15,000 líneas (estimado)
-- **Archivos PHP:** 65+ archivos organizados
-- **Controladores:** 27 controladores activos
-- **Modelos:** 25 modelos con relaciones
-- **Vistas:** 39+ elementos organizados
-- **Base de Datos:** 24 tablas con datos de ejemplo
+- **Líneas de Código:** ~18,000 líneas (estimado)
+- **Archivos PHP:** 72+ archivos organizados
+- **Controladores:** 32 controladores activos
+- **Modelos:** 28 modelos con relaciones
+- **Vistas:** 49 módulos organizados
+- **Base de Datos:** 28 tablas con datos de ejemplo
 - **Facturación:** Sistema automático con 4 tipos de comprobantes
 
 ### **🆕 Últimas Actualizaciones**
+
+#### **Noviembre 2025 - Sistema de Notificaciones en Tiempo Real con Pusher SDK v7.2.7**
+- ✅ **Pusher PHP Server SDK**: Integración completa para notificaciones push
+- ✅ **Pusher JavaScript Client**: Pusher.js v8.2.0 para recepción de eventos
+- ✅ **4 Tipos de Notificaciones**: Reserva cercana, pago pendiente, pedido en cabaña, inconveniente
+- ✅ **Canales Privados**: Seguridad por usuario con `private-user-{userId}`
+- ✅ **Autenticación Obligatoria**: Endpoint `/pusher/auth` con PusherController
+- ✅ **UI Completa**: Badge de notificaciones, toasts, dropdown con historial
+- ✅ **Solo para Huéspedes**: Sistema exclusivo para perfil "huesped"
+- ✅ **NotificationService**: Servicio centralizado para disparar notificaciones
+- ✅ **Frontend Reactivo**: JavaScript listeners con actualización automática de UI
+- ✅ **Documentación Completa**: README actualizado en Core, Controllers, Models y Views
+
+#### **Noviembre 2025 - Integración MercadoPago SDK v3.7.1**
+- ✅ **SDK Moderno**: Migración completa a MercadoPagoConfig, PreferenceClient, PaymentClient
+- ✅ **Wallet Brick**: Interfaz optimizada de MercadoPago para mejor conversión
+- ✅ **Callbacks Completos**: Manejo de success, failure, pending y webhook IPN
+- ✅ **Diseño Profesional**: Pasarela con colores corporativos sobrios
+- ✅ **Transacciones Garantizadas**: Rollback automático y detección de duplicados
+- ✅ **Emails Completos**: Datos de huéspedes por edad, monto y método de pago
+- ✅ **Session Management**: `session_write_close()` antes de redirects
+- ✅ **Error Handling**: Página de debug para desarrollo y logging detallado
+- ✅ **Consultas SQL Optimizadas**: JOINs correctos (pago → factura → reserva)
+- ✅ **Credenciales de Prueba**: 5 tarjetas de test + 2 usuarios + 14 escenarios
 
 #### **Noviembre 2025 - Sistema de Transacciones Atómicas**
 - ✅ **Transacciones ACID**: Implementadas dos transacciones críticas para reservas online
@@ -1039,5 +1861,7 @@ Para información detallada sobre cada componente, consultar:
 
 *Proyecto desarrollado como parte del programa de Desarrollo de Software - ISRMM*  
 *Casa de Palos Cabañas - Sistema Integral de Gestión de Turismo Rural*  
-*Documentación actualizada: 1 de Noviembre de 2025*
+*Documentación actualizada: 18 de Noviembre de 2025*  
+*Integración MercadoPago SDK v3.7.1 - Checkout Pro con Wallet Brick*  
+*Integración Pusher SDK v7.2.7 - Notificaciones en Tiempo Real para Huéspedes*
 ```

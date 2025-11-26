@@ -116,7 +116,7 @@ if (!isset($huesped) || empty($huesped)) {
                                     <i class="fas fa-map-marker-alt text-muted"></i> Ubicación Actual:
                                 </label>
                                 <div class="info-value">
-                                    <?= htmlspecialchars($huesped['huesped_ubicacion'] ?? 'No especificada') ?>
+                                    <?= htmlspecialchars($huesped['ubicacion_descripcion'] ?? 'No especificada') ?>
                                 </div>
                             </div>
                         </div>

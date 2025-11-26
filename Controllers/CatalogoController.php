@@ -56,7 +56,10 @@ class CatalogoController extends Controller
             'total_results' => $pagination['total']
         ];
         
-        return $this->render('public/catalogo/index', $data, 'public');
+        // Usar layout 'main' si está autenticado, 'public' si no lo está
+        $layout = Auth::check() ? 'main' : 'public';
+        
+        return $this->render('public/catalogo/index', $data, $layout);
     }
     
     /**
@@ -100,7 +103,7 @@ class CatalogoController extends Controller
             
             // Verificar si la cabaña existe y está activa usando el modelo
             $cabania = $cabaniaModel->find($cabaniaId);
-            if (!$cabania || $cabania['cabania_estado'] != 1) {
+            if (!$cabania || $cabania['rela_estadocabania'] != 1) {
                 $this->json(['error' => 'Cabaña no encontrada'], 404);
                 return;
             }

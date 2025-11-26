@@ -82,6 +82,9 @@ class Application
         $this->router->post('/auth/register', 'AuthController@register');
         $this->router->any('/auth/change-password', 'AuthController@changePassword');
         
+        // Rutas de Pusher (autenticación de canales privados)
+        $this->router->post('/pusher/auth', 'PusherController@auth');
+        
         // Rutas de recuperación de contraseña
         $this->router->get('/auth/forgot-password', 'AuthController@forgotPassword');
         $this->router->post('/auth/forgot-password', 'AuthController@forgotPassword');
@@ -100,6 +103,10 @@ class Application
         $this->router->get('/home', 'HomeController@index');
         $this->router->get('/about', 'HomeController@about');
         $this->router->any('/contact', 'HomeController@contact');
+        
+        // API de notificaciones
+        $this->router->get('/api/notificaciones/pendientes', 'HomeController@getNotificacionesPendientes');
+        $this->router->post('/api/verificar-pagos-pendientes', 'HomeController@verificarPagosPendientes');
         
         // Rutas del catálogo público
         $this->router->get('/catalogo', 'CatalogoController@index');
@@ -124,8 +131,11 @@ class Application
         $this->router->any('/huespedes/create', 'HuespedesController@create');
         $this->router->get('/huespedes/exportar', 'HuespedesController@exportar');
         $this->router->get('/huespedes/exportar-pdf', 'HuespedesController@exportarPdf');
-        $this->router->get('/huespedes/{id}', 'HuespedesController@show');
+        $this->router->get('/huespedes/buscar-por-dni', 'HuespedesController@buscarPorDni');
+        $this->router->post('/huespedes/asociar-existente', 'HuespedesController@asociarHuespedExistente');
+        $this->router->get('/huespedes/{id}/edit-ajax', 'HuespedesController@editAjax'); // AJAX para cargar datos
         $this->router->any('/huespedes/{id}/edit', 'HuespedesController@edit');
+        $this->router->get('/huespedes/{id}', 'HuespedesController@show');
         $this->router->post('/huespedes/{id}/delete', 'HuespedesController@delete');
         $this->router->post('/huespedes/{id}/restore', 'HuespedesController@restore');
         $this->router->post('/huespedes/{id}/estado', 'HuespedesController@cambiarEstado');
@@ -153,8 +163,14 @@ class Application
         $this->router->post('/menus/{id}/estado', 'MenusController@cambiarEstado');
 
         // Rutas de reservas
+        // Ruta pública para huéspedes (debe ir ANTES de /reservas para evitar conflictos)
+        $this->router->get('/mis-reservas', 'ReservasController@misReservas');
+        
+        // Rutas administrativas (requieren permisos)
         $this->router->get('/reservas', 'ReservasController@index');
         $this->router->any('/reservas/create', 'ReservasController@create');
+        $this->router->get('/reservas/exportar', 'ReservasController@exportar');
+        $this->router->get('/reservas/exportar-pdf', 'ReservasController@exportarPdf');
         $this->router->any('/reservas/online', 'ReservasController@online');
         $this->router->get('/reservas/confirmar', 'ReservasController@confirmar');
         $this->router->post('/reservas/servicios', 'ReservasController@servicios');
@@ -162,16 +178,45 @@ class Application
         $this->router->get('/reservas/resumen', 'ReservasController@resumen');
         $this->router->post('/reservas/proceder-pago', 'ReservasController@procederPago');
         $this->router->get('/reservas/pasarela', 'ReservasController@pasarela');
-        $this->router->post('/reservas/pasarela', 'ReservasController@pasarela');
-        $this->router->post('/reservas/procesar-pasarela', 'ReservasController@procesarPasarela');
+        
+        // Callbacks de MercadoPago
+        $this->router->get('/reservas/pago-exitoso', 'ReservasController@pagoExitoso');
+        $this->router->get('/reservas/pago-fallido', 'ReservasController@pagoFallido');
+        $this->router->get('/reservas/pago-pendiente', 'ReservasController@pagoPendiente');
+        $this->router->post('/reservas/webhook', 'ReservasController@webhook');
+        
+        // Descargar comprobante de factura
+        $this->router->get('/reservas/comprobante/{id}', 'ReservasController@descargarComprobante');
+        
+        // Rutas legacy y utilidades
         $this->router->post('/reservas/confirmar-pago', 'ReservasController@confirmarPago');
         $this->router->get('/reservas/exito', 'ReservasController@exito');
         $this->router->get('/reservas/exito/{id}', 'ReservasController@exito');
         $this->router->get('/reservas/limpiar-expiradas', 'ReservasController@limpiarReservasExpiradas'); // Para cron job
         $this->router->post('/reservas/{id}/cancelar', 'ReservasController@cancelarReserva'); // Cancelar por huésped
         $this->router->post('/reservas/{id}/anular', 'ReservasController@anularReserva'); // Anular por admin
+        
+        // Rutas de acciones sobre reservas (marcar ingreso/salida, pagar)
+        $this->router->get('/reservas/{id}/marcar-ingreso', 'ReservasController@marcarIngreso');
+        $this->router->get('/reservas/{id}/marcar-salida', 'ReservasController@marcarSalida');
+        $this->router->get('/reservas/{id}/pagar', 'ReservasController@pagarReserva');
+        
+        // NOTA: Las vistas de huéspedes, consumos y comentarios ahora usan sus módulos públicos completos:
+        // - Huéspedes: /huesped/huespedes?reserva_id={id} (HuespedesController - pendiente de migración)
+        // - Consumos: /huesped/consumos?reserva_id={id} (HuespedConsumosController@index)
+        // - Comentarios: /comentarios?reserva_id={id} (ComentariosController@index)
+        
+        // Rutas legacy mantenidas por compatibilidad (se pueden deprecar gradualmente)
+        $this->router->get('/reservas/{id}/huespedes', 'ReservasController@verHuespedes');
+        $this->router->get('/reservas/{id}/consumos', 'ReservasController@gestionarConsumos');
+        $this->router->post('/reservas/{id}/consumos/registrar', 'ReservasController@registrarConsumo');
+        $this->router->get('/reservas/{id}/comentarios', 'ReservasController@gestionarComentarios');
+        
         $this->router->get('/reservas/{id}', 'ReservasController@show');
         $this->router->any('/reservas/{id}/edit', 'ReservasController@edit');
+        $this->router->post('/reservas/{id}/delete', 'ReservasController@delete');
+        $this->router->post('/reservas/{id}/restore', 'ReservasController@restore');
+        $this->router->post('/reservas/{id}/estado', 'ReservasController@cambiarEstado');
         $this->router->post('/reservas/{id}/change-status', 'ReservasController@changeStatus');
 
         // Rutas de revisiones
@@ -393,11 +438,13 @@ class Application
         $this->router->get('/comentarios', 'ComentariosController@index');
         $this->router->get('/comentarios/public', 'ComentariosController@public'); // Vista pública
         $this->router->any('/comentarios/create', 'ComentariosController@create');
+        $this->router->post('/comentarios/store', 'ComentariosController@store');
         $this->router->get('/comentarios/{id}', 'ComentariosController@show');
         $this->router->any('/comentarios/{id}/edit', 'ComentariosController@edit');
+        $this->router->post('/comentarios/{id}/update', 'ComentariosController@update');
         $this->router->post('/comentarios/{id}/moderate', 'ComentariosController@moderate');
-        $this->router->get('/comentarios/{id}/delete', 'ComentariosController@delete');
-        $this->router->get('/comentarios/{id}/restore', 'ComentariosController@restore');
+        $this->router->post('/comentarios/{id}/delete', 'ComentariosController@delete');
+        $this->router->post('/comentarios/{id}/restore', 'ComentariosController@restore');
         $this->router->get('/comentarios/search', 'ComentariosController@search');
         $this->router->post('/comentarios/{id}/report', 'ComentariosController@report');
 
@@ -411,6 +458,7 @@ class Application
         $this->router->get('/consumos/{id}/delete', 'ConsumosController@delete');
         $this->router->get('/consumos/{id}/restore', 'ConsumosController@restore');
         $this->router->post('/consumos/{id}/estado', 'ConsumosController@cambiarEstado');
+        $this->router->post('/consumos/{id}/reportar-inconveniente', 'ConsumosController@reportarInconveniente');
         $this->router->get('/consumos/reserva/{id}', 'ConsumosController@byReserva');
         $this->router->any('/consumos/facturar/{id}', 'ConsumosController@facturar');
         $this->router->get('/consumos/producto/{id}/precio', 'ConsumosController@getPrecioProducto');

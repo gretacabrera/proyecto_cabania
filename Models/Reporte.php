@@ -143,7 +143,7 @@ class Reporte
      */
     public function getConsumosPorCabania($filtros = [], $page = 1, $perPage = 10)
     {
-        $whereConditions = ["c.consumo_estado = 1"];
+        $whereConditions = ["c.rela_estadoconsumo IN (1, 2, 3)"];
         $params = [];
         $paramTypes = '';
 
@@ -289,7 +289,7 @@ class Reporte
                     rela_producto,
                     SUM(consumo_cantidad) as total_vendido
                 FROM consumo
-                WHERE consumo_estado = 1
+                WHERE rela_estadoconsumo IN (1, 2, 3)
                 GROUP BY rela_producto
             ) cons ON p.id_producto = cons.rela_producto
             WHERE c.categoria_estado = 1
@@ -530,7 +530,7 @@ class Reporte
      */
     public function getProductoMasVendidoPorMes($filtros = [])
     {
-        $whereConditions = ["c.consumo_estado = 1"];
+        $whereConditions = ["c.rela_estadoconsumo IN (1, 2, 3)"];
         $params = [];
         $paramTypes = '';
 
@@ -603,7 +603,7 @@ class Reporte
                 SUM(c.consumo_cantidad * p.producto_precio) as ingresos
             FROM consumo c
             JOIN producto p ON c.rela_producto = p.id_producto
-            WHERE c.consumo_estado = 1
+            WHERE c.rela_estadoconsumo IN (1, 2, 3)
             GROUP BY p.id_producto, p.producto_nombre
             ORDER BY total_vendido DESC
             LIMIT 5
@@ -624,7 +624,7 @@ class Reporte
                     SUM(c.consumo_cantidad * p.producto_precio) as total_consumos
                 FROM consumo c
                 JOIN producto p ON c.rela_producto = p.id_producto
-                WHERE c.consumo_estado = 1
+                WHERE c.rela_estadoconsumo IN (1, 2, 3)
                 GROUP BY c.rela_reserva
             ) consumos ON r.id_reserva = consumos.rela_reserva
             WHERE r.reserva_fecha_inicio >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
@@ -644,7 +644,7 @@ class Reporte
             FROM cabania c
             LEFT JOIN reserva r ON c.id_cabania = r.rela_cabania
             LEFT JOIN comentario com ON r.id_reserva = com.rela_reserva
-            WHERE c.cabania_estado = 1
+            WHERE c.rela_estadocabania = 1
             GROUP BY c.id_cabania, c.cabania_nombre, c.cabania_codigo
             HAVING total_reservas > 0
             ORDER BY total_reservas DESC
@@ -668,7 +668,7 @@ class Reporte
         $data['cabanas'] = $this->db->query("
             SELECT id_cabania, cabania_nombre, cabania_codigo 
             FROM cabania 
-            WHERE cabania_estado = 1 
+            WHERE rela_estadocabania = 1 
             ORDER BY cabania_nombre
         ")->fetch_all(MYSQLI_ASSOC);
 

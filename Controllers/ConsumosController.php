@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Core\NotificationService;
 use App\Models\Consumo;
 
 /**
@@ -11,11 +12,13 @@ use App\Models\Consumo;
 class ConsumosController extends Controller
 {
     protected $consumoModel;
+    protected $notificationService;
 
     public function __construct()
     {
         parent::__construct();
         $this->consumoModel = new Consumo();
+        $this->notificationService = new NotificationService();
     }
 
     /**
@@ -142,6 +145,56 @@ class ConsumosController extends Controller
                 }
 
                 if ($registrosExitosos > 0) {
+                    // Enviar notificación de nuevo pedido en cabaña
+                    try {
+                        $reservaModel = new \App\Models\Reserva();
+                        $reserva = $reservaModel->find($rela_reserva);
+                        if ($reserva) {
+                            // Calcular monto total correctamente
+                            $montoTotal = 0;
+                            
+                            foreach ($items as $index => $item) {
+                                if (empty($item)) continue;
+                                $itemParts = explode('_', $item);
+                                if (count($itemParts) != 2) continue;
+                                $tipo = $itemParts[0];
+                                $itemId = $itemParts[1];
+                                $cantidad = floatval($cantidades[$index] ?? 1);
+                                
+                                if ($tipo == 'p') {
+                                    $itemData = $this->consumoModel->getProductoById($itemId);
+                                    if ($itemData) {
+                                        $precio = (float)$itemData['producto_precio'];
+                                        $subtotal = $precio * $cantidad;
+                                        $montoTotal += $subtotal;
+                                    }
+                                } else if ($tipo == 's') {
+                                    $itemData = $this->consumoModel->getServicioById($itemId);
+                                    if ($itemData) {
+                                        $precio = (float)$itemData['servicio_precio'];
+                                        $subtotal = $precio * $cantidad;
+                                        $montoTotal += $subtotal;
+                                    }
+                                }
+                            }
+                            
+                            $consumoData = [
+                                'items' => $items,
+                                'consumo_monto_total' => $montoTotal,
+                                'consumo_fecha' => date('Y-m-d H:i:s')
+                            ];
+                            
+                            // Obtener usuario_id del huésped de la reserva
+                            $usuarioId = $reservaModel->getUsuarioIdFromReserva($rela_reserva);
+                            
+                            if ($usuarioId) {
+                                $this->notificationService->notifyPedidoCabania($consumoData, $reserva, $usuarioId);
+                            }
+                        }
+                    } catch (\Exception $notifError) {
+                        error_log('WARNING: Error enviando notificación de pedido: ' . $notifError->getMessage());
+                    }
+                    
                     $mensaje = "{$registrosExitosos} consumo(s) registrado(s) exitosamente";
                     if (count($errores) > 0) {
                         $mensaje .= " (con " . count($errores) . " error(es))";
@@ -293,6 +346,10 @@ class ConsumosController extends Controller
     /**
      * Cambiar estado del consumo (AJAX)
      */
+    /**
+     * Cambiar estado de un consumo
+     * POST con parámetro 'nuevo_estado' (ID de estadoconsumo)
+     */
     public function cambiarEstado($id)
     {
         if (!$this->hasPermission('consumos')) {
@@ -301,22 +358,158 @@ class ConsumosController extends Controller
             return;
         }
 
-        $consumo = $this->consumoModel->find($id);
+        $consumo = $this->consumoModel->findWithRelations($id);
         if (!$consumo) {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'message' => 'Consumo no encontrado']);
             return;
         }
 
-        $nuevoEstado = $consumo['consumo_estado'] == 1 ? 0 : 1;
+        // Obtener nuevo estado desde POST o alternar estado simple (para compatibilidad)
+        $nuevoEstadoId = $this->post('nuevo_estado');
         
-        if ($this->consumoModel->update($id, ['consumo_estado' => $nuevoEstado])) {
-            $mensaje = $nuevoEstado == 1 ? 'Consumo activado' : 'Consumo desactivado';
+        if (!$nuevoEstadoId) {
+            // Comportamiento legacy: si no se especifica, alternar entre pendiente(1) y entregado(3)
+            $nuevoEstadoId = $consumo['rela_estadoconsumo'] == 1 ? 3 : 1;
+        }
+        
+        $estadoAnterior = $consumo['rela_estadoconsumo'];
+        
+        if ($this->consumoModel->update($id, ['rela_estadoconsumo' => $nuevoEstadoId])) {
+            // Enviar notificaciones según el cambio de estado
+            if ($estadoAnterior != $nuevoEstadoId) {
+                try {
+                    $reservaId = $consumo['rela_reserva'] ?? null;
+                    $usuarioId = null;
+                    $reserva = null;
+                    
+                    if ($reservaId) {
+                        $reservaModel = new \App\Models\Reserva();
+                        $usuarioId = $reservaModel->getUsuarioIdFromReserva($reservaId);
+                        $reserva = $reservaModel->find($reservaId);
+                    }
+                    
+                    if ($usuarioId && $reserva) {
+                        // Estado 2: Confirmado (en proceso)
+                        if ($nuevoEstadoId == 2) {
+                            $this->notificationService->notifyPedidoConfirmado(
+                                $consumo,
+                                $reserva,
+                                $usuarioId
+                            );
+                            error_log("Notificación de pedido confirmado enviada - Consumo: $id, Usuario: $usuarioId");
+                        }
+                        // Estado 3: Entregado
+                        elseif ($nuevoEstadoId == 3) {
+                            $this->notificationService->notifyPedidoEntregado(
+                                $consumo,
+                                $reserva,
+                                $usuarioId
+                            );
+                            error_log("Notificación de pedido entregado enviada - Consumo: $id, Usuario: $usuarioId");
+                        }
+                        // Estado 4: Anulado por falta de stock
+                        // Estado 5: Anulado por inconveniente
+                        elseif ($nuevoEstadoId == 4 || $nuevoEstadoId == 5) {
+                            $tipoInconveniente = $nuevoEstadoId == 4 
+                                ? 'Producto sin stock' 
+                                : 'Inconveniente con el pedido';
+                            
+                            $descripcion = $nuevoEstadoId == 4
+                                ? 'Lo sentimos, el producto solicitado no está disponible en este momento'
+                                : 'Ha surgido un inconveniente con tu pedido. Por favor contacta con recepción';
+                            
+                            $this->notificationService->notifyInconvenientePedido(
+                                $consumo,
+                                $tipoInconveniente,
+                                $descripcion,
+                                $usuarioId
+                            );
+                            error_log("Notificación de inconveniente enviada - Consumo: $id, Estado: $nuevoEstadoId, Usuario: $usuarioId");
+                        }
+                    }
+                } catch (\Exception $e) {
+                    error_log("Error enviando notificación de estado: " . $e->getMessage());
+                }
+            }
+            
+            // Mensajes según el estado
+            $mensajes = [
+                1 => 'Consumo marcado como pendiente',
+                2 => 'Consumo en proceso',
+                3 => 'Consumo entregado',
+                4 => 'Consumo anulado por falta de stock',
+                5 => 'Consumo anulado por inconveniente',
+                6 => 'Consumo cancelado'
+            ];
+            
+            $mensaje = $mensajes[$nuevoEstadoId] ?? 'Estado actualizado';
+            
             header('Content-Type: application/json');
-            echo json_encode(['success' => true, 'message' => $mensaje, 'nuevoEstado' => $nuevoEstado]);
+            echo json_encode([
+                'success' => true, 
+                'message' => $mensaje, 
+                'nuevoEstado' => $nuevoEstadoId
+            ]);
         } else {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'message' => 'Error al cambiar estado']);
+        }
+    }
+
+    /**
+     * Reportar inconveniente con un pedido/consumo (AJAX)
+     */
+    public function reportarInconveniente($id)
+    {
+        if (!$this->hasPermission('consumos')) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Sin permisos']);
+            return;
+        }
+
+        $consumo = $this->consumoModel->findWithRelations($id);
+        if (!$consumo) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Consumo no encontrado']);
+            return;
+        }
+
+        $tipoInconveniente = $this->post('tipo_inconveniente');
+        $descripcion = $this->post('descripcion', '');
+        
+        if (empty($tipoInconveniente)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Debe especificar el tipo de inconveniente']);
+            return;
+        }
+
+        // Enviar notificación de inconveniente
+        try {
+            // Obtener usuario_id del huésped de la reserva
+            $reservaId = $consumo['rela_reserva'] ?? null;
+            $usuarioId = null;
+            
+            if ($reservaId) {
+                $reservaModel = new \App\Models\Reserva();
+                $usuarioId = $reservaModel->getUsuarioIdFromReserva($reservaId);
+            }
+            
+            if ($usuarioId) {
+                $this->notificationService->notifyInconvenientePedido($consumo, $tipoInconveniente, $descripcion, $usuarioId);
+            }
+            
+            // Opcionalmente, agregar observación al consumo
+            $observacionActual = $consumo['consumo_descripcion'] ?? '';
+            $nuevaObservacion = $observacionActual . " [INCONVENIENTE: {$tipoInconveniente} - {$descripcion}]";
+            $this->consumoModel->update($id, ['consumo_descripcion' => $nuevaObservacion]);
+            
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'Inconveniente reportado exitosamente']);
+        } catch (\Exception $e) {
+            error_log('ERROR reportando inconveniente: ' . $e->getMessage());
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Error al reportar inconveniente']);
         }
     }
 

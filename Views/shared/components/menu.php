@@ -25,7 +25,7 @@ if (session_status() == PHP_SESSION_NONE) {
         </a>
 
         <!-- Botón hamburguesa para móvil -->
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" 
+        <button class="navbar-toggler" type="button" id="menuToggle"
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span></span>
             <span></span>
@@ -54,19 +54,7 @@ if (session_status() == PHP_SESSION_NONE) {
                             <a class="nav-link" href="<?= $this->url('/catalogo') ?>">Catálogo</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="<?= $this->url('/reservas') ?>">Reservas</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="<?= $this->url('/huesped/consumos') ?>">Consumos</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="<?= $this->url('/ingresos') ?>">Ingresos</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="<?= $this->url('/salidas') ?>">Salidas</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="<?= $this->url('/comentarios') ?>">Comentarios</a>
+                            <a class="nav-link" href="<?= $this->url('/mis-reservas') ?>">Reservas</a>
                         </li>
                     <?php else: ?>
                     <?php 
@@ -126,14 +114,39 @@ if (session_status() == PHP_SESSION_NONE) {
             <!-- Enlaces de usuario (derecha) -->
             <ul class="navbar-nav">
                 <?php if (Auth::check()): ?>
+                    <!-- Notificaciones en tiempo real (solo para usuarios huéspedes) -->
+                    <?php 
+                    $userProfile = strtolower(Auth::getUserProfile() ?? '');
+                    if ($userProfile === 'huesped'): 
+                    ?>
+                    <li class="nav-item dropdown mr-3">
+                        <a class="nav-link position-relative" href="#" role="button" data-toggle="dropdown" aria-expanded="false" title="Notificaciones">
+                            <i class="fas fa-bell fa-lg"></i>
+                            <span id="notifications-badge" class="badge badge-danger badge-pill position-absolute d-none" 
+                                  style="top: 0; right: 5px; font-size: 0.65rem; padding: 0.25em 0.5em;">0</span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right p-0 notifications-dropdown" style="min-width: 350px; max-height: 500px; overflow-y: auto;">
+                            <div class="dropdown-header bg-primary text-white d-flex justify-content-between align-items-center">
+                                <strong><i class="fas fa-bell mr-2"></i>Notificaciones</strong>
+                                <button class="btn btn-sm btn-link text-white p-0" onclick="NotificationService.clearAll()" title="Limpiar todo">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                            <div id="notifications-list" class="py-2">
+                                <div class="dropdown-item text-center text-muted">Sin notificaciones</div>
+                            </div>
+                        </div>
+                    </li>
+                    <?php endif; ?>
+                    
                     <!-- Dropdown de usuario -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-expanded="false">
                             <img src="<?= $this->asset('imagenes/home.png') ?>" alt="Avatar" class="user-avatar">
-                            <?= htmlspecialchars(Auth::user()) ?>
+                            Usuario: <?= htmlspecialchars(Auth::user()) ?>
                         </a>
                         <div class="dropdown-menu dropdown-menu-right">
-                            <h6 class="dropdown-header" style="color: #2c3e50;">Usuario: <?= htmlspecialchars(Auth::user()) ?></h6>
+                            <h6 class="dropdown-header">Perfil: <?= htmlspecialchars(Auth::getUserProfile()) ?></h6>
                             <div class="dropdown-divider"></div>
                             <a class="dropdown-item" href="<?= $this->url('/auth/change-password') ?>">
                                 <i class="fas fa-key me-2"></i>Cambiar Contraseña
@@ -160,29 +173,64 @@ if (session_status() == PHP_SESSION_NONE) {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Manejar el cierre automático de dropdowns
-    const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
+    const menuToggle = document.getElementById('menuToggle');
+    const navbarCollapse = document.getElementById('navbarNav');
+    let isMenuOpen = false;
     
-    dropdownToggles.forEach(toggle => {
+    if (!menuToggle || !navbarCollapse) return;
+    
+    // Manejar click en el botón hamburguesa
+    menuToggle.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (isMenuOpen) {
+            // Cerrar menú
+            navbarCollapse.classList.remove('show');
+            menuToggle.classList.remove('active');
+            menuToggle.setAttribute('aria-expanded', 'false');
+            isMenuOpen = false;
+        } else {
+            // Abrir menú
+            navbarCollapse.classList.add('show');
+            menuToggle.classList.add('active');
+            menuToggle.setAttribute('aria-expanded', 'true');
+            isMenuOpen = true;
+        }
+    });
+    
+    // Cerrar menú móvil al hacer clic en un enlace
+    navbarCollapse.querySelectorAll('.nav-link:not(.dropdown-toggle)').forEach(link => {
+        link.addEventListener('click', function() {
+            if (window.innerWidth <= 991) {
+                navbarCollapse.classList.remove('show');
+                menuToggle.classList.remove('active');
+                menuToggle.setAttribute('aria-expanded', 'false');
+                isMenuOpen = false;
+            }
+        });
+    });
+    
+    // Manejar dropdowns personalizados
+    document.querySelectorAll('.dropdown-toggle').forEach(toggle => {
         toggle.addEventListener('click', function(e) {
             const currentDropdown = this.nextElementSibling;
-            const isCurrentlyOpen = currentDropdown && currentDropdown.classList.contains('show');
+            if (!currentDropdown || !currentDropdown.classList.contains('dropdown-menu')) return;
             
-            // Siempre prevenir el comportamiento por defecto para manejar manualmente
+            const isCurrentlyOpen = currentDropdown.classList.contains('show');
+            
             e.preventDefault();
             e.stopPropagation();
             
             // Cerrar TODOS los dropdowns primero
             document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
                 menu.classList.remove('show');
-                const associatedToggle = menu.previousElementSibling;
-                if (associatedToggle) {
-                    associatedToggle.setAttribute('aria-expanded', 'false');
-                }
+                const toggle = menu.previousElementSibling;
+                if (toggle) toggle.setAttribute('aria-expanded', 'false');
             });
             
             // Si el dropdown actual no estaba abierto, abrirlo
-            if (!isCurrentlyOpen && currentDropdown) {
+            if (!isCurrentlyOpen) {
                 currentDropdown.classList.add('show');
                 this.setAttribute('aria-expanded', 'true');
             }
@@ -194,44 +242,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!e.target.closest('.dropdown')) {
             document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
                 menu.classList.remove('show');
-                const associatedToggle = menu.previousElementSibling;
-                if (associatedToggle) {
-                    associatedToggle.setAttribute('aria-expanded', 'false');
-                }
+                const toggle = menu.previousElementSibling;
+                if (toggle) toggle.setAttribute('aria-expanded', 'false');
             });
         }
     });
-    
-    // Mejorar la experiencia en móvil con Bootstrap 4.6.2
-    if (window.innerWidth <= 991) {
-        const navbarToggler = document.querySelector('.navbar-toggler');
-        const navbarCollapse = document.querySelector('.navbar-collapse');
-        
-        if (navbarToggler && navbarCollapse) {
-            // Manejar el toggle del menú móvil
-            navbarToggler.addEventListener('click', function() {
-                const isExpanded = this.getAttribute('aria-expanded') === 'true';
-                
-                if (isExpanded) {
-                    navbarCollapse.classList.remove('show');
-                    this.setAttribute('aria-expanded', 'false');
-                    this.classList.remove('active');
-                } else {
-                    navbarCollapse.classList.add('show');
-                    this.setAttribute('aria-expanded', 'true');
-                    this.classList.add('active');
-                }
-            });
-            
-            // Cerrar menú móvil al hacer clic en un enlace
-            navbarCollapse.querySelectorAll('.nav-link:not(.dropdown-toggle)').forEach(link => {
-                link.addEventListener('click', function() {
-                    navbarCollapse.classList.remove('show');
-                    navbarToggler.setAttribute('aria-expanded', 'false');
-                    navbarToggler.classList.remove('active');
-                });
-            });
-        }
-    }
 });
 </script>

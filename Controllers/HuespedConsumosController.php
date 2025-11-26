@@ -42,21 +42,51 @@ class HuespedConsumosController extends Controller
         // Obtener reservas completas del usuario con todos los detalles
         $reservas = $this->consumoModel->getReservasUsuario($userId);
         
-        // Obtener ID de reserva seleccionada o la más reciente
+        // Obtener ID de reserva seleccionada (parámetro GET)
         $reservaId = $this->get('reserva_id');
-        if (!$reservaId && !empty($reservas)) {
-            $reservaId = $reservas[0]['id_reserva'];
-        }
         
-        // Obtener consumos de la reserva
+        // Obtener consumos
         $consumos = [];
         $totalConsumos = 0;
+        $reservaSeleccionada = null;
+        $fechaFactura = null;
+        
         if ($reservaId) {
+            // Vista de una reserva específica
             $consumos = $this->consumoModel->getConsumosByReservaWithDetails($reservaId);
-            foreach ($consumos as $consumo) {
-                // El total ya viene calculado en consumo_total
-                $totalConsumos += floatval($consumo['consumo_total']);
+            
+            // Buscar la reserva seleccionada para obtener su estado y tipo
+            foreach ($reservas as $reserva) {
+                if ($reserva['id_reserva'] == $reservaId) {
+                    $reservaSeleccionada = $reserva;
+                    break;
+                }
             }
+            
+            // Obtener fecha de factura si la reserva es online y está confirmada
+            if ($reservaSeleccionada && $reservaSeleccionada['reserva_online'] == 1) {
+                $database = \App\Core\Database::getInstance();
+                $sqlFactura = "SELECT factura_fechahora FROM factura WHERE rela_reserva = ? ORDER BY factura_fechahora ASC LIMIT 1";
+                $stmtFactura = $database->prepare($sqlFactura);
+                $stmtFactura->bind_param("i", $reservaId);
+                $stmtFactura->execute();
+                $resultFactura = $stmtFactura->get_result()->fetch_assoc();
+                $stmtFactura->close();
+                if ($resultFactura) {
+                    $fechaFactura = $resultFactura['factura_fechahora'];
+                }
+            }
+        } else {
+            // Vista de todos los consumos del huésped
+            foreach ($reservas as $reserva) {
+                $consumosReserva = $this->consumoModel->getConsumosByReservaWithDetails($reserva['id_reserva']);
+                $consumos = array_merge($consumos, $consumosReserva);
+            }
+        }
+        
+        // Calcular total de consumos
+        foreach ($consumos as $consumo) {
+            $totalConsumos += floatval($consumo['consumo_total']);
         }
         
         $data = [
@@ -64,6 +94,8 @@ class HuespedConsumosController extends Controller
             'reservas' => $reservas,
             'consumos' => $consumos,
             'reservaId' => $reservaId,
+            'reservaSeleccionada' => $reservaSeleccionada,
+            'fechaFactura' => $fechaFactura,
             'totalConsumos' => $totalConsumos,
             'isPublicArea' => true
         ];
@@ -91,7 +123,20 @@ class HuespedConsumosController extends Controller
         // Obtener reserva actual del usuario
         $reservaActual = $this->consumoModel->getReservaActualUsuario($userId);
         if (!$reservaActual) {
-            $this->redirect('/huesped/consumos', 'No tiene una reserva confirmada disponible para solicitar consumos', 'warning');
+            // Volver a la vista anterior (de donde vino)
+            $referer = $_SERVER['HTTP_REFERER'] ?? url('/huesped/consumos');
+            $this->redirect($referer, 'No tiene una reserva confirmada disponible para solicitar consumos', 'warning');
+            return;
+        }
+        
+        // Validar que la reserva esté en estado permitido para agregar consumos
+        // Estados: 1=Pendiente, 2=Confirmada, 3=En Curso, 4=Pendiente de Pago, 8=Pendiente de Revisión
+        // No permitidos: 5=Finalizada, 6=Anulada
+        $estadosPermitidos = [1, 2, 3, 4, 8];
+        if (!in_array($reservaActual['rela_estadoreserva'], $estadosPermitidos)) {
+            // Volver a la vista anterior (de donde vino)
+            $referer = $_SERVER['HTTP_REFERER'] ?? url('/huesped/consumos');
+            $this->redirect($referer, 'No se pueden agregar consumos en el estado actual de la reserva: ' . $reservaActual['estadoreserva_descripcion'], 'error');
             return;
         }
 
@@ -222,6 +267,46 @@ class HuespedConsumosController extends Controller
             $this->redirect('/huesped/consumos', 'No tiene permiso para editar este consumo', 'error');
             return;
         }
+        
+        // Validar que la reserva esté en estado Confirmada (2) o En Curso (3)
+        $reservaDelConsumo = null;
+        foreach ($reservasUsuario as $reserva) {
+            if ($reserva['id_reserva'] == $consumo['rela_reserva']) {
+                $reservaDelConsumo = $reserva;
+                break;
+            }
+        }
+        
+        $estadosPermitidos = [1, 2, 3, 4, 8];
+        if ($reservaDelConsumo && !in_array($reservaDelConsumo['rela_estadoreserva'], $estadosPermitidos)) {
+            $this->redirect('/huesped/consumos?reserva_id=' . $consumo['rela_reserva'], 
+                'No se puede editar el consumo porque la reserva está en estado: ' . $reservaDelConsumo['estadoreserva_descripcion'], 'error');
+            return;
+        }
+        
+        // Solo se pueden editar consumos en estado "solicitud pendiente" (1)
+        if ($consumo['rela_estadoconsumo'] != 1) {
+            $this->redirect('/huesped/consumos?reserva_id=' . $consumo['rela_reserva'], 
+                'Solo se pueden editar consumos en estado "Solicitud Pendiente"', 'error');
+            return;
+        }
+        
+        // Para reservas online, verificar si el consumo ya fue facturado
+        if ($reservaDelConsumo && $reservaDelConsumo['reserva_online'] == 1) {
+            $database = \App\Core\Database::getInstance();
+            $sqlFactura = "SELECT factura_fechahora FROM factura WHERE rela_reserva = ? ORDER BY factura_fechahora ASC LIMIT 1";
+            $stmtFactura = $database->prepare($sqlFactura);
+            $stmtFactura->bind_param("i", $consumo['rela_reserva']);
+            $stmtFactura->execute();
+            $resultFactura = $stmtFactura->get_result()->fetch_assoc();
+            $stmtFactura->close();
+            
+            if ($resultFactura && $consumo['consumo_fechahora'] <= $resultFactura['factura_fechahora']) {
+                $this->redirect('/huesped/consumos?reserva_id=' . $consumo['rela_reserva'], 
+                    'No se puede editar este consumo porque ya fue facturado y pagado', 'error');
+                return;
+            }
+        }
 
         if ($this->isPost()) {
             $cantidad = floatval($this->post('cantidad', 1));
@@ -282,10 +367,54 @@ class HuespedConsumosController extends Controller
             return $this->json(['success' => false, 'message' => 'No tiene permiso para eliminar este consumo'], 403);
         }
         
-        if ($this->consumoModel->deleteConsumo($id)) {
-            return $this->json(['success' => true, 'message' => 'Consumo eliminado exitosamente']);
+        // Validar que la reserva esté en estado Confirmada (2) o En Curso (3)
+        $reservaDelConsumo = null;
+        foreach ($reservasUsuario as $reserva) {
+            if ($reserva['id_reserva'] == $consumo['rela_reserva']) {
+                $reservaDelConsumo = $reserva;
+                break;
+            }
+        }
+        
+        $estadosPermitidos = [1, 2, 3, 4, 8];
+        if ($reservaDelConsumo && !in_array($reservaDelConsumo['rela_estadoreserva'], $estadosPermitidos)) {
+            return $this->json([
+                'success' => false, 
+                'message' => 'No se puede cancelar el consumo porque la reserva está en estado: ' . $reservaDelConsumo['estadoreserva_descripcion']
+            ], 403);
+        }
+        
+        // Solo se pueden cancelar consumos en estado "solicitud pendiente" (1)
+        if ($consumo['rela_estadoconsumo'] != 1) {
+            return $this->json([
+                'success' => false, 
+                'message' => 'Solo se pueden cancelar consumos en estado "Solicitud Pendiente"'
+            ], 403);
+        }
+        
+        // Para reservas online, verificar si el consumo ya fue facturado
+        if ($reservaDelConsumo && $reservaDelConsumo['reserva_online'] == 1) {
+            $database = \App\Core\Database::getInstance();
+            $sqlFactura = "SELECT factura_fechahora FROM factura WHERE rela_reserva = ? ORDER BY factura_fechahora ASC LIMIT 1";
+            $stmtFactura = $database->prepare($sqlFactura);
+            $stmtFactura->bind_param("i", $consumo['rela_reserva']);
+            $stmtFactura->execute();
+            $resultFactura = $stmtFactura->get_result()->fetch_assoc();
+            $stmtFactura->close();
+            
+            if ($resultFactura && $consumo['consumo_fechahora'] <= $resultFactura['factura_fechahora']) {
+                return $this->json([
+                    'success' => false, 
+                    'message' => 'No se puede cancelar este consumo porque ya fue facturado y pagado'
+                ], 403);
+            }
+        }
+        
+        // Cambiar estado a "cancelado por usuario" (6) en lugar de eliminar
+        if ($this->consumoModel->update($id, ['rela_estadoconsumo' => 6])) {
+            return $this->json(['success' => true, 'message' => 'Consumo cancelado exitosamente']);
         } else {
-            return $this->json(['success' => false, 'message' => 'Error al eliminar el consumo'], 500);
+            return $this->json(['success' => false, 'message' => 'Error al cancelar el consumo'], 500);
         }
     }
 

@@ -188,7 +188,7 @@ class TipoServicio extends Model
                 WHERE s.rela_tiposervicio = ?
                 AND r.reserva_fhinicio >= ?
                 AND r.reserva_fhinicio <= ?
-                AND c.consumo_estado = 1";
+                AND c.rela_estadoconsumo IN (1, 2, 3)";
         
         $stmt = $this->db->prepare($sql);
         $stmt->bind_param('iss', $id, $inicioMes, $finMes);

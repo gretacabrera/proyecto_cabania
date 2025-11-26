@@ -258,6 +258,15 @@ class Revision extends Model
     {
         $db = \App\Core\Database::getInstance();
         
+        // Obtener información de la reserva y cabaña
+        $sqlReserva = "SELECT rela_cabania FROM reserva WHERE id_reserva = ?";
+        $stmt = $db->prepare($sqlReserva);
+        $stmt->bind_param('i', $idReserva);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $reserva = $result->fetch_assoc();
+        $idCabania = $reserva['rela_cabania'];
+        
         // Obtener total de la reserva (cabaña + servicios + productos)
         $sqlTotal = "SELECT 
                         (SELECT cabania_precio * DATEDIFF(r.reserva_fhfin, r.reserva_fhinicio)
@@ -274,9 +283,11 @@ class Revision extends Model
         // Obtener total de costos de revisión
         $totalRevision = $this->getTotalCostoByReserva($idReserva);
 
-        // Obtener total pagado
-        $sqlPagado = "SELECT COALESCE(SUM(pago_total), 0) as total_pagado
-                      FROM pago WHERE rela_reserva = ?";
+        // Obtener total pagado (pago está vinculado a factura, no directamente a reserva)
+        $sqlPagado = "SELECT COALESCE(SUM(p.pago_total), 0) as total_pagado
+                      FROM pago p
+                      INNER JOIN factura f ON p.rela_factura = f.id_factura
+                      WHERE f.rela_reserva = ?";
         $stmt = $db->prepare($sqlPagado);
         $stmt->bind_param('i', $idReserva);
         $stmt->execute();
@@ -286,10 +297,10 @@ class Revision extends Model
         // Calcular total final
         $totalFinal = $totalReserva + $totalRevision;
 
-        // Determinar nuevo estado
-        $nuevoEstado = ($totalPagado >= $totalFinal) ? 5 : 4; // 5 = Finalizada, 4 = Pendiente de pago
+        // Determinar nuevo estado: 5 = Finalizada, 4 = Pendiente de pago
+        $nuevoEstado = ($totalPagado >= $totalFinal) ? 5 : 4;
 
-        // LOG TEMPORAL - REMOVER DESPUÉS
+        // LOG TEMPORAL
         error_log("=== ACTUALIZAR ESTADO RESERVA (EN TRANSACCIÓN) ===");
         error_log("ID Reserva: " . $idReserva);
         error_log("Total Reserva: " . $totalReserva);
@@ -297,7 +308,6 @@ class Revision extends Model
         error_log("Total Pagado: " . $totalPagado);
         error_log("Total Final: " . $totalFinal);
         error_log("Nuevo Estado: " . $nuevoEstado);
-        error_log("===============================================");
 
         // Actualizar estado de la reserva
         $sqlUpdate = "UPDATE reserva SET rela_estadoreserva = ? WHERE id_reserva = ?";
@@ -305,8 +315,17 @@ class Revision extends Model
         $stmt->bind_param('ii', $nuevoEstado, $idReserva);
         $resultado = $stmt->execute();
         
-        error_log("Filas afectadas: " . $stmt->affected_rows);
-        error_log("Resultado update: " . ($resultado ? 'true' : 'false'));
+        error_log("Filas afectadas reserva: " . $stmt->affected_rows);
+        
+        // Cambiar estado de la cabaña a "Libre" (1)
+        $sqlUpdateCabania = "UPDATE cabania SET rela_estadocabania = 1 WHERE id_cabania = ?";
+        $stmt = $db->prepare($sqlUpdateCabania);
+        $stmt->bind_param('i', $idCabania);
+        $stmt->execute();
+        
+        error_log("Filas afectadas cabaña: " . $stmt->affected_rows);
+        error_log("Cabaña ID " . $idCabania . " marcada como LIBRE");
+        error_log("===============================================");
 
         return true;
     }

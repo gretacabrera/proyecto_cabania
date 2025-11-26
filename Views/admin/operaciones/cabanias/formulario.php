@@ -145,13 +145,18 @@ $isEdit = isset($cabania) && !empty($cabania);
 
                         <!-- Ubicación -->
                         <div class="form-group">
-                            <label for="cabania_ubicacion" class="required">
+                            <label for="rela_ubicacion" class="required">
                                 <i class="fas fa-map-marker-alt"></i> Ubicación
                             </label>
-                            <input type="text" class="form-control" id="cabania_ubicacion" name="cabania_ubicacion" 
-                                   value="<?php echo htmlspecialchars($cabania['cabania_ubicacion'] ?? ''); ?>"
-                                   required maxlength="200" 
-                                   placeholder="Ej: Sector A - Junto al lago">
+                            <select class="form-select" id="rela_ubicacion" name="rela_ubicacion" required>
+                                <option value="">-- Seleccionar Ubicación --</option>
+                                <?php foreach ($ubicaciones as $ubicacion): ?>
+                                    <option value="<?= $ubicacion['id_ubicacion'] ?>" 
+                                        <?= (isset($cabania['rela_ubicacion']) && $cabania['rela_ubicacion'] == $ubicacion['id_ubicacion']) ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($ubicacion['ubicacion_descripcion']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
                             <div class="invalid-feedback"></div>
                         </div>
 

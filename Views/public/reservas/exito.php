@@ -29,10 +29,6 @@
                             <?php 
                             $emailMostrar = '';
                             
-                            // Debug temporal - remover en producción
-                            error_log("DEBUG Vista Éxito - Email en reserva: '" . ($reserva['huesped_email'] ?? 'VACÍO') . "'");
-                            error_log("DEBUG Vista Éxito - Email en sesión: '" . ($_SESSION['user']['usuario_email'] ?? 'VACÍO') . "'");
-                            
                             // Priorizar email del huésped de la reserva
                             if (!empty($reserva['huesped_email'])) {
                                 $emailMostrar = $reserva['huesped_email'];
@@ -182,21 +178,23 @@
 
 
                     <!-- Botones de Acción -->
-                    <div class="row mt-4">
+                    <div class="row mt-4 g-3">
                         <div class="col-md-4">
-                            <a href="/reservas/comprobante/<?= $reserva_exitosa['reserva_id'] ?? $reserva['id_reserva'] ?? '' ?>" target="_blank" class="btn btn-outline-primary w-100">
+                            <a href="<?= url('/reservas/comprobante/' . ($reserva_exitosa['reserva_id'] ?? $reserva['id_reserva'] ?? '')) ?>" 
+                               class="btn btn-outline-primary w-100" 
+                               target="_blank">
                                 <i class="fas fa-file-pdf me-1"></i>
                                 Descargar Comprobante
                             </a>
                         </div>
                         <div class="col-md-4">
-                            <a href="/reservas" class="btn btn-outline-info w-100">
+                            <a href="<?= url('/reservas') ?>" class="btn btn-outline-info w-100">
                                 <i class="fas fa-history me-1"></i>
                                 Ver Mis Reservas
                             </a>
                         </div>
                         <div class="col-md-4">
-                            <a href="/" class="btn btn-primary w-100">
+                            <a href="<?= url('/') ?>" class="btn btn-primary w-100">
                                 <i class="fas fa-home me-1"></i>
                                 Volver al Inicio
                             </a>

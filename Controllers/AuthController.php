@@ -87,6 +87,34 @@ class AuthController extends Controller
     }
 
     /**
+     * Verificar y notificar reservas cercanas al usuario
+     */
+    private function checkAndNotifyReservasCercanas($usuarioId)
+    {
+        try {
+            $reservaModel = new \App\Models\Reserva();
+            $notificationService = new \App\Core\NotificationService();
+            
+            // Obtener reservas próximas del usuario (próximos 7 días)
+            $reservasCercanas = $reservaModel->getReservasCercanasUsuario($usuarioId, 7);
+            
+            if (!empty($reservasCercanas)) {
+                foreach ($reservasCercanas as $reserva) {
+                    // Usar días hasta check-in calculado en la query SQL
+                    $diasRestantes = (int)$reserva['dias_hasta_checkin'];
+                    
+                    // Enviar notificación
+                    $notificationService->notifyReservaCercana($reserva, $diasRestantes, $usuarioId);
+                    error_log("Notificación de reserva cercana enviada - Usuario: $usuarioId, Reserva: {$reserva['id_reserva']}, Días: $diasRestantes");
+                }
+            }
+        } catch (\Exception $e) {
+            error_log("ERROR checkAndNotifyReservasCercanas: " . $e->getMessage());
+            error_log("ERROR Stack trace: " . $e->getTraceAsString());
+        }
+    }
+
+    /**
      * Cerrar sesión
      */
     public function logout()

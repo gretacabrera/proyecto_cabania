@@ -39,13 +39,11 @@ $generarDetallesCompletos = function($datos, $complejo, $formato) {
     $diasEstancia = htmlspecialchars($datos['dias_estancia']);
     $adultos = intval($datos['adultos'] ?? 0);
     $menores = intval($datos['menores'] ?? 0);
-    $totalHuespedes = $adultos + $menores;
+    $totalHuespedes = intval($datos['total_huespedes'] ?? ($adultos + $menores));
     
-    // Fallback si no hay datos de huéspedes específicos o son inválidos
-    if ($totalHuespedes == 0 || ($adultos == 0 && $menores == 0)) {
-        $adultos = 2; // Valor por defecto mínimo
-        $menores = 0;
-        $totalHuespedes = 2;
+    // Si total_huespedes no está disponible, usar la suma de adultos y menores
+    if ($totalHuespedes == 0 && ($adultos + $menores) > 0) {
+        $totalHuespedes = $adultos + $menores;
     }
     $monto = number_format($datos['monto_pagado'], 2, ',', '.');
     $metodoPago = htmlspecialchars($datos['metodo_pago']);

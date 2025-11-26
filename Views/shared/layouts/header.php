@@ -16,19 +16,9 @@
     <link href="<?= $this->asset('assets/css/components.css') ?>" rel="stylesheet">
     <link href="<?= $this->asset('assets/css/forms.css') ?>" rel="stylesheet">
     <link href="<?= $this->asset('assets/css/admin.css') ?>" rel="stylesheet">
+    <link href="<?= $this->asset('assets/css/notifications.css') ?>" rel="stylesheet">
     
-    <!-- Chart.js para gráficos -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- JavaScript Centralizado -->
-    <script src="<?= $this->asset('assets/js/main.js') ?>"></script>
-    <script src="<?= $this->asset('assets/js/components.js?v=' . time()) ?>"></script>
-    <script src="<?= $this->asset('assets/js/forms.js') ?>"></script>
-    <script src="<?= $this->asset('assets/js/admin.js') ?>"></script>
+
 </head>
 <body>
     <div id="app">

@@ -541,7 +541,7 @@
     /* Regla responsive de footer-content eliminada - ya no se utiliza */
 }
 
-@media (max-width: 576px) {
+@media (max-width: 480px) {
     .hero-section h1 {
         font-size: 28px;
     }
@@ -561,6 +561,55 @@
     
     .reserva-container {
         padding: 25px 20px;
+    }
+    
+    /* Headers de listados públicos - consumos, huéspedes, comentarios */
+    .huespedes-header,
+    .comentarios-header {
+        padding: 1.5rem 0 !important;
+    }
+    
+    .huespedes-header h2,
+    .comentarios-header h2 {
+        font-size: 1.25rem !important;
+    }
+    
+    /* Botones de acción en headers */
+    .btn-accion {
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem !important;
+    }
+}
+
+/* Responsive adicional para headers de listados */
+@media (max-width: 576px) {
+    /* Ajustar espaciado de headers */
+    .card-body {
+        padding: 1rem !important;
+    }
+    
+    /* Títulos más compactos */
+    h2.h4 {
+        font-size: 1.1rem !important;
+    }
+    
+    h2.h-md-2 {
+        font-size: 1.25rem !important;
+    }
+    
+    /* Botones full-width en móvil */
+    .btn-accion.w-100 {
+        min-height: 44px;
+    }
+    
+    /* Iconos más pequeños en móvil */
+    .btn i {
+        font-size: 0.875rem;
+    }
+    
+    /* Espaciado entre elementos */
+    .gap-3 {
+        gap: 0.75rem !important;
     }
 }
 

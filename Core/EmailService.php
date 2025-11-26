@@ -339,6 +339,51 @@ Este es un email automático, por favor no responda a este mensaje.
     }
 
     /**
+     * Enviar email con archivo adjunto
+     */
+    public function sendEmailWithAttachment($to, $toName, $subject, $htmlBody, $textBody = '', $attachmentPath = null)
+    {
+        try {
+            // Limpiar destinatarios previos
+            $this->mailer->clearAddresses();
+            $this->mailer->clearAttachments();
+            
+            // Configurar destinatario
+            $this->mailer->addAddress($to, $toName);
+            
+            // Configurar contenido
+            $this->mailer->Subject = $subject;
+            $this->mailer->Body = $htmlBody;
+            
+            if ($textBody) {
+                $this->mailer->AltBody = $textBody;
+            }
+            
+            // Agregar archivo adjunto si existe
+            if ($attachmentPath && file_exists($attachmentPath)) {
+                $filename = basename($attachmentPath);
+                $this->mailer->addAttachment($attachmentPath, $filename);
+                error_log("Archivo adjunto agregado al email: $filename");
+            }
+            
+            // Enviar email
+            $result = $this->mailer->send();
+            
+            return [
+                'success' => $result,
+                'message' => $result ? 'Email enviado exitosamente' : 'Error al enviar email'
+            ];
+            
+        } catch (Exception $e) {
+            error_log('Error al enviar email con adjunto: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Error al enviar email: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
      * Enviar email de recuperación de contraseña
      */
     public function sendPasswordResetEmail($recipientEmail, $recipientName, $userName, $resetToken)

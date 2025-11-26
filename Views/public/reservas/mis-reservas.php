@@ -1,130 +1,178 @@
-<?php
-$pageTitle = 'Mis Reservas';
-$pageStyles = ['public.css'];
-require_once __DIR__ . '/../../shared/header.php';
-?>
-
 <div class="container my-5">
     <div class="row justify-content-center">
-        <div class="col-12">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="mb-0">
-                        <i class="fas fa-calendar-alt me-2"></i>
-                        Mis Reservas
-                    </h3>
+        <div class="col-12 col-xl-10">
+            <!-- Card Contenedora Principal -->
+            <div class="card shadow-lg border-0">
+                <!-- Header -->
+                <div class="card-header bg-white border-bottom py-3">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+                        <div>
+                            <h4 class="mb-1 text-dark">
+                                <i class="fas fa-calendar-check text-primary me-2"></i>
+                                Mis Reservas
+                            </h4>
+                            <?php if (!empty($reservas)): ?>
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Total de reservas: <strong><?= count($reservas) ?></strong>
+                                </small>
+                            <?php endif; ?>
+                        </div>
+                        <div class="d-flex gap-2 mt-2 mt-md-0">
+                            <a href="<?= url('/catalogo') ?>" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-plus me-1"></i>Nueva Reserva
+                            </a>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
+
+                <div class="card-body p-0">
                     <?php if (empty($reservas)): ?>
-                        <div class="text-center py-5">
-                            <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
-                            <h4 class="text-muted">No tienes reservas</h4>
-                            <p class="text-muted">Cuando realices una reserva aparecerá aquí.</p>
-                            <a href="/" class="btn btn-primary">
-                                <i class="fas fa-home me-2"></i>Realizar una reserva
+                        <!-- Estado Vacío -->
+                        <div class="text-center py-5 px-3">
+                            <i class="fas fa-calendar-times fa-3x text-secondary mb-3"></i>
+                            <h5 class="text-muted mb-2">No tienes reservas</h5>
+                            <p class="text-muted small mb-3">Cuando realices una reserva aparecerá aquí.</p>
+                            <a href="<?= url('/catalogo') ?>" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-home me-1"></i>Ver Cabañas Disponibles
                             </a>
                         </div>
                     <?php else: ?>
-                        <div class="row">
-                            <?php foreach ($reservas as $reserva): ?>
-                                <div class="col-md-6 mb-4">
-                                    <div class="card border-left-primary">
-                                        <div class="card-body">
-                                            <!-- Header con estado -->
-                                            <div class="d-flex justify-content-between align-items-start mb-3">
-                                                <h5 class="card-title mb-0">
-                                                    <i class="fas fa-home me-2 text-primary"></i>
+                        <!-- Lista Responsive de Reservas -->
+                        <div class="list-group list-group-flush">
+                            <?php foreach ($reservas as $index => $reserva): 
+                                $estadoClass = [
+                                    'pendiente' => 'warning',
+                                    'confirmada' => 'success',
+                                    'en curso' => 'info',
+                                    'finalizada' => 'secondary',
+                                    'anulada' => 'danger',
+                                    'cancelada' => 'danger'
+                                ];
+                                $estado = strtolower($reserva['estadoreserva_descripcion'] ?? 'desconocido');
+                                $badgeClass = $estadoClass[$estado] ?? 'secondary';
+                            ?>
+                                <div class="list-group-item list-group-item-action p-0 border-0 <?= $index > 0 ? 'border-top' : '' ?>">
+                                    <div class="p-4">
+                                        <!-- Header de la Reserva -->
+                                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start mb-3">
+                                            <div class="mb-2 mb-md-0">
+                                                <h5 class="mb-1">
+                                                    <i class="fas fa-home text-primary me-2"></i>
                                                     <?= htmlspecialchars($reserva['cabania_nombre']) ?>
                                                 </h5>
-                                                <?php
-                                                $estadoClass = [
-                                                    'pendiente' => 'warning',
-                                                    'confirmada' => 'success',
-                                                    'en curso' => 'info',
-                                                    'pendiente de pago' => 'warning',
-                                                    'finalizada' => 'secondary',
-                                                    'anulada' => 'danger',
-                                                    'expirada' => 'dark',
-                                                    'cancelada' => 'danger'
-                                                ];
-                                                $estado = $reserva['estadoreserva_descripcion'] ?? 'desconocido';
-                                                $class = $estadoClass[strtolower($estado)] ?? 'secondary';
-                                                ?>
-                                                <span class="badge bg-<?= $class ?> fs-6">
-                                                    <?= ucfirst($estado) ?>
-                                                </span>
+                                                <small class="text-muted">
+                                                    Estado: <strong class="text-<?= $badgeClass ?>"><?= ucfirst($reserva['estadoreserva_descripcion']) ?></strong>
+                                                </small>
                                             </div>
-                                            
-                                            <!-- Información de la reserva -->
-                                            <div class="mb-3">
-                                                <div class="row">
-                                                    <div class="col-6">
-                                                        <small class="text-muted d-block">Check-in</small>
-                                                        <strong><?= date('d/m/Y H:i', strtotime($reserva['reserva_fechainicio'])) ?></strong>
+                                            <div class="text-end">
+                                                <div class="mb-1">
+                                                    <small class="text-muted d-block">Importe Total</small>
+                                                    <h5 class="text-dark mb-0">$<?= number_format($reserva['importe_total'], 2) ?></h5>
+                                                </div>
+                                                <div class="mb-1">
+                                                    <small class="text-muted">Abonado: <span class="text-success fw-bold">$<?= number_format($reserva['total_abonado'], 2) ?></span></small>
+                                                </div>
+                                                <?php if ($reserva['saldo_pendiente'] > 0): ?>
+                                                    <div>
+                                                        <small class="text-muted">Pendiente: <span class="text-warning fw-bold">$<?= number_format($reserva['saldo_pendiente'], 2) ?></span></small>
                                                     </div>
-                                                    <div class="col-6">
-                                                        <small class="text-muted d-block">Check-out</small>
-                                                        <strong><?= date('d/m/Y H:i', strtotime($reserva['reserva_fechafin'])) ?></strong>
+                                                <?php else: ?>
+                                                    <div>
+                                                        <small class="text-success"><i class="fas fa-check-circle me-1"></i>Pagado completo</small>
                                                     </div>
-                                                </div>
-                                            </div>
-                                            
-                                            <div class="mb-3">
-                                                <small class="text-muted d-block">Huéspedes</small>
-                                                <strong>
-                                                    <i class="fas fa-users me-1"></i>
-                                                    <?= $reserva['reserva_cantidadpersonas'] ?> persona<?= $reserva['reserva_cantidadpersonas'] > 1 ? 's' : '' ?>
-                                                </strong>
-                                            </div>
-                                            
-                                            <?php if (!empty($reserva['reserva_observaciones'])): ?>
-                                                <div class="mb-3">
-                                                    <small class="text-muted d-block">Observaciones</small>
-                                                    <p class="small"><?= nl2br(htmlspecialchars($reserva['reserva_observaciones'])) ?></p>
-                                                </div>
-                                            <?php endif; ?>
-                                            
-                                            <!-- Expiración si aplica -->
-                                            <?php if ($reserva['rela_estadoreserva'] == 1 && !empty($reserva['reserva_fhexpiracion'])): ?>
-                                                <?php 
-                                                $expiracion = strtotime($reserva['reserva_fhexpiracion']);
-                                                $ahora = time();
-                                                ?>
-                                                <div class="alert alert-warning small mb-3">
-                                                    <i class="fas fa-clock me-1"></i>
-                                                    <strong>Esta reserva expira:</strong><br>
-                                                    <?= date('d/m/Y H:i', $expiracion) ?>
-                                                    <?php if ($expiracion > $ahora): ?>
-                                                        <br><small class="text-muted">
-                                                            (<?= round(($expiracion - $ahora) / 60) ?> minutos restantes)
-                                                        </small>
-                                                    <?php endif; ?>
-                                                </div>
-                                            <?php endif; ?>
-                                            
-                                            <!-- Botones de acción -->
-                                            <div class="d-flex justify-content-end">
-                                                <?php 
-                                                // Solo mostrar cancelación para reservas PENDIENTES o CONFIRMADAS
-                                                if (in_array($reserva['rela_estadoreserva'], [1, 2])): 
-                                                ?>
-                                                    <button type="button" 
-                                                            class="btn btn-outline-danger btn-sm btn-cancelar-reserva"
-                                                            data-reserva-id="<?= $reserva['id_reserva'] ?>"
-                                                            data-reserva-info="<?= htmlspecialchars($reserva['cabania_nombre']) ?>">
-                                                        <i class="fas fa-times me-1"></i>
-                                                        Cancelar Reserva
-                                                    </button>
-                                                <?php endif; ?>
-                                                
-                                                <?php if ($reserva['rela_estadoreserva'] == 2): // CONFIRMADA ?>
-                                                    <a href="/reservas/<?= $reserva['id_reserva'] ?>/voucher" 
-                                                       class="btn btn-primary btn-sm ms-2" target="_blank">
-                                                        <i class="fas fa-download me-1"></i>
-                                                        Descargar Voucher
-                                                    </a>
                                                 <?php endif; ?>
                                             </div>
+                                        </div>
+
+                                        <!-- Información de Fechas -->
+                                        <div class="row g-3 mb-3">
+                                            <div class="col-12 col-md-4">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-calendar-check text-muted me-2 mr-3"></i>
+                                                    <div>
+                                                        <small class="text-muted d-block">Confirmación</small>
+                                                        <strong>
+                                                            <?php if (!empty($reserva['fecha_confirmacion'])): ?>
+                                                                <?= date('d/m/Y H:i', strtotime($reserva['fecha_confirmacion'])) ?>
+                                                            <?php else: ?>
+                                                                <span class="text-warning">Pendiente</span>
+                                                            <?php endif; ?>
+                                                        </strong>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-6 col-md-4">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-sign-in-alt text-success me-2 mr-3"></i>
+                                                    <div>
+                                                        <small class="text-muted d-block">Entrada</small>
+                                                        <strong><?= date('d/m/Y', strtotime($reserva['reserva_fhinicio'])) ?></strong>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-6 col-md-4">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-sign-out-alt text-danger me-2 mr-3"></i>
+                                                    <div>
+                                                        <small class="text-muted d-block">Salida</small>
+                                                        <strong><?= date('d/m/Y', strtotime($reserva['reserva_fhfin'])) ?></strong>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Acciones -->
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <!-- Completar Pago (para reservas pendientes) -->
+                                            <?php if ($reserva['rela_estadoreserva'] == 1): ?>
+                                                <a href="<?= url('/reservas/' . $reserva['id_reserva'] . '/pagar') ?>" 
+                                                   class="btn btn-warning btn-sm">
+                                                    <i class="fas fa-credit-card me-1"></i>
+                                                    <span class="d-none d-sm-inline">Completar </span>Pago
+                                                </a>
+                                            <?php endif; ?>
+                                            
+                                            <!-- Marcar Ingreso -->
+                                            <?php if ($reserva['rela_estadoreserva'] == 2): ?>
+                                                <button type="button"
+                                                   class="btn btn-outline-success btn-sm btn-marcar-ingreso"
+                                                   data-reserva-id="<?= $reserva['id_reserva'] ?>"
+                                                   data-cabania="<?= htmlspecialchars($reserva['cabania_nombre']) ?>">
+                                                    <i class="fas fa-sign-in-alt me-1"></i>
+                                                    <span class="d-none d-sm-inline">Marcar </span>Ingreso
+                                                </button>
+                                            <?php endif; ?>
+                                            
+                                            <!-- Marcar Salida -->
+                                            <?php if ($reserva['rela_estadoreserva'] == 3): ?>
+                                                <button type="button"
+                                                   class="btn btn-outline-warning btn-sm btn-marcar-salida"
+                                                   data-reserva-id="<?= $reserva['id_reserva'] ?>"
+                                                   data-cabania="<?= htmlspecialchars($reserva['cabania_nombre']) ?>">
+                                                    <i class="fas fa-sign-out-alt me-1"></i>
+                                                    <span class="d-none d-sm-inline">Marcar </span>Salida
+                                                </button>
+                                            <?php endif; ?>
+                                            
+                                            <!-- Ver Consumos (visible para todos los estados) -->
+                                            <a href="<?= url('/huesped/consumos?reserva_id=' . $reserva['id_reserva']) ?>" 
+                                               class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-shopping-cart me-1"></i>
+                                                <span class="d-none d-sm-inline">Ver </span>Consumos
+                                            </a>
+                                            
+                            <!-- Ver Huéspedes (visible para todos los estados) -->
+                            <a href="<?= url('/huespedes?reserva_id=' . $reserva['id_reserva']) ?>" 
+                               class="btn btn-outline-info btn-sm">
+                                <i class="fas fa-users me-1"></i>
+                                <span class="d-none d-sm-inline">Ver </span>Huéspedes
+                            </a>                                            <!-- Ver Comentarios (visible para todos los estados) -->
+                                            <a href="<?= url('/comentarios?reserva_id=' . $reserva['id_reserva']) ?>" 
+                                               class="btn btn-outline-secondary btn-sm">
+                                                <i class="fas fa-comments me-1"></i>
+                                                <span class="d-none d-sm-inline">Ver </span>Comentarios
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
@@ -137,91 +185,55 @@ require_once __DIR__ . '/../../shared/header.php';
     </div>
 </div>
 
-<!-- Modal de confirmación -->
-<div class="modal fade" id="confirmCancelModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
-                    Confirmar Cancelación
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p class="mb-2">¿Está seguro de que desea cancelar esta reserva?</p>
-                <div class="alert alert-warning">
-                    <strong>Cabaña:</strong> <span id="modal-reserva-info"></span><br>
-                    <small class="text-muted">
-                        Esta acción no se puede deshacer. La cabaña quedará nuevamente disponible.
-                    </small>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="fas fa-times me-1"></i>Mantener Reserva
-                </button>
-                <button type="button" class="btn btn-danger" id="confirm-cancel-btn">
-                    <i class="fas fa-check me-1"></i>Confirmar Cancelación
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const modal = new bootstrap.Modal(document.getElementById('confirmCancelModal'));
-    let reservaIdToCancel = null;
-    
-    // Manejar cancelación de reservas
-    document.querySelectorAll('.btn-cancelar-reserva').forEach(btn => {
-        btn.addEventListener('click', function() {
-            reservaIdToCancel = this.dataset.reservaId;
-            const reservaInfo = this.dataset.reservaInfo;
+    // Marcar Ingreso
+    document.querySelectorAll('.btn-marcar-ingreso').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const reservaId = this.dataset.reservaId;
+            const cabania = this.dataset.cabania;
             
-            document.getElementById('modal-reserva-info').textContent = reservaInfo;
-            modal.show();
+            Swal.fire({
+                title: '¿Confirmar ingreso?',
+                html: `¿Deseas marcar el ingreso a la cabaña <strong>${cabania}</strong>?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, confirmar ingreso',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = `<?= url('/reservas/') ?>${reservaId}/marcar-ingreso`;
+                }
+            });
         });
     });
     
-    // Confirmar cancelación
-    document.getElementById('confirm-cancel-btn').addEventListener('click', function() {
-        if (reservaIdToCancel) {
-            const btn = this;
-            const originalText = btn.innerHTML;
+    // Marcar Salida
+    document.querySelectorAll('.btn-marcar-salida').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const reservaId = this.dataset.reservaId;
+            const cabania = this.dataset.cabania;
             
-            // Mostrar loading
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Cancelando...';
-            btn.disabled = true;
-            
-            fetch(`/reservas/${reservaIdToCancel}/cancelar`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
+            Swal.fire({
+                title: '¿Confirmar salida?',
+                html: `¿Deseas marcar la salida de la cabaña <strong>${cabania}</strong>?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#ffc107',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, confirmar salida',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = `<?= url('/reservas/') ?>${reservaId}/marcar-salida`;
                 }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    modal.hide();
-                    location.reload();
-                } else {
-                    alert('Error: ' + (data.message || 'No se pudo cancelar la reserva'));
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error de conexión. Intente nuevamente.');
-            })
-            .finally(() => {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
             });
-        }
+        });
     });
 });
 </script>
-
-<?php require_once __DIR__ . '/../../shared/footer.php'; ?>
+```

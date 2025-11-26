@@ -33,8 +33,15 @@
                     </div>
                     <div class="col-auto">
                         <label class="form-label small mb-1">Ubicación</label>
-                        <input type="text" name="huesped_ubicacion" class="form-control form-control-sm" 
-                               placeholder="" value="<?= htmlspecialchars($_GET['huesped_ubicacion'] ?? '') ?>" style="width: 150px;">
+                        <select name="rela_ubicacion" class="form-select form-select-sm" style="width: 150px;">
+                            <option value="">Todas</option>
+                            <?php foreach ($ubicaciones as $ubicacion): ?>
+                                <option value="<?= $ubicacion['id_ubicacion'] ?>" 
+                                    <?= ($_GET['rela_ubicacion'] ?? '') == $ubicacion['id_ubicacion'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($ubicacion['ubicacion_descripcion']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <div class="col-auto ms-auto">
                         <label class="form-label small mb-1">Estado</label>
@@ -214,7 +221,7 @@
                                     <td class="border-0 py-3">
                                         <div class="d-flex align-items-center">
                                             <i class="fas fa-map-marker-alt text-danger me-2"></i>
-                                            <span class="text-dark"><?= htmlspecialchars($huesped['huesped_ubicacion'] ?? '-') ?></span>
+                                            <span class="text-dark"><?= htmlspecialchars($huesped['ubicacion_descripcion'] ?? '-') ?></span>
                                         </div>
                                     </td>
                                     <td class="border-0 py-3">

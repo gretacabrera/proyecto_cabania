@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\Cabania;
+use App\Models\Ubicacion;
 
 /**
  * Controlador para el manejo de cabañas
@@ -11,11 +12,13 @@ use App\Models\Cabania;
 class CabaniasController extends Controller
 {
     protected $cabaniaModel;
+    protected $ubicacionModel;
 
     public function __construct()
     {
         parent::__construct();
         $this->cabaniaModel = new Cabania();
+        $this->ubicacionModel = new Ubicacion();
     }
 
     /**
@@ -41,7 +44,7 @@ class CabaniasController extends Controller
             'cabania_capacidad' => $this->get('cabania_capacidad'),
             'cabania_habitaciones' => $this->get('cabania_habitaciones'),
             'cabania_banios' => $this->get('cabania_banios'),
-            'cabania_estado' => $this->get('cabania_estado')
+            'cabania_estado' => $this->get('cabania_estado') // Mapea a rela_estadocabania en el modelo
         ];
 
         $result = $this->cabaniaModel->getWithDetails($page, $perPage, $filters);
@@ -51,6 +54,7 @@ class CabaniasController extends Controller
             'cabanias' => $result['data'],
             'pagination' => $result,
             'filters' => $filters,
+            'ubicaciones' => $this->ubicacionModel->getAllActive(),
             'isAdminArea' => true
         ];
 
@@ -75,6 +79,9 @@ class CabaniasController extends Controller
         $data = [
             'title' => 'Nueva Cabaña',
             'inventarios' => $inventarios,
+            'ubicaciones' => $this->ubicacionModel->getAllActive(),
+            'cabania' => [],
+            'isEdit' => false,
             'isAdminArea' => true
         ];
 
@@ -109,13 +116,13 @@ class CabaniasController extends Controller
             'cabania_codigo' => $this->post('cabania_codigo'),
             'cabania_nombre' => $this->post('cabania_nombre'),
             'cabania_descripcion' => $this->post('cabania_descripcion'),
+            'rela_ubicacion' => (int) $this->post('rela_ubicacion'),
             'cabania_capacidad' => $this->post('cabania_capacidad'),
             'cabania_precio' => $this->post('cabania_precio'),
-            'cabania_ubicacion' => $this->post('cabania_ubicacion'),
             'cabania_cantidadbanios' => $this->post('cabania_cantidadbanios'),
             'cabania_cantidadhabitaciones' => $this->post('cabania_cantidadhabitaciones'),
             'cabania_foto' => $cabania_foto,
-            'cabania_estado' => 1
+            'rela_estadocabania' => 1 // Disponible
         ];
 
         // Inventarios seleccionados
@@ -225,6 +232,8 @@ class CabaniasController extends Controller
             'estadisticas' => $estadisticas,
             'inventarios' => $inventarios,
             'inventarioCabania' => $inventarioCabania,
+            'ubicaciones' => $this->ubicacionModel->getAllActive(),
+            'isEdit' => true,
             'isAdminArea' => true
         ];
 
@@ -268,9 +277,9 @@ class CabaniasController extends Controller
             'cabania_codigo' => $this->post('cabania_codigo'),
             'cabania_nombre' => $this->post('cabania_nombre'),
             'cabania_descripcion' => $this->post('cabania_descripcion'),
+            'rela_ubicacion' => (int) $this->post('rela_ubicacion'),
             'cabania_capacidad' => $this->post('cabania_capacidad'),
             'cabania_precio' => $this->post('cabania_precio'),
-            'cabania_ubicacion' => $this->post('cabania_ubicacion'),
             'cabania_cantidadbanios' => $this->post('cabania_cantidadbanios'),
             'cabania_cantidadhabitaciones' => $this->post('cabania_cantidadhabitaciones'),
             'cabania_foto' => $cabania_foto
@@ -327,7 +336,7 @@ class CabaniasController extends Controller
             return $this->view->error(404);
         }
 
-        if ($this->cabaniaModel->softDelete($id, 'cabania_estado')) {
+        if ($this->cabaniaModel->softDelete($id, 'rela_estadocabania')) {
             $this->redirect('/cabanias', 'Cabaña eliminada correctamente', 'exito');
         } else {
             $this->redirect('/cabanias', 'Error al eliminar la cabaña', 'error');
@@ -341,7 +350,7 @@ class CabaniasController extends Controller
     {
         $this->requirePermission('cabanias');
 
-        if ($this->cabaniaModel->restore($id, 'cabania_estado')) {
+        if ($this->cabaniaModel->restore($id, 'rela_estadocabania')) {
             $this->redirect('/cabanias', 'Cabaña restaurada correctamente', 'exito');
         } else {
             $this->redirect('/cabanias', 'Error al restaurar la cabaña', 'error');
@@ -409,8 +418,11 @@ class CabaniasController extends Controller
             return $this->json(['success' => false, 'message' => 'Estado inválido. Estados válidos: 0 (inactiva), 1 (activa), 2 (ocupada)'], 400);
         }
 
+        // Mapear estado de interfaz a ID de estadocabania: 0->3 (inactiva), 1->1 (disponible), 2->2 (ocupada)
+        $estadoCabaniaId = $nuevoEstado === 0 ? 3 : $nuevoEstado;
+
         // Actualizar el estado
-        $data = ['cabania_estado' => $nuevoEstado];
+        $data = ['rela_estadocabania' => $estadoCabaniaId];
         $resultado = $this->cabaniaModel->update($id, $data);
 
         if ($resultado) {
@@ -490,17 +502,17 @@ class CabaniasController extends Controller
             // Llenar datos
             $row = 2;
             foreach ($cabanias as $cabania) {
-                // Mapear estado a texto
+                // Mapear rela_estadocabania a texto: 1=Disponible, 2=Ocupada, 3=Inactiva
                 $estadoTexto = '';
-                switch ($cabania['cabania_estado']) {
-                    case 0:
-                        $estadoTexto = 'Inactiva';
-                        break;
+                switch ($cabania['rela_estadocabania']) {
                     case 1:
-                        $estadoTexto = 'Activa';
+                        $estadoTexto = 'Disponible';
                         break;
                     case 2:
                         $estadoTexto = 'Ocupada';
+                        break;
+                    case 3:
+                        $estadoTexto = 'Inactiva';
                         break;
                     default:
                         $estadoTexto = 'Desconocido';
@@ -513,7 +525,7 @@ class CabaniasController extends Controller
                 $worksheet->setCellValue('E' . $row, $cabania['cabania_cantidadhabitaciones']);
                 $worksheet->setCellValue('F' . $row, $cabania['cabania_cantidadbanios']);
                 $worksheet->setCellValue('G' . $row, number_format($cabania['cabania_precio'], 2));
-                $worksheet->setCellValue('H' . $row, $cabania['cabania_ubicacion'] ?? '');
+                $worksheet->setCellValue('H' . $row, $cabania['ubicacion_descripcion'] ?? '');
                 $worksheet->setCellValue('I' . $row, $estadoTexto);
 
                 $row++;
@@ -576,7 +588,7 @@ class CabaniasController extends Controller
                 'cabania_capacidad' => $this->get('cabania_capacidad'),
                 'cabania_habitaciones' => $this->get('cabania_habitaciones'),
                 'cabania_banios' => $this->get('cabania_banios'),
-                'cabania_estado' => $this->get('cabania_estado')
+                'cabania_estado' => $this->get('cabania_estado') // Mapea a rela_estadocabania
             ];
 
             // Obtener TODOS los registros sin paginación
@@ -705,21 +717,21 @@ class CabaniasController extends Controller
 
             // Llenar datos
             foreach ($cabanias as $cabania) {
-                // Mapear estado a texto y clase CSS
+                // Mapear rela_estadocabania a texto y clase CSS: 1=Disponible, 2=Ocupada, 3=Inactiva
                 $estadoTexto = '';
                 $estadoClase = '';
-                switch ($cabania['cabania_estado']) {
-                    case 0:
-                        $estadoTexto = 'Inactiva';
-                        $estadoClase = 'estado-inactiva';
-                        break;
+                switch ($cabania['rela_estadocabania']) {
                     case 1:
-                        $estadoTexto = 'Activa';
+                        $estadoTexto = 'Disponible';
                         $estadoClase = 'estado-activa';
                         break;
                     case 2:
                         $estadoTexto = 'Ocupada';
                         $estadoClase = 'estado-ocupada';
+                        break;
+                    case 3:
+                        $estadoTexto = 'Inactiva';
+                        $estadoClase = 'estado-inactiva';
                         break;
                     default:
                         $estadoTexto = 'Desconocido';

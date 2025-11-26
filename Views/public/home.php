@@ -120,18 +120,8 @@
         <!-- Header de bienvenida -->
         <div class="dashboard-header">
             <div class="welcome-section">
-                <div class="welcome-avatar">
-                    <i class="fas fa-user-circle"></i>
-                </div>
                 <div class="welcome-info">
-                    <h1>¡Bienvenido/a, <?= $this->escape($user) ?>!</h1>
-                    <p class="user-role">Huésped</p>
-                    <?php if (isset($persona)): ?>
-                        <p class="user-details">
-                            <i class="fas fa-id-card"></i>
-                            <?= $this->escape($persona['persona_nombre'] . ' ' . $persona['persona_apellido']) ?>
-                        </p>
-                    <?php endif; ?>
+                    <h1>¡Bienvenido/a, <?= $this->escape($persona['persona_nombre'] . ' ' . $persona['persona_apellido']) ?>!</h1>
                 </div>
             </div>
             
@@ -145,7 +135,13 @@
         
         <!-- Próximas reservas -->
         <div class="dashboard-section">
-            <h2><i class="fas fa-calendar-check"></i> Mis Próximas Reservas</h2>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2><i class="fas fa-calendar-check"></i> Mis Próximas Reservas</h2>
+                <a href="<?= $this->url('/mis-reservas') ?>" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-list"></i>
+                    Ver Todos
+                </a>
+            </div>
             
             <?php if (!empty($reservas_proximas)): ?>
                 <div class="reservas-grid">
@@ -176,9 +172,6 @@
                 <div class="empty-state">
                     <i class="fas fa-calendar-times"></i>
                     <p>No tienes reservas próximas</p>
-                    <a href="<?= $this->url('/catalogo') ?>" class="btn btn-primary">
-                        Hacer una Reserva
-                    </a>
                 </div>
             <?php endif; ?>
         </div>
@@ -205,6 +198,106 @@
             </div>
         </div>
         <?php endif; ?>
+        
+        <!-- Últimos consumos -->
+        <div class="dashboard-section">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2><i class="fas fa-shopping-cart"></i> Mis Últimos Consumos</h2>
+                <a href="<?= $this->url('/huesped/consumos') ?>" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-list"></i>
+                    Ver Todos
+                </a>
+            </div>
+            
+            <?php if (!empty($ultimos_consumos)): ?>
+                <div class="consumos-grid">
+                    <?php foreach ($ultimos_consumos as $consumo): ?>
+                        <div class="consumo-card">
+                            <div class="consumo-header">
+                                <h4><?= $this->escape($consumo['item_descripcion']) ?></h4>
+                                <span class="consumo-tipo tipo-<?= strtolower($consumo['tipo_item']) ?>">
+                                    <i class="fas fa-<?= $consumo['tipo_item'] === 'Producto' ? 'box' : 'concierge-bell' ?>"></i>
+                                    <?= $this->escape($consumo['tipo_item']) ?>
+                                </span>
+                            </div>
+                            <div class="consumo-details">
+                                <p><i class="fas fa-home"></i> <?= $this->escape($consumo['cabania_nombre']) ?></p>
+                                <p><i class="fas fa-calendar"></i> <?= date('d/m/Y H:i', strtotime($consumo['consumo_fechahora'])) ?></p>
+                                <p><i class="fas fa-sort-numeric-up"></i> Cantidad: <?= $consumo['consumo_cantidad'] ?></p>
+                            </div>
+                            <div class="consumo-footer">
+                                <div class="consumo-estado">
+                                    <span class="estado-<?= strtolower(str_replace(' ', '-', $consumo['estadoconsumo_descripcion'])) ?>">
+                                        <?= $this->escape($consumo['estadoconsumo_descripcion']) ?>
+                                    </span>
+                                </div>
+                                <div class="consumo-total">
+                                    <strong>$<?= number_format($consumo['consumo_total'], 0, ',', '.') ?></strong>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php else: ?>
+                <div class="empty-state">
+                    <i class="fas fa-shopping-basket"></i>
+                    <p>No tienes consumos registrados</p>
+                </div>
+            <?php endif; ?>
+        </div>
+        
+        <!-- Últimos comentarios -->
+        <div class="dashboard-section">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2><i class="fas fa-comments"></i> Mis Últimos Comentarios</h2>
+                <a href="<?= $this->url('/comentarios') ?>" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-list"></i>
+                    Ver Todos
+                </a>
+            </div>
+            
+            <?php if (!empty($ultimos_comentarios)): ?>
+                <div class="comentarios-grid">
+                    <?php foreach ($ultimos_comentarios as $comentario): ?>
+                        <div class="comentario-card">
+                            <div class="comentario-header">
+                                <div class="comentario-cabania">
+                                    <h4><i class="fas fa-home"></i> <?= $this->escape($comentario['cabania_nombre']) ?></h4>
+                                    <p class="comentario-fecha">
+                                        <i class="fas fa-calendar"></i>
+                                        <?= date('d/m/Y', strtotime($comentario['reserva_fhinicio'])) ?> - 
+                                        <?= date('d/m/Y', strtotime($comentario['reserva_fhfin'])) ?>
+                                    </p>
+                                </div>
+                                <div class="comentario-puntuacion">
+                                    <?php for ($i = 1; $i <= 5; $i++): ?>
+                                        <i class="fas fa-star <?= $i <= $comentario['comentario_puntuacion'] ? 'text-warning' : 'text-muted' ?>"></i>
+                                    <?php endfor; ?>
+                                </div>
+                            </div>
+                            <div class="comentario-body">
+                                <p class="comentario-texto">
+                                    <?= $this->escape(strlen($comentario['comentario_texto']) > 150 
+                                        ? substr($comentario['comentario_texto'], 0, 150) . '...' 
+                                        : $comentario['comentario_texto']) ?>
+                                </p>
+                            </div>
+                            <div class="comentario-footer">
+                                <span class="comentario-fecha-comentario">
+                                    <i class="fas fa-clock"></i>
+                                    <?= date('d/m/Y H:i', strtotime($comentario['comentario_fechahora'])) ?>
+                                </span>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php else: ?>
+                <div class="empty-state">
+                    <i class="fas fa-comment-slash"></i>
+                    <p>No has dejado comentarios aún</p>
+                </div>
+            <?php endif; ?>
+        </div>
     </div>
 </div>
 
@@ -521,7 +614,7 @@
             
             <div class="cabanias-detalle-grid">
                 <?php foreach ($cabanias_estado['total'] as $cabania): ?>
-                    <div class="cabania-card <?= $cabania['cabania_estado'] == 1 ? 'disponible' : 'ocupada' ?>">
+                    <div class="cabania-card <?= $cabania['rela_estadocabania'] == 1 ? 'disponible' : 'ocupada' ?>">
                         <div class="cabania-header">
                             <h4><?= $this->escape($cabania['cabania_nombre']) ?></h4>
                             <span class="cabania-codigo"><?= $this->escape($cabania['cabania_codigo']) ?></span>
@@ -531,7 +624,7 @@
                             <p><i class="fas fa-dollar-sign"></i> $<?= number_format($cabania['cabania_precio'], 0, ',', '.') ?>/noche</p>
                         </div>
                         <div class="cabania-estado">
-                            <?php if ($cabania['cabania_estado'] == 1): ?>
+                            <?php if ($cabania['rela_estadocabania'] == 1): ?>
                                 <span class="estado-disponible">
                                     <i class="fas fa-check-circle"></i> Disponible
                                 </span>

@@ -6760,12 +6760,20 @@ body.auth, body.login {
     background: #ffffff;
     border-radius: 16px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    width: 90%;
-    max-width: 600px;
-    max-height: 90vh;
+    width: 95%;
+    max-width: 950px;
+    max-height: 98vh;
     overflow: hidden;
     position: relative;
     animation: modalSlideIn 0.3s ease;
+}
+
+@media (max-width: 576px) {
+    .modal-container-new {
+        width: 98%;
+        max-height: 98vh;
+        border-radius: 12px;
+    }
 }
 
 @keyframes modalSlideIn {
@@ -6782,10 +6790,16 @@ body.auth, body.login {
 .modal-header-new {
     background: linear-gradient(135deg, #2c5530, #4a7c59);
     color: white;
-    padding: 20px 24px;
+    padding: 16px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+@media (max-width: 576px) {
+    .modal-header-new {
+        padding: 6px 8px;
+    }
 }
 
 .modal-title-new {
@@ -6795,6 +6809,18 @@ body.auth, body.login {
     display: flex;
     align-items: center;
     gap: 10px;
+}
+
+@media (max-width: 576px) {
+    .modal-title-new {
+        font-size: 0.75rem;
+        gap: 3px;
+        line-height: 1.1;
+    }
+    
+    .modal-title-new i {
+        font-size: 0.8em;
+    }
 }
 
 .modal-close-new {
@@ -6811,14 +6837,64 @@ body.auth, body.login {
     justify-content: center;
 }
 
+@media (max-width: 576px) {
+    .modal-close-new {
+        font-size: 0.9em;
+        padding: 3px;
+    }
+}
+
 .modal-close-new:hover {
     background: rgba(255, 255, 255, 0.2);
 }
 
 .modal-body-new {
-    padding: 24px;
+    padding: 20px;
     overflow-y: auto;
-    max-height: calc(90vh - 200px);
+    max-height: calc(98vh - 180px);
+}
+
+@media (max-width: 576px) {
+    .modal-body-new {
+        padding: 6px;
+        max-height: calc(98vh - 110px);
+    }
+}
+
+/* Layout de 2 columnas en desktop */
+.modal-content-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+@media (min-width: 768px) {
+    .modal-content-grid {
+        grid-template-columns: 2fr 1fr;
+        gap: 24px;
+    }
+}
+
+@media (max-width: 576px) {
+    .modal-content-grid {
+        gap: 8px;
+    }
+}
+
+.calendar-column {
+    min-width: 0;
+}
+
+.info-column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+@media (max-width: 576px) {
+    .info-column {
+        gap: 6px;
+    }
 }
 
 /* Información de fechas seleccionadas */
@@ -6826,25 +6902,50 @@ body.auth, body.login {
     background: linear-gradient(135deg, #f8f9fa, #e9ecef);
     border: 2px solid #2c5530;
     border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 24px;
+    padding: 16px;
+    margin-bottom: 16px;
     text-align: center;
+}
+
+@media (max-width: 576px) {
+    .selected-dates-display {
+        padding: 6px;
+        margin-bottom: 6px;
+        border-radius: 4px;
+        border-width: 1px;
+    }
 }
 
 .dates-summary {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 20px;
+    gap: 16px;
     margin-bottom: 12px;
+}
+
+@media (max-width: 576px) {
+    .dates-summary {
+        gap: 4px;
+        margin-bottom: 3px;
+    }
 }
 
 .date-box {
     background: white;
     border-radius: 8px;
-    padding: 12px 16px;
+    padding: 10px 14px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    min-width: 120px;
+    min-width: 110px;
+}
+
+@media (max-width: 576px) {
+    .date-box {
+        padding: 3px 4px;
+        min-width: 60px;
+        border-radius: 3px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
 }
 
 .date-label {
@@ -6855,6 +6956,13 @@ body.auth, body.login {
     font-weight: 500;
 }
 
+@media (max-width: 576px) {
+    .date-label {
+        font-size: 0.55em;
+        margin-bottom: 0;
+    }
+}
+
 .date-value {
     display: block;
     font-size: 1.1em;
@@ -6862,9 +6970,21 @@ body.auth, body.login {
     color: #2c5530;
 }
 
+@media (max-width: 576px) {
+    .date-value {
+        font-size: 0.7em;
+    }
+}
+
 .date-arrow {
     color: #2c5530;
     font-size: 1.3em;
+}
+
+@media (max-width: 576px) {
+    .date-arrow {
+        font-size: 0.9em;
+    }
 }
 
 .nights-summary {
@@ -6884,11 +7004,17 @@ body.auth, body.login {
 
 .calendar-nav {
     background: #f8f9fa;
-    padding: 16px 20px;
+    padding: 12px 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid #dee2e6;
+}
+
+@media (max-width: 576px) {
+    .calendar-nav {
+        padding: 4px 6px;
+    }
 }
 
 .nav-button {
@@ -6905,6 +7031,14 @@ body.auth, body.login {
     justify-content: center;
 }
 
+@media (max-width: 576px) {
+    .nav-button {
+        width: 24px;
+        height: 24px;
+        font-size: 0.7em;
+    }
+}
+
 .nav-button:hover {
     background: #4a7c59;
     transform: scale(1.05);
@@ -6915,6 +7049,12 @@ body.auth, body.login {
     font-size: 1.2em;
     font-weight: 600;
     color: #2c5530;
+}
+
+@media (max-width: 576px) {
+    .month-title {
+        font-size: 0.75em;
+    }
 }
 
 .calendar-table {
@@ -6929,12 +7069,20 @@ body.auth, body.login {
 }
 
 .day-header {
-    padding: 12px 8px;
+    padding: 10px 4px;
     text-align: center;
     font-weight: 600;
-    font-size: 0.9em;
+    font-size: 0.85em;
     color: #495057;
     border-right: 1px solid #dee2e6;
+}
+
+@media (max-width: 576px) {
+    .day-header {
+        padding: 3px 0;
+        font-size: 0.6em;
+        font-weight: 700;
+    }
 }
 
 .day-header:last-child {
@@ -6957,7 +7105,16 @@ body.auth, body.login {
     font-weight: 500;
     position: relative;
     transition: all 0.2s ease;
-    min-height: 50px;
+    min-height: 70px;
+    font-size: 0.95em;
+}
+
+@media (max-width: 576px) {
+    .calendar-day-new {
+        min-height: 28px;
+        font-size: 0.65em;
+        padding: 0;
+    }
 }
 
 .calendar-day-new:nth-child(7n) {
@@ -7024,17 +7181,31 @@ body.auth, body.login {
 
 /* Leyenda */
 .calendar-legend-new {
-    margin-top: 20px;
-    padding: 16px;
+    margin-top: 16px;
+    padding: 12px;
     background: #f8f9fa;
     border-radius: 8px;
+}
+
+@media (max-width: 576px) {
+    .calendar-legend-new {
+        margin-top: 4px;
+        padding: 4px;
+        border-radius: 3px;
+    }
 }
 
 .legend-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 16px;
+    gap: 12px;
     justify-content: center;
+}
+
+@media (max-width: 576px) {
+    .legend-row {
+        gap: 3px;
+    }
 }
 
 .legend-item-new {
@@ -7044,11 +7215,26 @@ body.auth, body.login {
     font-size: 0.9em;
 }
 
+@media (max-width: 576px) {
+    .legend-item-new {
+        gap: 2px;
+        font-size: 0.55em;
+    }
+}
+
 .legend-square {
     width: 16px;
     height: 16px;
     border-radius: 3px;
     flex-shrink: 0;
+}
+
+@media (max-width: 576px) {
+    .legend-square {
+        width: 8px;
+        height: 8px;
+        border-radius: 1px;
+    }
 }
 
 .legend-square.available {
@@ -7077,33 +7263,58 @@ body.auth, body.login {
 /* Mensaje de instrucciones */
 .instruction-message {
     text-align: center;
-    padding: 16px;
+    padding: 12px;
     background: #e3f2fd;
     color: #1976d2;
     border-radius: 8px;
-    margin-top: 16px;
+    margin-top: 12px;
     font-weight: 500;
+    font-size: 0.95em;
+}
+
+@media (max-width: 576px) {
+    .instruction-message {
+        padding: 4px;
+        margin-top: 4px;
+        font-size: 0.65em;
+        border-radius: 3px;
+    }
 }
 
 /* Footer del modal */
 .modal-footer-new {
-    padding: 20px 24px;
+    padding: 20px;
     background: #f8f9fa;
     border-top: 1px solid #dee2e6;
     display: flex;
     justify-content: flex-end;
-    gap: 12px;
+    gap: 10px;
+}
+
+@media (max-width: 576px) {
+    .modal-footer-new {
+        padding: 6px;
+        gap: 4px;
+    }
 }
 
 .btn-cancel {
     background: #6c757d;
     color: white;
     border: none;
-    padding: 12px 24px;
+    padding: 14px 28px;
     border-radius: 8px;
     cursor: pointer;
     font-weight: 500;
     transition: all 0.2s ease;
+    font-size: 1rem;
+}
+
+@media (max-width: 576px) {
+    .btn-cancel {
+        padding: 6px 10px;
+        font-size: 0.8em;
+    }
 }
 
 .btn-cancel:hover {
@@ -7114,7 +7325,7 @@ body.auth, body.login {
     background: #2c5530;
     color: white;
     border: none;
-    padding: 12px 24px;
+    padding: 14px 28px;
     border-radius: 8px;
     cursor: pointer;
     font-weight: 500;
@@ -7122,6 +7333,15 @@ body.auth, body.login {
     display: flex;
     align-items: center;
     gap: 8px;
+    font-size: 1rem;
+}
+
+@media (max-width: 576px) {
+    .btn-confirm {
+        padding: 6px 10px;
+        font-size: 0.8em;
+        gap: 4px;
+    }
 }
 
 .btn-confirm:hover:not(:disabled) {
@@ -7134,34 +7354,39 @@ body.auth, body.login {
     cursor: not-allowed;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
+/* Responsive adicional para tablets */
+@media (max-width: 768px) and (min-width: 577px) {
     .modal-container-new {
         width: 95%;
-        margin: 20px;
     }
     
     .dates-summary {
-        flex-direction: column;
-        gap: 12px;
+        gap: 14px;
+    }
+}
+
+/* Optimización para pantallas muy pequeñas */
+@media (max-width: 360px) {
+    .modal-title-new {
+        font-size: 0.7rem;
     }
     
-    .date-arrow {
-        transform: rotate(90deg);
+    .date-box {
+        min-width: 55px;
+        padding: 2px 3px;
     }
     
-    .legend-row {
-        flex-direction: column;
-        align-items: flex-start;
+    .calendar-day-new {
+        min-height: 26px;
+        font-size: 0.6em;
     }
     
-    .modal-footer-new {
-        flex-direction: column;
+    .legend-item-new {
+        font-size: 0.5em;
     }
     
-    .btn-cancel, .btn-confirm {
-        width: 100%;
-        justify-content: center;
+    .day-header {
+        font-size: 0.55em;
     }
 }
 

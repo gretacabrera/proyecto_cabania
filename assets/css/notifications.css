@@ -1,0 +1,123 @@
+/* Estilos para notificaciones en tiempo real */
+
+/* Badge de notificaciones */
+#notifications-badge {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* Dropdown de notificaciones */
+.notification-item {
+    padding: 12px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+    cursor: pointer;
+}
+
+.notification-icon {
+    font-size: 1rem;
+}
+
+.notification-content {
+    line-height: 1.4;
+}
+
+.notification-content strong {
+    font-size: 0.95rem;
+    color: #2c3e50;
+}
+
+.notification-content small {
+    font-size: 0.85rem;
+}
+
+/* Toast de notificaciones */
+.notification-toast {
+    animation: slideInRight 0.3s ease-out;
+    max-width: 400px;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.notification-toast .alert-link {
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.notification-toast .alert-link:hover {
+    text-decoration: underline;
+}
+
+/* Colores personalizados para tipos de notificación */
+.bg-info {
+    background-color: #17a2b8 !important;
+}
+
+.bg-success {
+    background-color: #28a745 !important;
+}
+
+.bg-warning {
+    background-color: #ffc107 !important;
+}
+
+.bg-danger {
+    background-color: #dc3545 !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .notification-toast {
+        top: 60px !important;
+        right: 10px !important;
+        left: 10px !important;
+        max-width: none;
+    }
+    
+    .dropdown-menu {
+        max-height: 400px !important;
+    }
+}
+
+/* Scroll personalizado para lista de notificaciones */
+#notifications-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+#notifications-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+#notifications-list::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+
+#notifications-list::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}

@@ -91,7 +91,7 @@
                                                 <?php endif; ?>
                                                 
                                                 <div class="d-flex justify-content-between align-items-center">
-                                                    <span class="badge bg-success fs-6">
+                                                    <span class="fw-bold text-success fs-6">
                                                         $<?= number_format($servicio['servicio_precio'], 0, ',', '.') ?>
                                                     </span>
                                                     
@@ -155,10 +155,10 @@
                         <!-- Botones de Acción -->
                         <div class="row mt-4">
                             <div class="col-md-4">
-                                <a href="/reservas/confirmar" class="btn btn-outline-secondary w-100">
+                                <button type="button" onclick="volverAConfirmar()" class="btn btn-outline-secondary w-100">
                                     <i class="fas fa-arrow-left me-1"></i>
                                     Volver
-                                </a>
+                                </button>
                             </div>
                             <div class="col-md-4">
                                 <button type="submit" name="accion" value="omitir" class="btn btn-outline-primary w-100">
@@ -173,6 +173,13 @@
                                 </button>
                             </div>
                         </div>
+                    </form>
+                    
+                    <!-- Formulario oculto para volver a confirmar con los datos -->
+                    <form id="formVolver" method="GET" action="<?= $this->url('/reservas/confirmar') ?>" style="display: none;">
+                        <input type="hidden" name="cabania_id" value="<?= $reserva['cabania_id'] ?>">
+                        <input type="hidden" name="fecha_inicio" value="<?= $reserva['fecha_ingreso'] ?>">
+                        <input type="hidden" name="fecha_fin" value="<?= $reserva['fecha_salida'] ?>">
                     </form>
                 </div>
             </div>
@@ -334,4 +341,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+// Función para volver a confirmar con los datos
+function volverAConfirmar() {
+    document.getElementById('formVolver').submit();
+}
 </script>

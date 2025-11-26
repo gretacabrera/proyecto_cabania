@@ -754,3 +754,239 @@
         grid-template-columns: 1fr;
     }
 }
+/* ===================================
+   CONSUMOS GRID (HUÉSPED DASHBOARD)
+   =================================== */
+
+.consumos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+
+.consumo-card {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    padding: 1.5rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.consumo-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.consumo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    gap: 0.5rem;
+}
+
+.consumo-header h4 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #2c3e50;
+    flex: 1;
+}
+
+.consumo-tipo {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+
+.consumo-tipo.tipo-producto {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.consumo-tipo.tipo-servicio {
+    background: #f3e5f5;
+    color: #6a1b9a;
+}
+
+.consumo-details p {
+    margin: 0.5rem 0;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.consumo-details i {
+    width: 16px;
+    color: #3498db;
+}
+
+.consumo-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #dee2e6;
+}
+
+.consumo-estado {
+    font-size: 0.85rem;
+}
+
+.estado-entregado {
+    background: #d4edda;
+    color: #155724;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.estado-cancelado {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.consumo-total {
+    font-size: 1.1rem;
+    color: #28a745;
+    font-weight: 600;
+}
+
+/* Responsive consumos grid */
+@media (max-width: 768px) {
+    .consumos-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ===================================
+   COMENTARIOS GRID (HUÉSPED DASHBOARD)
+   =================================== */
+
+.comentarios-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+
+.comentario-card {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    padding: 1.5rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.comentario-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.comentario-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    gap: 1rem;
+}
+
+.comentario-cabania {
+    flex: 1;
+}
+
+.comentario-cabania h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.comentario-cabania h4 i {
+    color: #3498db;
+}
+
+.comentario-fecha {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.comentario-puntuacion {
+    display: flex;
+    gap: 0.25rem;
+    font-size: 1rem;
+}
+
+.comentario-puntuacion .text-warning {
+    color: #ffc107 !important;
+}
+
+.comentario-puntuacion .text-muted {
+    color: #dee2e6 !important;
+}
+
+.comentario-body {
+    margin: 1rem 0;
+    padding: 1rem;
+    background: white;
+    border-radius: 8px;
+    border-left: 3px solid #3498db;
+}
+
+.comentario-texto {
+    margin: 0;
+    color: #495057;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.comentario-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 1px solid #dee2e6;
+}
+
+.comentario-fecha-comentario {
+    font-size: 0.85rem;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.comentario-fecha-comentario i {
+    color: #3498db;
+}
+
+/* Responsive comentarios grid */
+@media (max-width: 768px) {
+    .comentarios-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .comentario-header {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .comentario-puntuacion {
+        align-self: flex-start;
+    }
+}

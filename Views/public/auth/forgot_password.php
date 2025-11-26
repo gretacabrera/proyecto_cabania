@@ -6,8 +6,8 @@
 ?>
 
 <form method="POST" action="<?= url('/auth/forgot-password') ?>" class="modern-form" id="forgotPasswordForm">
-    <div class="form-group">
-        <label for="email">
+    <div class="form-group mb-3">
+        <label for="email" class="mb-2">
             <i class="fas fa-envelope"></i>
             Email
         </label>
@@ -15,35 +15,35 @@
             type="email" 
             id="email" 
             name="email" 
-            class="form-control"
+            class="form-control form-control-lg"
             placeholder="Ingrese su email registrado"
             required 
             autocomplete="email"
         >
-        <small class="form-text text-muted">
+        <small class="form-text text-muted mt-2 d-block">
             Le enviaremos un enlace seguro para restablecer su contraseña
         </small>
     </div>
 
-    <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+    <button type="submit" class="btn btn-primary btn-lg w-100" id="submitBtn">
         <i class="fas fa-paper-plane"></i>
         Enviar Instrucciones
     </button>
 </form>
 
-<div class="auth-divider">
+<div class="auth-divider my-3">
     <span>o</span>
 </div>
 
 <div class="auth-alternative">
-    <p>¿Recordó su contraseña?</p>
-    <a href="<?= url('/auth/login') ?>" class="btn btn-outline-primary">
+    <p class="mb-2">¿Recordó su contraseña?</p>
+    <a href="<?= url('/auth/login') ?>" class="btn btn-outline-primary w-100">
         <i class="fas fa-sign-in-alt"></i>
         Volver al Login
     </a>
 </div>
 
-<div class="auth-help">
+<div class="auth-help mt-3 text-center">
     <a href="<?= url('/auth/register') ?>" class="text-muted">
         <i class="fas fa-user-plus"></i>
         ¿No tiene cuenta? Regístrese aquí
