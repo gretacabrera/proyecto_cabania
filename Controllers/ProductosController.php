@@ -7,6 +7,7 @@ use App\Models\Producto;
 use App\Models\Categoria;
 use App\Models\Marca;
 use App\Models\EstadoProducto;
+use App\Models\Proveedor;
 
 /**
  * Controlador para la gestión de productos
@@ -17,6 +18,7 @@ class ProductosController extends Controller
     protected $categoriaModel;
     protected $marcaModel;
     protected $estadoProductoModel;
+    protected $proveedorModel;
 
     public function __construct()
     {
@@ -25,6 +27,7 @@ class ProductosController extends Controller
         $this->categoriaModel = new Categoria();
         $this->marcaModel = new Marca();
         $this->estadoProductoModel = new EstadoProducto();
+        $this->proveedorModel = new Proveedor();
     }
 
     /**
@@ -59,6 +62,7 @@ class ProductosController extends Controller
         $categorias = $this->categoriaModel->findAll('categoria_estado = 1', 'categoria_descripcion ASC');
         $marcas = $this->marcaModel->findAll('marca_estado = 1', 'marca_descripcion ASC');
         $estadosProducto = $this->estadoProductoModel->findAll('estadoproducto_estado = 1', 'estadoproducto_descripcion ASC');
+        $proveedores = $this->proveedorModel->getProveedoresActivos();
 
         $data = [
             'title' => 'Gestión de Productos',
@@ -68,6 +72,7 @@ class ProductosController extends Controller
             'categorias' => $categorias,
             'marcas' => $marcas,
             'estadosProducto' => $estadosProducto,
+            'proveedores' => $proveedores,
             'isAdminArea' => true
         ];
 
@@ -562,6 +567,347 @@ class ProductosController extends Controller
     }
 
 
+
+    /**
+     * Exportar plantilla de cotización a Excel
+     */
+    public function exportarCotizacion()
+    {
+        $this->requirePermission('productos');
+
+        try {
+            // Aplicar los mismos filtros de la consulta actual
+            $filters = [
+                'producto_nombre' => $this->get('producto_nombre'),
+                'rela_categoria' => $this->get('rela_categoria'),
+                'rela_marca' => $this->get('rela_marca'),
+                'rela_estadoproducto' => $this->get('rela_estadoproducto'),
+                'precio_min' => $this->get('precio_min'),
+                'precio_max' => $this->get('precio_max'),
+                'stock_min' => $this->get('stock_min')
+            ];
+            
+            $result = $this->productoModel->getAllWithDetailsForExport($filters);
+            $productos = $result['data'];
+
+            if (empty($productos)) {
+                $this->redirect('/productos', 'No hay productos disponibles para cotizar', 'error');
+                return;
+            }
+
+            // Crear archivo Excel
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+
+            // Título
+            $sheet->mergeCells('A1:C1');
+            $sheet->setCellValue('A1', 'SOLICITUD DE COTIZACIÓN DE PRODUCTOS');
+            $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+            $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+            // Información
+            $sheet->setCellValue('A2', 'Fecha: ' . date('d/m/Y H:i'));
+            $sheet->setCellValue('A3', 'Sistema de Gestión de Cabañas');
+            
+            // Instrucciones al principio
+            $sheet->mergeCells('A5:C5');
+            $sheet->setCellValue('A5', 'INSTRUCCIONES:');
+            $sheet->getStyle('A5')->getFont()->setBold(true)->setSize(10);
+            
+            $sheet->mergeCells('A6:C6');
+            $sheet->setCellValue('A6', '• Complete la columna "Cotización" con el precio unitario de cada producto.');
+            $sheet->getStyle('A6')->getFont()->setSize(9);
+            
+            $sheet->mergeCells('A7:C7');
+            $sheet->setCellValue('A7', '• Deje VACÍA la celda de cotización para los productos que NO estén disponibles.');
+            $sheet->getStyle('A7')->getFont()->setSize(9)->setBold(true)->getColor()->setRGB('FF0000');
+            
+            $sheet->mergeCells('A8:C8');
+            $sheet->setCellValue('A8', '• Una vez completado, devuelva este archivo a nuestro correo de contacto.');
+            $sheet->getStyle('A8')->getFont()->setSize(9);
+            
+            // Encabezados de la tabla (ahora en fila 10)
+            $headers = ['Descripción del producto', 'Marca', 'Cotización'];
+            $sheet->fromArray($headers, null, 'A10');
+            
+            // Estilo encabezados
+            $headerStyle = [
+                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '4472C4']],
+                'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER]
+            ];
+            $sheet->getStyle('A10:C10')->applyFromArray($headerStyle);
+
+            // Datos de productos (ahora empiezan en fila 11)
+            $row = 11;
+            foreach ($productos as $producto) {
+                $sheet->setCellValue('A' . $row, $producto['producto_nombre']);
+                $sheet->setCellValue('B' . $row, $producto['marca_descripcion'] ?? 'Sin marca');
+                $sheet->setCellValue('C' . $row, ''); // Columna vacía para que el proveedor complete
+                $row++;
+            }
+
+            // Ajustar anchos de columna
+            $sheet->getColumnDimension('A')->setWidth(50);
+            $sheet->getColumnDimension('B')->setWidth(25);
+            $sheet->getColumnDimension('C')->setWidth(20);
+
+            // Bordes para la tabla
+            $styleArray = [
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                        'color' => ['rgb' => '000000']
+                    ]
+                ]
+            ];
+            $lastRow = $row - 1;
+            $sheet->getStyle('A10:C' . $lastRow)->applyFromArray($styleArray);
+
+            // Fondo amarillo claro para columna Cotización
+            $sheet->getStyle('C11:C' . $lastRow)->applyFromArray([
+                'fill' => [
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => 'FFFFCC']
+                ]
+            ]);
+
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            
+            $filename = 'COTIZACION_GENERAL_' . date('Ymd_His') . '.xlsx';
+            $filepath = '../temp/' . $filename;
+            
+            // Crear directorio si no existe
+            if (!file_exists('../temp')) {
+                mkdir('../temp', 0777, true);
+            }
+            
+            $writer->save($filepath);
+
+            // Descargar archivo
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $filename . '"');
+            header('Cache-Control: max-age=0');
+            
+            readfile($filepath);
+            unlink($filepath);
+            exit;
+
+        } catch (\Exception $e) {
+            error_log("Error al exportar plantilla de cotización: " . $e->getMessage());
+            $this->redirect('/productos', 'Error al exportar plantilla: ' . $e->getMessage(), 'error');
+            return;
+        }
+    }
+
+    /**
+     * Enviar plantilla de cotización por email a proveedor
+     */
+    public function enviarCotizacion()
+    {
+        $this->requirePermission('productos');
+
+        if (!$this->isPost()) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+            exit;
+        }
+
+        $id_proveedor = (int) $this->post('proveedor_id');
+        
+        if (!$id_proveedor) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Debe seleccionar un proveedor']);
+            exit;
+        }
+
+        try {
+            // Obtener información del proveedor
+            $proveedor = $this->proveedorModel->getProveedorCompleto($id_proveedor);
+            
+            if (!$proveedor) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Proveedor no encontrado']);
+                exit;
+            }
+
+            $email_proveedor = $proveedor['contacto_correo'] ?? null;
+            
+            if (!$email_proveedor) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'El proveedor no tiene un correo electrónico registrado']);
+                exit;
+            }
+
+            // Aplicar los mismos filtros de la consulta actual
+            $filters = [
+                'producto_nombre' => $this->post('producto_nombre') ?: $this->get('producto_nombre'),
+                'rela_categoria' => $this->post('rela_categoria') ?: $this->get('rela_categoria'),
+                'rela_marca' => $this->post('rela_marca') ?: $this->get('rela_marca'),
+                'rela_estadoproducto' => $this->post('rela_estadoproducto') ?: $this->get('rela_estadoproducto'),
+                'precio_min' => $this->post('precio_min') ?: $this->get('precio_min'),
+                'precio_max' => $this->post('precio_max') ?: $this->get('precio_max'),
+                'stock_min' => $this->post('stock_min') ?: $this->get('stock_min')
+            ];
+            
+            $result = $this->productoModel->getAllWithDetailsForExport($filters);
+            $productos = $result['data'];
+
+            if (empty($productos)) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'No hay productos disponibles para cotizar']);
+                exit;
+            }
+
+            // Crear archivo Excel
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+
+            // Título
+            $sheet->mergeCells('A1:C1');
+            $sheet->setCellValue('A1', 'SOLICITUD DE COTIZACIÓN DE PRODUCTOS');
+            $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+            $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+            // Información
+            $sheet->setCellValue('A2', 'Fecha: ' . date('d/m/Y H:i'));
+            $sheet->setCellValue('A3', 'Proveedor: ' . $proveedor['persona_denominacion']);
+            
+            // Instrucciones al principio
+            $sheet->mergeCells('A5:C5');
+            $sheet->setCellValue('A5', 'INSTRUCCIONES:');
+            $sheet->getStyle('A5')->getFont()->setBold(true)->setSize(10);
+            
+            $sheet->mergeCells('A6:C6');
+            $sheet->setCellValue('A6', '• Complete la columna "Cotización" con el precio unitario de cada producto.');
+            $sheet->getStyle('A6')->getFont()->setSize(9);
+            
+            $sheet->mergeCells('A7:C7');
+            $sheet->setCellValue('A7', '• Deje VACÍA la celda de cotización para los productos que NO estén disponibles.');
+            $sheet->getStyle('A7')->getFont()->setSize(9)->setBold(true)->getColor()->setRGB('FF0000');
+            
+            $sheet->mergeCells('A8:C8');
+            $sheet->setCellValue('A8', '• Una vez completado, devuelva este archivo a nuestro correo de contacto.');
+            $sheet->getStyle('A8')->getFont()->setSize(9);
+            
+            // Encabezados (ahora en fila 10)
+            $headers = ['Descripción del producto', 'Marca', 'Cotización'];
+            $sheet->fromArray($headers, null, 'A10');
+            
+            // Estilo encabezados
+            $headerStyle = [
+                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '4472C4']],
+                'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER]
+            ];
+            $sheet->getStyle('A10:C10')->applyFromArray($headerStyle);
+
+            // Datos (ahora empiezan en fila 11)
+            $row = 11;
+            foreach ($productos as $producto) {
+                $sheet->setCellValue('A' . $row, $producto['producto_nombre']);
+                $sheet->setCellValue('B' . $row, $producto['marca_descripcion'] ?? 'Sin marca');
+                $sheet->setCellValue('C' . $row, ''); // Columna vacía para cotización
+                $row++;
+            }
+
+            // Ajustar anchos
+            $sheet->getColumnDimension('A')->setWidth(50);
+            $sheet->getColumnDimension('B')->setWidth(25);
+            $sheet->getColumnDimension('C')->setWidth(20);
+
+            // Bordes
+            $styleArray = [
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                        'color' => ['rgb' => '000000']
+                    ]
+                ]
+            ];
+            $lastRow = $row - 1;
+            $sheet->getStyle('A10:C' . $lastRow)->applyFromArray($styleArray);
+
+            // Fondo amarillo claro para columna Cotización
+            $sheet->getStyle('C11:C' . $lastRow)->applyFromArray([
+                'fill' => [
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => 'FFFFCC']
+                ]
+            ]);
+
+            // Guardar archivo temporalmente
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            
+            // Nombre de archivo: COTIZACION_<PROVEEDOR>_<FECHA>_<HORA>.xlsx
+            $nombreProveedor = strtoupper(str_replace(' ', '_', $proveedor['persona_denominacion']));
+            $filename = 'COTIZACION_' . $nombreProveedor . '_' . date('Ymd_His') . '.xlsx';
+            $filepath = '../temp/' . $filename;
+            
+            if (!file_exists('../temp')) {
+                mkdir('../temp', 0777, true);
+            }
+            
+            $writer->save($filepath);
+
+            // Enviar email
+            $emailService = new \App\Core\EmailService();
+            
+            $asunto = 'Solicitud de Cotización de Productos - ' . date('d/m/Y');
+            $mensaje = '
+                <h2>Solicitud de Cotización</h2>
+                <p>Estimado/a proveedor/a,</p>
+                <p>Adjuntamos plantilla de cotización con el listado de productos para los cuales solicitamos su mejor oferta de precios.</p>
+                <p>Detalles de la solicitud:</p>
+                <ul>
+                    <li><strong>Fecha:</strong> ' . date('d/m/Y H:i') . '</li>
+                    <li><strong>Total de productos:</strong> ' . count($productos) . '</li>
+                </ul>
+                <p>Por favor, complete los precios solicitados y devuelva el archivo a nuestro correo de contacto.</p>
+                <p>Quedamos a la espera de su respuesta.</p>
+                <p>Saludos cordiales,<br>Sistema de Gestión de Cabañas</p>
+            ';
+
+            $result = $emailService->sendEmailWithAttachment(
+                $email_proveedor,
+                $proveedor['persona_denominacion'],
+                $asunto,
+                $mensaje,
+                '',  // textBody vacío
+                $filepath
+            );
+
+            // Eliminar archivo temporal
+            if (file_exists($filepath)) {
+                unlink($filepath);
+            }
+
+            if ($result['success']) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => true, 
+                    'message' => 'Cotización enviada exitosamente a ' . $proveedor['persona_denominacion']
+                ]);
+                exit;
+            } else {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'Error al enviar el correo electrónico: ' . $result['message']
+                ]);
+                exit;
+            }
+
+        } catch (\Exception $e) {
+            error_log("Error al enviar cotización: " . $e->getMessage());
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false, 
+                'message' => 'Error al enviar cotización: ' . $e->getMessage()
+            ]);
+            exit;
+        }
+    }
 
     /**
      * Obtener texto del estado

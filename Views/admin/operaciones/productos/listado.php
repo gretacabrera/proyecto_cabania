@@ -23,7 +23,7 @@ function getStockBadgeClass($stock) {
                 </div>
                 <div class="col-auto">
                     <a href="<?= url('/productos/create') ?>" class="btn btn-primary btn-sm">
-                        <i class="fas fa-plus me-1"></i>Nuevo Producto
+                        <i class="fas fa-plus me-1"></i> Nuevo Producto
                     </a>
                 </div>
             </div>
@@ -114,6 +114,9 @@ function getStockBadgeClass($stock) {
                             </button>
                             <button type="button" onclick="exportarProductosPDF(event)" class="btn btn-danger btn-sm" title="Exportar a PDF">
                                 <i class="fas fa-file-pdf me-1"></i> PDF
+                            </button>
+                            <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#modalCotizacion" title="Plantilla de Cotización">
+                                <i class="fas fa-file-invoice-dollar me-1"></i> Cotización
                             </button>
                         </div>
                     </div>
@@ -238,13 +241,11 @@ function getStockBadgeClass($stock) {
                                     </td>
                                     <td class="border-0 py-3">
                                         <div class="d-flex align-items-center">
-                                            <i class="fas fa-tag text-info me-2"></i>
                                             <span class="text-dark"><?= htmlspecialchars($producto['categoria_descripcion'] ?? 'Sin categoría') ?></span>
                                         </div>
                                     </td>
                                     <td class="border-0 py-3">
                                         <div class="d-flex align-items-center">
-                                            <i class="fas fa-boxes text-warning me-2"></i>
                                             <span class="text-dark"><?= $producto['producto_stock'] ?></span>
                                         </div>
                                     </td>
@@ -310,6 +311,283 @@ function getStockBadgeClass($stock) {
     </div>
 </div>
 
+<!-- Modal 1: Selección de Acción -->
+<div class="modal" id="modalCotizacion" tabindex="-1" role="dialog" style="display: none;">
+    <div class="modal-dialog" role="document" style="max-width: 370px; width: 370px; max-height: 300px; height: 300px;">
+        <div class="modal-content" style="border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); border: none; width: 100%; height: 100%;">
+            <!-- Header simple -->
+            <div class="modal-header border-0 pb-1 pt-2 px-3 position-relative" style="background: #ffffff;">
+                <h5 class="modal-title w-100 text-left font-weight-normal d-flex align-items-center" style="font-size: 15px; color: #333; font-weight: 400;">
+                    <i class="fas fa-file-invoice-dollar mr-2" style="color: #17a2b8; font-size: 16px;"></i>
+                    Generar Plantilla de Cotizaciones
+                </h5>
+                <button type="button" class="close position-absolute" data-dismiss="modal" style="right: 12px; top: 8px; font-size: 22px; opacity: 0.5; outline: none;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='0.5'">
+                    <span>&times;</span>
+                </button>
+            </div>
+            
+            <!-- Descripción -->
+            <div class="px-3 pb-2 text-left" style="background: #ffffff;">
+                <p class="mb-0 text-muted" style="font-size: 12px; line-height: 1.3; color: #777;">
+                    Seleccione una opción para generar la solicitud de cotización
+                </p>
+            </div>
+            
+            <!-- Body con botones -->
+            <div class="modal-body text-center px-3 pt-2 pb-3" style="background: #ffffff;">
+                <div class="d-flex flex-row justify-content-center align-items-stretch" style="gap: 15px;">
+                    <!-- Botón Excel -->
+                    <button type="button" class="btn btn-cotizacion d-flex flex-column align-items-center justify-content-center" onclick="exportarPlantillaCotizacion()" style="width: 140px; height: 120px; border-radius: 8px; background: #28a745; border: none; transition: all 0.2s ease; color: white; box-shadow: 0 1px 4px rgba(40, 167, 69, 0.3);">
+                        <div class="icon-wrapper mb-2" style="background: rgba(255,255,255,0.2); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-file-excel" style="font-size: 24px;"></i>
+                        </div>
+                        <div class="text-wrapper">
+                            <div style="font-size: 14px; font-weight: 500; line-height: 1.2;">Exportar</div>
+                            <div style="font-size: 13px; opacity: 0.95;">Excel</div>
+                        </div>
+                    </button>
+                    
+                    <!-- Botón Email -->
+                    <button type="button" class="btn btn-cotizacion d-flex flex-column align-items-center justify-content-center" onclick="abrirModalProveedor()" style="width: 140px; height: 120px; border-radius: 8px; background: #007bff; border: none; transition: all 0.2s ease; color: white; box-shadow: 0 1px 4px rgba(0, 123, 255, 0.3);">
+                        <div class="icon-wrapper mb-2" style="background: rgba(255,255,255,0.2); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-envelope" style="font-size: 22px;"></i>
+                        </div>
+                        <div class="text-wrapper">
+                            <div style="font-size: 14px; font-weight: 500; line-height: 1.2;">Enviar por</div>
+                            <div style="font-size: 13px; opacity: 0.95;">Email</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Backdrop personalizado para el modal -->
+<div class="modal-backdrop" id="modalCotizacionBackdrop" style="display: none; background-color: rgba(0, 0, 0, 0.5); position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1040;"></div>
+
+<style>
+/* Estilos para centrado perfecto del modal */
+#modalCotizacion {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    display: none !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 1050 !important;
+}
+
+#modalCotizacion.show {
+    display: flex !important;
+}
+
+#modalCotizacion .modal-dialog {
+    margin: 0 !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+}
+
+/* Efectos hover para botones de cotización */
+.btn-cotizacion:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
+    opacity: 0.95;
+}
+
+.btn-cotizacion:active {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2) !important;
+}
+
+/* Animación de entrada del modal */
+#modalCotizacion.show .modal-content {
+    animation: modalFadeIn 0.2s ease-out;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Responsive para pantallas pequeñas */
+@media (max-width: 576px) {
+    #modalCotizacion .modal-dialog {
+        max-width: 95vw !important;
+    }
+    
+    #modalCotizacion .modal-body .d-flex {
+        flex-direction: column;
+    }
+    
+    .btn-cotizacion {
+        width: 100% !important;
+        max-width: 200px !important;
+        height: 110px !important;
+    }
+}
+
+/* Mejora visual del backdrop */
+#modalCotizacionBackdrop {
+    transition: opacity 0.15s ease;
+}
+
+/* Estilos para modal de proveedores */
+#modalProveedor {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    display: none !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 1050 !important;
+}
+
+#modalProveedor.show {
+    display: flex !important;
+}
+
+#modalProveedor .modal-dialog {
+    margin: 0 !important;
+}
+
+#modalProveedor .list-group-item {
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+#modalProveedor .list-group-item:hover {
+    background-color: #f8f9fa;
+}
+</style>
+
+<script>
+// Función personalizada para mostrar/ocultar modal (estilo SweetAlert)
+function toggleModalCotizacion(show) {
+    const modal = document.getElementById('modalCotizacion');
+    const backdrop = document.getElementById('modalCotizacionBackdrop');
+    
+    if (show) {
+        backdrop.style.display = 'block';
+        modal.style.display = 'block';
+        setTimeout(() => {
+            modal.classList.add('show');
+            modal.style.paddingRight = '0px';
+        }, 10);
+    } else {
+        modal.classList.remove('show');
+        setTimeout(() => {
+            modal.style.display = 'none';
+            backdrop.style.display = 'none';
+        }, 150);
+    }
+}
+
+// Reemplazar el comportamiento del botón de abrir modal
+document.addEventListener('DOMContentLoaded', function() {
+    // Interceptar el clic en el botón "Plantilla de Cotización"
+    const btnCotizacion = document.querySelector('[data-target="#modalCotizacion"]');
+    if (btnCotizacion) {
+        btnCotizacion.removeAttribute('data-toggle');
+        btnCotizacion.removeAttribute('data-target');
+        btnCotizacion.addEventListener('click', function(e) {
+            e.preventDefault();
+            toggleModalCotizacion(true);
+        });
+    }
+    
+    // Interceptar el clic en el botón de cerrar
+    document.querySelectorAll('#modalCotizacion [data-dismiss="modal"]').forEach(btn => {
+        btn.removeAttribute('data-dismiss');
+        btn.addEventListener('click', function() {
+            toggleModalCotizacion(false);
+        });
+    });
+    
+    // Cerrar al hacer clic en el backdrop
+    document.getElementById('modalCotizacionBackdrop').addEventListener('click', function() {
+        toggleModalCotizacion(false);
+    });
+});
+</script>
+
+<!-- Backdrop para modal de proveedores -->
+<div class="modal-backdrop" id="modalProveedorBackdrop" style="display: none; background-color: rgba(0, 0, 0, 0.5); position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1040;"></div>
+
+<!-- Modal 2: Selección de Proveedor -->
+<div class="modal" id="modalProveedor" tabindex="-1" role="dialog" style="display: none;">
+    <div class="modal-dialog" role="document" style="max-width: 450px; width: 450px;">
+        <div class="modal-content" style="border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); border: none; width: 100%;">
+            <div class="modal-header py-2 px-3">
+                <h5 class="modal-title" style="font-size: 15px;">
+                    <i class="fas fa-building mr-2"></i>Seleccionar Proveedor
+                </h5>
+                <button type="button" class="close" onclick="toggleModalProveedor(false)" style="font-size: 22px; opacity: 0.8;">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-3">
+                <div class="form-group mb-3">
+                    <label for="buscar_proveedor" class="small mb-1">
+                        <i class="fas fa-search mr-1"></i>Buscar por CUIT o Denominación
+                    </label>
+                    <input type="text" class="form-control form-control-sm" id="buscar_proveedor" placeholder="Escriba para buscar...">
+                </div>
+                
+                <div id="lista_proveedores" class="list-group" style="max-height: 300px; overflow-y: auto;">
+                    <?php foreach ($proveedores as $proveedor): ?>
+                        <a href="javascript:void(0)" 
+                           class="list-group-item list-group-item-action proveedor-item py-2 px-3"
+                           data-id="<?= $proveedor['id_proveedor'] ?>"
+                           data-denominacion="<?= htmlspecialchars($proveedor['persona_denominacion']) ?>"
+                           data-cuit="<?= htmlspecialchars($proveedor['personajuridica_cuit'] ?? '') ?>"
+                           data-email="<?= htmlspecialchars($proveedor['contacto_correo'] ?? '') ?>"
+                           onclick="seleccionarProveedor(this)"
+                           style="display: none;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong style="font-size: 13px;"><?= htmlspecialchars($proveedor['persona_denominacion']) ?></strong>
+                                    <?php if (!empty($proveedor['personajuridica_cuit'])): ?>
+                                        <br><small class="text-muted" style="font-size: 11px;">CUIT: <?= htmlspecialchars($proveedor['personajuridica_cuit']) ?></small>
+                                    <?php endif; ?>
+                                </div>
+                                <?php if (!empty($proveedor['contacto_correo'])): ?>
+                                    <i class="fas fa-check-circle text-success" title="Tiene email" style="font-size: 16px;"></i>
+                                <?php else: ?>
+                                    <i class="fas fa-exclamation-triangle text-warning" title="Sin email" style="font-size: 16px;"></i>
+                                <?php endif; ?>
+                            </div>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+                
+                <!-- Paginación -->
+                <div class="d-flex justify-content-between align-items-center mt-3 px-2">
+                    <small class="text-muted" id="proveedor-info"></small>
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-primary" id="proveedor-prev" onclick="cambiarPaginaProveedor(-1)">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" id="proveedor-next" onclick="cambiarPaginaProveedor(1)">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 // Función para cambiar estado del producto
 function cambiarEstadoProducto(id, nuevoEstado, nombreProducto) {
@@ -369,8 +647,195 @@ function exportarProductosPDF(event) {
     window.location.href = '<?= url('/productos/exportar-pdf') ?>?' + params.toString();
 }
 
+// Función para exportar plantilla de cotización
+function exportarPlantillaCotizacion() {
+    toggleModalCotizacion(false);
+    const params = new URLSearchParams(window.location.search);
+    window.location.href = '<?= url('/productos/exportar-cotizacion') ?>?' + params.toString();
+}
+
+// Función para abrir modal de selección de proveedor
+function abrirModalProveedor() {
+    toggleModalCotizacion(false);
+    setTimeout(() => {
+        toggleModalProveedor(true);
+    }, 300);
+}
+
+// Variables para paginación de proveedores
+let proveedoresFiltrados = [];
+let paginaActualProveedor = 1;
+const itemsPorPaginaProveedor = 5;
+
+// Función para mostrar/ocultar modal de proveedores
+function toggleModalProveedor(show) {
+    const modal = document.getElementById('modalProveedor');
+    const backdrop = document.getElementById('modalProveedorBackdrop');
+    
+    if (show) {
+        backdrop.style.display = 'block';
+        modal.style.display = 'block';
+        setTimeout(() => {
+            modal.classList.add('show');
+        }, 10);
+        
+        // Resetear búsqueda y mostrar todos los proveedores
+        document.getElementById('buscar_proveedor').value = '';
+        filtrarProveedores();
+        
+        // Vincular evento de búsqueda cuando se abre el modal
+        const searchInput = document.getElementById('buscar_proveedor');
+        searchInput.oninput = function() {
+            filtrarProveedores();
+        };
+    } else {
+        modal.classList.remove('show');
+        setTimeout(() => {
+            modal.style.display = 'none';
+            backdrop.style.display = 'none';
+        }, 150);
+    }
+}
+
+// Función para filtrar proveedores
+function filtrarProveedores() {
+    const searchInput = document.getElementById('buscar_proveedor');
+    const searchText = searchInput ? searchInput.value.toLowerCase() : '';
+    proveedoresFiltrados = [];
+    
+    const items = document.querySelectorAll('.proveedor-item');
+    items.forEach(function(item) {
+        const denominacion = item.getAttribute('data-denominacion').toLowerCase();
+        const cuit = item.getAttribute('data-cuit').toLowerCase();
+        
+        if (denominacion.includes(searchText) || cuit.includes(searchText)) {
+            proveedoresFiltrados.push(item);
+        }
+    });
+    
+    paginaActualProveedor = 1;
+    mostrarPaginaProveedor();
+}
+
+// Función para mostrar página actual de proveedores
+function mostrarPaginaProveedor() {
+    // Ocultar todos
+    const items = document.querySelectorAll('.proveedor-item');
+    items.forEach(item => item.style.display = 'none');
+    
+    const inicio = (paginaActualProveedor - 1) * itemsPorPaginaProveedor;
+    const fin = inicio + itemsPorPaginaProveedor;
+    const totalPaginas = Math.ceil(proveedoresFiltrados.length / itemsPorPaginaProveedor);
+    
+    // Mostrar items de la página actual
+    for (let i = inicio; i < fin && i < proveedoresFiltrados.length; i++) {
+        proveedoresFiltrados[i].style.display = 'block';
+    }
+    
+    // Actualizar información
+    const total = proveedoresFiltrados.length;
+    const mostrando = Math.min(fin, total) - inicio;
+    const infoElement = document.getElementById('proveedor-info');
+    if (infoElement) {
+        infoElement.textContent = `Mostrando ${mostrando} de ${total}`;
+    }
+    
+    // Actualizar botones
+    const btnPrev = document.getElementById('proveedor-prev');
+    const btnNext = document.getElementById('proveedor-next');
+    if (btnPrev) btnPrev.disabled = paginaActualProveedor === 1;
+    if (btnNext) btnNext.disabled = paginaActualProveedor >= totalPaginas;
+}
+
+// Función para cambiar de página
+function cambiarPaginaProveedor(direccion) {
+    paginaActualProveedor += direccion;
+    mostrarPaginaProveedor();
+}
+
+// Función de búsqueda en tiempo real de proveedores
+$(document).ready(function() {
+    // Cerrar modal al hacer clic en el backdrop
+    $('#modalProveedorBackdrop').on('click', function() {
+        toggleModalProveedor(false);
+    });
+});
+
+// Función para seleccionar proveedor y enviar cotización
+function seleccionarProveedor(element) {
+    const proveedorId = $(element).data('id');
+    const denominacion = $(element).data('denominacion');
+    const email = $(element).data('email');
+    
+    // Verificar si tiene email
+    if (!email || email === '') {
+        Swal.fire({
+            title: 'Proveedor sin email',
+            text: 'El proveedor seleccionado no tiene un correo electrónico registrado.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Exportar Excel',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#28a745'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                toggleModalProveedor(false);
+                exportarPlantillaCotizacion();
+            }
+        });
+        return;
+    }
+    
+    // Confirmar envío
+    Swal.fire({
+        title: '¿Enviar cotización?',
+        html: `Se enviará la plantilla de cotización a:<br><strong>${denominacion}</strong><br>${email}`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Enviar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#007bff'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            enviarCotizacionEmail(proveedorId, denominacion);
+        }
+    });
+}
+
+// Función para enviar cotización por email
+function enviarCotizacionEmail(proveedorId, denominacion) {
+    Swal.fire({
+        title: 'Enviando cotización...',
+        text: 'Por favor espere',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    // Obtener los parámetros de filtro actuales de la URL
+    const params = new URLSearchParams(window.location.search);
+    params.append('proveedor_id', proveedorId);
+    
+    fetch('<?= url('/productos/enviar-cotizacion') ?>', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: params.toString()
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            toggleModalProveedor(false);
+            Swal.fire('¡Éxito!', data.message, 'success');
+        } else {
+            Swal.fire('Error', data.message, 'error');
+        }
+    })
+    .catch(error => {
+        Swal.fire('Error', 'Ocurrió un error al enviar la cotización', 'error');
+    });
+}
 
 </script>
-
-
-?>

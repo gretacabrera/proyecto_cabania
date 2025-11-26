@@ -128,6 +128,11 @@ class Producto extends Model
         $where = "1=1";
         $params = [];
         
+        // Filtro especial para cotizaciones (solo productos activos: disponible, stock mínimo, sin stock)
+        if (isset($filters['activos_para_cotizacion']) && $filters['activos_para_cotizacion'] === true) {
+            $where .= " AND p.rela_estadoproducto IN (1, 2, 3)";
+        }
+        
         // Aplicar los mismos filtros que getWithDetails
         if (!empty($filters['producto_nombre'])) {
             $where .= " AND p.producto_nombre LIKE ?";

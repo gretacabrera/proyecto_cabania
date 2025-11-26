@@ -137,6 +137,17 @@ class Application
         $this->router->post('/ubicaciones/{id}/restore', 'UbicacionesController@restore');
         $this->router->post('/ubicaciones/{id}/estado', 'UbicacionesController@cambiarEstado');
 
+        // Rutas de Proveedores
+        $this->router->get('/proveedores', 'ProveedoresController@index');
+        $this->router->any('/proveedores/create', 'ProveedoresController@create');
+        $this->router->get('/proveedores/exportar', 'ProveedoresController@exportar');
+        $this->router->get('/proveedores/exportar-pdf', 'ProveedoresController@exportarPdf');
+        $this->router->get('/proveedores/{id}', 'ProveedoresController@show');
+        $this->router->any('/proveedores/{id}/edit', 'ProveedoresController@edit');
+        $this->router->post('/proveedores/{id}/delete', 'ProveedoresController@delete');
+        $this->router->post('/proveedores/{id}/restore', 'ProveedoresController@restore');
+        $this->router->post('/proveedores/{id}/estado', 'ProveedoresController@cambiarEstado');
+
         // Rutas de Parámetros Generales
         $this->router->get('/parametrosgenerales', 'ParametrosGeneralesController@index');
         $this->router->any('/parametrosgenerales/create', 'ParametrosGeneralesController@create');
@@ -270,6 +281,8 @@ class Application
         $this->router->any('/productos/create', 'ProductosController@create');
         $this->router->get('/productos/exportar', 'ProductosController@exportar');
         $this->router->get('/productos/exportar-pdf', 'ProductosController@exportarPdf');
+        $this->router->get('/productos/exportar-cotizacion', 'ProductosController@exportarCotizacion');
+        $this->router->post('/productos/enviar-cotizacion', 'ProductosController@enviarCotizacion');
         $this->router->get('/productos/{id}', 'ProductosController@show');
         $this->router->any('/productos/{id}/edit', 'ProductosController@edit');
         $this->router->post('/productos/{id}/delete', 'ProductosController@delete');

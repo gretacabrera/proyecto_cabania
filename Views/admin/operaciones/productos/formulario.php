@@ -41,7 +41,7 @@ $isEdit = isset($producto) && !empty($producto);
 
                         <div class="row">
                             <!-- Nombre -->
-                            <div class="col-md-8">
+                            <div class="col-md-12">
                                 <div class="form-group">
                                     <label for="producto_nombre" class="required">
                                         <i class="fas fa-tag"></i> Nombre del Producto
@@ -49,19 +49,6 @@ $isEdit = isset($producto) && !empty($producto);
                                     <input type="text" class="form-control" id="producto_nombre" name="producto_nombre" 
                                            value="<?= htmlspecialchars($producto['producto_nombre'] ?? '') ?>"
                                            required maxlength="100" placeholder="Nombre completo del producto">
-                                    <div class="invalid-feedback"></div>
-                                </div>
-                            </div>
-
-                            <!-- Stock -->
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label for="producto_stock" class="required">
-                                        <i class="fas fa-boxes"></i> Stock
-                                    </label>
-                                    <input type="number" class="form-control" id="producto_stock" name="producto_stock" 
-                                           value="<?= $producto['producto_stock'] ?? '0' ?>"
-                                           required min="0" max="9999" placeholder="0">
                                     <div class="invalid-feedback"></div>
                                 </div>
                             </div>

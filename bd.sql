@@ -1270,7 +1270,7 @@ DROP TABLE IF EXISTS `personajuridica`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `personajuridica` (
   `id_personajuridica` int NOT NULL AUTO_INCREMENT,
-  `personajuridica_cuit` varchar(10) NOT NULL,
+  `personajuridica_cuit` varchar(11) NOT NULL COMMENT 'CUIT de 11 dígitos sin guiones',
   PRIMARY KEY (`id_personajuridica`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -1330,10 +1330,11 @@ DROP TABLE IF EXISTS `proveedor`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `proveedor` (
   `id_proveedor` int NOT NULL AUTO_INCREMENT,
-  `proveedor_nombre` varchar(250) NOT NULL,
-  `proveedor_cuilcuit` varchar(11) NOT NULL,
+  `rela_persona` int NOT NULL,
   `proveedor_estado` int NOT NULL DEFAULT '1',
-  PRIMARY KEY (`id_proveedor`)
+  PRIMARY KEY (`id_proveedor`),
+  KEY `fk_proveedor_persona1` (`rela_persona`),
+  CONSTRAINT `fk_proveedor_persona1` FOREIGN KEY (`rela_persona`) REFERENCES `persona` (`id_persona`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -1761,4 +1762,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-26  1:59:07
+-- Dump completed on 2025-11-26  3:28:43
