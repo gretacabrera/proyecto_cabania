@@ -587,6 +587,11 @@ class ProductosController extends Controller
                 'stock_min' => $this->get('stock_min')
             ];
             
+            // Forzar exclusión de productos de baja (estado 4)
+            if (empty($filters['rela_estadoproducto'])) {
+                $filters['excluir_baja'] = true;
+            }
+            
             $result = $this->productoModel->getAllWithDetailsForExport($filters);
             $productos = $result['data'];
 

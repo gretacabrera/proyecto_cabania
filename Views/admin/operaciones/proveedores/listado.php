@@ -224,6 +224,16 @@
                                                title="Editar">
                                                 <i class="fas fa-edit"></i>
                                             </a>
+                                            <a href="<?= url('/cotizaciones?rela_proveedor=' . $proveedor['id_proveedor']) ?>"
+                                               class="btn btn-outline-info btn-sm"
+                                               title="Ver Cotizaciones">
+                                                <i class="fas fa-file-invoice-dollar"></i>
+                                            </a>
+                                            <button class="btn btn-outline-secondary btn-sm"
+                                                    onclick="abrirModalImportarCotizaciones(<?= $proveedor['id_proveedor'] ?>, '<?= addslashes($proveedor['persona_denominacion']) ?>')"
+                                                    title="Importar Cotizaciones">
+                                                <i class="fas fa-file-upload"></i>
+                                            </button>
                                             <?php if ($proveedor['proveedor_estado'] == 1): ?>
                                                 <button class="btn btn-outline-danger btn-sm"
                                                         onclick="cambiarEstadoProveedor(<?= $proveedor['id_proveedor'] ?>, 0, '<?= addslashes($proveedor['persona_denominacion']) ?>')"
@@ -313,4 +323,97 @@ function exportarProveedoresPDF(event) {
     const params = new URLSearchParams(window.location.search);
     window.location.href = `<?= url('/proveedores/exportar-pdf') ?>?${params.toString()}`;
 }
+
+function abrirModalImportarCotizaciones(proveedorId, proveedorNombre) {
+    Swal.fire({
+        title: 'Importar Cotizaciones',
+        html: `
+            <p class="mb-3">Proveedor: <strong>${proveedorNombre}</strong></p>
+            <input type="file" id="archivo_cotizaciones" class="form-control" accept=".xlsx,.xls" />
+            <div class="alert alert-info mt-3 small text-start">
+                <strong>Instrucciones:</strong>
+                <ul class="mb-0 ps-3">
+                    <li>Utilice la plantilla de cotizaciones provista</li>
+                    <li>Las filas con datos empiezan desde la fila 11</li>
+                    <li><strong>Columna A:</strong> Nombre del producto</li>
+                    <li><strong>Columna B:</strong> Marca del producto</li>
+                    <li><strong>Columna C:</strong> Monto de la cotización</li>
+                    <li>Si la columna C está vacía, la fila se ignora</li>
+                    <li>El sistema buscará productos por nombre + marca para mayor precisión</li>
+                </ul>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Importar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#28a745',
+        preConfirm: () => {
+            const archivo = document.getElementById('archivo_cotizaciones').files[0];
+            if (!archivo) {
+                Swal.showValidationMessage('Debe seleccionar un archivo');
+                return false;
+            }
+            return archivo;
+        }
+    }).then((result) => {
+        if (result.isConfirmed && result.value) {
+            const formData = new FormData();
+            formData.append('archivo_cotizaciones', result.value);
+            formData.append('proveedor_id', proveedorId);
+
+            Swal.fire({
+                title: 'Procesando...',
+                text: 'Importando cotizaciones, por favor espere',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            fetch('<?= url('/cotizaciones/importar') ?>', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Respuesta del servidor:', data);
+                
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Importación exitosa!',
+                        html: data.message,
+                        confirmButtonText: 'Aceptar',
+                        width: '500px'
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error en la importación',
+                        text: data.message,
+                        confirmButtonText: 'Aceptar'
+                    });
+                }
+                
+                // Mostrar errores en consola si existen
+                if (data.errores_detalle && data.errores_detalle.length > 0) {
+                    console.warn('Errores encontrados durante la importación:');
+                    data.errores_detalle.forEach((error, index) => {
+                        console.warn(`${index + 1}. ${error}`);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error en la petición:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Hubo un problema al importar las cotizaciones',
+                    confirmButtonText: 'Aceptar'
+                });
+            });
+        }
+    });
+}
 </script>
+

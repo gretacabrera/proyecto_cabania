@@ -148,6 +148,22 @@ class Application
         $this->router->post('/proveedores/{id}/restore', 'ProveedoresController@restore');
         $this->router->post('/proveedores/{id}/estado', 'ProveedoresController@cambiarEstado');
 
+        // Rutas de Cotizaciones
+        $this->router->get('/cotizaciones', 'CotizacionesController@index');
+        $this->router->any('/cotizaciones/create', 'CotizacionesController@create');
+        $this->router->get('/cotizaciones/exportar', 'CotizacionesController@exportar');
+        $this->router->get('/cotizaciones/exportar-pdf', 'CotizacionesController@exportarPdf');
+        $this->router->get('/cotizaciones/historial', 'CotizacionesController@historial');
+        $this->router->get('/cotizaciones/historial/exportar', 'CotizacionesController@exportarHistorial');
+        $this->router->get('/cotizaciones/historial/exportar-pdf', 'CotizacionesController@exportarHistorialPdf');
+        $this->router->post('/cotizaciones/importar', 'CotizacionesController@importarCotizaciones');
+        $this->router->get('/cotizaciones/{id}', 'CotizacionesController@show');
+        $this->router->get('/cotizaciones/{id}/recotizar', 'CotizacionesController@recotizar');
+        $this->router->any('/cotizaciones/{id}/edit', 'CotizacionesController@edit');
+        $this->router->post('/cotizaciones/{id}/delete', 'CotizacionesController@delete');
+        $this->router->post('/cotizaciones/{id}/restore', 'CotizacionesController@restore');
+        $this->router->post('/cotizaciones/{id}/estado', 'CotizacionesController@cambiarEstado');
+
         // Rutas de Parámetros Generales
         $this->router->get('/parametrosgenerales', 'ParametrosGeneralesController@index');
         $this->router->any('/parametrosgenerales/create', 'ParametrosGeneralesController@create');

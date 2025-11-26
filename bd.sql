@@ -403,7 +403,7 @@ CREATE TABLE `contacto` (
   KEY `fk_contacto_tipocontacto1_idx` (`rela_tipocontacto`),
   CONSTRAINT `fk_contacto_persona1` FOREIGN KEY (`rela_persona`) REFERENCES `persona` (`id_persona`),
   CONSTRAINT `fk_contacto_tipocontacto1` FOREIGN KEY (`rela_tipocontacto`) REFERENCES `tipocontacto` (`id_tipocontacto`)
-) ENGINE=InnoDB AUTO_INCREMENT=2106 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=2108 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -466,7 +466,7 @@ CREATE TABLE `cotizacion` (
   KEY `fk_cotizacion_producto_idx` (`rela_producto`),
   CONSTRAINT `fk_cotizacion_producto` FOREIGN KEY (`rela_producto`) REFERENCES `producto` (`id_producto`),
   CONSTRAINT `fk_cotizacion_proveedor` FOREIGN KEY (`rela_proveedor`) REFERENCES `proveedor` (`id_proveedor`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=78 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -989,7 +989,7 @@ CREATE TABLE `modulo` (
   PRIMARY KEY (`id_modulo`),
   KEY `fk_modulo_menu1_idx` (`rela_menu`),
   CONSTRAINT `fk_modulo_menu1` FOREIGN KEY (`rela_menu`) REFERENCES `menu` (`id_menu`)
-) ENGINE=InnoDB AUTO_INCREMENT=83 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=84 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -998,7 +998,7 @@ CREATE TABLE `modulo` (
 
 LOCK TABLES `modulo` WRITE;
 /*!40000 ALTER TABLE `modulo` DISABLE KEYS */;
-INSERT INTO `modulo` VALUES (4,'Productos','productos',1,4),(5,'Reservas','reservas',1,4),(6,'Usuarios','usuarios',1,3),(33,'Modulos','modulos',1,3),(34,'Perfiles','perfiles',1,3),(35,'Marcas','marcas',1,1),(36,'Categorias','categorias',1,1),(37,'Estados de Reservas','estadosreservas',1,1),(38,'Estados de Personas','estadospersonas',1,1),(39,'Tipos de Contactos','tiposcontactos',1,1),(40,'Tipos de Servicios','tiposservicios',1,1),(42,'Métodos de Pago','metodosdepago',1,1),(43,'Estados de Productos','estadosproductos',1,1),(44,'Condiciones de Salud','condicionessalud',1,1),(45,'Servicios','servicios',1,4),(46,'Períodos','periodos',1,1),(50,'Cabañas','cabanias',1,4),(51,'Menús','menus',1,3),(52,'Reporte de Consumos por Cabaña','reportes/consumos',1,2),(53,'Reporte de Productos Mas Vendidos por Mes','reportes/ventas-mensuales',1,2),(54,'Reporte de Productos por Categoría','reportes/productos',1,2),(55,'Reporte de Temporadas Altas por Año','reportes/temporadas',1,2),(56,'Reporte de Reservas Por Grupo Etario','reportes/demografico',1,2),(60,'Reporte de Comentarios','reportes/comentarios',1,2),(61,'Niveles de Daño','nivelesdanio',1,1),(62,'Inventario','inventarios',1,4),(63,'Costos por Daño','costosdanio',1,4),(65,'Revisiones','revisiones',1,4),(66,'Cajas','cajas',1,4),(67,'Facturación','facturacion',1,4),(70,'Huespedes','huespedes',1,4),(71,'Consumos','consumos',1,4),(72,'Arqueos de Caja','arqueos',1,4),(73,'Aperturas de Caja','aperturas',1,4),(74,'Movimientos de Caja','movimientos',1,4),(75,'Reimpresión','reimpresiones',1,4),(76,'Cierres de Caja','cierres',1,4),(77,'Proveedores','proveedores',1,4),(78,'Compras','compras',1,4),(79,'Estados de Consumo','estadosconsumo',1,1),(80,'Devoluciones','devoluciones',1,4),(81,'Ubicaciones','ubicaciones',1,1),(82,'Parámetros Generales','parametrosgenerales',1,1);
+INSERT INTO `modulo` VALUES (4,'Productos','productos',1,4),(5,'Reservas','reservas',1,4),(6,'Usuarios','usuarios',1,3),(33,'Modulos','modulos',1,3),(34,'Perfiles','perfiles',1,3),(35,'Marcas','marcas',1,1),(36,'Categorias','categorias',1,1),(37,'Estados de Reservas','estadosreservas',1,1),(38,'Estados de Personas','estadospersonas',1,1),(39,'Tipos de Contactos','tiposcontactos',1,1),(40,'Tipos de Servicios','tiposservicios',1,1),(42,'Métodos de Pago','metodosdepago',1,1),(43,'Estados de Productos','estadosproductos',1,1),(44,'Condiciones de Salud','condicionessalud',1,1),(45,'Servicios','servicios',1,4),(46,'Períodos','periodos',1,1),(50,'Cabañas','cabanias',1,4),(51,'Menús','menus',1,3),(52,'Reporte de Consumos por Cabaña','reportes/consumos',1,2),(53,'Reporte de Productos Mas Vendidos por Mes','reportes/ventas-mensuales',1,2),(54,'Reporte de Productos por Categoría','reportes/productos',1,2),(55,'Reporte de Temporadas Altas por Año','reportes/temporadas',1,2),(56,'Reporte de Reservas Por Grupo Etario','reportes/demografico',1,2),(60,'Reporte de Comentarios','reportes/comentarios',1,2),(61,'Niveles de Daño','nivelesdanio',1,1),(62,'Inventario','inventarios',1,4),(63,'Costos por Daño','costosdanio',1,4),(65,'Revisiones','revisiones',1,4),(66,'Cajas','cajas',1,4),(67,'Facturación','facturacion',1,4),(70,'Huespedes','huespedes',1,4),(71,'Consumos','consumos',1,4),(72,'Arqueos de Caja','arqueos',1,4),(73,'Aperturas de Caja','aperturas',1,4),(74,'Movimientos de Caja','movimientos',1,4),(75,'Reimpresión','reimpresiones',1,4),(76,'Cierres de Caja','cierres',1,4),(77,'Proveedores','proveedores',1,4),(78,'Compras','compras',1,4),(79,'Estados de Consumo','estadosconsumo',1,1),(80,'Devoluciones','devoluciones',1,4),(81,'Ubicaciones','ubicaciones',1,1),(82,'Parámetros Generales','parametrosgenerales',1,1),(83,'Cotizaciones','cotizaciones',1,4);
 /*!40000 ALTER TABLE `modulo` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1158,7 +1158,7 @@ CREATE TABLE `perfil_modulo` (
   KEY `fk_perfilModulo_modulo1_idx` (`rela_modulo`),
   CONSTRAINT `fk_perfilModulo_modulo1` FOREIGN KEY (`rela_modulo`) REFERENCES `modulo` (`id_modulo`),
   CONSTRAINT `fk_perfilModulo_perfil1` FOREIGN KEY (`rela_perfil`) REFERENCES `perfil` (`id_perfil`)
-) ENGINE=InnoDB AUTO_INCREMENT=111 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=112 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1167,7 +1167,7 @@ CREATE TABLE `perfil_modulo` (
 
 LOCK TABLES `perfil_modulo` WRITE;
 /*!40000 ALTER TABLE `perfil_modulo` DISABLE KEYS */;
-INSERT INTO `perfil_modulo` VALUES (38,1,4,1),(39,1,5,1),(40,1,6,1),(50,2,5,1),(51,2,6,1),(52,1,33,1),(53,1,34,1),(54,1,35,1),(55,1,36,1),(56,1,37,1),(57,1,38,1),(58,1,39,1),(59,1,40,1),(61,1,42,1),(62,1,43,1),(63,1,44,1),(64,1,45,1),(65,1,46,1),(72,1,50,1),(73,1,51,1),(74,1,52,1),(75,1,53,1),(77,1,54,1),(78,1,55,1),(79,1,56,1),(83,1,60,1),(84,1,61,1),(85,1,62,1),(86,1,63,1),(88,1,65,1),(89,1,66,1),(90,1,67,1),(93,1,70,1),(99,1,71,1),(100,1,72,1),(101,1,73,1),(102,1,74,1),(103,1,75,1),(104,1,76,1),(105,1,77,1),(106,1,78,1),(107,1,79,1),(108,1,80,1),(109,1,81,1),(110,1,82,1);
+INSERT INTO `perfil_modulo` VALUES (38,1,4,1),(39,1,5,1),(40,1,6,1),(50,2,5,1),(51,2,6,1),(52,1,33,1),(53,1,34,1),(54,1,35,1),(55,1,36,1),(56,1,37,1),(57,1,38,1),(58,1,39,1),(59,1,40,1),(61,1,42,1),(62,1,43,1),(63,1,44,1),(64,1,45,1),(65,1,46,1),(72,1,50,1),(73,1,51,1),(74,1,52,1),(75,1,53,1),(77,1,54,1),(78,1,55,1),(79,1,56,1),(83,1,60,1),(84,1,61,1),(85,1,62,1),(86,1,63,1),(88,1,65,1),(89,1,66,1),(90,1,67,1),(93,1,70,1),(99,1,71,1),(100,1,72,1),(101,1,73,1),(102,1,74,1),(103,1,75,1),(104,1,76,1),(105,1,77,1),(106,1,78,1),(107,1,79,1),(108,1,80,1),(109,1,81,1),(110,1,82,1),(111,1,83,1);
 /*!40000 ALTER TABLE `perfil_modulo` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1221,7 +1221,7 @@ CREATE TABLE `persona` (
   CONSTRAINT `fk_persona_estadopersona1` FOREIGN KEY (`rela_estadopersona`) REFERENCES `estadopersona` (`id_estadopersona`),
   CONSTRAINT `fk_persona_personafisica` FOREIGN KEY (`rela_personajuridica`) REFERENCES `personafisica` (`id_personafisica`),
   CONSTRAINT `fk_persona_personajuridica` FOREIGN KEY (`rela_personajuridica`) REFERENCES `personajuridica` (`id_personajuridica`)
-) ENGINE=InnoDB AUTO_INCREMENT=1045 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=1046 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1270,9 +1270,9 @@ DROP TABLE IF EXISTS `personajuridica`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `personajuridica` (
   `id_personajuridica` int NOT NULL AUTO_INCREMENT,
-  `personajuridica_cuit` varchar(11) NOT NULL COMMENT 'CUIT de 11 dígitos sin guiones',
+  `personajuridica_cuit` varchar(11) NOT NULL,
   PRIMARY KEY (`id_personajuridica`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1335,7 +1335,7 @@ CREATE TABLE `proveedor` (
   PRIMARY KEY (`id_proveedor`),
   KEY `fk_proveedor_persona1` (`rela_persona`),
   CONSTRAINT `fk_proveedor_persona1` FOREIGN KEY (`rela_persona`) REFERENCES `persona` (`id_persona`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1762,4 +1762,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-26  3:28:43
+-- Dump completed on 2025-11-26 20:16:08

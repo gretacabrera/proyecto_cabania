@@ -105,9 +105,7 @@ if (!isset($proveedor) || empty($proveedor)) {
                                 </label>
                                 <div class="info-value">
                                     <?php if (!empty($proveedor['contacto_correo'])): ?>
-                                        <a href="mailto:<?= htmlspecialchars($proveedor['contacto_correo']) ?>">
-                                            <?= htmlspecialchars($proveedor['contacto_correo']) ?>
-                                        </a>
+                                        <?= htmlspecialchars($proveedor['contacto_correo']) ?>
                                     <?php else: ?>
                                         <span class="text-muted">No especificado</span>
                                     <?php endif; ?>
@@ -121,9 +119,7 @@ if (!isset($proveedor) || empty($proveedor)) {
                                 </label>
                                 <div class="info-value">
                                     <?php if (!empty($proveedor['contacto_telefono'])): ?>
-                                        <a href="tel:<?= htmlspecialchars($proveedor['contacto_telefono']) ?>">
-                                            <?= htmlspecialchars($proveedor['contacto_telefono']) ?>
-                                        </a>
+                                        <?= htmlspecialchars($proveedor['contacto_telefono']) ?>
                                     <?php else: ?>
                                         <span class="text-muted">No especificado</span>
                                     <?php endif; ?>

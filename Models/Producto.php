@@ -133,6 +133,11 @@ class Producto extends Model
             $where .= " AND p.rela_estadoproducto IN (1, 2, 3)";
         }
         
+        // Filtro para excluir productos de baja (estado 4)
+        if (isset($filters['excluir_baja']) && $filters['excluir_baja'] === true) {
+            $where .= " AND p.rela_estadoproducto != 4";
+        }
+        
         // Aplicar los mismos filtros que getWithDetails
         if (!empty($filters['producto_nombre'])) {
             $where .= " AND p.producto_nombre LIKE ?";

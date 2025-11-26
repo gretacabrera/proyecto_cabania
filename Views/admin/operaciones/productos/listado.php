@@ -331,6 +331,9 @@ function getStockBadgeClass($stock) {
                 <p class="mb-0 text-muted" style="font-size: 12px; line-height: 1.3; color: #777;">
                     Seleccione una opción para generar la solicitud de cotización
                 </p>
+                <div class="alert alert-info mt-2 mb-0 py-2 px-2" style="font-size: 11px;">
+                    <i class="fas fa-info-circle"></i> <strong>Nota:</strong> No se incluirán productos que estén de baja.
+                </div>
             </div>
             
             <!-- Body con botones -->
