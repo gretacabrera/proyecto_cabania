@@ -25,12 +25,13 @@ class HuespedesController extends Controller
     }
 
     /**
-     * Listar huéspedes del usuario actual (para vistas públicas)
-     * Si recibe reserva_id, filtra por esa reserva específica
+     * Listar huéspedes
+     * - Área de administración: listado completo con filtros y paginación
+     * - Área pública: huéspedes de una reserva específica del usuario
      */
     public function index()
     {
-        // Verificar autenticación para huéspedes públicos
+        // Verificar autenticación
         if (!\App\Core\Auth::check()) {
             $this->redirect('/auth/login', 'Debe iniciar sesión para ver los huéspedes', 'error');
             return;
@@ -42,6 +43,51 @@ class HuespedesController extends Controller
             return;
         }
         
+        // Verificar si es área de administración (tiene permisos)
+        $hasAdminPermission = false;
+        try {
+            $this->requirePermission('huespedes');
+            $hasAdminPermission = true;
+        } catch (\Exception $e) {
+            $hasAdminPermission = false;
+        }
+        
+        // ÁREA DE ADMINISTRACIÓN
+        if ($hasAdminPermission) {
+            $page = (int) $this->get('page', 1);
+            $perPage = (int) $this->get('per_page', 10);
+            
+            // Validar perPage
+            $allowedPerPage = [5, 10, 25, 50];
+            if (!in_array($perPage, $allowedPerPage)) {
+                $perPage = 10;
+            }
+            
+            $filters = [
+                'persona_nombre' => $this->get('persona_nombre'),
+                'persona_dni' => $this->get('persona_dni'),
+                'rela_ubicacion' => $this->get('rela_ubicacion'),
+                'huesped_estado' => $this->get('huesped_estado')
+            ];
+
+            $result = $this->huespedModel->getWithDetails($page, $perPage, $filters);
+            
+            // Obtener ubicaciones para el filtro
+            $ubicaciones = $this->ubicacionModel->getAll();
+
+            $data = [
+                'title' => 'Gestión de Huéspedes',
+                'huespedes' => $result['data'],
+                'pagination' => $result,
+                'filters' => $filters,
+                'ubicaciones' => $ubicaciones,
+                'isAdminArea' => true
+            ];
+
+            return $this->render('admin/operaciones/huespedes/listado', $data, 'main');
+        }
+        
+        // ÁREA PÚBLICA (sin permisos de administración)
         $reservaId = $this->get('reserva_id');
         
         // Validar que se haya proporcionado reserva_id
