@@ -78,6 +78,25 @@
         .btn-group-vertical .btn {
             margin-bottom: 0.5rem;
         }
+        
+        .huespedes-header {
+            padding: 1rem 0 !important;
+        }
+        
+        .huespedes-header h2 {
+            font-size: 1.25rem !important;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .huespedes-header h2 {
+            font-size: 1.1rem !important;
+        }
+        
+        .btn-accion {
+            padding: 0.5rem 1rem !important;
+            font-size: 0.9rem;
+        }
     }
 </style>
 
@@ -87,34 +106,31 @@
             
             <!-- Card Única Integrada -->
             <div class="card border-0 shadow-lg">
-                <!-- Header con Detalles Integrados -->
-                <div class="huespedes-header py-3 px-4">
-                    <!-- Botón Mis Reservas arriba -->
-                    <div class="mb-3">
-                        <a href="<?= url('/mis-reservas') ?>" class="btn btn-link text-primary text-decoration-none p-0">
-                            <i class="fas fa-arrow-left me-2"></i>Mis Reservas
-                        </a>
-                    </div>
-                    
-                    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
-                        <!-- Título -->
+                <!-- Header sobrio -->
+                <div class="huespedes-header" style="background: #f8f9fa; padding: 0.5rem 1rem; margin: 0 0 1rem 0; border-radius: 0;">
+                    <!-- Estructura estandarizada: Botón Volver + Título -->
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <!-- Botón Volver -->
                         <div>
-                            <h2 class="mb-0 fw-bold text-dark">
-                                <i class="fas fa-users me-2"></i>
-                                Huéspedes de la Reserva #<?= htmlspecialchars($reserva_id) ?>
-                            </h2>
-                            <small class="text-muted">
-                                <i class="fas fa-info-circle me-1"></i>
-                                Total de huéspedes: <strong><?= count($huespedes) ?></strong>
-                            </small>
-                        </div>
-                        
-                        <!-- Botón para agregar nuevo huésped -->
-                        <div>
-                            <a href="<?= url('/huespedes/create?reserva_id=' . $reserva_id) ?>" class="btn btn-success btn-accion">
-                                <i class="fas fa-user-plus me-2"></i>Agregar Huésped
+                            <a href="<?= url('/mis-reservas') ?>" class="btn btn-link text-secondary p-1" title="Volver a Mis Reservas">
+                                <i class="fas fa-arrow-left"></i>
                             </a>
                         </div>
+                        
+                        <!-- Título -->
+                        <div class="flex-grow-1">
+                            <h6 class="mb-0 text-secondary" style="font-size: 0.95rem; font-weight: 400;">
+                                <span class="d-none d-md-inline">Huéspedes (Reserva #<?= htmlspecialchars($reserva_id) ?>)</span>
+                                <span class="d-inline d-md-none">Huéspedes</span>
+                            </h6>
+                        </div>
+                    </div>
+                    
+                    <!-- Fila de botón -->
+                    <div>
+                        <a href="<?= url('/huespedes/create?reserva_id=' . $reserva_id) ?>" class="btn btn-sm btn-outline-primary" style="min-width: 120px;">
+                            <i class="fas fa-plus me-1"></i>Agregar
+                        </a>
                     </div>
                 </div>
                 
@@ -180,22 +196,15 @@
                                     <div class="col-12 col-lg-2 text-end">
                                         <div class="btn-group-vertical w-100" role="group">
                                             <a href="<?= url('/huespedes/' . $huesped['id_huesped'] . '/edit?reserva_id=' . $reserva_id) ?>" 
-                                               class="btn btn-sm btn-warning mb-2">
+                                               class="btn btn-sm btn-outline-warning mb-2">
                                                 <i class="fas fa-edit me-1"></i>Editar
                                             </a>
                                             
                                             <?php if (!$huesped['tiene_usuario']): ?>
                                                 <button type="button" 
-                                                        class="btn btn-sm btn-danger"
+                                                        class="btn btn-sm btn-outline-danger"
                                                         onclick="eliminarHuesped(<?= $huesped['id_huesped'] ?>)">
                                                     <i class="fas fa-trash me-1"></i>Eliminar
-                                                </button>
-                                            <?php else: ?>
-                                                <button type="button" 
-                                                        class="btn btn-sm btn-secondary"
-                                                        disabled
-                                                        title="No se puede eliminar porque tiene usuario asociado">
-                                                    <i class="fas fa-lock me-1"></i>Protegido
                                                 </button>
                                             <?php endif; ?>
                                         </div>

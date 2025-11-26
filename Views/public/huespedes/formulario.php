@@ -3,10 +3,23 @@
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <div class="card shadow-lg border-0">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">
-                        <?= isset($huesped['id_huesped']) ? 'Editar Huésped' : 'Nuevo Huésped' ?>
-                    </h5>
+                <!-- Header con diseño estandarizado -->
+                <div class="card-header bg-white border-bottom-0">
+                    <!-- Fila 1: Volver (10%) + Título (90%) -->
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <div style="width: 20%; flex-shrink: 0;">
+                            <a href="<?= url('/huespedes?reserva_id=' . $reserva_id) ?>" 
+                               class="btn btn-outline-secondary btn-sm w-100"
+                               style="min-width: auto;">
+                                <i class="fas fa-arrow-left"></i>
+                            </a>
+                        </div>
+                        <div style="width: 80%;">
+                            <h6 class="mb-0 text-secondary" style="font-size: 0.95rem; font-weight: 400;">
+                                <?= isset($huesped['id_huesped']) ? 'Editar Huésped' : 'Nuevo Huésped' ?>
+                            </h6>
+                        </div>
+                    </div>
                 </div>
                 <div class="card-body p-4">
                     <form id="formHuesped" method="POST" novalidate>
@@ -107,8 +120,12 @@
                         
                         <!-- Botones -->
                         <div class="d-flex justify-content-end gap-2 mt-4">
-                            <button type="submit" class="btn btn-success">Guardar</button>
-                            <a href="<?= url('/huespedes?reserva_id=' . $reserva_id) ?>" class="btn btn-danger">Cancelar</a>
+                            <button type="submit" class="btn btn-outline-success">
+                                <i class="fas fa-save me-2"></i>Guardar
+                            </button>
+                            <a href="<?= url('/huespedes?reserva_id=' . $reserva_id) ?>" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
                         </div>
                     </form>
                 </div>

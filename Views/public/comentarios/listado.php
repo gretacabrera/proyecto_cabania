@@ -79,6 +79,34 @@ $pagina_actual = $paginacion['pagina_actual'] ?? 1;
         border-radius: 0.75rem;
         padding: 1.5rem;
     }
+    
+    @media (max-width: 768px) {
+        .comentarios-header {
+            padding: 1rem 0 !important;
+        }
+        
+        .comentarios-header h2 {
+            font-size: 1.25rem !important;
+        }
+        
+        .btn-accion {
+            padding: 0.5rem 1rem !important;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .comentarios-header h2 {
+            font-size: 1.1rem !important;
+        }
+        
+        .btn-accion {
+            font-size: 0.9rem;
+        }
+        
+        .card-body {
+            padding: 1rem !important;
+        }
+    }
 </style>
 
 <div class="container-fluid my-5">
@@ -87,47 +115,48 @@ $pagina_actual = $paginacion['pagina_actual'] ?? 1;
             
             <!-- Card Única Integrada -->
             <div class="card border-0 shadow-lg">
-                <!-- Header con Detalles Integrados -->
-                <div class="comentarios-header py-3 px-4">
-                    <!-- Botón Mis Reservas arriba -->
-                    <div class="mb-3">
-                        <a href="<?= url('/mis-reservas') ?>" class="btn btn-link text-primary text-decoration-none p-0">
-                            <i class="fas fa-arrow-left me-2"></i>Mis Reservas
-                        </a>
-                    </div>
-                    
-                    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
-                        <!-- Título -->
-                        <div>
-                            <h2 class="mb-0 fw-bold text-dark">
-                                <i class="fas fa-comments me-2"></i>
-                                <?php if ($esVistaReserva): ?>
-                                    Comentarios de Reserva #<?= htmlspecialchars($reserva_id) ?>
-                                <?php else: ?>
-                                    Mis Comentarios
-                                <?php endif; ?>
-                            </h2>
+                <!-- Header sobrio -->
+                <div class="comentarios-header" style="background: #f8f9fa; padding: 0.5rem 1rem; margin: 0 0 1rem 0; border-radius: 0; overflow: visible;">
+                    <!-- Estructura estandarizada: Botón Volver + Título -->
+                    <div class="d-flex align-items-center gap-2 mb-2" style="flex-wrap: nowrap;">
+                        <!-- Botón Volver -->
+                        <div style="flex-shrink: 0;">
+                            <a href="<?= url('/mis-reservas') ?>" class="btn btn-link text-secondary p-1" title="Volver a Mis Reservas">
+                                <i class="fas fa-arrow-left"></i>
+                            </a>
                         </div>
                         
-                        <!-- Botones alineados a la derecha -->
-                        <div class="d-flex gap-2">
-                            
-                            <?php if ($esVistaReserva): ?>
-                                <a href="<?= url('/comentarios') ?>" class="btn btn-outline-primary btn-accion">
-                                    <i class="fas fa-list me-2"></i>Ver Todos
-                                </a>
-                            <?php endif; ?>
-                            
-                            <?php if ($esVistaReserva && $puede_crear_comentario): ?>
-                                <a href="<?= url('/comentarios/create?reserva_id=' . $reserva_id) ?>" class="btn btn-success btn-accion">
-                                    <i class="fas fa-plus me-2"></i>Agregar Comentario
-                                </a>
-                            <?php elseif (!$esVistaReserva && isset($ultima_reserva) && $ultima_reserva): ?>
-                                <a href="<?= url('/comentarios/create?reserva_id=' . $ultima_reserva['id_reserva']) ?>" class="btn btn-success btn-accion">
-                                    <i class="fas fa-plus me-2"></i>Agregar Comentario
-                                </a>
-                            <?php endif; ?>
+                        <!-- Título -->
+                        <div class="flex-grow-1">
+                            <h6 class="mb-0 text-secondary" style="font-size: 0.95rem; font-weight: 400;">
+                                <?php if ($esVistaReserva): ?>
+                                    <span class="d-none d-md-inline">Comentarios #<?= htmlspecialchars($reserva_id) ?></span>
+                                    <span class="d-inline d-md-none">Comentarios</span>
+                                <?php else: ?>
+                                    <span class="d-none d-sm-inline">Mis Comentarios</span>
+                                    <span class="d-inline d-sm-none">Comentarios</span>
+                                <?php endif; ?>
+                            </h6>
                         </div>
+                    </div>
+                    
+                    <!-- Fila de botones -->
+                    <div class="d-flex gap-2">
+                        <?php if ($esVistaReserva): ?>
+                            <a href="<?= url('/comentarios') ?>" class="btn btn-sm btn-outline-secondary" style="min-width: 100px;">
+                                <i class="fas fa-list me-1"></i>Todos
+                            </a>
+                        <?php endif; ?>
+                        
+                        <?php if ($esVistaReserva && $puede_crear_comentario): ?>
+                            <a href="<?= url('/comentarios/create?reserva_id=' . $reserva_id) ?>" class="btn btn-sm btn-outline-primary" style="min-width: 120px;">
+                                <i class="fas fa-plus me-1"></i>Agregar
+                            </a>
+                        <?php elseif (!$esVistaReserva && isset($ultima_reserva) && $ultima_reserva): ?>
+                            <a href="<?= url('/comentarios/create?reserva_id=' . $ultima_reserva['id_reserva']) ?>" class="btn btn-sm btn-outline-primary" style="min-width: 120px;">
+                                <i class="fas fa-plus me-1"></i>Agregar
+                            </a>
+                        <?php endif; ?>
                     </div>
                 </div>
                 
@@ -207,12 +236,12 @@ $pagina_actual = $paginacion['pagina_actual'] ?? 1;
                                     <div class="col-md-3 text-end">
                                         <div class="d-flex flex-column flex-md-row gap-2 justify-content-md-end">
                                             <a href="<?= url('/comentarios/' . $comentario['id_comentario'] . '/edit') ?>" 
-                                               class="btn btn-sm btn-warning">
+                                               class="btn btn-sm btn-outline-warning">
                                                 <i class="fas fa-edit me-1"></i>Editar
                                             </a>
                                             
                                             <button type="button" 
-                                                    class="btn btn-sm btn-danger"
+                                                    class="btn btn-sm btn-outline-danger"
                                                     onclick="eliminarComentario(<?= $comentario['id_comentario'] ?>)">
                                                 <i class="fas fa-trash me-1"></i>Eliminar
                                             </button>

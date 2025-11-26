@@ -2,49 +2,74 @@
 <div class="container-fluid px-2 px-md-4 py-3 py-md-4">
     <div class="row">
         <div class="col-12">
-            <!-- Header con fondo blanco -->
-            <div class="card shadow-sm mb-3">
-                <div class="card-body p-3 p-md-4">
-                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3">
-                        <div class="d-flex align-items-center gap-2">
-                            <a href="<?= url('/mis-reservas') ?>" class="btn btn-outline-secondary btn-sm" title="Volver a Mis Reservas">
+            <!-- Header sobrio -->
+            <div class="card border-0 mb-3" style="background: #f8f9fa;">
+                <div class="card-body py-2 px-3">
+                    <!-- Estructura estandarizada: Botón Volver + Título -->
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <!-- Botón Volver -->
+                        <div>
+                            <a href="<?= url('/mis-reservas') ?>" class="btn btn-link text-secondary p-1" title="Volver a Mis Reservas">
                                 <i class="fas fa-arrow-left"></i>
                             </a>
-                            <h2 class="mb-0">
-                                <i class="fas fa-shopping-basket text-primary"></i> Mis Consumos
-                            </h2>
                         </div>
-                        <?php 
-                        // Estados permitidos: 1=Pendiente, 2=Confirmada, 3=En Curso, 4=Pendiente de Pago, 8=Pendiente de Revisión
-                        // Estados NO permitidos: 5=Finalizada, 6=Anulada
-                        $estadosPermitidos = [1, 2, 3, 4, 8];
-                        $puedeAgregarConsumos = $reservaSeleccionada && in_array($reservaSeleccionada['rela_estadoreserva'], $estadosPermitidos);
-                        ?>
+                        
+                        <!-- Título -->
+                        <div class="flex-grow-1">
+                            <h6 class="mb-0 text-secondary" style="font-size: 0.95rem; font-weight: 400;">
+                                <span class="d-none d-sm-inline">Mis Consumos</span>
+                                <span class="d-inline d-sm-none">Consumos</span>
+                            </h6>
+                        </div>
+                    </div>
+                    
+                    <!-- Fila de botón -->
+                    <?php 
+                    // Estados permitidos: 1=Pendiente, 2=Confirmada, 3=En Curso, 4=Pendiente de Pago, 8=Pendiente de Revisión
+                    // Estados NO permitidos: 5=Finalizada, 6=Anulada
+                    $estadosPermitidos = [1, 2, 3, 4, 8];
+                    $puedeAgregarConsumos = $reservaSeleccionada && in_array($reservaSeleccionada['rela_estadoreserva'], $estadosPermitidos);
+                    
+                    // Verificar si estamos en vista de reserva específica (viene por parámetro GET)
+                    $esVistaReserva = !empty($_GET['reserva_id']);
+                    ?>
+                    <div class="d-flex gap-2">
+                        <?php if ($esVistaReserva): ?>
+                            <a href="<?= url('/huesped/consumos') ?>" class="btn btn-sm btn-outline-secondary" style="min-width: 100px;">
+                                <i class="fas fa-list me-1"></i>Todos
+                            </a>
+                        <?php endif; ?>
+                        
                         <?php if ($puedeAgregarConsumos): ?>
-                            <a href="<?= url('/huesped/consumos/solicitar') ?>" class="btn btn-primary">
-                                <i class="fas fa-plus"></i> Solicitar Consumos
+                            <a href="<?= url('/huesped/consumos/solicitar') ?>" class="btn btn-sm btn-outline-primary" style="min-width: 120px;">
+                                <i class="fas fa-plus me-1"></i>Solicitar
                             </a>
                         <?php else: ?>
-                            <button class="btn btn-secondary" disabled title="No se pueden agregar consumos en el estado actual de la reserva">
-                                <i class="fas fa-lock"></i> Solicitar Consumos
+                            <button class="btn btn-sm btn-outline-secondary" disabled title="No se pueden agregar consumos en el estado actual de la reserva" style="min-width: 120px;">
+                                <i class="fas fa-lock me-1"></i>Solicitar
                             </button>
                         <?php endif; ?>
                     </div>
                 </div>
 
-                <!-- Filtro por Reserva - Card compacta -->
-                <?php if (!empty($reservas)): ?>
+                <!-- Filtro por Reserva - Botones de selección rápida -->
+                <?php if (!empty($reservas) && count($reservas) > 1): ?>
                     <div class="card-body p-3 mb-1">
-                        <label for="filtroReserva" class="form-label fw-bold mb-2">
+                        <label class="form-label fw-bold mb-2">
                             <i class="fas fa-filter"></i> Filtrar por Reserva
                         </label>
-                        <select id="filtroReserva" class="form-select" onchange="filtrarPorReserva(this.value)">
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="<?= url('/huesped/consumos') ?>" 
+                               class="btn btn-sm <?= empty($_GET['reserva_id']) ? 'btn-primary' : 'btn-outline-primary' ?>">
+                                Todas las reservas
+                            </a>
                             <?php foreach ($reservas as $reserva): ?>
-                                <option value="<?= $reserva['id_reserva'] ?>" <?= $reserva['id_reserva'] == $reservaId ? 'selected' : '' ?>>
+                                <a href="<?= url('/huesped/consumos?reserva_id=' . $reserva['id_reserva']) ?>" 
+                                   class="btn btn-sm <?= (!empty($_GET['reserva_id']) && $_GET['reserva_id'] == $reserva['id_reserva']) ? 'btn-primary' : 'btn-outline-primary' ?>">
                                     <?= htmlspecialchars($reserva['cabania_nombre']) ?> - <?= date('d/m/Y', strtotime($reserva['reserva_fhinicio'])) ?>
-                                </option>
+                                </a>
                             <?php endforeach; ?>
-                        </select>
+                        </div>
                     </div>
                 <?php endif; ?>
                 
@@ -278,10 +303,6 @@
 </div>
 
 <script>
-function filtrarPorReserva(reservaId) {
-    window.location.href = '<?= url('/huesped/consumos') ?>?reserva_id=' + reservaId;
-}
-
 function eliminarConsumo(id) {
     Swal.fire({
         title: '¿Eliminar consumo?',

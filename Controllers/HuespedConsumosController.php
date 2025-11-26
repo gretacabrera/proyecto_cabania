@@ -42,23 +42,18 @@ class HuespedConsumosController extends Controller
         // Obtener reservas completas del usuario con todos los detalles
         $reservas = $this->consumoModel->getReservasUsuario($userId);
         
-        // Obtener ID de reserva seleccionada o la más reciente
+        // Obtener ID de reserva seleccionada (parámetro GET)
         $reservaId = $this->get('reserva_id');
-        if (!$reservaId && !empty($reservas)) {
-            $reservaId = $reservas[0]['id_reserva'];
-        }
         
-        // Obtener consumos de la reserva
+        // Obtener consumos
         $consumos = [];
         $totalConsumos = 0;
         $reservaSeleccionada = null;
         $fechaFactura = null;
+        
         if ($reservaId) {
+            // Vista de una reserva específica
             $consumos = $this->consumoModel->getConsumosByReservaWithDetails($reservaId);
-            foreach ($consumos as $consumo) {
-                // El total ya viene calculado en consumo_total
-                $totalConsumos += floatval($consumo['consumo_total']);
-            }
             
             // Buscar la reserva seleccionada para obtener su estado y tipo
             foreach ($reservas as $reserva) {
@@ -81,6 +76,17 @@ class HuespedConsumosController extends Controller
                     $fechaFactura = $resultFactura['factura_fechahora'];
                 }
             }
+        } else {
+            // Vista de todos los consumos del huésped
+            foreach ($reservas as $reserva) {
+                $consumosReserva = $this->consumoModel->getConsumosByReservaWithDetails($reserva['id_reserva']);
+                $consumos = array_merge($consumos, $consumosReserva);
+            }
+        }
+        
+        // Calcular total de consumos
+        foreach ($consumos as $consumo) {
+            $totalConsumos += floatval($consumo['consumo_total']);
         }
         
         $data = [
@@ -117,7 +123,9 @@ class HuespedConsumosController extends Controller
         // Obtener reserva actual del usuario
         $reservaActual = $this->consumoModel->getReservaActualUsuario($userId);
         if (!$reservaActual) {
-            $this->redirect('/huesped/consumos', 'No tiene una reserva confirmada disponible para solicitar consumos', 'warning');
+            // Volver a la vista anterior (de donde vino)
+            $referer = $_SERVER['HTTP_REFERER'] ?? url('/huesped/consumos');
+            $this->redirect($referer, 'No tiene una reserva confirmada disponible para solicitar consumos', 'warning');
             return;
         }
         
@@ -126,7 +134,9 @@ class HuespedConsumosController extends Controller
         // No permitidos: 5=Finalizada, 6=Anulada
         $estadosPermitidos = [1, 2, 3, 4, 8];
         if (!in_array($reservaActual['rela_estadoreserva'], $estadosPermitidos)) {
-            $this->redirect('/huesped/consumos', 'No se pueden agregar consumos en el estado actual de la reserva: ' . $reservaActual['estadoreserva_descripcion'], 'error');
+            // Volver a la vista anterior (de donde vino)
+            $referer = $_SERVER['HTTP_REFERER'] ?? url('/huesped/consumos');
+            $this->redirect($referer, 'No se pueden agregar consumos en el estado actual de la reserva: ' . $reservaActual['estadoreserva_descripcion'], 'error');
             return;
         }
 

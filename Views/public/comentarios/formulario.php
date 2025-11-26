@@ -21,19 +21,23 @@ $actionUrl = $isEdit ? url("/comentarios/{$comentario['id_comentario']}/update")
             
             <!-- Card Principal -->
             <div class="card border-0 shadow-lg">
-                <!-- Botón Volver dentro de la card -->
-                <div class="px-4 pt-3">
-                    <a href="<?= url('/comentarios') ?>" class="btn btn-link text-primary text-decoration-none p-0">
-                        <i class="fas fa-arrow-left me-2"></i>Volver a Comentarios
-                    </a>
-                </div>
-                
-                <!-- Header -->
-                <div class="card-header bg-white py-3 px-4 border-bottom">
-                    <h2 class="mb-0 fw-bold text-dark">
-                        <i class="fas fa-<?= $isEdit ? 'edit' : 'plus-circle' ?> me-2"></i>
-                        <?= $pageTitle ?>
-                    </h2>
+                <!-- Header con diseño estandarizado -->
+                <div class="card-header bg-white border-bottom-0">
+                    <!-- Fila 1: Volver (10%) + Título (90%) -->
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <div style="width: 20%; flex-shrink: 0;">
+                            <a href="<?= url('/comentarios') ?>" 
+                               class="btn btn-outline-secondary btn-sm w-100" 
+                               style="min-width: auto;">
+                                <i class="fas fa-arrow-left"></i>
+                            </a>
+                        </div>
+                        <div style="width: 80%;">
+                            <h6 class="mb-0 text-secondary" style="font-size: 0.95rem; font-weight: 400;">
+                                <?= $pageTitle ?>
+                            </h6>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Body -->
@@ -128,15 +132,15 @@ $actionUrl = $isEdit ? url("/comentarios/{$comentario['id_comentario']}/update")
                         <?php endif; ?>
                         
                         <!-- Botones de Acción -->
-                        <div class="d-flex gap-2 flex-wrap">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-<?= $isEdit ? 'save' : 'paper-plane' ?> me-2"></i>
-                                <?= $isEdit ? 'Actualizar Comentario' : 'Enviar Comentario' ?>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-outline-success">
+                                <i class="fas fa-save me-2"></i>
+                                Guardar
                             </button>
                             
                             <a href="<?= url('/comentarios') ?>" class="btn btn-outline-secondary">
                                 <i class="fas fa-times me-2"></i>
-                                <?= $isEdit ? 'Cancelar' : 'Omitir' ?>
+                                Cancelar
                             </a>
                         </div>
                     </form>

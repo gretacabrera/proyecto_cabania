@@ -3,8 +3,8 @@
         <div class="form-section">
             <h3><i class="fas fa-user-circle"></i> Credenciales de acceso</h3>
             
-            <div class="form-group">
-                <label for="usuario_nombre">
+            <div class="form-group mb-3">
+                <label for="usuario_nombre" class="mb-2">
                     <i class="fas fa-user"></i>
                     Usuario
                 </label>
@@ -12,17 +12,17 @@
                     type="text" 
                     id="usuario_nombre" 
                     name="usuario_nombre" 
-                    class="form-control"
+                    class="form-control form-control-lg"
                     placeholder="Elige un nombre de usuario"
                     required 
                     minlength="3"
                     autocomplete="username"
                 >
-                <small class="form-text text-muted">Mínimo 3 caracteres</small>
+                <small class="form-text text-muted mt-2 d-block">Mínimo 3 caracteres</small>
             </div>
             
-            <div class="form-group">
-                <label for="usuario_contrasenia">
+            <div class="form-group mb-3">
+                <label for="usuario_contrasenia" class="mb-2">
                     <i class="fas fa-lock"></i>
                     Contraseña
                 </label>
@@ -31,7 +31,7 @@
                         type="password" 
                         id="usuario_contrasenia" 
                         name="usuario_contrasenia" 
-                        class="form-control"
+                        class="form-control form-control-lg"
                         placeholder="Ingresa una contraseña segura"
                         required 
                         minlength="6"
@@ -51,8 +51,8 @@
                 <small class="strength-text" id="strengthText">Ingrese una contraseña</small>
             </div>
             
-            <div class="form-group">
-                <label for="confirmar_contrasenia">
+            <div class="form-group mb-3">
+                <label for="confirmar_contrasenia" class="mb-2">
                     <i class="fas fa-lock"></i>
                     Confirmar contraseña
                 </label>
@@ -61,7 +61,7 @@
                         type="password" 
                         id="confirmar_contrasenia" 
                         name="confirmar_contrasenia" 
-                        class="form-control"
+                        class="form-control form-control-lg"
                         placeholder="Repite la contraseña"
                         required 
                         autocomplete="new-password"
@@ -76,9 +76,9 @@
         <div class="form-section">
             <h3><i class="fas fa-address-card"></i> Datos personales</h3>
             
-            <div class="form-row">
-                <div class="form-group col-md-6">
-                    <label for="nombre">
+            <div class="row">
+                <div class="form-group col-12 col-md-6 mb-3">
+                    <label for="nombre" class="mb-2">
                         <i class="fas fa-user"></i>
                         Nombre
                     </label>
@@ -86,15 +86,15 @@
                         type="text" 
                         id="nombre" 
                         name="nombre" 
-                        class="form-control"
+                        class="form-control form-control-lg"
                         placeholder="Tu nombre"
                         required 
                         autocomplete="given-name"
                     >
                 </div>
                 
-                <div class="form-group col-md-6">
-                    <label for="apellido">
+                <div class="form-group col-12 col-md-6 mb-3">
+                    <label for="apellido" class="mb-2">
                         <i class="fas fa-user"></i>
                         Apellido
                     </label>
@@ -102,7 +102,7 @@
                         type="text" 
                         id="apellido" 
                         name="apellido" 
-                        class="form-control"
+                        class="form-control form-control-lg"
                         placeholder="Tu apellido"
                         required 
                         autocomplete="family-name"
@@ -110,9 +110,9 @@
                 </div>
             </div>
             
-            <div class="form-row">
-                <div class="form-group col-md-6">
-                    <label for="fecha_nacimiento">
+            <div class="row">
+                <div class="form-group col-12 col-md-6 mb-3">
+                    <label for="fecha_nacimiento" class="mb-2">
                         <i class="fas fa-calendar-alt"></i>
                         Fecha de nacimiento
                     </label>
@@ -120,16 +120,16 @@
                         type="date" 
                         id="fecha_nacimiento" 
                         name="fecha_nacimiento" 
-                        class="form-control"
+                        class="form-control form-control-lg"
                         required 
                         autocomplete="bday"
                         max="<?= date('Y-m-d', strtotime('-18 years')) ?>"
                     >
-                    <small class="form-text text-muted">Debe ser mayor de 18 años</small>
+                    <small class="form-text text-muted mt-2 d-block">Debe ser mayor de 18 años</small>
                 </div>
                 
-                <div class="form-group col-md-6">
-                    <label for="direccion">
+                <div class="form-group col-12 col-md-6 mb-3">
+                    <label for="direccion" class="mb-2">
                         <i class="fas fa-map-marker-alt"></i>
                         Dirección
                     </label>
@@ -137,7 +137,7 @@
                         type="text" 
                         id="direccion" 
                         name="direccion" 
-                        class="form-control"
+                        class="form-control form-control-lg"
                         placeholder="Tu dirección completa"
                         required 
                         autocomplete="street-address"
@@ -150,9 +150,9 @@
         <div class="form-section">
             <h3><i class="fas fa-address-book"></i> Información de contacto</h3>
             
-            <div class="form-row">
-                <div class="form-group col-md-6">
-                    <label for="email">
+            <div class="row">
+                <div class="form-group col-12 col-md-6 mb-3">
+                    <label for="email" class="mb-2">
                         <i class="fas fa-envelope"></i>
                         Email
                     </label>
@@ -160,15 +160,15 @@
                         type="email" 
                         id="email" 
                         name="email" 
-                        class="form-control"
+                        class="form-control form-control-lg"
                         placeholder="tu@email.com"
                         required 
                         autocomplete="email"
                     >
                 </div>
                 
-                <div class="form-group col-md-6">
-                    <label for="telefono">
+                <div class="form-group col-12 col-md-6 mb-3">
+                    <label for="telefono" class="mb-2">
                         <i class="fas fa-phone"></i>
                         Teléfono
                     </label>
@@ -176,16 +176,16 @@
                         type="tel" 
                         id="telefono" 
                         name="telefono" 
-                        class="form-control"
+                        class="form-control form-control-lg"
                         placeholder="123456789"
                         autocomplete="tel"
                     >
                 </div>
             </div>
             
-            <div class="form-row">
-                <div class="form-group col-md-6">
-                    <label for="contacto_instagram">
+            <div class="row">
+                <div class="form-group col-12 col-md-6 mb-3">
+                    <label for="contacto_instagram" class="mb-2">
                         <i class="fab fa-instagram"></i>
                         Instagram
                     </label>
@@ -193,15 +193,15 @@
                         type="text" 
                         id="contacto_instagram" 
                         name="contacto_instagram" 
-                        class="form-control"
+                        class="form-control form-control-lg"
                         placeholder="@tu_usuario"
                         autocomplete="off"
                     >
-                    <small class="form-text text-muted">Opcional</small>
+                    <small class="form-text text-muted mt-2 d-block">Opcional</small>
                 </div>
                 
-                <div class="form-group col-md-6">
-                    <label for="contacto_facebook">
+                <div class="form-group col-12 col-md-6 mb-3">
+                    <label for="contacto_facebook" class="mb-2">
                         <i class="fab fa-facebook"></i>
                         Facebook
                     </label>
@@ -209,11 +209,11 @@
                         type="text" 
                         id="contacto_facebook" 
                         name="contacto_facebook" 
-                        class="form-control"
+                        class="form-control form-control-lg"
                         placeholder="Tu perfil de Facebook"
                         autocomplete="off"
                     >
-                    <small class="form-text text-muted">Opcional</small>
+                    <small class="form-text text-muted mt-2 d-block">Opcional</small>
                 </div>
             </div>
         </div>
@@ -229,20 +229,20 @@
             </div>
         </div>
         
-        <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">
+        <button type="submit" class="btn btn-primary btn-lg w-100" id="submit-btn">
             <i class="fas fa-user-plus"></i>
             Crear cuenta
         </button>
         
     </form>
 
-    <div class="auth-divider">
+    <div class="auth-divider my-3">
         <span>o</span>
     </div>
 
     <div class="auth-alternative">
-        <p>¿Ya tienes una cuenta?</p>
-        <a href="<?= url('/auth/login') ?>" class="btn btn-outline-primary">
+        <p class="mb-2">¿Ya tienes una cuenta?</p>
+        <a href="<?= url('/auth/login') ?>" class="btn btn-outline-primary w-100">
             <i class="fas fa-sign-in-alt"></i>
             Iniciar sesión
         </a>
