@@ -176,6 +176,7 @@
                             <tr>
                                 <th class="border-0 py-3">Código</th>
                                 <th class="border-0 py-3">Descripción</th>
+                                <th class="border-0 py-3 text-end">Valor</th>
                                 <th class="border-0 py-3">Estado</th>
                                 <th class="border-0 py-3 text-center">Acciones</th>
                             </tr>
@@ -188,6 +189,9 @@
                                     </td>
                                     <td class="border-0 py-3">
                                         <div class="fw-medium text-dark"><?= htmlspecialchars($parametro['parametrogeneral_descripcion']) ?></div>
+                                    </td>
+                                    <td class="border-0 py-3 text-end">
+                                        <?= number_format($parametro['parametrogeneral_valor'], 2, ',', '.') ?>
                                     </td>
                                     <td class="border-0 py-3">
                                         <?php if ($parametro['parametrogeneral_estado'] == 1): ?>

@@ -82,10 +82,20 @@ if (!isset($parametro) || empty($parametro)) {
                         <div class="col-md-12">
                             <div class="info-group">
                                 <label class="info-label">
-                                    <i class="fas fa-align-left text-muted"></i> Descripción / Valor:
+                                    <i class="fas fa-align-left text-muted"></i> Descripción:
                                 </label>
                                 <div class="info-value">
                                     <?= nl2br(htmlspecialchars($parametro['parametrogeneral_descripcion'])) ?>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="info-group">
+                                <label class="info-label">
+                                    <i class="fas fa-calculator text-muted"></i> Valor Numérico:
+                                </label>
+                                <div class="info-value">
+                                    <strong><?= number_format($parametro['parametrogeneral_valor'], 2, ',', '.') ?></strong>
                                 </div>
                             </div>
                         </div>

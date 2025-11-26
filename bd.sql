@@ -1100,6 +1100,7 @@ CREATE TABLE `parametrogeneral` (
   `id_parametrogeneral` int NOT NULL AUTO_INCREMENT,
   `parametrogeneral_codigo` varchar(5) NOT NULL,
   `parametrogeneral_descripcion` varchar(250) NOT NULL,
+  `parametrogeneral_valor` float NOT NULL DEFAULT '0',
   `parametrogeneral_estado` int NOT NULL DEFAULT '1',
   PRIMARY KEY (`id_parametrogeneral`)
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -1111,7 +1112,7 @@ CREATE TABLE `parametrogeneral` (
 
 LOCK TABLES `parametrogeneral` WRITE;
 /*!40000 ALTER TABLE `parametrogeneral` DISABLE KEYS */;
-INSERT INTO `parametrogeneral` VALUES (1,'PIIVA','Porcentaje de IVA',1),(2,'PDEFE','Porcentaje de Descuento por Pago en Efectivo',1),(3,'COSMP','Costo de Servicio MercadoPago',1),(4,'MHSRE','Margen de Horas para Reintegro Gratuito',1),(5,'PREIN','Porcentaje de Reintegro',1);
+INSERT INTO `parametrogeneral` VALUES (1,'PIIVA','Porcentaje de IVA',21,1),(2,'PDEFE','Porcentaje de Descuento por Pago en Efectivo',10,1),(3,'COSMP','Costo de Servicio MercadoPago',6.29,1),(4,'MHSRE','Margen de Horas para Reintegro Gratuito',48,1),(5,'PREIN','Porcentaje de Reintegro',60,1);
 /*!40000 ALTER TABLE `parametrogeneral` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1760,4 +1761,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-26  0:48:47
+-- Dump completed on 2025-11-26  1:59:07

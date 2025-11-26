@@ -84,6 +84,7 @@ class ParametrosGeneralesController extends Controller
         $data = [
             'parametrogeneral_codigo' => strtoupper($this->post('parametrogeneral_codigo')),
             'parametrogeneral_descripcion' => $this->post('parametrogeneral_descripcion'),
+            'parametrogeneral_valor' => (float) $this->post('parametrogeneral_valor', 0),
             'parametrogeneral_estado' => 1
         ];
 
@@ -178,7 +179,8 @@ class ParametrosGeneralesController extends Controller
 
         $data = [
             'parametrogeneral_codigo' => strtoupper($this->post('parametrogeneral_codigo')),
-            'parametrogeneral_descripcion' => $this->post('parametrogeneral_descripcion')
+            'parametrogeneral_descripcion' => $this->post('parametrogeneral_descripcion'),
+            'parametrogeneral_valor' => (float) $this->post('parametrogeneral_valor', 0)
         ];
 
         // Validaciones básicas
@@ -315,12 +317,12 @@ class ParametrosGeneralesController extends Controller
             
             // Título
             $sheet->setCellValue('A1', 'LISTADO DE PARÁMETROS GENERALES');
-            $sheet->mergeCells('A1:C1');
+            $sheet->mergeCells('A1:D1');
             $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
             $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
             
             // Encabezados
-            $headers = ['Código', 'Descripción', 'Estado'];
+            $headers = ['Código', 'Descripción', 'Valor', 'Estado'];
             $col = 'A';
             foreach ($headers as $header) {
                 $sheet->setCellValue($col . '3', $header);
@@ -334,12 +336,13 @@ class ParametrosGeneralesController extends Controller
             foreach ($datos as $parametro) {
                 $sheet->setCellValue('A' . $row, $parametro['parametrogeneral_codigo']);
                 $sheet->setCellValue('B' . $row, $parametro['parametrogeneral_descripcion']);
-                $sheet->setCellValue('C' . $row, $parametro['parametrogeneral_estado'] == 1 ? 'Activo' : 'Inactivo');
+                $sheet->setCellValue('C' . $row, $parametro['parametrogeneral_valor']);
+                $sheet->setCellValue('D' . $row, $parametro['parametrogeneral_estado'] == 1 ? 'Activo' : 'Inactivo');
                 $row++;
             }
             
             // Ajustar columnas
-            foreach (range('A', 'C') as $col) {
+            foreach (range('A', 'D') as $col) {
                 $sheet->getColumnDimension($col)->setAutoSize(true);
             }
             
@@ -412,8 +415,9 @@ class ParametrosGeneralesController extends Controller
             $html = '<table border="1" cellpadding="4">
                 <thead>
                     <tr style="background-color:#E0E0E0;font-weight:bold;">
-                        <th width="20%">Código</th>
-                        <th width="60%">Descripción</th>
+                        <th width="15%">Código</th>
+                        <th width="45%">Descripción</th>
+                        <th width="20%">Valor</th>
                         <th width="20%">Estado</th>
                     </tr>
                 </thead>
@@ -423,8 +427,9 @@ class ParametrosGeneralesController extends Controller
                 $estado = $parametro['parametrogeneral_estado'] == 1 ? 'Activo' : 'Inactivo';
                 
                 $html .= '<tr>
-                    <td width="20%">' . htmlspecialchars($parametro['parametrogeneral_codigo']) . '</td>
-                    <td width="60%">' . htmlspecialchars($parametro['parametrogeneral_descripcion']) . '</td>
+                    <td width="15%">' . htmlspecialchars($parametro['parametrogeneral_codigo']) . '</td>
+                    <td width="45%">' . htmlspecialchars($parametro['parametrogeneral_descripcion']) . '</td>
+                    <td width="20%" align="right">' . number_format($parametro['parametrogeneral_valor'], 2, ',', '.') . '</td>
                     <td width="20%" align="center">' . $estado . '</td>
                 </tr>';
             }

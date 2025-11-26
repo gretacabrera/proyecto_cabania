@@ -69,18 +69,30 @@ $isEdit = isset($parametro) && !empty($parametro);
                             <?php endif; ?>
                         </div>
 
-                        <!-- Descripción / Valor -->
+                        <!-- Descripción -->
                         <div class="form-group mb-3">
                             <label for="parametrogeneral_descripcion" class="required">
-                                <i class="fas fa-align-left"></i> Descripción / Valor
+                                <i class="fas fa-align-left"></i> Descripción
                             </label>
                             <textarea class="form-control" id="parametrogeneral_descripcion" name="parametrogeneral_descripcion" 
                                       rows="3" required maxlength="250" 
-                                      placeholder="Ingrese la descripción o valor del parámetro..."><?= htmlspecialchars($parametro['parametrogeneral_descripcion'] ?? '') ?></textarea>
+                                      placeholder="Ingrese la descripción del parámetro..."><?= htmlspecialchars($parametro['parametrogeneral_descripcion'] ?? '') ?></textarea>
                             <div class="invalid-feedback"></div>
                             <small class="form-text text-muted">
                                 <span id="contadorDescripcion">0</span> / 250 caracteres
                             </small>
+                        </div>
+
+                        <!-- Valor Numérico -->
+                        <div class="form-group mb-3">
+                            <label for="parametrogeneral_valor" class="required">
+                                <i class="fas fa-calculator"></i> Valor Numérico
+                            </label>
+                            <input type="number" class="form-control" id="parametrogeneral_valor" name="parametrogeneral_valor" 
+                                   value="<?= htmlspecialchars($parametro['parametrogeneral_valor'] ?? '0') ?>"
+                                   required step="0.01" min="0" placeholder="Ej: 21.00">
+                            <div class="invalid-feedback"></div>
+                            <small class="form-text text-muted">Ingrese el valor numérico del parámetro (decimales permitidos)</small>
                         </div>
 
                         <!-- Botones -->
@@ -115,7 +127,8 @@ $isEdit = isset($parametro) && !empty($parametro);
                             <li>• El código debe ser único y de 5 caracteres máximo</li>
                             <li>• Use códigos descriptivos que identifiquen el parámetro</li>
                             <li>• Los códigos se guardan siempre en mayúsculas</li>
-                            <li>• La descripción puede contener el valor numérico o texto</li>
+                            <li>• La descripción debe ser un texto explicativo</li>
+                            <li>• El valor debe ser un número (puede tener decimales)</li>
                         </ul>
                     </div>
                 </div>
