@@ -755,7 +755,7 @@
     }
 }
 /* ===================================
-   CONSUMOS GRID (HUÉSPED DASHBOARD)
+   CONSUMOS GRID (HUï¿½SPED DASHBOARD)
    =================================== */
 
 .consumos-grid {
@@ -866,11 +866,22 @@
 @media (max-width: 768px) {
     .consumos-grid {
         grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .consumo-card {
+        border: 2px solid #dee2e6;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    
+    .consumo-card:last-child {
+        margin-bottom: 0;
     }
 }
 
 /* ===================================
-   COMENTARIOS GRID (HUÉSPED DASHBOARD)
+   COMENTARIOS GRID (HUï¿½SPED DASHBOARD)
    =================================== */
 
 .comentarios-grid {
