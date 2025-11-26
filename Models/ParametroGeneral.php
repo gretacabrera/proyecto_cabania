@@ -21,7 +21,7 @@ class ParametroGeneral extends Model
     const PARAM_PORCENTAJE_REINTEGRO = 'PREIN'; // Porcentaje de reintegro
 
     /**
-     * Obtener parámetros con paginación
+     * Obtener parámetros con paginación y filtros
      */
     public function getWithDetails($page = 1, $perPage = 10, $filters = [])
     {
@@ -40,10 +40,48 @@ class ParametroGeneral extends Model
         }
         
         if (isset($filters['parametrogeneral_estado']) && $filters['parametrogeneral_estado'] !== '') {
-            $where .= " AND parametrogeneral_estado = " . (int)$filters['parametrogeneral_estado'];
+            $where .= " AND parametrogeneral_estado = ?";
+            $params[] = (int) $filters['parametrogeneral_estado'];
         }
         
-        return $this->paginate($page, $perPage, $where, "parametrogeneral_codigo ASC");
+        return $this->paginateWithParams($page, $perPage, $where, "parametrogeneral_codigo ASC", $params);
+    }
+
+    /**
+     * Paginación con parámetros preparados
+     */
+    private function paginateWithParams($page = 1, $perPage = 10, $where = "1=1", $orderBy = null, $params = [])
+    {
+        $offset = ($page - 1) * $perPage;
+        $limit = (int) $perPage;
+        
+        // Query para contar total
+        $countSql = "SELECT COUNT(*) as total FROM {$this->table} WHERE $where";
+        $totalResult = $this->query($countSql, $params);
+        $totalRow = $totalResult->fetch_assoc();
+        $total = (int) $totalRow['total'];
+        
+        // Query para obtener registros
+        $orderClause = $orderBy ? "ORDER BY $orderBy" : '';
+        $dataSql = "SELECT * FROM {$this->table} WHERE $where $orderClause LIMIT $limit OFFSET $offset";
+        $dataResult = $this->query($dataSql, $params);
+        
+        $data = [];
+        while ($row = $dataResult->fetch_assoc()) {
+            $data[] = $row;
+        }
+        
+        $totalPages = ceil($total / $perPage);
+        
+        return [
+            'data' => $data,
+            'total' => $total,
+            'current_page' => $page,
+            'total_pages' => $totalPages,
+            'per_page' => $perPage,
+            'offset' => $offset,
+            'limit' => $limit
+        ];
     }
 
     /**

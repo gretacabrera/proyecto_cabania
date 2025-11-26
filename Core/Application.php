@@ -126,6 +126,17 @@ class Application
         $this->router->post('/cabanias/{id}/estado', 'CabaniasController@cambiarEstado');
         $this->router->post('/cabanias/check-availability', 'CabaniasController@checkAvailability');
 
+        // Rutas de Parámetros Generales
+        $this->router->get('/parametrosgenerales', 'ParametrosGeneralesController@index');
+        $this->router->any('/parametrosgenerales/create', 'ParametrosGeneralesController@create');
+        $this->router->get('/parametrosgenerales/exportar', 'ParametrosGeneralesController@exportar');
+        $this->router->get('/parametrosgenerales/exportar-pdf', 'ParametrosGeneralesController@exportarPdf');
+        $this->router->get('/parametrosgenerales/{id}', 'ParametrosGeneralesController@show');
+        $this->router->any('/parametrosgenerales/{id}/edit', 'ParametrosGeneralesController@edit');
+        $this->router->post('/parametrosgenerales/{id}/delete', 'ParametrosGeneralesController@delete');
+        $this->router->post('/parametrosgenerales/{id}/restore', 'ParametrosGeneralesController@restore');
+        $this->router->post('/parametrosgenerales/{id}/estado', 'ParametrosGeneralesController@cambiarEstado');
+
         // Rutas de huéspedes
         $this->router->get('/huespedes', 'HuespedesController@index');
         $this->router->any('/huespedes/create', 'HuespedesController@create');
