@@ -580,31 +580,58 @@ Pusher : Error : {"type":"WebSocketError","error":{"type":"PusherError","data":{
 
 ---
 
-## 🛍️ **Sistema de Consumos Multimodal - 3 Controladores**
+## 🛍️ **Sistema de Consumos con Gestión de Stock - 4 Interfaces**
 
-### **1. ConsumosController.php (Módulo Admin)**
+### **1. ConsumosController.php (Módulo Admin + Encargado Bar)**
 **Ubicación**: `Controllers/ConsumosController.php`  
-**Acceso**: Administrativo (requiere autenticación)
+**Acceso**: Administrativo o perfil "encargado bar"
 
 **Métodos Implementados:**
-- `index()` - Listado con filtros y paginación
+- `index()` - Listado con filtros y paginación (adaptativo según perfil)
 - `create()` - Formulario de creación múltiple con **notificación push** al huésped
 - `store()` - Guardar múltiples consumos transaccionalmente
 - `show($id)` - Detalle de consumo
 - `edit($id)` - Formulario de edición
 - `update($id)` - Actualizar consumo
 - `delete($id)` - Eliminar consumo
+- `cambiarEstado($id)` - **Cambio de estado con gestión automática de stock**
 - `reportarInconveniente($id)` - Reportar problema con pedido (AJAX) con **notificación push**
 - `exportar()` - Exportar a Excel
 - `exportarPdf()` - Exportar a PDF
 
-**Características:**
+**Características Admin:**
 - ✅ Formulario dinámico con JavaScript para múltiples items
 - ✅ Cálculo automático de subtotales y total
 - ✅ Soporte transaccional con método `createMultiple()`
 - ✅ Validación completa de datos
 - ✅ Exportación con filtros aplicados
 - ✅ **Notificaciones push** a huéspedes cuando se crea pedido o reporta inconveniente
+
+**Características Encargado Bar:**
+- ✅ Vista simplificada solo con consumos del día actual
+- ✅ Botones de acción contextuales según estado del pedido
+- ✅ **Sistema de gestión de stock integrado**:
+  * Descuento automático al entregar (estado 3)
+  * Devolución automática al anular por inconveniente (estado 5)
+  * Registro de pérdidas sin reintegro (estado 7)
+  * Reactivación con dos escenarios (error vs reintento)
+  * Transacciones atómicas con rollback automático
+  * Audit trail completo en tabla `productomovimiento`
+- ✅ Edición de cantidad al aceptar pedidos (estado 1 → 2)
+- ✅ Confirmación sin edición al entregar (estado 2 → 3)
+- ✅ Modales informativos detallados con SweetAlert2
+- ✅ Sin filtros, exportaciones ni botón de nuevo registro
+- ✅ **Notificaciones push deshabilitadas** en reactivaciones (transparente para huésped)
+
+**Estados Manejados por Encargado Bar:**
+- **Estado 1 → 2**: Aceptar pedido (con edición de cantidad)
+- **Estado 2 → 3**: Entregar pedido (descuenta stock)
+- **Estado 2 → 4**: Anular por falta de stock
+- **Estado 2 → 5**: Anular por inconveniente
+- **Estado 2 → 7**: Registrar pérdida (descuenta stock, no reintegrable)
+- **Estado 3 → 5**: Anular entregado (devuelve stock)
+- **Estado 3 → 7**: Reclasificar a pérdida (ajuste contable)
+- **Estado 7 → 2**: Reactivar con dos opciones (error o reintento)
 
 ### **2. HuespedConsumosController.php (Módulo Self-Service)**
 **Ubicación**: `Controllers/HuespedConsumosController.php`  

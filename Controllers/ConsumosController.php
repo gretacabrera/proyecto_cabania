@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\Controller;
 use App\Core\NotificationService;
 use App\Models\Consumo;
+use App\Models\EstadoConsumo;
 
 /**
  * Controlador para la gestión de consumos
@@ -12,12 +13,14 @@ use App\Models\Consumo;
 class ConsumosController extends Controller
 {
     protected $consumoModel;
+    protected $estadoConsumoModel;
     protected $notificationService;
 
     public function __construct()
     {
         parent::__construct();
         $this->consumoModel = new Consumo();
+        $this->estadoConsumoModel = new EstadoConsumo();
         $this->notificationService = new NotificationService();
     }
 
@@ -44,13 +47,23 @@ class ConsumosController extends Controller
             'servicio' => $this->get('servicio'),
             'estado' => $this->get('estado')
         ];
+        
+        // Si es encargado bar, filtrar solo consumos de hoy
+        $userProfile = \App\Core\Auth::getUserProfile();
+        if ($userProfile === 'encargado bar') {
+            $filters['fecha_hoy'] = true;
+        }
 
         $result = $this->consumoModel->getWithDetails($page, $perPage, $filters);
+        
+        // Cargar estados de consumo para el filtro
+        $estadosConsumo = $this->estadoConsumoModel->getActivos();
 
         $data = [
             'title' => 'Gestión de Consumos',
             'consumos' => $result['data'],
             'pagination' => $result,
+            'estadosConsumo' => $estadosConsumo,
             'filters' => $filters,
             'isAdminArea' => true
         ];
@@ -116,7 +129,7 @@ class ConsumosController extends Controller
                             'consumo_descripcion' => $descripcion,
                             'consumo_cantidad' => $cantidad,
                             'consumo_total' => $precioUnitario * $cantidad,
-                            'consumo_estado' => 1
+                            'rela_estadoconsumo' => 1
                         ];
                     } else if ($tipo == 's') {
                         // Es servicio
@@ -132,7 +145,7 @@ class ConsumosController extends Controller
                             'consumo_descripcion' => $descripcion,
                             'consumo_cantidad' => $cantidad,
                             'consumo_total' => $precioUnitario * $cantidad,
-                            'consumo_estado' => 1
+                            'rela_estadoconsumo' => 1
                         ];
                     }
 
@@ -249,7 +262,8 @@ class ConsumosController extends Controller
                 'rela_servicio' => $this->post('rela_servicio') ?: null,
                 'consumo_descripcion' => $this->post('consumo_descripcion'),
                 'consumo_cantidad' => floatval($this->post('consumo_cantidad', 1)),
-                'consumo_total' => floatval($this->post('consumo_total', 0))
+                'consumo_total' => floatval($this->post('consumo_total', 0)),
+                'rela_estadoconsumo' => (int) $this->post('rela_estadoconsumo', 1)
             ];
             
             // Validar datos básicos
@@ -275,6 +289,7 @@ class ConsumosController extends Controller
         $reservas = $this->consumoModel->getReservasActivas();
         $productos = $this->consumoModel->getProductosActivos();
         $servicios = $this->consumoModel->getServiciosActivos();
+        $estadosConsumo = $this->estadoConsumoModel->getActivos();
 
         $data = [
             'title' => 'Editar Consumo',
@@ -282,6 +297,7 @@ class ConsumosController extends Controller
             'reservas' => $reservas,
             'productos' => $productos,
             'servicios' => $servicios,
+            'estadosConsumo' => $estadosConsumo,
             'isAdminArea' => true
         ];
 
@@ -352,7 +368,11 @@ class ConsumosController extends Controller
      */
     public function cambiarEstado($id)
     {
-        if (!$this->hasPermission('consumos')) {
+        // Verificar permisos: puede ser admin con permiso 'consumos' o perfil 'encargado bar'
+        $hasPermission = $this->hasPermission('consumos');
+        $isEncargadoBar = \App\Core\Auth::getUserProfile() === 'encargado bar';
+        
+        if (!$hasPermission && !$isEncargadoBar) {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'message' => 'Sin permisos']);
             return;
@@ -365,19 +385,192 @@ class ConsumosController extends Controller
             return;
         }
 
-        // Obtener nuevo estado desde POST o alternar estado simple (para compatibilidad)
-        $nuevoEstadoId = $this->post('nuevo_estado');
+        // Parsear JSON si viene como application/json
+        $jsonData = json_decode(file_get_contents('php://input'), true);
+        
+        // Obtener nuevo estado desde POST o JSON
+        $nuevoEstadoId = $jsonData['nuevo_estado'] ?? $this->post('nuevo_estado');
         
         if (!$nuevoEstadoId) {
             // Comportamiento legacy: si no se especifica, alternar entre pendiente(1) y entregado(3)
             $nuevoEstadoId = $consumo['rela_estadoconsumo'] == 1 ? 3 : 1;
         }
         
-        $estadoAnterior = $consumo['rela_estadoconsumo'];
+        // Obtener nueva cantidad si se envió (para encargado bar)
+        $nuevaCantidad = $jsonData['cantidad'] ?? $this->post('cantidad');
         
-        if ($this->consumoModel->update($id, ['rela_estadoconsumo' => $nuevoEstadoId])) {
-            // Enviar notificaciones según el cambio de estado
-            if ($estadoAnterior != $nuevoEstadoId) {
+        $dataUpdate = ['rela_estadoconsumo' => $nuevoEstadoId];
+        
+        if ($nuevaCantidad && $nuevaCantidad > 0) {
+            $dataUpdate['consumo_cantidad'] = (int) $nuevaCantidad;
+            // Recalcular total si se cambió la cantidad
+            if (isset($consumo['consumo_total']) && isset($consumo['consumo_cantidad']) && $consumo['consumo_cantidad'] > 0) {
+                $precioUnitario = $consumo['consumo_total'] / $consumo['consumo_cantidad'];
+                $dataUpdate['consumo_total'] = $precioUnitario * (int) $nuevaCantidad;
+            }
+        }
+        
+        $estadoAnterior = $consumo['rela_estadoconsumo'];
+        $cantidadParaStock = isset($dataUpdate['consumo_cantidad']) ? (int) $dataUpdate['consumo_cantidad'] : (int) $consumo['consumo_cantidad'];
+        
+        // Iniciar transacción para asegurar atomicidad
+        $db = \App\Core\Database::getInstance();
+        $db->beginTransaction();
+        
+        try {
+            // 1. Actualizar estado y cantidad del consumo
+            if (!$this->consumoModel->update($id, $dataUpdate)) {
+                throw new \Exception('Error al actualizar el consumo');
+            }
+            
+            // 2. GESTIÓN DE STOCK según cambio de estado
+            // Si cambia a estado "entregado" (3) y es un producto, descontar stock
+            if ($nuevoEstadoId == 3 && $estadoAnterior != 3 && !empty($consumo['rela_producto'])) {
+                $productoModel = new \App\Models\Producto();
+                $productoMovimientoModel = new \App\Models\ProductoMovimiento();
+                
+                // SIEMPRE descontar stock al entregar (incluso en reactivaciones)
+                $productoModel->updateStock($consumo['rela_producto'], $cantidadParaStock, 'subtract');
+                
+                // Verificar si viene de reactivación para descripción apropiada
+                $tipoReact = $productoMovimientoModel->verificarReactivacion($id);
+                
+                $producto = $productoModel->find($consumo['rela_producto']);
+                
+                if ($tipoReact === 'error') {
+                    $descripcion = "Consumo entregado (post-corrección) - Reserva #{$consumo['rela_reserva']} - {$producto['producto_nombre']}";
+                } elseif ($tipoReact === 'reintento') {
+                    $descripcion = "Consumo entregado (reintento con nuevo producto) - Reserva #{$consumo['rela_reserva']} - {$producto['producto_nombre']}";
+                } else {
+                    $descripcion = "Consumo entregado - Reserva #{$consumo['rela_reserva']} - {$producto['producto_nombre']}";
+                }
+                
+                $productoMovimientoModel->registrarMovimiento(
+                    $consumo['rela_producto'],
+                    'S', // Salida (siempre descuenta)
+                    $cantidadParaStock,
+                    $descripcion
+                );
+            }
+            
+            // Si cambia de "entregado" (3) a "anulado por inconveniente" (5) y es un producto, devolver stock
+            if ($estadoAnterior == 3 && $nuevoEstadoId == 5 && !empty($consumo['rela_producto'])) {
+                $productoModel = new \App\Models\Producto();
+                $productoMovimientoModel = new \App\Models\ProductoMovimiento();
+                
+                // Devolver stock con la cantidad ORIGINAL (antes de cualquier cambio)
+                $cantidadOriginal = (int) $consumo['consumo_cantidad'];
+                $productoModel->updateStock($consumo['rela_producto'], $cantidadOriginal, 'add');
+                
+                // Registrar movimiento de entrada (devolución)
+                $producto = $productoModel->find($consumo['rela_producto']);
+                $descripcion = "Devolución por anulación - Consumo #{$id} - Reserva #{$consumo['rela_reserva']} - {$producto['producto_nombre']}";
+                $productoMovimientoModel->registrarMovimiento(
+                    $consumo['rela_producto'],
+                    'E', // Entrada
+                    $cantidadOriginal,
+                    $descripcion
+                );
+            }
+            
+            // REACTIVACIÓN: Estado 2 desde Estado 7 (Pérdida)
+            if ($estadoAnterior == 7 && $nuevoEstadoId == 2 && !empty($consumo['rela_producto'])) {
+                $productoModel = new \App\Models\Producto();
+                $productoMovimientoModel = new \App\Models\ProductoMovimiento();
+                
+                // Obtener tipo de reactivación desde el request
+                $tipoReactivacion = isset($jsonData['tipo_reactivacion']) ? $jsonData['tipo_reactivacion'] : null;
+                
+                if (!$tipoReactivacion || !in_array($tipoReactivacion, ['error', 'reintento'])) {
+                    throw new \Exception('Debe especificar el tipo de reactivación');
+                }
+                
+                if ($tipoReactivacion == 'error') {
+                    // ESCENARIO 1: Error administrativo - DEVOLVER stock
+                    $productoModel->updateStock($consumo['rela_producto'], $cantidadParaStock, 'add');
+                    
+                    $descripcion = "Corrección de error - Stock devuelto - Consumo #{$id} - Reserva #{$consumo['rela_reserva']}";
+                    $productoMovimientoModel->registrarMovimiento(
+                        $consumo['rela_producto'],
+                        'C', // Corrección (devuelve stock)
+                        $cantidadParaStock,
+                        $descripcion
+                    );
+                    
+                } else {
+                    // ESCENARIO 2: Reintento real - NO TOCAR STOCK (ya descontado)
+                    // NO se toca el stock porque el producto ya se perdió
+                    $descripcion = "Reintento - Sin descuento de stock - Consumo #{$id} - Reserva #{$consumo['rela_reserva']} (Producto anterior ya perdido)";
+                    $productoMovimientoModel->registrarMovimiento(
+                        $consumo['rela_producto'],
+                        'A', // Ajuste informativo (sin impacto en stock)
+                        0,
+                        $descripcion
+                    );
+                }
+            }
+            
+            // Estado 7: Anulado por pérdida (sin reintegro de stock)
+            if ($nuevoEstadoId == 7 && !empty($consumo['rela_producto'])) {
+                $productoModel = new \App\Models\Producto();
+                $productoMovimientoModel = new \App\Models\ProductoMovimiento();
+                $producto = $productoModel->find($consumo['rela_producto']);
+                $cantidadPerdida = (int) $consumo['consumo_cantidad'];
+                
+                // CASO 1: Pérdida desde "En proceso" (estado 2)
+                if ($estadoAnterior == 2) {
+                    // Descontar stock porque el producto se perdió físicamente durante la preparación
+                    $productoModel->updateStock($consumo['rela_producto'], $cantidadPerdida, 'subtract');
+                    
+                    // Registrar como pérdida/merma
+                    $descripcion = "Pérdida de producto - Consumo #{$id} - Reserva #{$consumo['rela_reserva']} - {$producto['producto_nombre']} (Dañado en preparación)";
+                    $productoMovimientoModel->registrarMovimiento(
+                        $consumo['rela_producto'],
+                        'S', // Salida por pérdida
+                        $cantidadPerdida,
+                        $descripcion
+                    );
+                
+                // CASO 2: Pérdida desde "Entregado" (estado 3)
+                } elseif ($estadoAnterior == 3) {
+                    // Stock ya fue descontado al entregar, NO se toca
+                    // Solo registrar ajuste para reclasificar de venta a pérdida
+                    $descripcion = "Reclasificación a pérdida - Consumo #{$id} - Reserva #{$consumo['rela_reserva']} - {$producto['producto_nombre']} (Originalmente entregado como venta)";
+                    $productoMovimientoModel->registrarMovimiento(
+                        $consumo['rela_producto'],
+                        'A', // Ajuste (reclasificación sin afectar stock)
+                        0,   // Cantidad 0 porque no afecta stock físico
+                        $descripcion
+                    );
+                    
+                } else {
+                    throw new \Exception('Solo se puede registrar pérdida desde estados "En proceso" o "Entregado"');
+                }
+            }
+            
+            // Si todo salió bien, confirmar la transacción
+            $db->commit();
+            
+        } catch (\Exception $e) {
+            // Si hubo algún error, revertir todos los cambios
+            $db->rollback();
+            
+            error_log("Error en transacción de cambio de estado: " . $e->getMessage());
+            header('Content-Type: application/json');
+            
+            // Mensaje más descriptivo para el usuario
+            $mensajeUsuario = $e->getMessage();
+            if (strpos($mensajeUsuario, 'Stock insuficiente') !== false) {
+                $mensajeUsuario = 'No hay suficiente stock disponible para entregar este producto. Por favor, verifique el inventario.';
+            }
+            
+            echo json_encode(['success' => false, 'message' => $mensajeUsuario]);
+            return;
+        }
+        
+        // Enviar notificaciones según el cambio de estado (fuera de la transacción)
+        // NO enviar notificación si es una reactivación (estado 7 -> 2) para que sea transparente al huésped
+        if ($estadoAnterior != $nuevoEstadoId && !($estadoAnterior == 7 && $nuevoEstadoId == 2)) {
                 try {
                     $reservaId = $consumo['rela_reserva'] ?? null;
                     $usuarioId = null;
@@ -425,7 +618,6 @@ class ConsumosController extends Controller
                                 $descripcion,
                                 $usuarioId
                             );
-                            error_log("Notificación de inconveniente enviada - Consumo: $id, Estado: $nuevoEstadoId, Usuario: $usuarioId");
                         }
                     }
                 } catch (\Exception $e) {
@@ -440,7 +632,8 @@ class ConsumosController extends Controller
                 3 => 'Consumo entregado',
                 4 => 'Consumo anulado por falta de stock',
                 5 => 'Consumo anulado por inconveniente',
-                6 => 'Consumo cancelado'
+                6 => 'Consumo cancelado',
+                7 => 'Consumo anulado por pérdida (sin reintegro de stock)'
             ];
             
             $mensaje = $mensajes[$nuevoEstadoId] ?? 'Estado actualizado';
@@ -451,10 +644,6 @@ class ConsumosController extends Controller
                 'message' => $mensaje, 
                 'nuevoEstado' => $nuevoEstadoId
             ]);
-        } else {
-            header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'message' => 'Error al cambiar estado']);
-        }
     }
 
     /**
@@ -693,7 +882,7 @@ class ConsumosController extends Controller
             // Llenar datos
             $row = 2;
             foreach ($consumos as $consumo) {
-                $estadoTexto = $consumo['consumo_estado'] == 1 ? 'Activo' : 'Inactivo';
+                $estadoTexto = $consumo['estadoconsumo_descripcion'] ?? 'Desconocido';
                 $huesped = trim(($consumo['huesped_nombre'] ?? '') . ' ' . ($consumo['huesped_apellido'] ?? ''));
                 $precioUnitario = $consumo['consumo_cantidad'] > 0 ? $consumo['consumo_total'] / $consumo['consumo_cantidad'] : 0;
 
@@ -834,7 +1023,7 @@ class ConsumosController extends Controller
                 <tbody>';
 
             foreach ($consumos as $consumo) {
-                $estadoTexto = $consumo['consumo_estado'] == 1 ? 'Activo' : 'Inactivo';
+                $estadoTexto = $consumo['estadoconsumo_descripcion'] ?? 'Desconocido';
                 $huesped = trim(($consumo['huesped_nombre'] ?? '') . ' ' . ($consumo['huesped_apellido'] ?? ''));
                 $precioUnitario = $consumo['consumo_cantidad'] > 0 ? $consumo['consumo_total'] / $consumo['consumo_cantidad'] : 0;
                 $descripcion = substr($consumo['consumo_descripcion'], 0, 60) . (strlen($consumo['consumo_descripcion']) > 60 ? '...' : '');

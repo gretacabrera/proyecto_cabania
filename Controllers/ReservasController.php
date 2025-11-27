@@ -3025,7 +3025,7 @@ class ReservasController extends Controller
                 'consumo_descripcion' => 'Servicio: ' . $servicio['servicio_nombre'],
                 'consumo_cantidad' => $cantidad,
                 'consumo_total' => $servicio['servicio_precio'] * $cantidad,
-                'consumo_estado' => 1 // PENDIENTE (no confirmado ni abonado)
+                'rela_estadoconsumo' => 1 // PENDIENTE (Solicitud pendiente)
             ];
             
             $consumoId = $this->consumoModel->create($consumoData);

@@ -581,7 +581,7 @@ class Persona extends Model
 
 ### **🛍️ Modelos Comerciales**
 
-#### **`Consumo.php` - ACTUALIZADO**
+#### **`Consumo.php` - ACTUALIZADO CON GESTIÓN DE STOCK**
 ```php
 <?php
 
@@ -596,7 +596,7 @@ class Consumo extends Model
     
     protected $fillable = [
         'consumo_descripcion', 'consumo_cantidad', 'consumo_precio',
-        'rela_producto', 'rela_servicio', 'rela_reserva'
+        'rela_producto', 'rela_servicio', 'rela_reserva', 'rela_estadoconsumo'
     ];
 
     /**
@@ -618,6 +618,61 @@ class Consumo extends Model
             $this->db->rollback();
             throw $e;
         }
+    }
+
+    /**
+     * NUEVO - Obtener consumos con detalles y evitar duplicados
+     * Uso: Listados en módulos Admin y Encargado Bar
+     * Nota: Usa subquery para obtener solo el primer huésped de cada reserva
+     */
+    public function getWithDetails($page, $perPage, $filters)
+    {
+        $where = "1=1";
+        $params = [];
+        
+        // Filtros aplicados según perfil
+        if (!empty($filters['fecha_desde'])) {
+            $where .= " AND DATE(c.consumo_fecha) >= ?";
+            $params[] = $filters['fecha_desde'];
+        }
+        
+        if (!empty($filters['producto'])) {
+            $where .= " AND c.rela_producto = ?";
+            $params[] = $filters['producto'];
+        }
+        
+        if (isset($filters['estado']) && $filters['estado'] !== '') {
+            $where .= " AND c.rela_estadoconsumo = ?";
+            $params[] = $filters['estado'];
+        }
+        
+        // Subquery para evitar duplicados por múltiples huéspedes
+        $sql = "SELECT c.*, 
+                   COALESCE(p.producto_nombre, s.servicio_nombre) as item_nombre,
+                   ec.estadoconsumo_descripcion,
+                   r.reserva_codigo,
+                   cab.cabania_nombre,
+                   pf.personafisica_nombre,
+                   pf.personafisica_apellido
+            FROM consumo c
+            LEFT JOIN producto p ON c.rela_producto = p.id_producto
+            LEFT JOIN servicio s ON c.rela_servicio = s.id_servicio
+            LEFT JOIN estadoconsumo ec ON c.rela_estadoconsumo = ec.id_estadoconsumo
+            LEFT JOIN reserva r ON c.rela_reserva = r.id_reserva
+            LEFT JOIN cabania cab ON r.rela_cabania = cab.id_cabania
+            LEFT JOIN huesped_reserva hr ON hr.rela_reserva = r.id_reserva
+                AND hr.id_huespedreserva = (
+                    SELECT MIN(hr2.id_huespedreserva)
+                    FROM huesped_reserva hr2
+                    WHERE hr2.rela_reserva = r.id_reserva
+                )
+            LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
+            LEFT JOIN persona per ON h.rela_persona = per.id_persona
+            LEFT JOIN personafisica pf ON per.id_persona = pf.rela_persona
+            WHERE {$where}
+            ORDER BY c.id_consumo DESC";
+        
+        return $this->paginateWithParams($page, $perPage, $where, "c.id_consumo DESC", $params);
     }
 
     /**
@@ -693,6 +748,132 @@ class Consumo extends Model
         
         return $this->db->query($sql)->fetch_all(MYSQLI_ASSOC);
     }
+}
+```
+
+---
+
+#### **`ProductoMovimiento.php` - NUEVO: Audit Trail de Stock**
+```php
+<?php
+
+namespace App\Models;
+
+use App\Core\Model;
+
+class ProductoMovimiento extends Model
+{
+    protected $table = 'productomovimiento';
+    protected $primaryKey = 'id_productomovimiento';
+    
+    protected $fillable = [
+        'rela_producto',
+        'productomovimiento_tipo',
+        'productomovimiento_cantidad',
+        'productomovimiento_descripcion'
+    ];
+
+    /**
+     * Registrar movimiento de stock con validación de tipos
+     * 
+     * @param int $productoId ID del producto
+     * @param string $tipo Tipo de movimiento: E (Entrada), S (Salida), A (Ajuste), C (Corrección)
+     * @param int $cantidad Cantidad del movimiento
+     * @param string $descripcion Descripción detallada del movimiento
+     * @return int ID del movimiento creado
+     * @throws Exception Si el tipo no es válido
+     */
+    public function registrarMovimiento($productoId, $tipo, $cantidad, $descripcion)
+    {
+        // Validar tipo de movimiento
+        $tiposValidos = ['E', 'S', 'A', 'C'];
+        if (!in_array($tipo, $tiposValidos)) {
+            throw new \Exception("Tipo de movimiento inválido: {$tipo}. Debe ser E, S, A o C.");
+        }
+        
+        return $this->create([
+            'rela_producto' => $productoId,
+            'productomovimiento_tipo' => $tipo,
+            'productomovimiento_cantidad' => $cantidad,
+            'productomovimiento_descripcion' => $descripcion
+        ]);
+    }
+
+    /**
+     * Verificar tipo de reactivación de un consumo
+     * Analiza el último movimiento para determinar si fue error o reintento
+     * 
+     * @param int $consumoId ID del consumo
+     * @return string|null 'error' si fue error administrativo, 'reintento' si fue pérdida real, null si no aplica
+     */
+    public function verificarReactivacion($consumoId)
+    {
+        $sql = "SELECT productomovimiento_descripcion 
+                FROM productomovimiento pm
+                INNER JOIN consumo c ON pm.rela_producto = c.rela_producto
+                WHERE c.id_consumo = ?
+                ORDER BY pm.id_productomovimiento DESC
+                LIMIT 1";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param("i", $consumoId);
+        $stmt->execute();
+        $result = $stmt->get_result()->fetch_assoc();
+        
+        if (!$result) {
+            return null;
+        }
+        
+        $descripcion = $result['productomovimiento_descripcion'];
+        
+        // Detectar tipo de reactivación por keywords en descripción
+        if (strpos($descripcion, 'Corrección de error') !== false) {
+            return 'error';
+        }
+        
+        if (strpos($descripcion, 'Reintento - Sin descuento') !== false) {
+            return 'reintento';
+        }
+        
+        return null;
+    }
+
+    /**
+     * Obtener historial de movimientos de un producto
+     * 
+     * @param int $productoId ID del producto
+     * @param int $limit Límite de registros (default: 50)
+     * @return array Movimientos ordenados del más reciente al más antiguo
+     */
+    public function getHistorialProducto($productoId, $limit = 50)
+    {
+        $sql = "SELECT pm.*, p.producto_nombre
+                FROM productomovimiento pm
+                INNER JOIN producto p ON pm.rela_producto = p.id_producto
+                WHERE pm.rela_producto = ?
+                ORDER BY pm.id_productomovimiento DESC
+                LIMIT ?";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param("ii", $productoId, $limit);
+        $stmt->execute();
+        return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    }
+}
+```
+
+**Tipos de Movimiento:**
+- **`E` (Entrada)**: Incrementa stock - Devoluciones, correcciones de error
+- **`S` (Salida)**: Decrementa stock - Entregas, pérdidas, ventas
+- **`A` (Ajuste)**: Sin cambio de stock - Reclasificaciones, movimientos informativos
+- **`C` (Corrección)**: Incrementa stock - Corrección por error administrativo
+
+**Flujos de Uso:**
+1. **Entrega de Consumo (Estado 2→3)**: Registra salida tipo `S`
+2. **Pérdida de Producto (Estado 2→7)**: Registra salida tipo `S` por pérdida
+3. **Anulación con Devolución (Estado 3→5)**: Registra entrada tipo `E`
+4. **Reactivación por Error (Estado 7→2)**: Registra corrección tipo `C`
+5. **Reactivación por Reintento (Estado 7→2)**: Registra ajuste tipo `A` (sin cambio stock)
 
     /**
      * NUEVO - Obtener reservas del usuario actual

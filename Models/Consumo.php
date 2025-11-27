@@ -20,9 +20,12 @@ class Consumo extends Model
         $where = "1=1";
         $params = [];
         
+        // EXCLUIR consumos cancelados por usuario (estado 6)
+        $where .= " AND c.rela_estadoconsumo != 6";
+        
         // Aplicar filtros
         if (!empty($filters['huesped'])) {
-            $where .= " AND (p.persona_nombre LIKE ? OR p.persona_apellido LIKE ?)";
+            $where .= " AND (pf.personafisica_nombre LIKE ? OR pf.personafisica_apellido LIKE ?)";
             $searchTerm = '%' . $filters['huesped'] . '%';
             $params[] = $searchTerm;
             $params[] = $searchTerm;
@@ -48,6 +51,11 @@ class Consumo extends Model
             $params[] = (int) $filters['estado'];
         }
         
+        // Filtrar solo consumos de hoy (para encargado bar)
+        if (!empty($filters['fecha_hoy'])) {
+            $where .= " AND DATE(c.consumo_fechahora) = CURDATE()";
+        }
+        
         // Query personalizada con JOINs
         $baseSql = "FROM {$this->table} c
                     LEFT JOIN reserva r ON c.rela_reserva = r.id_reserva
@@ -55,9 +63,18 @@ class Consumo extends Model
                     LEFT JOIN servicio serv ON c.rela_servicio = serv.id_servicio
                     LEFT JOIN categoria cat ON prod.rela_categoria = cat.id_categoria
                     LEFT JOIN estadoconsumo ec ON c.rela_estadoconsumo = ec.id_estadoconsumo
-                    LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
+                    LEFT JOIN (
+                        SELECT hr.rela_reserva, hr.rela_huesped
+                        FROM huesped_reserva hr
+                        WHERE hr.id_huespedreserva = (
+                            SELECT MIN(hr2.id_huespedreserva)
+                            FROM huesped_reserva hr2
+                            WHERE hr2.rela_reserva = hr.rela_reserva
+                        )
+                    ) hr ON r.id_reserva = hr.rela_reserva
                     LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                     LEFT JOIN persona p ON h.rela_persona = p.id_persona
+                    LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                     WHERE {$where}";
         
         return $this->paginateWithCustomQuery($baseSql, $page, $perPage, $params);
@@ -84,8 +101,8 @@ class Consumo extends Model
                            serv.servicio_nombre,
                            cat.categoria_descripcion,
                            ec.estadoconsumo_descripcion,
-                           p.persona_nombre as huesped_nombre, 
-                           p.persona_apellido as huesped_apellido
+                           pf.personafisica_nombre as huesped_nombre, 
+                           pf.personafisica_apellido as huesped_apellido
                     " . $baseSql . "
                     ORDER BY c.consumo_fechahora DESC, c.id_consumo DESC
                     LIMIT $limit OFFSET $offset";
@@ -118,9 +135,12 @@ class Consumo extends Model
         $where = "1=1";
         $params = [];
         
+        // EXCLUIR consumos cancelados por usuario (estado 6)
+        $where .= " AND c.rela_estadoconsumo != 6";
+        
         // Aplicar los mismos filtros que getWithDetails
         if (!empty($filters['huesped'])) {
-            $where .= " AND (p.persona_nombre LIKE ? OR p.persona_apellido LIKE ?)";
+            $where .= " AND (pf.personafisica_nombre LIKE ? OR pf.personafisica_apellido LIKE ?)";
             $searchTerm = '%' . $filters['huesped'] . '%';
             $params[] = $searchTerm;
             $params[] = $searchTerm;
@@ -152,17 +172,26 @@ class Consumo extends Model
                        serv.servicio_nombre,
                        cat.categoria_descripcion,
                        ec.estadoconsumo_descripcion,
-                       p.persona_nombre as huesped_nombre, 
-                       p.persona_apellido as huesped_apellido
+                       pf.personafisica_nombre as huesped_nombre, 
+                       pf.personafisica_apellido as huesped_apellido
                 FROM {$this->table} c
                 LEFT JOIN reserva r ON c.rela_reserva = r.id_reserva
                 LEFT JOIN producto prod ON c.rela_producto = prod.id_producto
                 LEFT JOIN servicio serv ON c.rela_servicio = serv.id_servicio
                 LEFT JOIN categoria cat ON prod.rela_categoria = cat.id_categoria
                 LEFT JOIN estadoconsumo ec ON c.rela_estadoconsumo = ec.id_estadoconsumo
-                LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
+                LEFT JOIN (
+                    SELECT hr.rela_reserva, hr.rela_huesped
+                    FROM huesped_reserva hr
+                    WHERE hr.id_huespedreserva = (
+                        SELECT MIN(hr2.id_huespedreserva)
+                        FROM huesped_reserva hr2
+                        WHERE hr2.rela_reserva = hr.rela_reserva
+                    )
+                ) hr ON r.id_reserva = hr.rela_reserva
                 LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                 LEFT JOIN persona p ON h.rela_persona = p.id_persona
+                LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                 WHERE {$where}
                 ORDER BY c.consumo_fechahora DESC, c.id_consumo DESC";
         
@@ -197,13 +226,22 @@ class Consumo extends Model
             $where .= " AND c.rela_producto = " . intval($filters['producto']);
         }
         
-        $sql = "SELECT c.*, r.id_reserva, r.reserva_fhinicio, r.reserva_fhfin, p.producto_nombre, pr.persona_nombre, pr.persona_apellido
+        $sql = "SELECT c.*, r.id_reserva, r.reserva_fhinicio, r.reserva_fhfin, p.producto_nombre, pf.personafisica_nombre as persona_nombre, pf.personafisica_apellido as persona_apellido
                 FROM {$this->table} c
                 LEFT JOIN reserva r ON c.rela_reserva = r.id_reserva
                 LEFT JOIN producto p ON c.rela_producto = p.id_producto
-                LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
+                LEFT JOIN (
+                    SELECT hr.rela_reserva, hr.rela_huesped
+                    FROM huesped_reserva hr
+                    WHERE hr.id_huespedreserva = (
+                        SELECT MIN(hr2.id_huespedreserva)
+                        FROM huesped_reserva hr2
+                        WHERE hr2.rela_reserva = hr.rela_reserva
+                    )
+                ) hr ON r.id_reserva = hr.rela_reserva
                 LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                 LEFT JOIN persona pr ON h.rela_persona = pr.id_persona
+                LEFT JOIN personafisica pf ON pr.rela_personafisica = pf.id_personafisica
                 WHERE {$where}
                 ORDER BY c.id_consumo DESC
                 LIMIT {$perPage} OFFSET {$offset}";
@@ -245,17 +283,28 @@ class Consumo extends Model
                        r.id_reserva, r.reserva_fhinicio, r.reserva_fhfin,
                        p.producto_nombre, 
                        s.servicio_nombre,
-                       pr.persona_nombre AS huesped_nombre, 
-                       pr.persona_apellido AS huesped_apellido,
-                       cab.cabania_nombre
+                       pf.personafisica_nombre AS huesped_nombre, 
+                       pf.personafisica_apellido AS huesped_apellido,
+                       cab.cabania_nombre,
+                       ec.estadoconsumo_descripcion
                 FROM {$this->table} c
                 LEFT JOIN reserva r ON c.rela_reserva = r.id_reserva
                 LEFT JOIN producto p ON c.rela_producto = p.id_producto
                 LEFT JOIN servicio s ON c.rela_servicio = s.id_servicio
-                LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
+                LEFT JOIN (
+                    SELECT hr.rela_reserva, hr.rela_huesped
+                    FROM huesped_reserva hr
+                    WHERE hr.id_huespedreserva = (
+                        SELECT MIN(hr2.id_huespedreserva)
+                        FROM huesped_reserva hr2
+                        WHERE hr2.rela_reserva = hr.rela_reserva
+                    )
+                ) hr ON r.id_reserva = hr.rela_reserva
                 LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                 LEFT JOIN persona pr ON h.rela_persona = pr.id_persona
+                LEFT JOIN personafisica pf ON pr.rela_personafisica = pf.id_personafisica
                 LEFT JOIN cabania cab ON r.rela_cabania = cab.id_cabania
+                LEFT JOIN estadoconsumo ec ON c.rela_estadoconsumo = ec.id_estadoconsumo
                 WHERE c.{$this->primaryKey} = {$id}
                 LIMIT 1";
         
@@ -268,13 +317,14 @@ class Consumo extends Model
      */
     public function getReservasActivas()
     {
-        $sql = "SELECT r.id_reserva, r.reserva_fhinicio, r.reserva_fhfin, c.cabania_nombre, p.persona_nombre, p.persona_apellido
+        $sql = "SELECT r.id_reserva, r.reserva_fhinicio, r.reserva_fhfin, c.cabania_nombre, pf.personafisica_nombre as persona_nombre, pf.personafisica_apellido as persona_apellido
                 FROM reserva r
                 INNER JOIN cabania c ON r.rela_cabania = c.id_cabania
                 INNER JOIN estadoreserva er ON r.rela_estadoreserva = er.id_estadoreserva
                 INNER JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                 INNER JOIN huesped h ON hr.rela_huesped = h.id_huesped
                 INNER JOIN persona p ON h.rela_persona = p.id_persona
+                INNER JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                 WHERE er.estadoreserva_estado = 1
                 ORDER BY r.reserva_fhinicio DESC";
         
@@ -347,12 +397,21 @@ class Consumo extends Model
      */
     public function getReservaInfo($reservaId)
     {
-        $sql = "SELECT r.*, c.cabania_nombre, p.persona_nombre, p.persona_apellido
+        $sql = "SELECT r.*, c.cabania_nombre, pf.personafisica_nombre as persona_nombre, pf.personafisica_apellido as persona_apellido
                 FROM reserva r
                 LEFT JOIN cabania c ON r.rela_cabania = c.id_cabania
-                LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
+                LEFT JOIN (
+                    SELECT hr.rela_reserva, hr.rela_huesped
+                    FROM huesped_reserva hr
+                    WHERE hr.id_huespedreserva = (
+                        SELECT MIN(hr2.id_huespedreserva)
+                        FROM huesped_reserva hr2
+                        WHERE hr2.rela_reserva = hr.rela_reserva
+                    )
+                ) hr ON r.id_reserva = hr.rela_reserva
                 LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                 LEFT JOIN persona p ON h.rela_persona = p.id_persona
+                LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
                 WHERE r.id_reserva = {$reservaId}";
         
         $result = $this->db->query($sql);
@@ -572,7 +631,15 @@ class Consumo extends Model
                        pf.personafisica_apellido AS persona_apellido
                 FROM reserva r
                 LEFT JOIN cabania c ON r.rela_cabania = c.id_cabania
-                LEFT JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
+                LEFT JOIN (
+                    SELECT hr.rela_reserva, hr.rela_huesped
+                    FROM huesped_reserva hr
+                    WHERE hr.id_huespedreserva = (
+                        SELECT MIN(hr2.id_huespedreserva)
+                        FROM huesped_reserva hr2
+                        WHERE hr2.rela_reserva = hr.rela_reserva
+                    )
+                ) hr ON r.id_reserva = hr.rela_reserva
                 LEFT JOIN huesped h ON hr.rela_huesped = h.id_huesped
                 LEFT JOIN persona p ON h.rela_persona = p.id_persona
                 LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
@@ -1114,3 +1181,4 @@ class Consumo extends Model
         return $result->fetch_assoc();
     }
 }
+

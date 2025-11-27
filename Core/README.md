@@ -368,7 +368,7 @@ class View
 - ✅ Inclusión de partials
 - ✅ Variables globales de vista
 
-### **6. Database.php - Gestión de Base de Datos**
+### **6. Database.php - Gestión de Base de Datos CON TRANSACCIONES ACID**
 
 ```php
 namespace App\Core;
@@ -410,9 +410,34 @@ class Database
             );
             
             $this->connection->set_charset('utf8mb4');
+            $this->connection->autocommit(false); // Desactivar autocommit para transacciones
         } catch (Exception $e) {
             throw new Exception("Error de conexión: " . $e->getMessage());
         }
+    }
+
+    /**
+     * Iniciar transacción SQL
+     */
+    public function beginTransaction()
+    {
+        return $this->connection->begin_transaction();
+    }
+
+    /**
+     * Confirmar transacción (commit)
+     */
+    public function commit()
+    {
+        return $this->connection->commit();
+    }
+
+    /**
+     * Revertir transacción (rollback)
+     */
+    public function rollback()
+    {
+        return $this->connection->rollback();
     }
 }
 ```
@@ -422,6 +447,59 @@ class Database
 - ✅ Conexión segura con MySQL
 - ✅ Configuración centralizada
 - ✅ Manejo de errores
+- ✅ **Transacciones ACID** (Atomicidad, Consistencia, Aislamiento, Durabilidad)
+- ✅ **Métodos de control transaccional**: `beginTransaction()`, `commit()`, `rollback()`
+- ✅ **Integridad de datos** garantizada en operaciones críticas
+
+**Uso de Transacciones en el Sistema:**
+
+**Caso 1: Gestión de Stock en Consumos**
+```php
+// ConsumosController::cambiarEstado()
+$this->db->beginTransaction();
+
+try {
+    // 1. Actualizar estado del consumo
+    // 2. Modificar stock del producto
+    // 3. Registrar movimiento en ProductoMovimiento
+    
+    $this->db->commit(); // ✅ Todo exitoso
+} catch (Exception $e) {
+    $this->db->rollback(); // ❌ Revertir todo si falla algo
+    throw $e;
+}
+```
+
+**Caso 2: Confirmación de Reserva con Pago**
+```php
+// Reserva::confirmPayment()
+$this->db->beginTransaction();
+
+try {
+    // 1. Validar reserva en estado PENDIENTE
+    // 2. Generar factura
+    // 3. Registrar pago vinculado a factura
+    // 4. Actualizar estado reserva a CONFIRMADA
+    
+    $this->db->commit(); // ✅ Todo exitoso
+} catch (Exception $e) {
+    $this->db->rollback(); // ❌ Revertir todo si falla algo
+    throw $e;
+}
+```
+
+**Garantías de las Transacciones:**
+- **Atomicidad**: Todo se ejecuta o nada se ejecuta (no estados intermedios)
+- **Consistencia**: La base de datos pasa de un estado válido a otro estado válido
+- **Aislamiento**: Transacciones concurrentes no interfieren entre sí
+- **Durabilidad**: Una vez confirmada, los cambios son permanentes
+
+**Operaciones Críticas que Usan Transacciones:**
+1. ✅ **Cambios de estado de consumos** con gestión de stock
+2. ✅ **Confirmación de pagos** de reservas (reserva + factura + pago)
+3. ✅ **Reactivaciones de consumos** anulados por pérdida
+4. ✅ **Anulaciones con devolución** de stock de productos
+5. ✅ **Entregas de pedidos** con descuento automático de inventario
 
 ### **7. Auth.php - Sistema de Autenticación**
 

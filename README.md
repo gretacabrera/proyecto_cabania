@@ -1255,9 +1255,9 @@ $numero = $factura->generateNumeroFactura($tipoComprobante);
 // Resultado: "FACA-00000001" (dependiendo del tipo)
 ```
 
-### **🛒 Sistema de Consumos Multimodal**
+### **🛒 Sistema de Consumos con Gestión de Stock**
 
-**3 Módulos Independientes para Gestión de Consumos:**
+**3 Módulos Independientes con Gestión Inteligente de Inventario:**
 
 #### **1. Módulo Admin (Panel Administrativo)**
 - **Ubicación**: `/admin/operaciones/consumos/`
@@ -1269,9 +1269,33 @@ $numero = $factura->generateNumeroFactura($tipoComprobante);
   - ✅ Cálculo automático de subtotales y total
   - ✅ Listado con filtros y paginación
   - ✅ Exportación Excel/PDF
-  - ✅ Gestión completa de estados
+  - ✅ Gestión completa de estados con control de stock
+  - ✅ **Sistema de Gestión de Stock Integrado**:
+    * Descuento automático al entregar (estado 3)
+    * Devolución automática al anular por inconveniente (estado 5)
+    * Registro de pérdidas sin reintegro (estado 7)
+    * Reactivación con dos escenarios (error vs reintento)
+    * Transacciones atómicas (rollback automático en errores)
+    * Audit trail completo en `productomovimiento`
 
-#### **2. Módulo Huésped (Self-Service)**
+#### **2. Módulo Encargado Bar (Interfaz Simplificada)**
+- **Ubicación**: `/admin/operaciones/consumos/` (con perfil "encargado bar")
+- **Acceso**: Requiere perfil "encargado bar"
+- **Características**:
+  - ✅ Vista simplificada solo con consumos del día actual
+  - ✅ Botones de acción según estado del pedido
+  - ✅ Cambio de estado con confirmaciones detalladas
+  - ✅ Edición de cantidad al aceptar pedidos
+  - ✅ Sin filtros, exportaciones ni botón de nuevo registro
+  - ✅ **Estados Manejados**:
+    * **Pendiente → En Proceso**: Aceptar pedido con cantidad editable
+    * **En Proceso → Entregado**: Confirmar entrega (descuenta stock)
+    * **En Proceso → Anulado Stock**: Sin stock disponible (sin descuento)
+    * **En Proceso → Anulado Inconveniente**: Cancelar por problema (sin descuento)
+    * **En Proceso → Pérdida**: Producto dañado (descuenta stock, no reintegrable)
+    * **Pérdida → En Proceso**: Reactivar con dos opciones (error o reintento)
+
+#### **3. Módulo Huésped (Self-Service)**
 - **Ubicación**: `/huesped/consumos/`
 - **Acceso**: Requiere autenticación de huésped
 - **Características**:
@@ -1282,7 +1306,7 @@ $numero = $factura->generateNumeroFactura($tipoComprobante);
   - ✅ Validación de propiedad de consumos (seguridad)
   - ✅ Interfaz optimizada para experiencia de usuario
 
-#### **3. Módulo Totem (Sin Autenticación)**
+#### **4. Módulo Totem (Sin Autenticación)**
 - **Ubicación**: `/totem/consumos/`
 - **Acceso**: Sin autenticación requerida (ideal para tablets)
 - **Características**:
@@ -1294,12 +1318,81 @@ $numero = $factura->generateNumeroFactura($tipoComprobante);
   - ✅ Layout púrpura distintivo con gradiente
   - ✅ Validación de reservas activas por cabaña
 
+#### **📦 Sistema de Gestión de Stock**
+
+**Características del Sistema:**
+- **Transacciones ACID**: Todas las operaciones de stock son atómicas
+- **Tabla de Movimientos**: `productomovimiento` registra cada cambio
+- **Tipos de Movimiento**:
+  * `E` (Entrada): Devoluciones, correcciones de error
+  * `S` (Salida): Entregas, pérdidas
+  * `A` (Ajuste): Reclasificaciones sin cambio de stock
+  * `C` (Corrección): Devolución por error administrativo
+
+**Flujos de Stock por Estado:**
+
+1. **Estado 2 → Estado 3 (Entregado)**
+   - Descuenta stock SIEMPRE
+   - Registra movimiento tipo `S` (Salida)
+   - Detecta si viene de reactivación para descripción apropiada
+
+2. **Estado 3 → Estado 5 (Anulado por Inconveniente)**
+   - Devuelve stock con cantidad original
+   - Registra movimiento tipo `E` (Entrada)
+   - Ejemplo: Devolución de producto en buen estado
+
+3. **Estado 2 → Estado 7 (Pérdida)**
+   - Descuenta stock (producto perdido/dañado)
+   - Registra movimiento tipo `S` (Salida por pérdida)
+   - NO se reintegra el stock
+
+4. **Estado 3 → Estado 7 (Reclasificación a Pérdida)**
+   - Stock ya fue descontado al entregar
+   - Registra movimiento tipo `A` (Ajuste informativo)
+   - Solo cambia clasificación contable
+
+5. **Estado 7 → Estado 2 (Reactivación)**
+   - **Escenario Error**: Devuelve stock (tipo `C`), se descuenta al entregar
+   - **Escenario Reintento**: NO toca stock (tipo `A`), descuenta nuevo producto al entregar
+
+**Modelo ProductoMovimiento:**
+```php
+// Registrar movimiento
+$productoMovimientoModel->registrarMovimiento(
+    $productoId,
+    'S',  // Tipo: E/S/A/C
+    $cantidad,
+    $descripcion
+);
+
+// Verificar tipo de reactivación
+$tipo = $productoMovimientoModel->verificarReactivacion($consumoId);
+// Retorna: 'error' | 'reintento' | null
+```
+
+#### **🎨 Interfaz de Usuario**
+
+**Modales Informativos con SweetAlert2:**
+- Confirmación de entrega con cantidad y efectos
+- Anulación por falta de stock con explicación de flujo
+- Anulación por inconveniente con casos de uso
+- Pérdida de producto con advertencia de no reintegro
+- Reactivación con dos opciones (error vs reintento) y flujo detallado
+
+**Mensajes Adaptados al Contexto:**
+- Textos en lenguaje de negocio (sin jerga técnica)
+- Sin referencias a "Producto A/B" genéricos
+- Sin emojis innecesarios ni bullet points
+- Cantidades reales del pedido mostradas
+- Terminología: "entrega" en lugar de "venta"
+
 #### **Tecnologías y Funcionalidades Transversales**
 - **Base de Datos**: Operaciones atómicas con soporte transaccional
 - **Método Clave**: `createMultiple()` para registro batch de consumos
 - **Seguridad**: Validación de propiedad, sanitización de datos, CSRF protection
 - **UX**: SweetAlert2 para confirmaciones, loading states, responsive design
 - **APIs**: Endpoints AJAX para operaciones dinámicas
+- **Audit Trail**: Registro completo de todos los movimientos de stock
 
 ### **🔧 Panel Administrativo**
 

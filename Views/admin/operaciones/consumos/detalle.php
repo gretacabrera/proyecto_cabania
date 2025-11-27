@@ -21,21 +21,10 @@ if (!isset($consumo) || empty($consumo)) {
                 </a>
             </div>
             <div class="action-buttons">
-                <?php if ($consumo['consumo_estado']): ?>
-                    <a href="<?= url('/consumos/' . $consumo['id_consumo'] . '/edit') ?>"
-                        class="btn btn-warning">
-                        <i class="fas fa-edit"></i> Editar
-                    </a>
-                    <button class="btn btn-danger ms-2"
-                        onclick="cambiarEstadoConsumo(<?= $consumo['id_consumo'] ?>, 0, '<?= addslashes($consumo['consumo_descripcion']) ?>')">
-                        <i class="fas fa-ban"></i> Desactivar
-                    </button>
-                <?php else: ?>
-                    <button class="btn btn-success ms-2"
-                        onclick="cambiarEstadoConsumo(<?= $consumo['id_consumo'] ?>, 1, '<?= addslashes($consumo['consumo_descripcion']) ?>')">
-                        <i class="fas fa-check"></i> Activar
-                    </button>
-                <?php endif; ?>
+                <a href="<?= url('/consumos/' . $consumo['id_consumo'] . '/edit') ?>"
+                    class="btn btn-warning">
+                    <i class="fas fa-edit"></i> Editar Consumo
+                </a>
             </div>
         </div>
     </div>
@@ -105,11 +94,34 @@ if (!isset($consumo) || empty($consumo)) {
                         <div class="col-md-12">
                             <div class="info-group">
                                 Estado:
-                                <?php if ($consumo['consumo_estado'] == 1): ?>
-                                    <span class="badge bg-success">Activo</span>
-                                <?php else: ?>
-                                    <span class="badge bg-danger">Inactivo</span>
-                                <?php endif; ?>
+                                <?php
+                                $estadoId = $consumo['rela_estadoconsumo'] ?? 0;
+                                $estadoDesc = $consumo['estadoconsumo_descripcion'] ?? 'Desconocido';
+                                
+                                // Colores según estado
+                                $badgeClass = 'bg-secondary';
+                                switch($estadoId) {
+                                    case 1: // Solicitud pendiente
+                                        $badgeClass = 'bg-warning text-dark';
+                                        break;
+                                    case 2: // En proceso
+                                        $badgeClass = 'bg-info';
+                                        break;
+                                    case 3: // Entregado
+                                        $badgeClass = 'bg-success';
+                                        break;
+                                    case 4: // Anulado por falta de stock
+                                    case 5: // Anulado por inconveniente
+                                        $badgeClass = 'bg-danger';
+                                        break;
+                                    case 6: // Cancelado por usuario
+                                        $badgeClass = 'bg-dark';
+                                        break;
+                                }
+                                ?>
+                                <span class="badge <?= $badgeClass ?> text-white px-3 py-2">
+                                    <?= htmlspecialchars($estadoDesc) ?>
+                                </span>
                             </div>
                         </div>
                     </div>

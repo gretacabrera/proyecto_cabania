@@ -137,20 +137,42 @@ abstract class Model
     public function update($id, $data)
     {
         $fields = [];
-        foreach (array_keys($data) as $field) {
+        $values = [];
+        $types = '';
+        
+        foreach ($data as $field => $value) {
             $fields[] = "$field = ?";
+            $values[] = $value;
+            
+            // Determinar el tipo correcto para bind_param
+            if (is_null($value)) {
+                $types .= 's'; // NULL se maneja como string
+            } elseif (is_int($value)) {
+                $types .= 'i';
+            } elseif (is_float($value) || is_double($value)) {
+                $types .= 'd';
+            } else {
+                $types .= 's';
+            }
         }
         
         $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) . " WHERE {$this->primaryKey} = ?";
         
-        $values = array_values($data);
+        // Agregar el ID al final
         $values[] = $id;
+        $types .= 'i'; // El ID siempre es entero
         
         $stmt = $this->db->prepare($sql);
-        $types = str_repeat('s', count($values));
-        $stmt->bind_param($types, ...$values);
         
-        return $stmt->execute();
+        if (!$stmt) {
+            error_log("Error preparando statement: " . $this->db->error);
+            return false;
+        }
+        
+        $stmt->bind_param($types, ...$values);
+        $result = $stmt->execute();
+        
+        return $result;
     }
 
     /**

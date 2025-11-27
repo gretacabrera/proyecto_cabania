@@ -43,10 +43,17 @@ Vistas que requieren autenticación administrativa:
 
 #### `/admin/operaciones/` - Operaciones del Negocio (9 módulos)  
 - `cabanias/` - Gestión de cabañas del complejo
-- `consumos/` - Registro administrativo de consumos con formulario múltiple:
-  - `listado.php` - Listado con filtros y exportaciones
-  - `formulario.php` - Formulario dinámico para múltiples items
+- `consumos/` - **Sistema de consumos con gestión de stock** (admin + encargado bar):
+  - `listado.php` - Listado adaptativo (filtros completos para admin, solo hoy para encargado bar)
+  - `formulario.php` - Formulario dinámico para múltiples items (solo admin)
   - `detalle.php` - Vista de detalle de consumo
+  - **Interfaz Encargado Bar**:
+    * Vista simplificada solo con pedidos del día
+    * Botones contextuales según estado del pedido
+    * Gestión automática de stock con transacciones ACID
+    * Modales informativos con SweetAlert2
+    * Estados manejados: Pendiente, En Proceso, Entregado, Anulaciones, Pérdida, Reactivación
+    * Sistema de movimientos con audit trail (`productomovimiento`)
 - `costosdanio/` - Gestión de costos por daños
 - `huespedes/` - Gestión de huéspedes y datos personales
 - `inventarios/` - Control de inventario por cabaña

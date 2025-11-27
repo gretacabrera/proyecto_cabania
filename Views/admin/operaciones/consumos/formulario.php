@@ -184,12 +184,29 @@ $isEdit = isset($consumo) && !empty($consumo);
                             <hr class="my-4">
 
                             <div class="row">
-                                <div class="col-12">
+                                <div class="col-md-8">
                                     <div class="form-group mb-3">
                                         <label for="consumo_descripcion" class="required"><i class="fas fa-file-alt"></i> Descripción</label>
                                         <textarea class="form-control form-control-sm bg-light" id="consumo_descripcion" name="consumo_descripcion"
                                                   rows="2" required readonly><?= htmlspecialchars($consumo['consumo_descripcion']) ?></textarea>
                                         <small class="text-muted">Se genera automáticamente</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <div class="form-group mb-3">
+                                        <label for="rela_estadoconsumo" class="required"><i class="fas fa-flag"></i> Estado</label>
+                                        <select class="form-select form-select-sm" id="rela_estadoconsumo" name="rela_estadoconsumo" required>
+                                            <?php if (isset($estadosConsumo)): ?>
+                                                <?php foreach ($estadosConsumo as $estado): ?>
+                                                    <option value="<?= $estado['id_estadoconsumo'] ?>" 
+                                                            <?= ($consumo['rela_estadoconsumo'] == $estado['id_estadoconsumo']) ? 'selected' : '' ?>>
+                                                        <?= htmlspecialchars($estado['estadoconsumo_descripcion']) ?>
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            <?php endif; ?>
+                                        </select>
+                                        <small class="text-muted">Cambiar estado del consumo</small>
                                     </div>
                                 </div>
                             </div>
