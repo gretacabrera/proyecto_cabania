@@ -122,4 +122,148 @@ class ProductoMovimiento extends Model
 
         return $movimientos;
     }
+
+    /**
+     * Obtener historial de movimientos de un producto con paginación y filtros
+     */
+    public function getHistorialByProducto($productoId, $page = 1, $perPage = 10, $filters = [])
+    {
+        $where = "pm.rela_producto = ?";
+        $params = [$productoId];
+        
+        // Aplicar filtros
+        if (!empty($filters['fecha_desde'])) {
+            $where .= " AND DATE(pm.productomovimiento_fechahora) >= ?";
+            $params[] = $filters['fecha_desde'];
+        }
+        
+        if (!empty($filters['fecha_hasta'])) {
+            $where .= " AND DATE(pm.productomovimiento_fechahora) <= ?";
+            $params[] = $filters['fecha_hasta'];
+        }
+        
+        if (!empty($filters['tipo'])) {
+            $where .= " AND pm.productomovimiento_tipo = ?";
+            $params[] = $filters['tipo'];
+        }
+        
+        if (isset($filters['cantidad_min']) && $filters['cantidad_min'] !== '') {
+            $where .= " AND ABS(pm.productomovimiento_cantidad) >= ?";
+            $params[] = (int) $filters['cantidad_min'];
+        }
+        
+        if (isset($filters['cantidad_max']) && $filters['cantidad_max'] !== '') {
+            $where .= " AND ABS(pm.productomovimiento_cantidad) <= ?";
+            $params[] = (int) $filters['cantidad_max'];
+        }
+        
+        // Contar total
+        $countSql = "SELECT COUNT(*) as total 
+                     FROM {$this->table} pm
+                     LEFT JOIN producto p ON pm.rela_producto = p.id_producto
+                     WHERE {$where}";
+        
+        $stmtCount = $this->db->prepare($countSql);
+        $types = str_repeat('s', count($params));
+        $stmtCount->bind_param($types, ...$params);
+        $stmtCount->execute();
+        $resultCount = $stmtCount->get_result();
+        $totalRecords = $resultCount->fetch_assoc()['total'];
+        
+        // Obtener registros paginados
+        $offset = ($page - 1) * $perPage;
+        
+        $sql = "SELECT 
+                    pm.*,
+                    p.producto_nombre
+                FROM {$this->table} pm
+                LEFT JOIN producto p ON pm.rela_producto = p.id_producto
+                WHERE {$where}
+                ORDER BY pm.productomovimiento_fechahora DESC
+                LIMIT ? OFFSET ?";
+        
+        $paramsWithLimit = array_merge($params, [$perPage, $offset]);
+        $typesWithLimit = $types . 'ii';
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param($typesWithLimit, ...$paramsWithLimit);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $data = [];
+        while ($row = $result->fetch_assoc()) {
+            $data[] = $row;
+        }
+        
+        return [
+            'data' => $data,
+            'total' => $totalRecords,
+            'current_page' => $page,
+            'per_page' => $perPage,
+            'total_pages' => ceil($totalRecords / $perPage),
+            'offset' => $offset,
+            'limit' => $perPage
+        ];
+    }
+
+    /**
+     * Obtener todos los movimientos de un producto para exportación
+     */
+    public function getAllHistorialByProducto($productoId, $filters = [])
+    {
+        $where = "pm.rela_producto = ?";
+        $params = [$productoId];
+        
+        // Aplicar filtros
+        if (!empty($filters['fecha_desde'])) {
+            $where .= " AND DATE(pm.productomovimiento_fechahora) >= ?";
+            $params[] = $filters['fecha_desde'];
+        }
+        
+        if (!empty($filters['fecha_hasta'])) {
+            $where .= " AND DATE(pm.productomovimiento_fechahora) <= ?";
+            $params[] = $filters['fecha_hasta'];
+        }
+        
+        if (!empty($filters['tipo'])) {
+            $where .= " AND pm.productomovimiento_tipo = ?";
+            $params[] = $filters['tipo'];
+        }
+        
+        if (isset($filters['cantidad_min']) && $filters['cantidad_min'] !== '') {
+            $where .= " AND ABS(pm.productomovimiento_cantidad) >= ?";
+            $params[] = (int) $filters['cantidad_min'];
+        }
+        
+        if (isset($filters['cantidad_max']) && $filters['cantidad_max'] !== '') {
+            $where .= " AND ABS(pm.productomovimiento_cantidad) <= ?";
+            $params[] = (int) $filters['cantidad_max'];
+        }
+        
+        $sql = "SELECT 
+                    pm.*,
+                    p.producto_nombre
+                FROM {$this->table} pm
+                LEFT JOIN producto p ON pm.rela_producto = p.id_producto
+                WHERE {$where}
+                ORDER BY pm.productomovimiento_fechahora DESC";
+        
+        $stmt = $this->db->prepare($sql);
+        if (!empty($params)) {
+            $stmt->bind_param(str_repeat('s', count($params)), ...$params);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $data = [];
+        while ($row = $result->fetch_assoc()) {
+            $data[] = $row;
+        }
+        
+        return [
+            'data' => $data,
+            'total' => count($data)
+        ];
+    }
 }
+

@@ -299,6 +299,9 @@ class Application
         $this->router->get('/productos/exportar-pdf', 'ProductosController@exportarPdf');
         $this->router->get('/productos/exportar-cotizacion', 'ProductosController@exportarCotizacion');
         $this->router->post('/productos/enviar-cotizacion', 'ProductosController@enviarCotizacion');
+        $this->router->get('/productos/{id}/historial-stock', 'ProductosController@historialStock');
+        $this->router->get('/productos/{id}/historial-stock/exportar', 'ProductosController@exportarHistorialStock');
+        $this->router->get('/productos/{id}/historial-stock/exportar-pdf', 'ProductosController@exportarHistorialStockPDF');
         $this->router->get('/productos/{id}', 'ProductosController@show');
         $this->router->any('/productos/{id}/edit', 'ProductosController@edit');
         $this->router->post('/productos/{id}/delete', 'ProductosController@delete');

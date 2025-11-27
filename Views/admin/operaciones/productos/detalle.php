@@ -28,6 +28,7 @@ function getStockBadgeClass($stock) {
                     <i class="fas fa-arrow-left"></i> Volver al listado
                 </a>
             </div>
+            <?php if (isset($_SESSION['perfil_nombre']) && $_SESSION['perfil_nombre'] !== 'encargado bar'): ?>
             <div class="action-buttons">
                 <a href="<?= url('/productos/' . $producto['id_producto'] . '/edit') ?>"
                    class="btn btn-warning">
@@ -48,6 +49,7 @@ function getStockBadgeClass($stock) {
                     </button>
                 <?php endif; ?>
             </div>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -208,6 +210,7 @@ function getStockBadgeClass($stock) {
             </div>
 
             <!-- Acciones adicionales -->
+            <?php if (isset($_SESSION['perfil_nombre']) && $_SESSION['perfil_nombre'] !== 'encargado bar'): ?>
             <div class="card">
                 <div class="card-header">
                     <h6 class="card-title mb-0">
@@ -232,6 +235,29 @@ function getStockBadgeClass($stock) {
                     </div>
                 </div>
             </div>
+            <?php else: ?>
+            <!-- Panel simplificado para encargado bar -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-cogs"></i> Acciones
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="btn-group-vertical w-100">
+                        <?php if (!empty($producto['producto_foto']) && $producto['producto_foto'] !== 'default.jpg'): ?>
+                            <a href="<?= url('/imagenes/productos/' . $producto['producto_foto']) ?>"
+                                target="_blank" class="btn btn-outline-secondary mb-2">
+                                <i class="fas fa-eye"></i> Ver Imagen Completa
+                            </a>
+                        <?php endif; ?>
+                        <a href="<?= url('/productos') ?>" class="btn btn-outline-primary">
+                            <i class="fas fa-list"></i> Ver Todos los Productos
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>

@@ -8,6 +8,7 @@ use App\Models\Categoria;
 use App\Models\Marca;
 use App\Models\EstadoProducto;
 use App\Models\Proveedor;
+use App\Models\ProductoMovimiento;
 
 /**
  * Controlador para la gestión de productos
@@ -19,6 +20,7 @@ class ProductosController extends Controller
     protected $marcaModel;
     protected $estadoProductoModel;
     protected $proveedorModel;
+    protected $movimientoModel;
 
     public function __construct()
     {
@@ -28,6 +30,7 @@ class ProductosController extends Controller
         $this->marcaModel = new Marca();
         $this->estadoProductoModel = new EstadoProducto();
         $this->proveedorModel = new Proveedor();
+        $this->movimientoModel = new ProductoMovimiento();
     }
 
     /**
@@ -85,6 +88,11 @@ class ProductosController extends Controller
     public function create()
     {
         $this->requirePermission('productos');
+        
+        // Verificar que no sea encargado bar
+        if (isset($_SESSION['perfil_nombre']) && $_SESSION['perfil_nombre'] === 'encargado bar') {
+            return $this->redirect('/productos', 'No tiene permisos para crear productos', 'error');
+        }
 
         if ($this->isPost()) {
             return $this->store();
@@ -111,6 +119,11 @@ class ProductosController extends Controller
     public function store()
     {
         $this->requirePermission('productos');
+        
+        // Verificar que no sea encargado bar
+        if (isset($_SESSION['perfil_nombre']) && $_SESSION['perfil_nombre'] === 'encargado bar') {
+            return $this->redirect('/productos', 'No tiene permisos para crear productos', 'error');
+        }
 
         if (!$this->isPost()) {
             return $this->redirect('/productos', 'Método no permitido', 'error');
@@ -180,6 +193,11 @@ class ProductosController extends Controller
     public function edit($id)
     {
         $this->requirePermission('productos');
+        
+        // Verificar que no sea encargado bar
+        if (isset($_SESSION['perfil_nombre']) && $_SESSION['perfil_nombre'] === 'encargado bar') {
+            return $this->redirect('/productos', 'No tiene permisos para editar productos', 'error');
+        }
 
         $producto = $this->productoModel->find($id);
         if (!$producto) {
@@ -217,6 +235,11 @@ class ProductosController extends Controller
     public function update($id)
     {
         $this->requirePermission('productos');
+        
+        // Verificar que no sea encargado bar
+        if (isset($_SESSION['perfil_nombre']) && $_SESSION['perfil_nombre'] === 'encargado bar') {
+            return $this->redirect('/productos', 'No tiene permisos para editar productos', 'error');
+        }
 
         if (!$this->isPost()) {
             return $this->redirect('/productos', 'Método no permitido', 'error');
@@ -319,6 +342,11 @@ class ProductosController extends Controller
     public function delete($id)
     {
         $this->requirePermission('productos');
+        
+        // Verificar que no sea encargado bar
+        if (isset($_SESSION['perfil_nombre']) && $_SESSION['perfil_nombre'] === 'encargado bar') {
+            return $this->redirect('/productos', 'No tiene permisos para eliminar productos', 'error');
+        }
 
         $producto = $this->productoModel->find($id);
         if (!$producto) {
@@ -339,6 +367,11 @@ class ProductosController extends Controller
     public function restore($id)
     {
         $this->requirePermission('productos');
+        
+        // Verificar que no sea encargado bar
+        if (isset($_SESSION['perfil_nombre']) && $_SESSION['perfil_nombre'] === 'encargado bar') {
+            return $this->redirect('/productos', 'No tiene permisos para restaurar productos', 'error');
+        }
 
         $producto = $this->productoModel->find($id);
         if (!$producto) {
@@ -359,6 +392,13 @@ class ProductosController extends Controller
     public function cambiarEstado($id)
     {
         $this->requirePermission('productos');
+        
+        // Verificar que no sea encargado bar
+        if (isset($_SESSION['perfil_nombre']) && $_SESSION['perfil_nombre'] === 'encargado bar') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'No tiene permisos para cambiar el estado de productos']);
+            exit;
+        }
 
         if (!$this->isPost()) {
             header('Content-Type: application/json');
@@ -425,28 +465,46 @@ class ProductosController extends Controller
         // Crear archivo Excel
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
+        
+        // Verificar si es encargado bar para excluir precio
+        $esEncargadoBar = isset($_SESSION['perfil_nombre']) && $_SESSION['perfil_nombre'] === 'encargado bar';
 
         // Encabezados
-        $headers = ['ID', 'Nombre', 'Descripción', 'Precio', 'Stock', 'Categoría', 'Marca', 'Estado'];
+        if ($esEncargadoBar) {
+            $headers = ['Nombre', 'Descripción', 'Stock', 'Categoría', 'Marca', 'Estado'];
+        } else {
+            $headers = ['ID', 'Nombre', 'Descripción', 'Precio', 'Stock', 'Categoría', 'Marca', 'Estado'];
+        }
         $sheet->fromArray($headers, null, 'A1');
 
         // Datos
         $row = 2;
         foreach ($productos as $producto) {
-            $sheet->setCellValue('A' . $row, $producto['id_producto']);
-            $sheet->setCellValue('B' . $row, $producto['producto_nombre']);
-            $sheet->setCellValue('C' . $row, $producto['producto_descripcion']);
-            $sheet->setCellValue('D' . $row, '$' . number_format($producto['producto_precio'], 2));
-            $sheet->setCellValue('E' . $row, $producto['producto_stock']);
-            $sheet->setCellValue('F' . $row, $producto['categoria_descripcion']);
-            $sheet->setCellValue('G' . $row, $producto['marca_descripcion']);
-            $sheet->setCellValue('H' . $row, $producto['estadoproducto_descripcion']);
+            if ($esEncargadoBar) {
+                $sheet->setCellValue('A' . $row, $producto['producto_nombre']);
+                $sheet->setCellValue('B' . $row, $producto['producto_descripcion']);
+                $sheet->setCellValue('C' . $row, $producto['producto_stock']);
+                $sheet->setCellValue('D' . $row, $producto['categoria_descripcion']);
+                $sheet->setCellValue('E' . $row, $producto['marca_descripcion']);
+                $sheet->setCellValue('F' . $row, $producto['estadoproducto_descripcion']);
+            } else {
+                $sheet->setCellValue('A' . $row, $producto['id_producto']);
+                $sheet->setCellValue('B' . $row, $producto['producto_nombre']);
+                $sheet->setCellValue('C' . $row, $producto['producto_descripcion']);
+                $sheet->setCellValue('D' . $row, '$' . number_format($producto['producto_precio'], 2));
+                $sheet->setCellValue('E' . $row, $producto['producto_stock']);
+                $sheet->setCellValue('F' . $row, $producto['categoria_descripcion']);
+                $sheet->setCellValue('G' . $row, $producto['marca_descripcion']);
+                $sheet->setCellValue('H' . $row, $producto['estadoproducto_descripcion']);
+            }
             $row++;
         }
 
         // Estilos
-        $sheet->getStyle('A1:H1')->getFont()->setBold(true);
-        foreach (range('A', 'H') as $column) {
+        $lastColumn = $esEncargadoBar ? 'F' : 'H';
+        $sheet->getStyle('A1:' . $lastColumn . '1')->getFont()->setBold(true);
+        $columnRange = $esEncargadoBar ? range('A', 'F') : range('A', 'H');
+        foreach ($columnRange as $column) {
             $sheet->getColumnDimension($column)->setAutoSize(true);
         }
 
@@ -530,24 +588,41 @@ class ProductosController extends Controller
             }
             $pdf->Ln(3);
         }
+        
+        // Verificar si es encargado bar para excluir precio
+        $esEncargadoBar = isset($_SESSION['perfil_nombre']) && $_SESSION['perfil_nombre'] === 'encargado bar';
 
         // Tabla
         $pdf->SetFont('helvetica', 'B', 9);
-        $pdf->Cell(15, 8, 'ID', 1, 0, 'C');
-        $pdf->Cell(40, 8, 'Nombre', 1, 0, 'C');
-        $pdf->Cell(35, 8, 'Precio', 1, 0, 'C');
-        $pdf->Cell(25, 8, 'Stock', 1, 0, 'C');
-        $pdf->Cell(35, 8, 'Categoría', 1, 0, 'C');
-        $pdf->Cell(35, 8, 'Estado', 1, 1, 'C');
+        if ($esEncargadoBar) {
+            $pdf->Cell(50, 8, 'Nombre', 1, 0, 'C');
+            $pdf->Cell(30, 8, 'Stock', 1, 0, 'C');
+            $pdf->Cell(50, 8, 'Categoría', 1, 0, 'C');
+            $pdf->Cell(45, 8, 'Estado', 1, 1, 'C');
+        } else {
+            $pdf->Cell(15, 8, 'ID', 1, 0, 'C');
+            $pdf->Cell(40, 8, 'Nombre', 1, 0, 'C');
+            $pdf->Cell(35, 8, 'Precio', 1, 0, 'C');
+            $pdf->Cell(25, 8, 'Stock', 1, 0, 'C');
+            $pdf->Cell(35, 8, 'Categoría', 1, 0, 'C');
+            $pdf->Cell(35, 8, 'Estado', 1, 1, 'C');
+        }
 
         $pdf->SetFont('helvetica', '', 8);
         foreach ($productos as $producto) {
-            $pdf->Cell(15, 6, $producto['id_producto'], 1, 0, 'C');
-            $pdf->Cell(40, 6, substr($producto['producto_nombre'], 0, 25), 1, 0, 'L');
-            $pdf->Cell(35, 6, '$' . number_format($producto['producto_precio'], 2), 1, 0, 'R');
-            $pdf->Cell(25, 6, $producto['producto_stock'], 1, 0, 'C');
-            $pdf->Cell(35, 6, substr($producto['categoria_descripcion'], 0, 20), 1, 0, 'L');
-            $pdf->Cell(35, 6, substr($producto['estadoproducto_descripcion'], 0, 15), 1, 1, 'L');
+            if ($esEncargadoBar) {
+                $pdf->Cell(50, 6, substr($producto['producto_nombre'], 0, 30), 1, 0, 'L');
+                $pdf->Cell(30, 6, $producto['producto_stock'], 1, 0, 'C');
+                $pdf->Cell(50, 6, substr($producto['categoria_descripcion'], 0, 30), 1, 0, 'L');
+                $pdf->Cell(45, 6, substr($producto['estadoproducto_descripcion'], 0, 20), 1, 1, 'L');
+            } else {
+                $pdf->Cell(15, 6, $producto['id_producto'], 1, 0, 'C');
+                $pdf->Cell(40, 6, substr($producto['producto_nombre'], 0, 25), 1, 0, 'L');
+                $pdf->Cell(35, 6, '$' . number_format($producto['producto_precio'], 2), 1, 0, 'R');
+                $pdf->Cell(25, 6, $producto['producto_stock'], 1, 0, 'C');
+                $pdf->Cell(35, 6, substr($producto['categoria_descripcion'], 0, 20), 1, 0, 'L');
+                $pdf->Cell(35, 6, substr($producto['estadoproducto_descripcion'], 0, 15), 1, 1, 'L');
+            }
         }
 
         $pdf->Ln(5);
@@ -927,5 +1002,293 @@ class ProductosController extends Controller
         ];
 
         return $estados[$estado] ?? 'Desconocido';
+    }
+
+    /**
+     * Mostrar historial de movimientos de stock de un producto
+     */
+    public function historialStock($id)
+    {
+        $this->requirePermission('productos');
+
+        // Obtener información del producto
+        $producto = $this->productoModel->find($id);
+        if (!$producto) {
+            return $this->redirect('/productos', 'Producto no encontrado', 'error');
+        }
+
+        // Parámetros de paginación
+        $page = (int) $this->get('page', 1);
+        $perPage = (int) $this->get('per_page', 10);
+        
+        // Validar perPage
+        $allowedPerPage = [5, 10, 25, 50];
+        if (!in_array($perPage, $allowedPerPage)) {
+            $perPage = 10;
+        }
+
+        // Filtros
+        $filters = [
+            'fecha_desde' => $this->get('fecha_desde'),
+            'fecha_hasta' => $this->get('fecha_hasta'),
+            'tipo' => $this->get('tipo'),
+            'cantidad_min' => $this->get('cantidad_min'),
+            'cantidad_max' => $this->get('cantidad_max')
+        ];
+
+        // Obtener historial con paginación
+        $result = $this->movimientoModel->getHistorialByProducto($id, $page, $perPage, $filters);
+
+        $data = [
+            'title' => 'Historial de Movimientos - ' . $producto['producto_nombre'],
+            'producto' => $producto,
+            'historial' => $result['data'],
+            'pagination' => $result,
+            'filters' => $filters,
+            'isAdminArea' => true
+        ];
+
+        return $this->render('admin/operaciones/productos/historial_stock', $data, 'main');
+    }
+
+    /**
+     * Exportar historial de stock a Excel
+     */
+    public function exportarHistorialStock($id)
+    {
+        $this->requirePermission('productos');
+
+        try {
+            $producto = $this->productoModel->find($id);
+            if (!$producto) {
+                $this->redirect('/productos', 'Producto no encontrado', 'error');
+                return;
+            }
+
+            $filters = [
+                'fecha_desde' => $this->get('fecha_desde'),
+                'fecha_hasta' => $this->get('fecha_hasta'),
+                'tipo' => $this->get('tipo'),
+                'cantidad_min' => $this->get('cantidad_min'),
+                'cantidad_max' => $this->get('cantidad_max')
+            ];
+
+            $result = $this->movimientoModel->getAllHistorialByProducto($id, $filters);
+            $movimientos = $result['data'];
+
+            if (empty($movimientos)) {
+                $this->redirect('/productos/' . $id . '/historial-stock', 'No hay datos para exportar', 'error');
+                return;
+            }
+
+            // Crear archivo Excel
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+
+            // Título
+            $sheet->mergeCells('A1:D1');
+            $sheet->setCellValue('A1', 'HISTORIAL DE MOVIMIENTOS DE STOCK');
+            $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+            $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+            $sheet->setCellValue('A2', 'Producto: ' . $producto['producto_nombre']);
+            $sheet->setCellValue('A3', 'Stock actual: ' . $producto['producto_stock']);
+            $sheet->setCellValue('A4', 'Generado: ' . date('d/m/Y H:i:s'));
+
+            // Encabezados
+            $headers = ['Fecha/Hora', 'Tipo', 'Cantidad', 'Descripción'];
+            $sheet->fromArray($headers, null, 'A6');
+            
+            // Estilo encabezados
+            $headerStyle = [
+                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '4472C4']],
+                'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER]
+            ];
+            $sheet->getStyle('A6:D6')->applyFromArray($headerStyle);
+
+            // Datos
+            $row = 7;
+            foreach ($movimientos as $mov) {
+                $tipoTexto = $this->getTipoMovimientoTexto($mov['productomovimiento_tipo']);
+                $sheet->setCellValue('A' . $row, date('d/m/Y H:i', strtotime($mov['productomovimiento_fechahora'])));
+                $sheet->setCellValue('B' . $row, $tipoTexto);
+                $sheet->setCellValue('C' . $row, $mov['productomovimiento_cantidad']);
+                $sheet->setCellValue('D' . $row, $mov['productomovimiento_descripcion']);
+                $row++;
+            }
+
+            // Ajustar anchos
+            foreach (range('A', 'D') as $column) {
+                $sheet->getColumnDimension($column)->setAutoSize(true);
+            }
+
+            // Bordes
+            $styleArray = [
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                        'color' => ['rgb' => '000000']
+                    ]
+                ]
+            ];
+            $lastRow = $row - 1;
+            $sheet->getStyle('A6:D' . $lastRow)->applyFromArray($styleArray);
+
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            
+            $filename = 'historial_stock_' . preg_replace('/[^a-z0-9]/i', '_', $producto['producto_nombre']) . '_' . date('Y-m-d_H-i-s') . '.xlsx';
+            $filepath = '../temp/' . $filename;
+            
+            if (!file_exists('../temp')) {
+                mkdir('../temp', 0777, true);
+            }
+            
+            $writer->save($filepath);
+
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $filename . '"');
+            header('Cache-Control: max-age=0');
+            
+            readfile($filepath);
+            unlink($filepath);
+            exit;
+
+        } catch (\Exception $e) {
+            error_log("Error al exportar historial de stock: " . $e->getMessage());
+            $this->redirect('/productos/' . $id . '/historial-stock', 'Error al exportar: ' . $e->getMessage(), 'error');
+            return;
+        }
+    }
+
+    /**
+     * Exportar historial de stock a PDF
+     */
+    public function exportarHistorialStockPDF($id)
+    {
+        $this->requirePermission('productos');
+
+        try {
+            $producto = $this->productoModel->find($id);
+            if (!$producto) {
+                $this->redirect('/productos', 'Producto no encontrado', 'error');
+                return;
+            }
+
+            $filters = [
+                'fecha_desde' => $this->get('fecha_desde'),
+                'fecha_hasta' => $this->get('fecha_hasta'),
+                'tipo' => $this->get('tipo'),
+                'cantidad_min' => $this->get('cantidad_min'),
+                'cantidad_max' => $this->get('cantidad_max')
+            ];
+
+            $result = $this->movimientoModel->getAllHistorialByProducto($id, $filters);
+            $movimientos = $result['data'];
+
+            if (empty($movimientos)) {
+                $this->redirect('/productos/' . $id . '/historial-stock', 'No hay datos para exportar', 'error');
+                return;
+            }
+
+            // Crear PDF
+            $pdf = new \TCPDF('L', 'mm', 'A4', true, 'UTF-8', false);
+            
+            $pdf->SetCreator('Sistema de Gestión');
+            $pdf->SetAuthor('Sistema de Gestión de Cabañas');
+            $pdf->SetTitle('Historial de Movimientos de Stock');
+            
+            $pdf->setPrintHeader(false);
+            $pdf->setPrintFooter(false);
+            $pdf->SetMargins(10, 10, 10);
+            $pdf->SetAutoPageBreak(true, 10);
+            
+            $pdf->AddPage();
+            
+            // Título
+            $pdf->SetFont('helvetica', 'B', 16);
+            $pdf->Cell(0, 10, 'HISTORIAL DE MOVIMIENTOS DE STOCK', 0, 1, 'C');
+            
+            $pdf->SetFont('helvetica', '', 10);
+            $pdf->Cell(0, 5, 'Producto: ' . $producto['producto_nombre'], 0, 1, 'L');
+            $pdf->Cell(0, 5, 'Stock actual: ' . $producto['producto_stock'] . ' unidades', 0, 1, 'L');
+            $pdf->Cell(0, 5, 'Generado: ' . date('d/m/Y H:i:s'), 0, 1, 'L');
+            $pdf->Ln(5);
+            
+            // Tabla
+            $pdf->SetFont('helvetica', 'B', 9);
+            $pdf->SetFillColor(68, 114, 196);
+            $pdf->SetTextColor(255, 255, 255);
+            
+            $pdf->Cell(40, 7, 'Fecha/Hora', 1, 0, 'C', true);
+            $pdf->Cell(30, 7, 'Tipo', 1, 0, 'C', true);
+            $pdf->Cell(25, 7, 'Cantidad', 1, 0, 'C', true);
+            $pdf->Cell(182, 7, 'Descripción', 1, 1, 'C', true);
+            
+            $pdf->SetFont('helvetica', '', 8);
+            $pdf->SetTextColor(0, 0, 0);
+            
+            foreach ($movimientos as $mov) {
+                $tipoTexto = $this->getTipoMovimientoTexto($mov['productomovimiento_tipo']);
+                $fecha = date('d/m/Y H:i', strtotime($mov['productomovimiento_fechahora']));
+                $cantidad = $mov['productomovimiento_cantidad'];
+                $descripcion = $mov['productomovimiento_descripcion'];
+                
+                // Calcular altura de la celda según el contenido
+                $nb = max(
+                    $pdf->getStringHeight(40, $fecha),
+                    $pdf->getStringHeight(30, $tipoTexto),
+                    $pdf->getStringHeight(25, $cantidad),
+                    $pdf->getStringHeight(182, $descripcion)
+                );
+                $height = max(6, $nb);
+                
+                $pdf->Cell(40, $height, $fecha, 1, 0, 'C');
+                $pdf->Cell(30, $height, $tipoTexto, 1, 0, 'C');
+                
+                // Color para cantidad
+                if ($cantidad > 0) {
+                    $pdf->SetTextColor(0, 128, 0);
+                    $pdf->Cell(25, $height, '+' . $cantidad, 1, 0, 'C');
+                    $pdf->SetTextColor(0, 0, 0);
+                } else {
+                    $pdf->SetTextColor(255, 0, 0);
+                    $pdf->Cell(25, $height, $cantidad, 1, 0, 'C');
+                    $pdf->SetTextColor(0, 0, 0);
+                }
+                
+                $pdf->Cell(182, $height, $descripcion, 1, 1, 'L');
+            }
+            
+            // Total de registros
+            $pdf->Ln(5);
+            $pdf->SetFont('helvetica', 'B', 9);
+            $pdf->Cell(0, 5, 'Total de registros: ' . count($movimientos), 0, 1, 'R');
+            
+            $filename = 'historial_stock_' . preg_replace('/[^a-z0-9]/i', '_', $producto['producto_nombre']) . '_' . date('Y-m-d_H-i-s') . '.pdf';
+            
+            $pdf->Output($filename, 'D');
+            exit;
+
+        } catch (\Exception $e) {
+            error_log("Error al exportar historial de stock a PDF: " . $e->getMessage());
+            $this->redirect('/productos/' . $id . '/historial-stock', 'Error al exportar: ' . $e->getMessage(), 'error');
+            return;
+        }
+    }
+
+    /**
+     * Obtener texto del tipo de movimiento
+     */
+    private function getTipoMovimientoTexto($tipo)
+    {
+        $tipos = [
+            'E' => 'Entrada',
+            'S' => 'Salida',
+            'A' => 'Ajuste',
+            'C' => 'Corrección'
+        ];
+
+        return $tipos[$tipo] ?? 'Desconocido';
     }
 }

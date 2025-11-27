@@ -10,6 +10,7 @@ function getStockBadgeClass($stock) {
     if ($stock <= 10) return 'badge-warning';
     return 'badge-success';
 }
+
 ?>
 
 <div class="container-fluid">
@@ -21,11 +22,13 @@ function getStockBadgeClass($stock) {
                 <div class="col">
                     <h4 class="mb-0">Gestión de Productos</h4>
                 </div>
+                <?php if (isset($_SESSION['perfil_nombre']) && $_SESSION['perfil_nombre'] !== 'encargado bar'): ?>
                 <div class="col-auto">
                     <a href="<?= url('/productos/create') ?>" class="btn btn-primary btn-sm">
                         <i class="fas fa-plus me-1"></i> Nuevo Producto
                     </a>
                 </div>
+                <?php endif; ?>
             </div>
         </div>
         <!-- Filtros compactos -->
@@ -115,9 +118,11 @@ function getStockBadgeClass($stock) {
                             <button type="button" onclick="exportarProductosPDF(event)" class="btn btn-danger btn-sm" title="Exportar a PDF">
                                 <i class="fas fa-file-pdf me-1"></i> PDF
                             </button>
+                            <?php if (!isset($_SESSION['perfil_nombre']) || $_SESSION['perfil_nombre'] !== 'encargado bar'): ?>
                             <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#modalCotizacion" title="Plantilla de Cotización">
                                 <i class="fas fa-file-invoice-dollar me-1"></i> Cotización
                             </button>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -132,10 +137,12 @@ function getStockBadgeClass($stock) {
                         <i class="fas fa-boxes fa-3x text-muted opacity-50"></i>
                     </div>
                     <h6 class="text-muted">No se encontraron productos</h6>
-                    <p class="text-muted small mb-3">Intenta modificar los filtros o crea un nuevo producto.</p>
+                    <p class="text-muted small mb-3">Intenta modificar los filtros<?php if (isset($_SESSION['perfil_nombre']) && $_SESSION['perfil_nombre'] !== 'encargado bar'): ?> o crea un nuevo producto<?php endif; ?>.</p>
+                    <?php if (isset($_SESSION['perfil_nombre']) && $_SESSION['perfil_nombre'] !== 'encargado bar'): ?>
                     <a href="<?= url('/productos/create') ?>" class="btn btn-outline-dark btn-sm">
                         <i class="fas fa-plus fa-sm"></i> Crear producto
                     </a>
+                    <?php endif; ?>
                 </div>
             <?php else: ?>
                 <!-- Información de paginación y navegación superior -->
@@ -223,7 +230,9 @@ function getStockBadgeClass($stock) {
                                 <th class="border-0 py-3">Nombre</th>
                                 <th class="border-0 py-3">Categoría</th>
                                 <th class="border-0 py-3">Stock</th>
+                                <?php if (!isset($_SESSION['perfil_nombre']) || $_SESSION['perfil_nombre'] !== 'encargado bar'): ?>
                                 <th class="border-0 py-3">Precio</th>
+                                <?php endif; ?>
                                 <th class="border-0 py-3">Estado</th>
                                 <th class="border-0 py-3 text-center">Acciones</th>
                             </tr>
@@ -249,10 +258,12 @@ function getStockBadgeClass($stock) {
                                             <span class="text-dark"><?= $producto['producto_stock'] ?></span>
                                         </div>
                                     </td>
+                                    <?php if (!isset($_SESSION['perfil_nombre']) || $_SESSION['perfil_nombre'] !== 'encargado bar'): ?>
                                     <td class="border-0 py-3">
                                         <span class="fw-medium text-success">$<?= number_format($producto['producto_precio'], 2, '.', ',') ?></span>
                                         <small class="text-muted d-block">c/unidad</small>
-                                    </td>                                    
+                                    </td>
+                                    <?php endif; ?>                                    
                                     <td class="border-0 py-3">
                                         <?php if ($producto['rela_estadoproducto'] == 1): ?>
                                             <span class="badge bg-success text-white px-2 py-1 rounded-pill">Disponible</span>
@@ -264,34 +275,51 @@ function getStockBadgeClass($stock) {
                                             <span class="badge bg-secondary text-white px-2 py-1 rounded-pill">Baja</span>
                                         <?php endif; ?>
                                     </td>
+                                    
+                                    <!-- Columna de acciones -->
                                     <td class="border-0 py-3 text-center">
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            <a href="<?= url('/productos/' . $producto['id_producto']) ?>"
-                                               class="btn btn-outline-primary btn-sm"
-                                               title="Ver detalle">
-                                                <i class="fas fa-eye"></i>
+                                        <?php if (isset($_SESSION['perfil_nombre']) && $_SESSION['perfil_nombre'] === 'encargado bar'): ?>
+                                            <!-- Encargado de bar: solo historial -->
+                                            <a href="<?= url('/productos/' . $producto['id_producto'] . '/historial-stock') ?>"
+                                               class="btn btn-outline-info btn-sm"
+                                               title="Historial de movimientos">
+                                                <i class="fas fa-history"></i>
                                             </a>
-                                            <a href="<?= url('/productos/' . $producto['id_producto']) . '/edit'?>"
-                                               class="btn btn-outline-warning btn-sm"
-                                               title="Editar">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <?php if ($producto['rela_estadoproducto'] != 4): ?>
-                                                <!-- Producto activo: puede dar de baja -->
-                                                <button class="btn btn-outline-danger btn-sm"
-                                                        onclick="cambiarEstadoProducto(<?= $producto['id_producto'] ?>, 4, '<?= addslashes($producto['producto_nombre']) ?>')"
-                                                        title="Dar de baja">
-                                                    <i class="fas fa-ban"></i>
-                                                </button>
-                                            <?php else: ?>
-                                                <!-- Producto dado de baja: puede reactivar -->
-                                                <button class="btn btn-outline-success btn-sm"
-                                                        onclick="cambiarEstadoProducto(<?= $producto['id_producto'] ?>, 1, '<?= addslashes($producto['producto_nombre']) ?>')"
-                                                        title="Reactivar">
-                                                    <i class="fas fa-check"></i>
-                                                </button>
-                                            <?php endif; ?>
-                                        </div>
+                                        <?php else: ?>
+                                            <!-- Otros usuarios: todas las acciones -->
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="<?= url('/productos/' . $producto['id_producto']) ?>"
+                                                   class="btn btn-outline-primary btn-sm"
+                                                   title="Ver detalle">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="<?= url('/productos/' . $producto['id_producto'] . '/historial-stock') ?>"
+                                                   class="btn btn-outline-info btn-sm"
+                                                   title="Historial de movimientos">
+                                                    <i class="fas fa-history"></i>
+                                                </a>
+                                                <a href="<?= url('/productos/' . $producto['id_producto']) . '/edit'?>"
+                                                   class="btn btn-outline-warning btn-sm"
+                                                   title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <?php if ($producto['rela_estadoproducto'] != 4): ?>
+                                                    <!-- Producto activo: puede dar de baja -->
+                                                    <button class="btn btn-outline-danger btn-sm"
+                                                            onclick="cambiarEstadoProducto(<?= $producto['id_producto'] ?>, 4, '<?= addslashes($producto['producto_nombre']) ?>')"
+                                                            title="Dar de baja">
+                                                        <i class="fas fa-ban"></i>
+                                                    </button>
+                                                <?php else: ?>
+                                                    <!-- Producto dado de baja: puede reactivar -->
+                                                    <button class="btn btn-outline-success btn-sm"
+                                                            onclick="cambiarEstadoProducto(<?= $producto['id_producto'] ?>, 1, '<?= addslashes($producto['producto_nombre']) ?>')"
+                                                            title="Reactivar">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                <?php endif; ?>
+                                            </div>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
