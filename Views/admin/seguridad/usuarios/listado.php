@@ -200,15 +200,15 @@
                                         <small class="text-muted"><?= htmlspecialchars($usuario['persona_email'] ?? 'Sin email') ?></small>
                                     </td>
                                     <td class="border-0 py-3">
-                                        <span class="badge bg-info"><?= htmlspecialchars($usuario['perfil_descripcion'] ?? 'Sin perfil') ?></span>
+                                        <span class="badge bg-info text-white"><?= htmlspecialchars($usuario['perfil_descripcion'] ?? 'Sin perfil') ?></span>
                                     </td>
                                     <td class="border-0 py-3">
                                         <?php if ($usuario['usuario_estado'] == 1): ?>
-                                            <span class="badge bg-success"><i class="fas fa-check"></i> Activo</span>
+                                            <span class="badge bg-success text-white"><i class="fas fa-check"></i> Activo</span>
                                         <?php elseif ($usuario['usuario_estado'] == 2): ?>
-                                            <span class="badge bg-warning"><i class="fas fa-clock"></i> Pendiente</span>
+                                            <span class="badge bg-warning text-white"><i class="fas fa-clock"></i> Pendiente</span>
                                         <?php else: ?>
-                                            <span class="badge bg-danger"><i class="fas fa-ban"></i> Inactivo</span>
+                                            <span class="badge bg-danger text-white"><i class="fas fa-ban"></i> Inactivo</span>
                                         <?php endif; ?>
                                     </td>
                                     <td class="border-0 py-3 text-center">

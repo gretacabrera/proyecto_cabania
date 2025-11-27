@@ -189,7 +189,6 @@
                                 <tr>
                                     <td class="border-0 py-3">
                                         <div class="d-flex align-items-center">
-                                            <i class="fas fa-calendar text-primary me-2"></i>
                                             <div>
                                                 <div class="fw-bold text-dark"><?= htmlspecialchars($periodo['periodo_descripcion']) ?></div>
                                             </div>
@@ -197,7 +196,6 @@
                                     </td>
                                     <td class="border-0 py-3">
                                         <div class="d-flex align-items-center">
-                                            <i class="fas fa-calendar-day text-success me-2"></i>
                                             <span class="text-dark ml-2">
                                                 <?= date('d/m/Y', strtotime($periodo['periodo_fechainicio'])) ?>
                                             </span>
@@ -205,7 +203,6 @@
                                     </td>
                                     <td class="border-0 py-3">
                                         <div class="d-flex align-items-center">
-                                            <i class="fas fa-calendar-check text-danger me-2"></i>
                                             <span class="text-dark ml-2">
                                                 <?= date('d/m/Y', strtotime($periodo['periodo_fechafin'])) ?>
                                             </span>
@@ -213,13 +210,11 @@
                                     </td>
                                     <td class="border-0 py-3">
                                         <div class="d-flex align-items-center">
-                                            <i class="fas fa-calendar-alt text-info me-2"></i>
                                             <span class="text-dark ml-2"><?= $periodo['periodo_anio'] ?></span>
                                         </div>
                                     </td>
                                     <td class="border-0 py-3">
                                         <div class="d-flex align-items-center">
-                                            <i class="fas fa-sort-numeric-down text-warning me-2"></i>
                                             <span class="text-dark ml-2"><?= $periodo['periodo_orden'] ?></span>
                                         </div>
                                     </td>

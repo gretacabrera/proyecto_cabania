@@ -179,7 +179,6 @@
                                 <tr>
                                     <td class="border-0 py-3">
                                         <div class="d-flex align-items-center">
-                                            <i class="fas fa-map-marker-alt text-primary me-2"></i>
                                             <div>
                                                 <div class="fw-medium text-dark"><?= htmlspecialchars($ubicacion['ubicacion_descripcion']) ?></div>
                                             </div>

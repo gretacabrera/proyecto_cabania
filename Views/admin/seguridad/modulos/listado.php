@@ -200,7 +200,6 @@
                                         <div class="d-flex align-items-center">
                                             <div>
                                                 <div class="fw-medium text-dark">
-                                                    <i class="fas fa-puzzle-piece text-primary me-2"></i>
                                                     <?= htmlspecialchars($modulo['modulo_descripcion']) ?>
                                                 </div>
                                             </div>
@@ -212,7 +211,6 @@
                                     <td class="border-0 py-3">
                                         <?php if (!empty($modulo['menu_nombre'])): ?>
                                             <div class="d-flex align-items-center">
-                                                <i class="fas fa-bars text-info me-2"></i>
                                                 <span><?= htmlspecialchars($modulo['menu_nombre']) ?></span>
                                             </div>
                                         <?php else: ?>

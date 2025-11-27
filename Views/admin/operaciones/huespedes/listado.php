@@ -199,7 +199,6 @@
                                 <tr>
                                     <td class="border-0 py-3">
                                         <div class="d-flex align-items-center">
-                                            <i class="fas fa-user-circle text-primary fa-2x me-2"></i>
                                             <div>
                                                 <div class="fw-medium text-dark">
                                                     <?= htmlspecialchars($huesped['persona_nombre'] . ' ' . $huesped['persona_apellido']) ?>
@@ -209,7 +208,6 @@
                                     </td>
                                     <td class="border-0 py-3">
                                         <div class="d-flex align-items-center">
-                                            <i class="fas fa-calendar text-info me-2"></i>
                                             <span class="text-dark"><?= date('d/m/Y', strtotime($huesped['persona_fechanac'])) ?></span>
                                         </div>
                                     </td>
@@ -220,7 +218,6 @@
                                     </td>
                                     <td class="border-0 py-3">
                                         <div class="d-flex align-items-center">
-                                            <i class="fas fa-map-marker-alt text-danger me-2"></i>
                                             <span class="text-dark"><?= htmlspecialchars($huesped['ubicacion_descripcion'] ?? '-') ?></span>
                                         </div>
                                     </td>

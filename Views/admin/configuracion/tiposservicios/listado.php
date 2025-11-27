@@ -179,7 +179,6 @@
                                 <tr>
                                     <td class="border-0 py-3">
                                         <div class="d-flex align-items-center">
-                                            <i class="fas fa-concierge-bell text-primary me-2"></i>
                                             <div>
                                                 <div class="fw-medium text-dark"><?= htmlspecialchars($tiposervicio['tiposervicio_descripcion']) ?></div>
                                             </div>
