@@ -126,6 +126,17 @@ class Application
         $this->router->post('/cabanias/{id}/estado', 'CabaniasController@cambiarEstado');
         $this->router->post('/cabanias/check-availability', 'CabaniasController@checkAvailability');
 
+        // Rutas de Cajas
+        $this->router->get('/cajas', 'CajasController@index');
+        $this->router->any('/cajas/create', 'CajasController@create');
+        $this->router->get('/cajas/exportar', 'CajasController@exportar');
+        $this->router->get('/cajas/exportar-pdf', 'CajasController@exportarPdf');
+        $this->router->get('/cajas/{id}', 'CajasController@show');
+        $this->router->any('/cajas/{id}/edit', 'CajasController@edit');
+        $this->router->post('/cajas/{id}/delete', 'CajasController@delete');
+        $this->router->post('/cajas/{id}/restore', 'CajasController@restore');
+        $this->router->post('/cajas/{id}/estado', 'CajasController@cambiarEstado');
+
         // Rutas de Ubicaciones
         $this->router->get('/ubicaciones', 'UbicacionesController@index');
         $this->router->any('/ubicaciones/create', 'UbicacionesController@create');

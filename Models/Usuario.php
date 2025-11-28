@@ -668,6 +668,53 @@ class Usuario extends Model
     }
 
     /**
+     * Obtener todos los usuarios activos
+     */
+    public function getAllActive()
+    {
+        $sql = "SELECT u.*, pf.personafisica_nombre as persona_nombre, pf.personafisica_apellido as persona_apellido
+                FROM usuario u
+                LEFT JOIN persona p ON u.rela_persona = p.id_persona
+                LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
+                WHERE u.usuario_estado = 1
+                ORDER BY u.usuario_nombre ASC";
+        
+        $result = $this->db->query($sql);
+        
+        $usuarios = [];
+        while ($row = $result->fetch_assoc()) {
+            $usuarios[] = $row;
+        }
+        
+        return $usuarios;
+    }
+
+    /**
+     * Obtener todos los usuarios activos con perfil cajero
+     */
+    public function getUsuariosCajeros()
+    {
+        $sql = "SELECT u.*, pf.personafisica_nombre as persona_nombre, pf.personafisica_apellido as persona_apellido,
+                       pr.perfil_descripcion
+                FROM usuario u
+                LEFT JOIN persona p ON u.rela_persona = p.id_persona
+                LEFT JOIN personafisica pf ON p.rela_personafisica = pf.id_personafisica
+                LEFT JOIN perfil pr ON u.rela_perfil = pr.id_perfil
+                WHERE u.usuario_estado = 1
+                AND LOWER(pr.perfil_descripcion) LIKE '%cajero%'
+                ORDER BY u.usuario_nombre ASC";
+        
+        $result = $this->db->query($sql);
+        
+        $usuarios = [];
+        while ($row = $result->fetch_assoc()) {
+            $usuarios[] = $row;
+        }
+        
+        return $usuarios;
+    }
+
+    /**
      * Obtener perfiles disponibles
      */
     public function getPerfiles()
