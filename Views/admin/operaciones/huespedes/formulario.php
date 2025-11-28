@@ -74,6 +74,17 @@ $isEdit = isset($huesped) && !empty($huesped);
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
+                                        <label for="persona_dni" class="required">
+                                            <i class="fas fa-id-card"></i> DNI
+                                        </label>
+                                        <input type="text" class="form-control form-control-sm" id="persona_dni" 
+                                               name="persona_dni" required maxlength="20" 
+                                               placeholder="Número de DNI">
+                                        <div class="invalid-feedback">El DNI es obligatorio</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
                                         <label for="persona_fechanac" class="required">
                                             <i class="fas fa-calendar"></i> Fecha de Nacimiento
                                         </label>
@@ -83,7 +94,10 @@ $isEdit = isset($huesped) && !empty($huesped);
                                         <div class="invalid-feedback">La fecha de nacimiento es obligatoria</div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-12">
                                     <div class="form-group">
                                         <label for="persona_direccion" class="required">
                                             <i class="fas fa-home"></i> Dirección
@@ -166,6 +180,7 @@ $isEdit = isset($huesped) && !empty($huesped);
                             </h6>
 
                             <div class="row">
+                                
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="persona_nombre" class="required">
@@ -173,7 +188,7 @@ $isEdit = isset($huesped) && !empty($huesped);
                                         </label>
                                         <input type="text" class="form-control form-control-sm" id="persona_nombre" 
                                                name="persona_nombre" required maxlength="45" 
-                                               value="<?= htmlspecialchars($huesped['persona_nombre']) ?>"
+                                               value="<?= htmlspecialchars($huesped['persona_nombre'] ?? '') ?>"
                                                placeholder="Nombre de la persona">
                                         <div class="invalid-feedback">El nombre es obligatorio</div>
                                     </div>
@@ -185,14 +200,25 @@ $isEdit = isset($huesped) && !empty($huesped);
                                         </label>
                                         <input type="text" class="form-control form-control-sm" id="persona_apellido" 
                                                name="persona_apellido" required maxlength="45" 
-                                               value="<?= htmlspecialchars($huesped['persona_apellido']) ?>"
+                                               value="<?= htmlspecialchars($huesped['persona_apellido'] ?? '') ?>"
                                                placeholder="Apellido de la persona">
                                         <div class="invalid-feedback">El apellido es obligatorio</div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="row">
+                            <div class="row"><div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="persona_dni" class="required">
+                                            <i class="fas fa-id-card"></i> DNI
+                                        </label>
+                                        <input type="text" class="form-control form-control-sm" id="persona_dni" 
+                                               name="persona_dni" required maxlength="20" 
+                                               value="<?= htmlspecialchars($huesped['persona_dni'] ?? '') ?>"
+                                               placeholder="Número de DNI">
+                                        <div class="invalid-feedback">El DNI es obligatorio</div>
+                                    </div>
+                                </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="persona_fechanac" class="required">
@@ -200,19 +226,22 @@ $isEdit = isset($huesped) && !empty($huesped);
                                         </label>
                                         <input type="date" class="form-control form-control-sm" id="persona_fechanac" 
                                                name="persona_fechanac" required 
-                                               value="<?= htmlspecialchars($huesped['persona_fechanac']) ?>"
+                                               value="<?= isset($huesped['persona_fechanac']) ? date('Y-m-d', strtotime($huesped['persona_fechanac'])) : '' ?>"
                                                max="<?= date('Y-m-d') ?>">
                                         <div class="invalid-feedback">La fecha de nacimiento es obligatoria</div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-12">
                                     <div class="form-group">
                                         <label for="persona_direccion" class="required">
                                             <i class="fas fa-home"></i> Dirección
                                         </label>
                                         <input type="text" class="form-control form-control-sm" id="persona_direccion" 
                                                name="persona_direccion" required maxlength="45" 
-                                               value="<?= htmlspecialchars($huesped['persona_direccion']) ?>"
+                                               value="<?= htmlspecialchars($huesped['persona_direccion'] ?? '') ?>"
                                                placeholder="Dirección completa">
                                         <div class="invalid-feedback">La dirección es obligatoria</div>
                                     </div>
@@ -456,13 +485,50 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('formHuesped');
     
     if (form) {
-        // Validación del formulario
+        // Manejo del submit del formulario
         form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Validación HTML5
             if (!form.checkValidity()) {
-                event.preventDefault();
-                event.stopPropagation();
+                form.classList.add('was-validated');
+                return;
             }
+            
             form.classList.add('was-validated');
+            
+            // Obtener datos del formulario
+            const formData = new FormData(form);
+            
+            // Enviar con AJAX
+            fetch(form.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Redirigir al listado con mensaje de éxito
+                    const mensaje = encodeURIComponent(data.message);
+                    window.location.href = '<?= $this->url('/huespedes') ?>?mensaje=' + mensaje + '&tipo=exito';
+                } else {
+                    // Mostrar mensaje de error con SweetAlert
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.message || 'Error al procesar la solicitud'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error al procesar la solicitud'
+                });
+            });
         });
     }
 
@@ -470,34 +536,36 @@ document.addEventListener('DOMContentLoaded', function() {
     const badges = document.querySelectorAll('.asignacion-badge[data-tipo="condicion"]');
     const hiddenContainer = document.getElementById('condiciones-hidden-container');
 
-    badges.forEach(function(badge) {
-        badge.addEventListener('click', function() {
-            const condicionId = this.getAttribute('data-condicion-id');
-            const isSelected = this.classList.contains('seleccionado-salud');
+    if (badges.length > 0 && hiddenContainer) {
+        badges.forEach(function(badge) {
+            badge.addEventListener('click', function() {
+                const condicionId = this.getAttribute('data-condicion-id');
+                const isSelected = this.classList.contains('seleccionado-salud');
 
-            if (isSelected) {
-                // Deseleccionar
-                this.classList.remove('seleccionado-salud');
-                this.classList.add('no-seleccionado');
-                // Remover input hidden
-                const hiddenInput = document.getElementById('hidden-condicion-' + condicionId);
-                if (hiddenInput) {
-                    hiddenInput.remove();
+                if (isSelected) {
+                    // Deseleccionar
+                    this.classList.remove('seleccionado-salud');
+                    this.classList.add('no-seleccionado');
+                    // Remover input hidden
+                    const hiddenInput = document.getElementById('hidden-condicion-' + condicionId);
+                    if (hiddenInput) {
+                        hiddenInput.remove();
+                    }
+                } else {
+                    // Seleccionar
+                    this.classList.remove('no-seleccionado');
+                    this.classList.add('seleccionado-salud');
+                    // Agregar input hidden
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'condiciones_salud[]';
+                    input.value = condicionId;
+                    input.id = 'hidden-condicion-' + condicionId;
+                    hiddenContainer.appendChild(input);
                 }
-            } else {
-                // Seleccionar
-                this.classList.remove('no-seleccionado');
-                this.classList.add('seleccionado-salud');
-                // Agregar input hidden
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'condiciones_salud[]';
-                input.value = condicionId;
-                input.id = 'hidden-condicion-' + condicionId;
-                hiddenContainer.appendChild(input);
-            }
+            });
         });
-    });
+    }
 });
 
 function limpiarFormulario() {
