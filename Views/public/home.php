@@ -357,18 +357,342 @@
             </div>
         </div>
         
-        <!-- Estadísticas mensuales -->
+        <!-- Estadísticas mensuales con gráficos -->
         <div class="dashboard-section">
             <h2><i class="fas fa-chart-line"></i> Tendencias (Últimos 6 Meses)</h2>
-            <div class="estadisticas-mensuales">
-                <?php foreach ($estadisticas_mensuales as $mes): ?>
-                    <div class="mes-stat">
-                        <h4><?= $mes['mes'] ?></h4>
-                        <p><i class="fas fa-calendar"></i> <?= $mes['reservas'] ?> reservas</p>
-                        <p><i class="fas fa-dollar-sign"></i> $<?= number_format($mes['ingresos'], 0, ',', '.') ?></p>
+            
+            <!-- Gráficos con Chart.js -->
+            <div class="row mb-4">
+                <!-- Gráfico de Reservas -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <h5 class="mb-0"><i class="fas fa-calendar-check text-primary"></i> Reservas Mensuales</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="chartReservas" height="250"></canvas>
+                        </div>
                     </div>
-                <?php endforeach; ?>
+                </div>
+                
+                <!-- Gráfico de Ingresos -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <h5 class="mb-0"><i class="fas fa-dollar-sign text-success"></i> Ingresos Mensuales</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="chartIngresos" height="250"></canvas>
+                        </div>
+                    </div>
+                </div>
             </div>
+            
+            <!-- Gráficos de Top Productos y Servicios -->
+            <div class="row">
+                <!-- Gráfico de Barras Horizontales - Top Productos -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <h5 class="mb-0"><i class="fas fa-box text-warning"></i> Top 10 Productos Más Vendidos</h5>
+                        </div>
+                        <div class="card-body">
+                            <?php if (!empty($top_productos)): ?>
+                                <canvas id="chartTopProductos" height="300"></canvas>
+                            <?php else: ?>
+                                <div class="text-center py-5 text-muted">
+                                    <i class="fas fa-box-open fa-3x mb-3"></i>
+                                    <p>No hay datos de productos vendidos</p>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Gráfico de Torta - Top Servicios -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <h5 class="mb-0"><i class="fas fa-concierge-bell text-info"></i> Top 10 Servicios Más Contratados</h5>
+                        </div>
+                        <div class="card-body">
+                            <?php if (!empty($top_servicios)): ?>
+                                <canvas id="chartTopServicios" height="300"></canvas>
+                            <?php else: ?>
+                                <div class="text-center py-5 text-muted">
+                                    <i class="fas fa-concierge-bell fa-3x mb-3"></i>
+                                    <p>No hay datos de servicios contratados</p>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Script para inicializar los gráficos -->
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    // Datos de PHP a JavaScript
+                    const estadisticas = <?= json_encode($estadisticas_mensuales) ?>;
+                    const topProductos = <?= json_encode($top_productos ?? []) ?>;
+                    const topServicios = <?= json_encode($top_servicios ?? []) ?>;
+                    
+                    // Extraer labels y datos - Estadísticas mensuales
+                    const meses = estadisticas.map(item => item.mes);
+                    const reservas = estadisticas.map(item => parseInt(item.reservas));
+                    const ingresos = estadisticas.map(item => parseFloat(item.ingresos));
+                    
+                    // Configuración común
+                    const commonOptions = {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        }
+                    };
+                    
+                    // 1. Gráfico de Línea - Reservas
+                    const ctxReservas = document.getElementById('chartReservas').getContext('2d');
+                    new Chart(ctxReservas, {
+                        type: 'line',
+                        data: {
+                            labels: meses,
+                            datasets: [{
+                                label: 'Reservas',
+                                data: reservas,
+                                borderColor: 'rgb(54, 162, 235)',
+                                backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 5,
+                                pointHoverRadius: 7,
+                                pointBackgroundColor: 'rgb(54, 162, 235)',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2
+                            }]
+                        },
+                        options: {
+                            ...commonOptions,
+                            plugins: {
+                                ...commonOptions.plugins,
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return 'Reservas: ' + context.parsed.y;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    
+                    // 2. Gráfico de Área - Ingresos
+                    const ctxIngresos = document.getElementById('chartIngresos').getContext('2d');
+                    new Chart(ctxIngresos, {
+                        type: 'line',
+                        data: {
+                            labels: meses,
+                            datasets: [{
+                                label: 'Ingresos ($)',
+                                data: ingresos,
+                                borderColor: 'rgb(75, 192, 192)',
+                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 5,
+                                pointHoverRadius: 7,
+                                pointBackgroundColor: 'rgb(75, 192, 192)',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2
+                            }]
+                        },
+                        options: {
+                            ...commonOptions,
+                            plugins: {
+                                ...commonOptions.plugins,
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return 'Ingresos: $' + context.parsed.y.toLocaleString('es-AR', {
+                                                minimumFractionDigits: 0,
+                                                maximumFractionDigits: 0
+                                            });
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return '$' + value.toLocaleString('es-AR');
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    
+                    // 3. Gráfico de Barras Horizontales - Top Productos
+                    if (topProductos.length > 0) {
+                        const productosLabels = topProductos.map(item => item.producto_nombre);
+                        const productosCantidades = topProductos.map(item => parseInt(item.cantidad_vendida));
+                        
+                        // Paleta de colores vibrantes
+                        const coloresProductos = [
+                            'rgba(255, 99, 132, 0.8)',
+                            'rgba(54, 162, 235, 0.8)',
+                            'rgba(255, 206, 86, 0.8)',
+                            'rgba(75, 192, 192, 0.8)',
+                            'rgba(153, 102, 255, 0.8)',
+                            'rgba(255, 159, 64, 0.8)',
+                            'rgba(199, 199, 199, 0.8)',
+                            'rgba(83, 102, 255, 0.8)',
+                            'rgba(255, 99, 255, 0.8)',
+                            'rgba(99, 255, 132, 0.8)'
+                        ];
+                        
+                        const ctxTopProductos = document.getElementById('chartTopProductos').getContext('2d');
+                        new Chart(ctxTopProductos, {
+                            type: 'bar',
+                            data: {
+                                labels: productosLabels,
+                                datasets: [{
+                                    label: 'Cantidad Vendida',
+                                    data: productosCantidades,
+                                    backgroundColor: coloresProductos,
+                                    borderColor: coloresProductos.map(color => color.replace('0.8', '1')),
+                                    borderWidth: 2
+                                }]
+                            },
+                            options: {
+                                indexAxis: 'y',
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        display: false
+                                    },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function(context) {
+                                                const item = topProductos[context.dataIndex];
+                                                return [
+                                                    'Cantidad: ' + context.parsed.x + ' unidades',
+                                                    'Ingresos: $' + parseFloat(item.total_ingresos).toLocaleString('es-AR', {
+                                                        minimumFractionDigits: 0,
+                                                        maximumFractionDigits: 0
+                                                    })
+                                                ];
+                                            }
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    x: {
+                                        beginAtZero: true,
+                                        ticks: {
+                                            precision: 0
+                                        },
+                                        title: {
+                                            display: true,
+                                            text: 'Cantidad Vendida'
+                                        }
+                                    },
+                                    y: {
+                                        ticks: {
+                                            autoSkip: false
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                    
+                    // 4. Gráfico de Torta - Top Servicios
+                    if (topServicios.length > 0) {
+                        const serviciosLabels = topServicios.map(item => item.servicio_descripcion);
+                        const serviciosCantidades = topServicios.map(item => parseInt(item.cantidad_contratada));
+                        
+                        // Paleta de colores para torta
+                        const coloresServicios = [
+                            'rgba(255, 99, 132, 0.8)',
+                            'rgba(54, 162, 235, 0.8)',
+                            'rgba(255, 206, 86, 0.8)',
+                            'rgba(75, 192, 192, 0.8)',
+                            'rgba(153, 102, 255, 0.8)',
+                            'rgba(255, 159, 64, 0.8)',
+                            'rgba(199, 199, 199, 0.8)',
+                            'rgba(83, 102, 255, 0.8)',
+                            'rgba(255, 99, 255, 0.8)',
+                            'rgba(99, 255, 132, 0.8)'
+                        ];
+                        
+                        const ctxTopServicios = document.getElementById('chartTopServicios').getContext('2d');
+                        new Chart(ctxTopServicios, {
+                            type: 'doughnut',
+                            data: {
+                                labels: serviciosLabels,
+                                datasets: [{
+                                    label: 'Veces Contratado',
+                                    data: serviciosCantidades,
+                                    backgroundColor: coloresServicios,
+                                    borderColor: '#fff',
+                                    borderWidth: 3
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        display: true,
+                                        position: 'right',
+                                        labels: {
+                                            boxWidth: 15,
+                                            padding: 10,
+                                            font: {
+                                                size: 11
+                                            }
+                                        }
+                                    },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function(context) {
+                                                const item = topServicios[context.dataIndex];
+                                                const total = serviciosCantidades.reduce((a, b) => a + b, 0);
+                                                const porcentaje = ((context.parsed / total) * 100).toFixed(1);
+                                                return [
+                                                    context.label + ': ' + context.parsed + ' veces',
+                                                    'Porcentaje: ' + porcentaje + '%',
+                                                    'Ingresos: $' + parseFloat(item.total_ingresos).toLocaleString('es-AR', {
+                                                        minimumFractionDigits: 0,
+                                                        maximumFractionDigits: 0
+                                                    })
+                                                ];
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                });
+            </script>
         </div>
         
         <!-- Reservas recientes -->

@@ -2796,13 +2796,13 @@ class ReservasController extends Controller
             // Verificar que es el propietario de la reserva
             $usuarioId = $_SESSION['usuario_id'];
             if (!$this->reservaModel->isReservaOwner($id, $usuarioId)) {
-                $this->redirect('/reservas', 'No tiene permisos para modificar esta reserva', 'error');
+                $this->redirect('/mis-reservas', 'No tiene permisos para modificar esta reserva', 'error');
                 return;
             }
             
             // Verificar que la reserva está en estado "Confirmada" (2)
             if ($reserva['rela_estadoreserva'] != 2) {
-                $this->redirect('/reservas', 'Solo se puede marcar ingreso en reservas confirmadas', 'error');
+                $this->redirect('/mis-reservas', 'Solo se puede marcar ingreso en reservas confirmadas', 'error');
                 return;
             }
             
@@ -2815,14 +2815,14 @@ class ReservasController extends Controller
                 // Nota: El estado de cabaña se gestiona automáticamente por las reservas activas
                 // No existe cabania_estado en la tabla cabania
                 
-                $this->redirect('/reservas', 'Ingreso registrado correctamente.', 'exito');
+                $this->redirect('/mis-reservas', 'Ingreso registrado correctamente.', 'exito');
             } else {
-                $this->redirect('/reservas', 'Error al registrar el ingreso', 'error');
+                $this->redirect('/mis-reservas', 'Error al registrar el ingreso', 'error');
             }
             
         } catch (\Exception $e) {
             error_log('Error en marcarIngreso: ' . $e->getMessage());
-            $this->redirect('/reservas', 'Error: ' . $e->getMessage(), 'error');
+            $this->redirect('/mis-reservas', 'Error: ' . $e->getMessage(), 'error');
         }
     }
     
@@ -2837,20 +2837,20 @@ class ReservasController extends Controller
             // Verificar que la reserva existe y pertenece al usuario
             $reserva = $this->reservaModel->find($id);
             if (!$reserva) {
-                $this->redirect('/reservas', 'Reserva no encontrada', 'error');
+                $this->redirect('/mis-reservas', 'Reserva no encontrada', 'error');
                 return;
             }
             
             // Verificar que es el propietario de la reserva
             $usuarioId = $_SESSION['usuario_id'];
             if (!$this->reservaModel->isReservaOwner($id, $usuarioId)) {
-                $this->redirect('/reservas', 'No tiene permisos para modificar esta reserva', 'error');
+                $this->redirect('/mis-reservas', 'No tiene permisos para modificar esta reserva', 'error');
                 return;
             }
             
             // Verificar que la reserva está en estado "En curso" (3)
             if ($reserva['rela_estadoreserva'] != 3) {
-                $this->redirect('/reservas', 'Solo se puede marcar salida en reservas en curso', 'error');
+                $this->redirect('/mis-reservas', 'Solo se puede marcar salida en reservas en curso', 'error');
                 return;
             }
             
@@ -2860,9 +2860,9 @@ class ReservasController extends Controller
             ]);
             
             if ($resultado) {
-                $this->redirect('/reservas', 'Salida registrada correctamente. La reserva está pendiente de revisión.', 'exito');
+                $this->redirect('/mis-reservas', 'Salida registrada correctamente. La reserva está pendiente de revisión.', 'exito');
             } else {
-                $this->redirect('/reservas', 'Error al registrar la salida', 'error');
+                $this->redirect('/mis-reservas', 'Error al registrar la salida', 'error');
             }
             
         } catch (\Exception $e) {

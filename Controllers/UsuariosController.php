@@ -244,24 +244,28 @@ class UsuariosController extends Controller
             'rela_perfil' => $this->post('rela_perfil')
         ];
 
-        // Datos de persona
+        // Datos de personafisica (campos de nombre, apellido, fechanac)
+        $personaFisicaData = [
+            'personafisica_nombre' => $this->post('persona_nombre'),
+            'personafisica_apellido' => $this->post('persona_apellido'),
+            'personafisica_fechanac' => $this->post('persona_fechanac')
+        ];
+
+        // Datos de persona (solo campos que existen en la tabla persona)
         $personaData = [
-            'persona_nombre' => $this->post('persona_nombre'),
-            'persona_apellido' => $this->post('persona_apellido'),
-            'persona_fechanac' => $this->post('persona_fechanac'),
             'persona_direccion' => $this->post('persona_direccion')
         ];
 
-        // Validaciones de persona
-        if (empty($personaData['persona_nombre'])) {
+        // Validaciones de personafisica
+        if (empty($personaFisicaData['personafisica_nombre'])) {
             $this->redirect("/usuarios/{$id}/edit", 'El nombre de la persona es obligatorio', 'error');
             return;
         }
-        if (empty($personaData['persona_apellido'])) {
+        if (empty($personaFisicaData['personafisica_apellido'])) {
             $this->redirect("/usuarios/{$id}/edit", 'El apellido de la persona es obligatorio', 'error');
             return;
         }
-        if (empty($personaData['persona_fechanac'])) {
+        if (empty($personaFisicaData['personafisica_fechanac'])) {
             $this->redirect("/usuarios/{$id}/edit", 'La fecha de nacimiento es obligatoria', 'error');
             return;
         }
@@ -281,14 +285,28 @@ class UsuariosController extends Controller
             // Iniciar transacción
             $this->usuarioModel->beginTransaction();
 
-            // 1. Actualizar datos de la persona
+            // 1. Actualizar datos de la persona (solo dirección)
             $idPersona = $usuario['rela_persona'];
             $personaModel = new \App\Models\Persona();
             if (!$personaModel->update($idPersona, $personaData)) {
                 throw new \Exception('Error al actualizar los datos de la persona');
             }
 
-            // 2. Preparar datos de usuario para actualizar
+            // 2. Actualizar datos de personafisica (nombre, apellido, fecha nacimiento)
+            $personaFisicaModel = new \App\Models\PersonaFisica();
+            
+            // Obtener el id_personafisica desde la tabla persona
+            $personaInfo = $personaModel->find($idPersona);
+            if (!$personaInfo || empty($personaInfo['rela_personafisica'])) {
+                throw new \Exception('No se encontró la información de persona física asociada');
+            }
+            
+            $idPersonaFisica = $personaInfo['rela_personafisica'];
+            if (!$personaFisicaModel->update($idPersonaFisica, $personaFisicaData)) {
+                throw new \Exception('Error al actualizar los datos de persona física');
+            }
+
+            // 3. Preparar datos de usuario para actualizar
             $updateData = [
                 'usuario_nombre' => $usuarioData['usuario_nombre'],
                 'rela_perfil' => $usuarioData['rela_perfil']
@@ -299,7 +317,7 @@ class UsuariosController extends Controller
                 $updateData['usuario_contrasenia'] = password_hash($usuarioData['usuario_contrasenia'], PASSWORD_DEFAULT);
             }
 
-            // 3. Actualizar usuario
+            // 4. Actualizar usuario
             if (!$this->usuarioModel->update($id, $updateData)) {
                 throw new \Exception('Error al actualizar el usuario');
             }

@@ -100,7 +100,9 @@ class HomeController extends Controller
                 'huespedes_mes' => $this->getHuespedesMes()
             ],
             'estadisticas_mensuales' => $this->getEstadisticasMensuales(),
-            'reservas_recientes' => $this->getReservasRecientes(5)
+            'reservas_recientes' => $this->getReservasRecientes(5),
+            'top_productos' => $this->getTopProductos(10),
+            'top_servicios' => $this->getTopServicios(10)
         ];
     }
     
@@ -642,6 +644,56 @@ class HomeController extends Controller
             $reservas[] = $row;
         }
         return $reservas;
+    }
+    
+    private function getTopProductos($limite = 10)
+    {
+        $db = \App\Core\Database::getInstance();
+        $stmt = $db->prepare("SELECT 
+                                p.producto_nombre,
+                                SUM(c.consumo_cantidad) as cantidad_vendida,
+                                SUM(c.consumo_total) as total_ingresos
+                              FROM consumo c
+                              INNER JOIN producto p ON c.rela_producto = p.id_producto
+                              WHERE c.rela_producto IS NOT NULL
+                              AND c.rela_estadoconsumo IN (1, 2, 3)
+                              GROUP BY p.id_producto, p.producto_nombre
+                              ORDER BY cantidad_vendida DESC
+                              LIMIT ?");
+        $stmt->bind_param("i", $limite);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $productos = [];
+        while ($row = $result->fetch_assoc()) {
+            $productos[] = $row;
+        }
+        return $productos;
+    }
+    
+    private function getTopServicios($limite = 10)
+    {
+        $db = \App\Core\Database::getInstance();
+        $stmt = $db->prepare("SELECT 
+                                s.servicio_descripcion,
+                                COUNT(c.id_consumo) as cantidad_contratada,
+                                SUM(c.consumo_total) as total_ingresos
+                              FROM consumo c
+                              INNER JOIN servicio s ON c.rela_servicio = s.id_servicio
+                              WHERE c.rela_servicio IS NOT NULL
+                              AND c.rela_estadoconsumo IN (1, 2, 3)
+                              GROUP BY s.id_servicio, s.servicio_descripcion
+                              ORDER BY cantidad_contratada DESC
+                              LIMIT ?");
+        $stmt->bind_param("i", $limite);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $servicios = [];
+        while ($row = $result->fetch_assoc()) {
+            $servicios[] = $row;
+        }
+        return $servicios;
     }
 
     /**

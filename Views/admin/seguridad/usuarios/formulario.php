@@ -139,7 +139,7 @@ $isEdit = isset($usuario) && !empty($usuario);
                                     <label for="persona_fechanac" class="required">Fecha de Nacimiento</label>
                                     <input type="date" class="form-control" id="persona_fechanac" 
                                            name="persona_fechanac" required 
-                                           value="<?= htmlspecialchars($usuario['persona_fechanac'] ?? '') ?>"
+                                           value="<?= !empty($usuario['persona_fechanac']) ? date('Y-m-d', strtotime($usuario['persona_fechanac'])) : '' ?>"
                                            max="<?= date('Y-m-d') ?>">
                                     <div class="invalid-feedback">La fecha de nacimiento es obligatoria</div>
                                 </div>

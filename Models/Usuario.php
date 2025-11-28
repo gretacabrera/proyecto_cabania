@@ -220,7 +220,8 @@ class Usuario extends Model
         // Total gastado - calculado desde pagos
         $sql = "SELECT COALESCE(SUM(p.pago_total), 0) as total 
                 FROM pago p
-                JOIN reserva r ON p.rela_reserva = r.id_reserva
+                JOIN factura f ON p.rela_factura = f.id_factura
+                JOIN reserva r ON f.rela_reserva = r.id_reserva
                 JOIN huesped_reserva hr ON r.id_reserva = hr.rela_reserva
                 JOIN huesped h ON hr.rela_huesped = h.id_huesped
                 JOIN persona pe ON h.rela_persona = pe.id_persona
@@ -751,7 +752,11 @@ class Usuario extends Model
      */
     public function findWithRelations($id)
     {
-        $sql = "SELECT u.*, pf.personafisica_nombre as persona_nombre, pf.personafisica_apellido as persona_apellido,
+        $sql = "SELECT u.*, 
+                       pf.personafisica_nombre as persona_nombre, 
+                       pf.personafisica_apellido as persona_apellido,
+                       pf.personafisica_fechanac as persona_fechanac,
+                       p.persona_direccion,
                        (SELECT c.contacto_descripcion FROM contacto c 
                         JOIN tipocontacto tc ON c.rela_tipocontacto = tc.id_tipocontacto 
                         WHERE tc.tipocontacto_descripcion = 'email' 
@@ -1198,6 +1203,30 @@ class Usuario extends Model
         } catch (\Exception $e) {
             error_log("clearPasswordResetTokens: Error - " . $e->getMessage());
         }
+    }
+
+    /**
+     * Iniciar transacción
+     */
+    public function beginTransaction()
+    {
+        $this->db->beginTransaction();
+    }
+
+    /**
+     * Confirmar transacción
+     */
+    public function commit()
+    {
+        $this->db->commit();
+    }
+
+    /**
+     * Revertir transacción
+     */
+    public function rollback()
+    {
+        $this->db->rollback();
     }
 }
 

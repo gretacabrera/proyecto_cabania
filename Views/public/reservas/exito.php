@@ -188,7 +188,7 @@
                             </a>
                         </div>
                         <div class="col-md-4">
-                            <a href="<?= url('/reservas') ?>" class="btn btn-outline-info w-100">
+                            <a href="<?= url('/mis-reservas') ?>" class="btn btn-outline-info w-100">
                                 <i class="fas fa-history me-1"></i>
                                 Ver Mis Reservas
                             </a>
