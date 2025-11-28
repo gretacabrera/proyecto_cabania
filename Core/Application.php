@@ -137,6 +137,23 @@ class Application
         $this->router->post('/cajas/{id}/restore', 'CajasController@restore');
         $this->router->post('/cajas/{id}/estado', 'CajasController@cambiarEstado');
 
+        // Rutas de Aperturas de Caja
+        $this->router->get('/aperturas', 'CajasAperturasController@index');
+        $this->router->any('/aperturas/apertura', 'CajasAperturasController@apertura');
+
+        // Rutas de Arqueos de Caja
+        $this->router->get('/arqueos', 'CajasArqueoController@index');
+        $this->router->get('/arqueos/formulario', 'CajasArqueoController@formulario');
+        $this->router->post('/arqueos/procesar', 'CajasArqueoController@procesarArqueo');
+        $this->router->get('/arqueos/{id}', 'CajasArqueoController@show');
+
+        // Rutas de Movimientos de Caja
+        $this->router->get('/movimientos', 'CajasMovimientosController@index');
+        $this->router->get('/movimientos/create', 'CajasMovimientosController@create');
+        $this->router->post('/movimientos', 'CajasMovimientosController@store');
+        $this->router->get('/movimientos/{id}', 'CajasMovimientosController@show');
+        $this->router->post('/movimientos/{id}/anular', 'CajasMovimientosController@anular');
+
         // Rutas de Ubicaciones
         $this->router->get('/ubicaciones', 'UbicacionesController@index');
         $this->router->any('/ubicaciones/create', 'UbicacionesController@create');

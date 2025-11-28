@@ -109,16 +109,62 @@ class HomeController extends Controller
      */
     private function getCajeroData()
     {
+        $usuarioId = Auth::id();
+        $cajaTurnoModel = new \App\Models\CajaTurno();
+        $cajaMovimientoModel = new \App\Models\CajaMovimiento();
+        $cajaArqueoModel = new \App\Models\CajaArqueo();
+        
+        // Obtener caja asignada
+        $caja = $cajaTurnoModel->getCajaByUsuario($usuarioId);
+        
+        // Verificar si hay turno abierto
+        $turnoAbierto = null;
+        if ($caja) {
+            $turnoAbierto = $cajaTurnoModel->getTurnoAbierto($caja['id_caja']);
+        }
+        
+        // Estadísticas del turno actual
+        $estadisticasTurno = [
+            'total_ingresos' => 0,
+            'total_egresos' => 0,
+            'cantidad_movimientos' => 0,
+            'cantidad_arqueos' => 0
+        ];
+        
+        $movimientosRecientes = [];
+        $arqueosRecientes = [];
+        
+        if ($turnoAbierto) {
+            // Obtener movimientos del turno
+            $movimientos = $cajaMovimientoModel->getMovimientosByTurno($turnoAbierto['id_cajaturno']);
+            foreach ($movimientos as $mov) {
+                if ($mov['cajamovimiento_tipo'] === 'I') {
+                    $estadisticasTurno['total_ingresos'] += $mov['cajamovimiento_monto'];
+                } else {
+                    $estadisticasTurno['total_egresos'] += $mov['cajamovimiento_monto'];
+                }
+            }
+            $estadisticasTurno['cantidad_movimientos'] = count($movimientos);
+            $movimientosRecientes = array_slice($movimientos, 0, 5);
+            
+            // Obtener arqueos del turno
+            $db = \App\Core\Database::getInstance();
+            $stmt = $db->prepare("SELECT * FROM cajaarqueo WHERE rela_cajaturno = ? ORDER BY cajaarqueo_fechahora DESC LIMIT 3");
+            $stmt->bind_param("i", $turnoAbierto['id_cajaturno']);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            while ($row = $result->fetch_assoc()) {
+                $arqueosRecientes[] = $row;
+            }
+            $estadisticasTurno['cantidad_arqueos'] = count($arqueosRecientes);
+        }
+        
         return [
-            'facturacion' => [
-                'facturas_hoy' => $this->getFacturasHoy(),
-                'ingresos_hoy' => $this->getIngresosHoy(),
-                'facturas_mes' => $this->getFacturasMes(),
-                'ingresos_mes' => $this->getIngresosMes(),
-                'metodos_pago' => $this->getMetodosPagoMes()
-            ],
-            'facturas_recientes' => $this->getFacturasRecientes(10),
-            'reservas_pendientes_pago' => $this->getReservasPendientesPago()
+            'caja' => $caja,
+            'turno_abierto' => $turnoAbierto,
+            'estadisticas_turno' => $estadisticasTurno,
+            'movimientos_recientes' => $movimientosRecientes,
+            'arqueos_recientes' => $arqueosRecientes
         ];
     }
     

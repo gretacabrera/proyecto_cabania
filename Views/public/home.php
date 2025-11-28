@@ -401,122 +401,239 @@
         <!-- Header -->
         <div class="dashboard-header">
             <div class="welcome-section">
-                <h1><i class="fas fa-cash-register"></i> Panel de Facturación</h1>
-                <p class="dashboard-subtitle">Gestión de pagos y facturación</p>
+                <h1><i class="fas fa-cash-register"></i> Panel de Caja</h1>
+                <p class="dashboard-subtitle">Gestión de caja y turnos</p>
             </div>
         </div>
         
-        <!-- KPIs de facturación -->
-        <div class="kpis-grid">
-            <div class="kpi-card kpi-hoy">
-                <div class="kpi-icon">
-                    <i class="fas fa-receipt"></i>
+        <?php if (isset($caja) && $caja): ?>
+            <!-- Información de la caja asignada -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-info text-white py-3">
+                    <h5 class="mb-0"><i class="fas fa-cash-register me-2"></i>Caja Asignada</h5>
                 </div>
-                <div class="kpi-content">
-                    <h3><?= $facturacion['facturas_hoy'] ?></h3>
-                    <p>Facturas Hoy</p>
-                </div>
-            </div>
-            
-            <div class="kpi-card kpi-hoy">
-                <div class="kpi-icon">
-                    <i class="fas fa-money-bill-wave"></i>
-                </div>
-                <div class="kpi-content">
-                    <h3>$<?= number_format($facturacion['ingresos_hoy'], 0, ',', '.') ?></h3>
-                    <p>Ingresos Hoy</p>
-                </div>
-            </div>
-            
-            <div class="kpi-card">
-                <div class="kpi-icon">
-                    <i class="fas fa-file-invoice"></i>
-                </div>
-                <div class="kpi-content">
-                    <h3><?= $facturacion['facturas_mes'] ?></h3>
-                    <p>Facturas del Mes</p>
-                </div>
-            </div>
-            
-            <div class="kpi-card">
-                <div class="kpi-icon">
-                    <i class="fas fa-dollar-sign"></i>
-                </div>
-                <div class="kpi-content">
-                    <h3>$<?= number_format($facturacion['ingresos_mes'], 0, ',', '.') ?></h3>
-                    <p>Ingresos del Mes</p>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Métodos de pago -->
-        <?php if (!empty($facturacion['metodos_pago'])): ?>
-        <div class="dashboard-section">
-            <h2><i class="fas fa-credit-card"></i> Métodos de Pago (Este Mes)</h2>
-            <div class="metodos-pago-grid">
-                <?php foreach ($facturacion['metodos_pago'] as $metodo): ?>
-                    <div class="metodo-card">
-                        <h4><?= $this->escape($metodo['metododepago_descripcion']) ?></h4>
-                        <p><strong><?= $metodo['cantidad'] ?></strong> transacciones</p>
-                        <p>$<?= number_format($metodo['total'], 0, ',', '.') ?></p>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-        <?php endif; ?>
-        
-        <!-- Reservas pendientes de pago -->
-        <div class="dashboard-section">
-            <h2><i class="fas fa-exclamation-triangle"></i> Reservas Pendientes de Pago</h2>
-            <?php if (!empty($reservas_pendientes_pago)): ?>
-                <div class="pendientes-list">
-                    <?php foreach ($reservas_pendientes_pago as $reserva): ?>
-                        <div class="pendiente-item">
-                            <div class="pendiente-info">
-                                <h4>Reserva #<?= $reserva['id_reserva'] ?></h4>
-                                <p><?= $this->escape($reserva['persona_nombre'] . ' ' . $reserva['persona_apellido']) ?></p>
-                                <p><?= $this->escape($reserva['cabania_nombre']) ?></p>
-                                <p><?= date('d/m/Y', strtotime($reserva['reserva_fhinicio'])) ?></p>
-                            </div>
-                            <div class="pendiente-monto">
-                                <strong>$<?= number_format($reserva['cabania_precio'], 0, ',', '.') ?></strong>
-                            </div>
-                            <div class="pendiente-actions">
-                                <a href="<?= $this->url('/reservas/procesar-pago/' . $reserva['id_reserva']) ?>" class="btn btn-sm btn-success">
-                                    <i class="fas fa-money-bill"></i>
-                                    Procesar Pago
-                                </a>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="h4 mb-1"><?= htmlspecialchars($caja['caja_descripcion']) ?></div>
+                            <div class="text-muted">
+                                <?php if (isset($turno_abierto) && $turno_abierto): ?>
+                                    <i class="fas fa-unlock text-success me-1"></i> Turno abierto desde <?= date('d/m/Y H:i', strtotime($turno_abierto['cajaturno_fhapertura'])) ?>
+                                <?php else: ?>
+                                    <i class="fas fa-lock text-danger me-1"></i> Sin turno abierto
+                                <?php endif; ?>
                             </div>
                         </div>
-                    <?php endforeach; ?>
+                        <div class="col-md-4 text-end">
+                            <?php if (!isset($turno_abierto) || !$turno_abierto): ?>
+                                <a href="<?= url('/aperturas') ?>" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-unlock me-2"></i> Abrir Caja
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <?php if (!isset($turno_abierto) || !$turno_abierto): ?>
+                <!-- Sin turno abierto - mensaje informativo -->
+                <div class="card border-0 shadow-sm text-center py-5">
+                    <div class="card-body">
+                        <i class="fas fa-info-circle fa-4x text-info mb-4"></i>
+                        <h4>Abra un turno para comenzar a operar</h4>
+                        <p class="text-muted mb-4">
+                            Una vez abierto el turno, podrá registrar movimientos y realizar arqueos de caja.
+                        </p>
+                    </div>
                 </div>
             <?php else: ?>
-                <div class="empty-state">
-                    <i class="fas fa-check-circle"></i>
-                    <p>No hay reservas pendientes de pago</p>
-                </div>
-            <?php endif; ?>
-        </div>
-        
-        <!-- Facturas recientes -->
-        <div class="dashboard-section">
-            <h2><i class="fas fa-history"></i> Facturas Recientes</h2>
-            <div class="facturas-list">
-                <?php foreach ($facturas_recientes as $factura): ?>
-                    <div class="factura-item">
-                        <div class="factura-info">
-                            <h4>Factura <?= $this->escape($factura['factura_nro']) ?></h4>
-                            <p><?= $this->escape($factura['persona_nombre'] . ' ' . $factura['persona_apellido']) ?></p>
-                            <p><?= $this->escape($factura['cabania_nombre']) ?></p>
-                            <p><?= date('d/m/Y H:i', strtotime($factura['factura_fechahora'])) ?></p>
-                        </div>
-                        <div class="factura-monto">
-                            <strong>$<?= number_format($factura['factura_total'], 0, ',', '.') ?></strong>
+                <!-- Información del turno actual -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white py-3">
+                        <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Turno Actual</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="text-muted small">Caja</div>
+                                <div class="h5"><?= htmlspecialchars($caja['caja_descripcion']) ?></div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-muted small">Apertura</div>
+                                <div class="h6"><?= date('d/m/Y H:i', strtotime($turno_abierto['cajaturno_fhapertura'])) ?></div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-muted small">Monto Inicial</div>
+                                <div class="h5 text-success">$<?= number_format($turno_abierto['cajaturno_contadoinicial'], 2, ',', '.') ?></div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-muted small">Balance</div>
+                                <div class="h5 text-info">
+                                    $<?= number_format($turno_abierto['cajaturno_contadoinicial'] + $estadisticas_turno['total_ingresos'] - $estadisticas_turno['total_egresos'], 2, ',', '.') ?>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                <?php endforeach; ?>
+                </div>
+                
+                <!-- KPIs del turno -->
+                <div class="kpis-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-icon">
+                            <i class="fas fa-exchange-alt"></i>
+                        </div>
+                        <div class="kpi-content">
+                            <h3><?= $estadisticas_turno['cantidad_movimientos'] ?></h3>
+                            <p>Movimientos</p>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card kpi-success">
+                        <div class="kpi-icon">
+                            <i class="fas fa-arrow-down"></i>
+                        </div>
+                        <div class="kpi-content">
+                            <h3>$<?= number_format($estadisticas_turno['total_ingresos'], 2, ',', '.') ?></h3>
+                            <p>Ingresos</p>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card kpi-danger">
+                        <div class="kpi-icon">
+                            <i class="fas fa-arrow-up"></i>
+                        </div>
+                        <div class="kpi-content">
+                            <h3>$<?= number_format($estadisticas_turno['total_egresos'], 2, ',', '.') ?></h3>
+                            <p>Egresos</p>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card">
+                        <div class="kpi-icon">
+                            <i class="fas fa-calculator"></i>
+                        </div>
+                        <div class="kpi-content">
+                            <h3><?= $estadisticas_turno['cantidad_arqueos'] ?></h3>
+                            <p>Arqueos Realizados</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Acciones rápidas -->
+                <div class="dashboard-section">
+                    <h2><i class="fas fa-bolt"></i> Acciones Rápidas</h2>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <a href="<?= url('/movimientos/create') ?>" class="btn btn-outline-primary w-100 py-3">
+                                <i class="fas fa-plus-circle fa-2x mb-2 d-block"></i>
+                                Nuevo Movimiento
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="<?= url('/arqueos/formulario') ?>" class="btn btn-outline-success w-100 py-3">
+                                <i class="fas fa-calculator fa-2x mb-2 d-block"></i>
+                                Realizar Arqueo
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="<?= url('/movimientos') ?>" class="btn btn-outline-info w-100 py-3">
+                                <i class="fas fa-list fa-2x mb-2 d-block"></i>
+                                Ver Movimientos
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Movimientos recientes -->
+                <?php if (!empty($movimientos_recientes)): ?>
+                <div class="dashboard-section">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2><i class="fas fa-history"></i> Movimientos Recientes</h2>
+                        <a href="<?= url('/movimientos') ?>" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-list"></i> Ver Todos
+                        </a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Fecha/Hora</th>
+                                    <th>Descripción</th>
+                                    <th>Tipo</th>
+                                    <th class="text-end">Monto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($movimientos_recientes as $mov): ?>
+                                <tr>
+                                    <td><?= date('d/m/Y H:i', strtotime($mov['cajamovimiento_fechahora'])) ?></td>
+                                    <td><?= htmlspecialchars($mov['cajamovimiento_descripcion']) ?></td>
+                                    <td>
+                                        <?php if ($mov['cajamovimiento_tipo'] === 'I'): ?>
+                                            <span class="badge text-white bg-success"><i class="fas fa-arrow-down"></i> Ingreso</span>
+                                        <?php else: ?>
+                                            <span class="badge text-white bg-danger"><i class="fas fa-arrow-up"></i> Egreso</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="fw-bold <?= $mov['cajamovimiento_tipo'] === 'I' ? 'text-success' : 'text-danger' ?>">
+                                            <?= $mov['cajamovimiento_tipo'] === 'I' ? '+' : '-' ?>$<?= number_format($mov['cajamovimiento_monto'], 2, ',', '.') ?>
+                                        </span>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <?php endif; ?>
+                
+                <!-- Arqueos recientes -->
+                <?php if (!empty($arqueos_recientes)): ?>
+                <div class="dashboard-section">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2><i class="fas fa-calculator"></i> Arqueos Recientes</h2>
+                        <a href="<?= url('/arqueos') ?>" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-list"></i> Ver Todos
+                        </a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Fecha/Hora</th>
+                                    <th class="text-end">Monto Contado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($arqueos_recientes as $arq): ?>
+                                <tr>
+                                    <td><?= date('d/m/Y H:i', strtotime($arq['cajaarqueo_fechahora'])) ?></td>
+                                    <td class="text-end">
+                                        <span class="fw-bold text-primary">
+                                            $<?= number_format($arq['cajaarqueo_montocontado'], 2, ',', '.') ?>
+                                        </span>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <?php endif; ?>
+            <?php endif; ?>
+        <?php else: ?>
+            <!-- Sin caja asignada -->
+            <div class="card border-0 shadow-sm text-center py-5">
+                <div class="card-body">
+                    <i class="fas fa-exclamation-triangle fa-4x text-warning mb-4"></i>
+                    <h4>No tiene una caja asignada</h4>
+                    <p class="text-muted mb-4">
+                        Por favor, contacte al administrador para que le asigne una caja.
+                    </p>
+                </div>
             </div>
-        </div>
+        <?php endif; ?>
     </div>
 </div>
 

@@ -117,11 +117,23 @@
     background: rgba(255, 255, 255, 0.2);
 }
 
+.kpi-content {
+    flex: 1;
+    min-width: 0; /* Permite que el contenido se encoja */
+    overflow: hidden;
+}
+
 .kpi-content h3 {
-    font-size: 2rem;
+    font-size: 1.25rem;
     font-weight: 700;
     margin: 0;
     color: #2c3e50;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .kpi-hoy .kpi-content h3 {
