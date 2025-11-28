@@ -182,9 +182,9 @@
                                     </td>
                                     <td class="border-0 py-3">
                                         <?php if ($registro['niveldanio_estado'] == 1): ?>
-                                            <span class="badge bg-success">Activo</span>
+                                            <span class="badge bg-success text-white px-2 py-1 rounded-pill">Activo</span>
                                         <?php else: ?>
-                                            <span class="badge bg-danger">Inactivo</span>
+                                            <span class="badge bg-danger text-white px-2 py-1 rounded-pill">Inactivo</span>
                                         <?php endif; ?>
                                     </td>
                                     <td class="border-0 py-3 text-center">

@@ -180,9 +180,9 @@ $renderPagination = function($showInfo = true) use ($pagination, $start, $end) {
                                     </td>
                                     <td class="border-0 py-3">
                                         <?php if ($condicion['condicionsalud_estado'] == 1): ?>
-                                            <span class="badge badge-success">Activa</span>
+                                            <span class="badge bg-success text-white px-2 py-1 rounded-pill">Activa</span>
                                         <?php else: ?>
-                                            <span class="badge badge-danger">Inactiva</span>
+                                            <span class="badge bg-danger text-white px-2 py-1 rounded-pill">Inactiva</span>
                                         <?php endif; ?>
                                     </td>
                                     <td class="border-0 py-3 text-center">

@@ -87,8 +87,8 @@
                     </div>
                     <h6 class="text-muted">No se encontraron proveedores</h6>
                     <p class="text-muted small mb-3">Intenta modificar los filtros o crea un nuevo proveedor.</p>
-                    <a href="<?= url('/proveedores/create') ?>" class="btn btn-outline-dark btn-sm">
-                        <i class="fas fa-plus fa-sm"></i> Crear proveedor
+                    <a href="<?= url('/proveedores/create') ?>" class="btn btn-sm btn-primary px-3 py-2 rounded">
+                        <i class="fas fa-plus"></i> Nuevo Proveedor
                     </a>
                 </div>
             <?php else: ?>
