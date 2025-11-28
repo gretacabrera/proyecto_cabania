@@ -124,27 +124,30 @@ class Cabania extends Model
         }
         
         if (!empty($filters['cabania_capacidad'])) {
-            $where .= " AND cabania_capacidad >= ?";
+            $where .= " AND c.cabania_capacidad >= ?";
             $params[] = (int) $filters['cabania_capacidad'];
         }
         
         if (!empty($filters['cabania_habitaciones'])) {
-            $where .= " AND cabania_cantidadhabitaciones >= ?";
+            $where .= " AND c.cabania_cantidadhabitaciones >= ?";
             $params[] = (int) $filters['cabania_habitaciones'];
         }
         
         if (!empty($filters['cabania_banios'])) {
-            $where .= " AND cabania_cantidadbanios >= ?";
+            $where .= " AND c.cabania_cantidadbanios >= ?";
             $params[] = (int) $filters['cabania_banios'];
         }
         
         if (isset($filters['cabania_estado']) && $filters['cabania_estado'] !== '') {
-            $where .= " AND rela_estadocabania = ?";
+            $where .= " AND c.rela_estadocabania = ?";
             $params[] = (int) $filters['cabania_estado'];
         }
         
-        // Query para contar total (para estadísticas)
-        $countSql = "SELECT COUNT(*) as total FROM {$this->table} WHERE $where";
+        // Query para contar total (para estadísticas) - con alias c
+        $countSql = "SELECT COUNT(*) as total 
+                     FROM {$this->table} c
+                     LEFT JOIN ubicacion u ON c.rela_ubicacion = u.id_ubicacion
+                     WHERE $where";
         $totalResult = $this->queryWithParams($countSql, $params);
         $totalRow = $totalResult->fetch_assoc();
         $total = (int) $totalRow['total'];
@@ -154,7 +157,7 @@ class Cabania extends Model
         $dataSql = "SELECT c.*, u.ubicacion_descripcion 
                     FROM {$this->table} c
                     LEFT JOIN ubicacion u ON c.rela_ubicacion = u.id_ubicacion
-                    WHERE $where ORDER BY cabania_nombre ASC";
+                    WHERE $where ORDER BY c.cabania_nombre ASC";
         $dataResult = $this->queryWithParams($dataSql, $params);
         
         $data = [];
@@ -176,8 +179,11 @@ class Cabania extends Model
         $offset = ($page - 1) * $perPage;
         $limit = (int) $perPage;
         
-        // Query para contar total
-        $countSql = "SELECT COUNT(*) as total FROM {$this->table} WHERE $where";
+        // Query para contar total - usar alias c para consistencia
+        $countSql = "SELECT COUNT(*) as total 
+                     FROM {$this->table} c
+                     LEFT JOIN ubicacion u ON c.rela_ubicacion = u.id_ubicacion
+                     WHERE $where";
         $totalResult = $this->queryWithParams($countSql, $params);
         $totalRow = $totalResult->fetch_assoc();
         $total = (int) $totalRow['total'];
